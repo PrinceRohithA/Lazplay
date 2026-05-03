@@ -31,7 +31,7 @@ function resolveProjectPath(value, fallbackRelativePath) {
 
 export const env = {
   NODE_ENV: process.env.NODE_ENV || "development",
-  PORT: toNumber(process.env.PORT, 3000),
+  PORT: toNumber(process.env.PORT, 2000),
   FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5173",
   API_BASE_URL: process.env.API_BASE_URL || "http://localhost:3000",
   PUBLIC_BASE_URL: process.env.PUBLIC_BASE_URL || process.env.API_BASE_URL || "http://localhost:3000",
