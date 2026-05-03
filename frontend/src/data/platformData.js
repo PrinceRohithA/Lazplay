@@ -29,7 +29,7 @@ export const gameCatalog = [
     installed: true,
     wishlist: false,
     demo: true,
-    art: "#246a73"
+    art: "url('https://picsum.photos/seed/night-market/800/450')"
   },
   {
     id: 2,
@@ -59,7 +59,7 @@ export const gameCatalog = [
     installed: false,
     wishlist: true,
     demo: true,
-    art: "#d65a31"
+    art: "url('https://picsum.photos/seed/rift-runners/800/450')"
   },
   {
     id: 3,
@@ -89,7 +89,7 @@ export const gameCatalog = [
     installed: false,
     wishlist: true,
     demo: true,
-    art: "#4f5d75"
+    art: "url('https://picsum.photos/seed/hollow-sketch/800/450')"
   },
   {
     id: 4,
@@ -119,7 +119,7 @@ export const gameCatalog = [
     installed: false,
     wishlist: false,
     demo: false,
-    art: "#4957a8"
+    art: "url('https://picsum.photos/seed/signal-state/800/450')"
   },
   {
     id: 5,
@@ -149,7 +149,7 @@ export const gameCatalog = [
     installed: false,
     wishlist: false,
     demo: false,
-    art: "#138a7b"
+    art: "url('https://picsum.photos/seed/moon-ledger/800/450')"
   },
   {
     id: 6,
@@ -179,7 +179,7 @@ export const gameCatalog = [
     installed: false,
     wishlist: true,
     demo: true,
-    art: "#9d3c4a"
+    art: "url('https://picsum.photos/seed/ember-crown/800/450')"
   },
   {
     id: 7,
@@ -209,7 +209,7 @@ export const gameCatalog = [
     installed: false,
     wishlist: false,
     demo: true,
-    art: "#5f7f56"
+    art: "url('https://picsum.photos/seed/void-garden/800/450')"
   },
   {
     id: 8,
@@ -239,7 +239,7 @@ export const gameCatalog = [
     installed: true,
     wishlist: false,
     demo: true,
-    art: "#30323d"
+    art: "url('https://picsum.photos/seed/arcade-vanta/800/450')"
   }
 ];
 
