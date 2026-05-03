@@ -85,7 +85,7 @@ function normalizeGame(remoteGame, fallback) {
       remoteGame.art ||
       remoteGame.coverArt ||
       fallback?.art ||
-      "linear-gradient(135deg, #2d8cff, #171a22 48%, #ff9d2e)",
+      "#246a73",
     owned: Boolean(remoteGame.owned ?? fallback?.owned),
     wishlist: Boolean(remoteGame.wishlist ?? fallback?.wishlist),
     inCart: Boolean(remoteGame.inCart ?? fallback?.inCart),

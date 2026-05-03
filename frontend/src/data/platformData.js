@@ -29,8 +29,7 @@ export const gameCatalog = [
     installed: true,
     wishlist: false,
     demo: true,
-    art:
-      "linear-gradient(135deg, rgba(255,125,46,0.9), rgba(19,21,28,0.7) 42%, rgba(61,224,195,0.6))"
+    art: "#246a73"
   },
   {
     id: 2,
@@ -60,8 +59,7 @@ export const gameCatalog = [
     installed: false,
     wishlist: true,
     demo: true,
-    art:
-      "linear-gradient(135deg, rgba(61,224,195,0.88), rgba(18,20,27,0.72) 44%, rgba(255,157,46,0.45))"
+    art: "#d65a31"
   },
   {
     id: 3,
@@ -91,8 +89,7 @@ export const gameCatalog = [
     installed: false,
     wishlist: true,
     demo: true,
-    art:
-      "linear-gradient(135deg, rgba(255,255,255,0.32), rgba(18,20,27,0.8) 44%, rgba(255,125,46,0.48))"
+    art: "#4f5d75"
   },
   {
     id: 4,
@@ -122,8 +119,7 @@ export const gameCatalog = [
     installed: false,
     wishlist: false,
     demo: false,
-    art:
-      "linear-gradient(135deg, rgba(61,224,195,0.62), rgba(18,20,27,0.82) 46%, rgba(140,120,255,0.45))"
+    art: "#4957a8"
   },
   {
     id: 5,
@@ -153,8 +149,7 @@ export const gameCatalog = [
     installed: false,
     wishlist: false,
     demo: false,
-    art:
-      "linear-gradient(135deg, rgba(255,157,46,0.7), rgba(18,20,27,0.82) 44%, rgba(61,224,195,0.52))"
+    art: "#138a7b"
   },
   {
     id: 6,
@@ -184,8 +179,7 @@ export const gameCatalog = [
     installed: false,
     wishlist: true,
     demo: true,
-    art:
-      "linear-gradient(135deg, rgba(255,92,92,0.9), rgba(18,20,27,0.78) 40%, rgba(255,157,46,0.44))"
+    art: "#9d3c4a"
   },
   {
     id: 7,
@@ -215,8 +209,7 @@ export const gameCatalog = [
     installed: false,
     wishlist: false,
     demo: true,
-    art:
-      "linear-gradient(135deg, rgba(61,224,195,0.48), rgba(18,20,27,0.8) 42%, rgba(255,255,255,0.32))"
+    art: "#5f7f56"
   },
   {
     id: 8,
@@ -246,8 +239,7 @@ export const gameCatalog = [
     installed: true,
     wishlist: false,
     demo: true,
-    art:
-      "linear-gradient(135deg, rgba(255,255,255,0.3), rgba(18,20,27,0.85) 48%, rgba(61,224,195,0.5))"
+    art: "#30323d"
   }
 ];
 
