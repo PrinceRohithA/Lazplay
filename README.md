@@ -42,17 +42,36 @@ Frontend URL:
 
 - http://localhost:5173
 
-## Required API Endpoints
+## API Surface
 
-Implemented in backend:
+Implemented in backend with role-aware access:
 
 - GET /auth/login
 - GET /auth/callback
+- GET /auth/me
 - GET /games
 - GET /games/:id
+- GET /library
+- POST /library/:gameId
+- GET /cart
+- POST /cart/items
+- DELETE /cart/items/:gameId
+- POST /checkout
+- GET /wishlist
+- POST /wishlist/:gameId
+- DELETE /wishlist/:gameId
 - GET /download/:gameId
+- GET /creator/games
+- POST /creator/games
+- PATCH /creator/games/:id
+- DELETE /creator/games/:id
+- GET /community/threads
+- POST /community/threads
+- GET /admin/users
+- GET /admin/games
+- PATCH /admin/games/:id/status
 
-Additional upload endpoint:
+Backward-compatible upload endpoint:
 
 - POST /games/upload (multipart form-data)
 
@@ -66,9 +85,12 @@ Additional upload endpoint:
 
 Defined in backend/src/db/schema.sql:
 
-- users
-- games (id, name, version, file_path, size)
-- user_games (ownership/access)
+- users with player, creator, and admin roles
+- games with creator ownership, status, price, tags, platforms, and storage metadata
+- user_games for ownership/access
+- cart_items, wishlist_items, orders, order_items
+- community_threads
+- notifications
 
 Auto initialization and seed data are controlled by:
 

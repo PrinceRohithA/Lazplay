@@ -2,14 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useStorefront } from "../context/StorefrontContext.jsx";
 
-const navItems = [
-  { to: "/", label: "Home" },
-  { to: "/store", label: "Store" },
-  { to: "/library", label: "Library" },
-  { to: "/community", label: "Community" },
-  { to: "/developer", label: "Upload" }
-];
-
 function getShortName(name) {
   const words = String(name || "").trim().split(/\s+/).filter(Boolean);
   if (!words.length) {
@@ -23,11 +15,17 @@ function getShortName(name) {
     .toUpperCase();
 }
 
+function roleLabel(role) {
+  return String(role || "player").replace(/^\w/, (letter) => letter.toUpperCase());
+}
+
 export default function StorefrontLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const {
     catalog,
+    canAdmin,
+    canCreate,
     cartItems,
     currentUser,
     isAuthenticated,
@@ -49,6 +47,25 @@ export default function StorefrontLayout() {
     setProfileOpen(false);
     setSearchFocused(false);
   }, [location.pathname]);
+
+  const navItems = useMemo(() => {
+    const items = [
+      { to: "/", label: "Home" },
+      { to: "/store", label: "Store" },
+      { to: "/library", label: "Library" },
+      { to: "/community", label: "Community" }
+    ];
+
+    if (canCreate) {
+      items.push({ to: "/creator", label: "Creator" });
+    }
+
+    if (canAdmin) {
+      items.push({ to: "/admin", label: "Admin" });
+    }
+
+    return items;
+  }, [canAdmin, canCreate]);
 
   const suggestions = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -81,7 +98,7 @@ export default function StorefrontLayout() {
           <span className="brand-badge">L</span>
           <span>
             <strong>LazPlay</strong>
-            <small>Black storefront</small>
+            <small>Open game market</small>
           </span>
         </Link>
 
@@ -98,8 +115,8 @@ export default function StorefrontLayout() {
             {(searchFocused || searchTerm.trim()) && (
               <div className="search-suggestions panel">
                 <div className="suggestion-meta">
-                  <span>Instant suggestions</span>
-                  <span>{suggestions.length} matches</span>
+                  <span>Matches</span>
+                  <span>{suggestions.length}</span>
                 </div>
                 {suggestions.map((game) => (
                   <button
@@ -113,7 +130,7 @@ export default function StorefrontLayout() {
                     <span>
                       <strong>{game.title}</strong>
                       <small>
-                        {game.developer} · {game.price === 0 ? "Free" : `$${game.price.toFixed(2)}`}
+                        {game.developer} - {game.price === 0 ? "Free" : `$${game.price.toFixed(2)}`}
                       </small>
                     </span>
                   </button>
@@ -154,13 +171,14 @@ export default function StorefrontLayout() {
             type="button"
             className="icon-button"
             onClick={() => setNotificationsOpen((current) => !current)}
+            aria-label="Open notifications"
           >
-            <span className="icon-mark">N</span>
+            <span className="icon-mark">!</span>
             <span>{notifications.length}</span>
           </button>
 
-          <button type="button" className="icon-button" onClick={() => navigate("/cart")}>
-            <span className="icon-mark">C</span>
+          <button type="button" className="icon-button" onClick={() => navigate("/cart")} aria-label="Open cart">
+            <span className="icon-mark">$</span>
             <span>{cartItems.length}</span>
           </button>
 
@@ -169,7 +187,7 @@ export default function StorefrontLayout() {
               <span className="avatar-circle">{getShortName(currentUser.name)}</span>
               <span className="profile-copy">
                 <strong>{currentUser.name}</strong>
-                <small>{currentUser.role || "Player"}</small>
+                <small>{roleLabel(currentUser.role)}</small>
               </span>
             </button>
           ) : (
@@ -208,6 +226,8 @@ export default function StorefrontLayout() {
             </div>
             <button type="button" onClick={() => navigate("/profile")}>Profile</button>
             <button type="button" onClick={() => navigate("/settings")}>Settings</button>
+            {canCreate && <button type="button" onClick={() => navigate("/creator")}>Creator dashboard</button>}
+            {canAdmin && <button type="button" onClick={() => navigate("/admin")}>Admin console</button>}
             <button
               type="button"
               onClick={() => {
@@ -228,7 +248,7 @@ export default function StorefrontLayout() {
       <footer className="site-footer panel">
         <div>
           <strong>LazPlay</strong>
-          <p>Black-themed distribution platform for self-hosted games, community, and developer workflows.</p>
+          <p>Self-hosted game store with player libraries, creator uploads, and community threads.</p>
         </div>
 
         <nav aria-label="Footer links">
@@ -240,9 +260,9 @@ export default function StorefrontLayout() {
 
         <div className="footer-meta">
           <div className="social-row" aria-label="Social links">
-            <span>𝕏</span>
-            <span>◐</span>
-            <span>⌂</span>
+            <span>X</span>
+            <span>GH</span>
+            <span>RSS</span>
           </div>
           <label>
             Language
@@ -257,7 +277,7 @@ export default function StorefrontLayout() {
       </footer>
 
       <nav className="bottom-nav panel" aria-label="Mobile navigation">
-        {navItems.slice(0, 4).map((item) => (
+        {navItems.slice(0, 5).map((item) => (
           <NavLink key={item.to} to={item.to} end={item.to === "/"}>
             {item.label}
           </NavLink>

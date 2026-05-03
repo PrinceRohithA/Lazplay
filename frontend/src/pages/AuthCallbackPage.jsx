@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { saveToken } from "../lib/auth.js";
-import { saveUser } from "../lib/auth.js";
+import { apiRequest } from "../lib/api.js";
+import { readUserFromToken, saveToken, saveUser } from "../lib/auth.js";
 
 export default function AuthCallbackPage() {
   const navigate = useNavigate();
@@ -17,8 +17,23 @@ export default function AuthCallbackPage() {
     }
 
     saveToken(token);
-    saveUser({ id: 0, name: "Player One", email: "player1@lazplay.local", role: "Explorer", avatar: "LP" });
-    navigate("/library", { replace: true });
+    const tokenUser = readUserFromToken(token);
+    if (tokenUser) {
+      saveUser(tokenUser);
+    }
+
+    apiRequest("/auth/me")
+      .then((payload) => {
+        saveUser(payload.user || tokenUser);
+      })
+      .catch(() => {
+        if (tokenUser) {
+          saveUser(tokenUser);
+        }
+      })
+      .finally(() => {
+        navigate("/library", { replace: true });
+      });
   }, [navigate]);
 
   if (error) {

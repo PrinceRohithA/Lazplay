@@ -3,6 +3,7 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import StorefrontLayout from "./components/StorefrontLayout.jsx";
 import AuthCallbackPage from "./pages/AuthCallbackPage.jsx";
 import {
+  AdminDashboardPage,
   AuthPage,
   CartPage,
   CheckoutPage,
@@ -65,8 +66,24 @@ export default function App() {
         <Route
           path="developer"
           element={(
-            <ProtectedRoute>
+            <ProtectedRoute role="creator">
               <DeveloperDashboardPage />
+            </ProtectedRoute>
+          )}
+        />
+        <Route
+          path="creator"
+          element={(
+            <ProtectedRoute role="creator">
+              <DeveloperDashboardPage />
+            </ProtectedRoute>
+          )}
+        />
+        <Route
+          path="admin"
+          element={(
+            <ProtectedRoute role="admin">
+              <AdminDashboardPage />
             </ProtectedRoute>
           )}
         />

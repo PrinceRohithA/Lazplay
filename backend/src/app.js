@@ -3,9 +3,14 @@ import express from "express";
 import morgan from "morgan";
 import { env } from "./config/env.js";
 import { errorHandler, notFoundHandler } from "./middleware/error.middleware.js";
+import adminRoutes from "./routes/admin.routes.js";
 import authRoutes from "./routes/auth.routes.js";
+import communityRoutes from "./routes/community.routes.js";
+import creatorRoutes from "./routes/creator.routes.js";
 import downloadRoutes from "./routes/download.routes.js";
 import gamesRoutes from "./routes/games.routes.js";
+import playerRoutes from "./routes/player.routes.js";
+import usersRoutes from "./routes/users.routes.js";
 
 const app = express();
 
@@ -28,7 +33,12 @@ app.get("/health", (_req, res) => {
 });
 
 app.use(authRoutes);
+app.use(usersRoutes);
 app.use(gamesRoutes);
+app.use(playerRoutes);
+app.use(creatorRoutes);
+app.use(communityRoutes);
+app.use(adminRoutes);
 app.use(downloadRoutes);
 
 // Static file serving for game archives. Express handles range requests automatically.

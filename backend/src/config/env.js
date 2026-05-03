@@ -29,15 +29,25 @@ function resolveProjectPath(value, fallbackRelativePath) {
   return path.resolve(projectRoot, raw);
 }
 
+function toList(value) {
+  return String(value || "")
+    .split(",")
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+const port = toNumber(process.env.PORT, 3000);
+const apiBaseUrl = process.env.API_BASE_URL || `http://localhost:${port}`;
+
 export const env = {
   NODE_ENV: process.env.NODE_ENV || "development",
-  PORT: toNumber(process.env.PORT, 2000),
+  PORT: port,
   FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5173",
-  API_BASE_URL: process.env.API_BASE_URL || "http://localhost:3000",
-  PUBLIC_BASE_URL: process.env.PUBLIC_BASE_URL || process.env.API_BASE_URL || "http://localhost:3000",
+  API_BASE_URL: apiBaseUrl,
+  PUBLIC_BASE_URL: process.env.PUBLIC_BASE_URL || apiBaseUrl,
   JWT_SECRET: process.env.JWT_SECRET || "change-me-in-production",
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "2h",
-  DATABASE_URL: process.env.DATABASE_URL || "postgresql+psycopg://lazplay:Prince%4018@localhost:5432/lazplay",
+  DATABASE_URL: process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/lazplay",
   DB_AUTO_INIT: toBoolean(process.env.DB_AUTO_INIT, true),
   DB_AUTO_SEED: toBoolean(process.env.DB_AUTO_SEED, true),
   GAME_STORAGE_DIR: resolveProjectPath(process.env.GAME_STORAGE_DIR, "./storage/games"),
@@ -45,5 +55,7 @@ export const env = {
   MOCK_OAUTH_ENABLED: toBoolean(process.env.MOCK_OAUTH_ENABLED, true),
   MOCK_OAUTH_PROVIDER: process.env.MOCK_OAUTH_PROVIDER || "mock",
   MOCK_OAUTH_EMAIL: process.env.MOCK_OAUTH_EMAIL || "player1@lazplay.local",
-  MOCK_OAUTH_NAME: process.env.MOCK_OAUTH_NAME || "Player One"
+  MOCK_OAUTH_NAME: process.env.MOCK_OAUTH_NAME || "Player One",
+  MOCK_OAUTH_ROLE: process.env.MOCK_OAUTH_ROLE || "player",
+  ADMIN_EMAILS: toList(process.env.ADMIN_EMAILS)
 };

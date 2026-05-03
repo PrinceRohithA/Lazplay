@@ -1,21 +1,59 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { apiRequest } from "../lib/api.js";
 import { useStorefront } from "../context/StorefrontContext.jsx";
-import { developerGames, gameCatalog, getGameById, getSectionGames, communityThreads, notificationsSeed, sections } from "../data/platformData.js";
+import { communityThreads, sections } from "../data/platformData.js";
 
 function formatCurrency(value) {
-  return value === 0 ? "Free" : `$${value.toFixed(2)}`;
+  return Number(value) === 0 ? "Free" : `$${Number(value).toFixed(2)}`;
 }
 
 function formatStars(value) {
-  return `${value.toFixed(1)} / 5`;
+  return `${Number(value || 0).toFixed(1)} / 5`;
 }
 
-function GameTile({ game, compact = false, actions = null }) {
-  const { toggleWishlist, wishlistIds, cartIds, toggleCart } = useStorefront();
+function filterGames(catalog, searchTerm, quickFilter) {
+  const query = searchTerm.trim().toLowerCase();
+
+  return catalog.filter((game) => {
+    const matchesQuery =
+      !query ||
+      [game.title, game.developer, game.genre, ...game.tags].join(" ").toLowerCase().includes(query);
+
+    const matchesFilter =
+      quickFilter === "all" ||
+      (quickFilter === "free" && game.price === 0) ||
+      (quickFilter === "paid" && game.price > 0) ||
+      (quickFilter === "indie" && game.tags.includes("Indie")) ||
+      (quickFilter === "top" && game.rating >= 4.7);
+
+    return matchesQuery && matchesFilter;
+  });
+}
+
+function GameTile({ game, compact = false }) {
+  const { claimGame, isAuthenticated, toggleCart, toggleWishlist, wishlistIds } = useStorefront();
+  const navigate = useNavigate();
   const inWishlist = wishlistIds.includes(game.id);
-  const inCart = cartIds.includes(game.id);
+
+  const primaryAction = async () => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+
+    if (game.owned) {
+      navigate(`/game/${game.id}`);
+      return;
+    }
+
+    if (game.price === 0) {
+      await claimGame(game.id);
+      return;
+    }
+
+    await toggleCart(game.id);
+  };
 
   return (
     <article className={`game-tile panel ${compact ? "compact" : ""}`}>
@@ -29,7 +67,7 @@ function GameTile({ game, compact = false, actions = null }) {
             <p>{game.developer}</p>
           </div>
           <button type="button" className={`wish-toggle ${inWishlist ? "active" : ""}`} onClick={() => toggleWishlist(game.id)}>
-            ♥
+            Save
           </button>
         </div>
 
@@ -46,23 +84,23 @@ function GameTile({ game, compact = false, actions = null }) {
           ))}
         </div>
 
-        {actions || (
-          <div className="tile-actions">
-            <button type="button" className="button" onClick={() => toggleCart(game.id)}>
-              {inCart ? "Remove" : "Add to Cart"}
-            </button>
-            <Link className="button primary" to={`/game/${game.id}`}>
-              View
-            </Link>
-          </div>
-        )}
+        <div className="tile-actions">
+          <button type="button" className="button" onClick={primaryAction}>
+            {game.owned ? "Owned" : game.price === 0 ? "Claim" : game.inCart ? "In cart" : "Add to cart"}
+          </button>
+          <Link className="button primary" to={`/game/${game.id}`}>
+            View
+          </Link>
+        </div>
       </div>
     </article>
   );
 }
 
-function SectionRow({ title, ids }) {
-  const games = getSectionGames(ids);
+function SectionRow({ title, games }) {
+  if (!games.length) {
+    return null;
+  }
 
   return (
     <section className="page-section">
@@ -88,9 +126,10 @@ export function AuthPage({ mode = "login" }) {
   const navigate = useNavigate();
   const { isAuthenticated, signInWithMockOAuth } = useStorefront();
   const [form, setForm] = useState({
-    email: "player1@lazplay.local",
+    email: mode === "signup" ? "creator@lazplay.local" : "player1@lazplay.local",
     password: "",
-    name: mode === "signup" ? "Player One" : "Player One"
+    name: mode === "signup" ? "Moon Quarry" : "Player One",
+    role: mode === "signup" ? "creator" : "player"
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -99,7 +138,7 @@ export function AuthPage({ mode = "login" }) {
     return <Navigate to="/library" replace />;
   }
 
-  const submit = async (provider = "local") => {
+  const submit = async (provider = "email") => {
     setLoading(true);
     setMessage("");
 
@@ -107,9 +146,10 @@ export function AuthPage({ mode = "login" }) {
       await signInWithMockOAuth({
         email: form.email || "player1@lazplay.local",
         name: form.name || form.email.split("@")[0] || "Player",
-        provider
+        provider,
+        role: form.role
       });
-      navigate("/library", { replace: true });
+      navigate(form.role === "creator" ? "/creator" : "/library", { replace: true });
     } catch (error) {
       setMessage(error.message);
     } finally {
@@ -122,10 +162,8 @@ export function AuthPage({ mode = "login" }) {
       <div className="panel auth-card">
         <div className="auth-hero">
           <p className="eyebrow">LazPlay account</p>
-          <h1>{mode === "signup" ? "Create your player identity." : "Sign in to your library."}</h1>
-          <p>
-            Email/password UI with OAuth entry points, backed by the internal JWT session flow on <strong>/api</strong>.
-          </p>
+          <h1>{mode === "signup" ? "Create your account" : "Sign in to LazPlay"}</h1>
+          <p>Players collect and download games. Creators publish builds, manage pages, and track reach.</p>
         </div>
 
         <div className="auth-switch">
@@ -141,19 +179,28 @@ export function AuthPage({ mode = "login" }) {
           }}
         >
           <label>
-            Email
+            <span>Email</span>
             <input value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} />
           </label>
-          {mode === "signup" && (
-            <label>
-              Username
-              <input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
-            </label>
-          )}
           <label>
-            Password
+            <span>Display name</span>
+            <input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
+          </label>
+          <label>
+            <span>Password</span>
             <input type="password" value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} />
           </label>
+
+          <div className="segmented-control">
+            {[
+              ["player", "Player"],
+              ["creator", "Creator"]
+            ].map(([value, label]) => (
+              <button key={value} type="button" className={form.role === value ? "chip active" : "chip"} onClick={() => setForm((current) => ({ ...current, role: value }))}>
+                {label}
+              </button>
+            ))}
+          </div>
 
           <button type="submit" className="button primary button-large" disabled={loading}>
             {loading ? "Signing in..." : mode === "signup" ? "Create account" : "Sign in"}
@@ -175,29 +222,14 @@ export function AuthPage({ mode = "login" }) {
 }
 
 export function HomePage() {
-  const { featuredGame, quickFilter, searchTerm, setQuickFilter, toggleWishlist, wishlistIds } = useStorefront();
-
-  const filtered = useMemo(() => {
-    const query = searchTerm.trim().toLowerCase();
-
-    return gameCatalog.filter((game) => {
-      const matchesQuery =
-        !query ||
-        [game.title, game.developer, game.genre, ...game.tags].join(" ").toLowerCase().includes(query);
-
-      const matchesQuickFilter =
-        quickFilter === "all" ||
-        (quickFilter === "free" && game.price === 0) ||
-        (quickFilter === "paid" && game.price > 0) ||
-        (quickFilter === "indie" && game.tags.includes("Indie")) ||
-        (quickFilter === "top" && game.rating >= 4.7);
-
-      return matchesQuery && matchesQuickFilter;
-    });
-  }, [quickFilter, searchTerm]);
+  const { apiMessage, apiStatus, catalog, featuredGame, quickFilter, searchTerm, setQuickFilter } = useStorefront();
+  const filtered = useMemo(() => filterGames(catalog, searchTerm, quickFilter), [catalog, quickFilter, searchTerm]);
+  const byIds = (ids) => ids.map((id) => filtered.find((game) => game.id === id)).filter(Boolean);
 
   return (
     <div className="page-grid home-page">
+      {apiStatus === "offline" && apiMessage && <p className="banner error">{apiMessage}</p>}
+
       <section className="hero-banner panel" style={{ background: featuredGame.art }}>
         <div className="hero-banner-copy">
           <p className="eyebrow">Featured game</p>
@@ -235,17 +267,18 @@ export function HomePage() {
         ))}
       </div>
 
-      <SectionRow title="Trending Games" ids={sections.trending.filter((id) => filtered.some((game) => game.id === id))} />
-      <SectionRow title="New Releases" ids={sections.newReleases.filter((id) => filtered.some((game) => game.id === id))} />
-      <SectionRow title="Top Free Games" ids={sections.topFree.filter((id) => filtered.some((game) => game.id === id))} />
-      <SectionRow title="Indie Picks" ids={sections.indie.filter((id) => filtered.some((game) => game.id === id))} />
-      <SectionRow title="Recommended for You" ids={sections.recommended.filter((id) => wishlistIds.includes(id) || filtered.some((game) => game.id === id))} />
+      <SectionRow title="Trending Games" games={byIds(sections.trending)} />
+      <SectionRow title="New Releases" games={byIds(sections.newReleases)} />
+      <SectionRow title="Top Free Games" games={byIds(sections.topFree)} />
+      <SectionRow title="Indie Picks" games={byIds(sections.indie)} />
+      <SectionRow title="Recommended for You" games={filtered.slice(0, 5)} />
     </div>
   );
 }
 
 export function StorePage() {
-  const { catalog, searchTerm, toggleCart, toggleWishlist, wishlistIds } = useStorefront();
+  const { catalog, claimGame, isAuthenticated, searchTerm, toggleCart, toggleWishlist, wishlistIds } = useStorefront();
+  const navigate = useNavigate();
   const [genre, setGenre] = useState("All");
   const [price, setPrice] = useState("All");
   const [platform, setPlatform] = useState("All");
@@ -261,12 +294,8 @@ export function StorePage() {
         const matchesQuery =
           !query ||
           [game.title, game.developer, game.genre, ...game.tags].join(" ").toLowerCase().includes(query);
-
         const matchesGenre = genre === "All" || game.genre.toLowerCase().includes(genre.toLowerCase());
-        const matchesPrice =
-          price === "All" ||
-          (price === "Free" && game.price === 0) ||
-          (price === "Paid" && game.price > 0);
+        const matchesPrice = price === "All" || (price === "Free" && game.price === 0) || (price === "Paid" && game.price > 0);
         const matchesPlatform = platform === "All" || game.platforms.includes(platform);
         const matchesTag = tag === "All" || game.tags.includes(tag);
 
@@ -274,7 +303,7 @@ export function StorePage() {
       })
       .sort((left, right) => {
         if (sort === "New") {
-          return right.id - left.id;
+          return Number(right.id) - Number(left.id);
         }
         if (sort === "Price") {
           return left.price - right.price;
@@ -282,6 +311,25 @@ export function StorePage() {
         return right.rating - left.rating;
       });
   }, [catalog, genre, platform, price, searchTerm, sort, tag]);
+
+  const buyAction = async (game) => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+
+    if (game.owned) {
+      navigate("/library");
+      return;
+    }
+
+    if (game.price === 0) {
+      await claimGame(game.id);
+      return;
+    }
+
+    await toggleCart(game.id);
+  };
 
   return (
     <div className="page-grid store-page">
@@ -310,19 +358,13 @@ export function StorePage() {
         <div className="filter-group">
           <span>Sort by</span>
           <div className="segmented-control">
-            {[
-              "Popularity",
-              "New",
-              "Price"
-            ].map((option) => (
+            {["Popularity", "New", "Price"].map((option) => (
               <button key={option} type="button" className={sort === option ? "chip active" : "chip"} onClick={() => setSort(option)}>
                 {option}
               </button>
             ))}
           </div>
         </div>
-
-        <p className="sidebar-note">Real-time search follows the global LazPlay header search bar.</p>
       </aside>
 
       <section className="store-main">
@@ -361,10 +403,10 @@ export function StorePage() {
                 </div>
                 <div className="tile-actions">
                   <button type="button" className="button" onClick={() => toggleWishlist(game.id)}>
-                    {wishlistIds.includes(game.id) ? "Wishlisted" : "Wishlist"}
+                    {wishlistIds.includes(game.id) ? "Saved" : "Save"}
                   </button>
-                  <button type="button" className="button primary" onClick={() => toggleCart(game.id)}>
-                    {game.price === 0 ? "Install" : formatCurrency(game.price)}
+                  <button type="button" className="button primary" onClick={() => buyAction(game)}>
+                    {game.owned ? "In library" : game.price === 0 ? "Claim" : game.inCart ? "In cart" : formatCurrency(game.price)}
                   </button>
                 </div>
               </div>
@@ -379,14 +421,35 @@ export function StorePage() {
 export function GameDetailsPage() {
   const { gameId } = useParams();
   const navigate = useNavigate();
-  const { toggleWishlist, toggleCart, wishlistIds } = useStorefront();
+  const { catalog, claimGame, downloadGame, isAuthenticated, toggleCart, toggleWishlist, wishlistIds } = useStorefront();
   const [selectedScreenshot, setSelectedScreenshot] = useState(0);
   const [working, setWorking] = useState(false);
-  const game = getGameById(gameId);
+  const game = catalog.find((item) => item.id === Number(gameId));
 
   if (!game) {
     return <Navigate to="/store" replace />;
   }
+
+  const primaryAction = async () => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+
+    setWorking(true);
+    try {
+      if (game.owned) {
+        await downloadGame(game.id);
+      } else if (game.price === 0) {
+        await claimGame(game.id);
+      } else {
+        await toggleCart(game.id);
+        navigate("/cart");
+      }
+    } finally {
+      setWorking(false);
+    }
+  };
 
   return (
     <div className="page-grid details-page">
@@ -411,39 +474,20 @@ export function GameDetailsPage() {
       <section className="panel details-copy">
         <p className="eyebrow">Game details</p>
         <h1>{game.title}</h1>
-        <p className="muted-text">{game.developer} · {game.genre}</p>
+        <p className="muted-text">{game.developer} - {game.genre}</p>
         <div className="detail-price-row">
           <strong>{formatCurrency(game.price)}</strong>
-          <span>{formatStars(game.rating)} · {game.reviewCount} reviews</span>
+          <span>{formatStars(game.rating)} - {game.reviewCount} reviews</span>
         </div>
 
         <p className="description-line">{game.description}</p>
 
         <div className="action-row">
-          <button
-            type="button"
-            className="button primary"
-            disabled={working}
-            onClick={async () => {
-              if (!game.owned) {
-                toggleCart(game.id);
-                navigate("/cart");
-                return;
-              }
-
-              setWorking(true);
-              try {
-                const payload = await apiRequest(`/download/${game.id}`);
-                window.location.assign(payload.downloadUrl);
-              } finally {
-                setWorking(false);
-              }
-            }}
-          >
-            {working ? "Preparing..." : game.owned ? "Download" : "Buy"}
+          <button type="button" className="button primary" disabled={working} onClick={primaryAction}>
+            {working ? "Preparing..." : game.owned ? "Download" : game.price === 0 ? "Claim" : "Buy"}
           </button>
           <button type="button" className="button" onClick={() => toggleWishlist(game.id)}>
-            {wishlistIds.includes(game.id) ? "Remove wishlist" : "Add to wishlist"}
+            {wishlistIds.includes(game.id) ? "Remove saved" : "Save"}
           </button>
           {game.demo && (
             <button type="button" className="button" onClick={() => navigate(`/store?demo=${game.id}`)}>
@@ -466,13 +510,17 @@ export function GameDetailsPage() {
         <section className="detail-block">
           <h2>Reviews</h2>
           <div className="stack-list">
-            {game.reviews.map((review) => (
-              <article key={review.author} className="review-card">
-                <strong>{review.author}</strong>
-                <p>{review.text}</p>
-                <span>{review.rating} / 5</span>
-              </article>
-            ))}
+            {game.reviews.length ? (
+              game.reviews.map((review) => (
+                <article key={review.author} className="review-card">
+                  <strong>{review.author}</strong>
+                  <p>{review.text}</p>
+                  <span>{review.rating} / 5</span>
+                </article>
+              ))
+            ) : (
+              <p className="empty-state">No reviews yet.</p>
+            )}
           </div>
         </section>
 
@@ -535,7 +583,7 @@ export function CartPage() {
           <input value={coupon} onChange={(event) => setCoupon(event.target.value)} placeholder="LAZ10" />
         </label>
 
-        <button type="button" className="button primary button-large" onClick={() => navigate("/checkout")}>
+        <button type="button" className="button primary button-large" disabled={!cartItems.length} onClick={() => navigate("/checkout")}>
           Checkout
         </button>
       </aside>
@@ -545,13 +593,24 @@ export function CartPage() {
 
 export function CheckoutPage() {
   const navigate = useNavigate();
-  const { cartItems, cartTotal } = useStorefront();
+  const { cartItems, cartTotal, checkoutCart } = useStorefront();
   const [paymentMethod, setPaymentMethod] = useState("UPI");
   const [confirmed, setConfirmed] = useState(false);
+  const [message, setMessage] = useState("");
 
-  if (cartItems.length === 0) {
+  if (cartItems.length === 0 && !confirmed) {
     return <Navigate to="/store" replace />;
   }
+
+  const pay = async () => {
+    setMessage("");
+    try {
+      await checkoutCart();
+      setConfirmed(true);
+    } catch (error) {
+      setMessage(error.message);
+    }
+  };
 
   return (
     <div className="page-grid checkout-page">
@@ -579,14 +638,15 @@ export function CheckoutPage() {
         {confirmed ? (
           <div className="confirmation-panel">
             <h2>Order confirmed</h2>
-            <p>Your payment was accepted and the game library has been updated.</p>
+            <p>Your library has been updated.</p>
             <button type="button" className="button primary" onClick={() => navigate("/library")}>Go to library</button>
           </div>
         ) : (
-          <button type="button" className="button primary button-large" onClick={() => setConfirmed(true)}>
+          <button type="button" className="button primary button-large" onClick={pay}>
             Pay {formatCurrency(cartTotal)} with {paymentMethod}
           </button>
         )}
+        {message && <p className="banner error">{message}</p>}
       </section>
 
       <aside className="panel summary-card">
@@ -606,18 +666,16 @@ export function CheckoutPage() {
 }
 
 export function LibraryPage() {
-  const { ownedGames, installedGames, toggleInstalled } = useStorefront();
+  const { downloadGame, ownedGames, installedGames, toggleInstalled } = useStorefront();
   const [view, setView] = useState("Installed");
 
   const visibleGames = useMemo(() => {
     if (view === "Installed") {
       return installedGames;
     }
-
     if (view === "Purchased") {
       return ownedGames;
     }
-
     return ownedGames.filter((game) => game.wishlist);
   }, [installedGames, ownedGames, view]);
 
@@ -626,11 +684,7 @@ export function LibraryPage() {
       <aside className="panel filter-sidebar compact">
         <p className="eyebrow">Library</p>
         <h1>Your collection</h1>
-        {[
-          "Installed",
-          "Purchased",
-          "Favorites"
-        ].map((item) => (
+        {["Installed", "Purchased", "Favorites"].map((item) => (
           <button key={item} type="button" className={view === item ? "chip active wide" : "chip wide"} onClick={() => setView(item)}>
             {item}
           </button>
@@ -645,24 +699,28 @@ export function LibraryPage() {
           </div>
         </div>
         <div className="library-list">
-          {visibleGames.map((game) => (
-            <article key={game.id} className="library-row">
-              <div className="library-cover" style={{ background: game.art }}>
-                <span>{game.title.slice(0, 1)}</span>
-              </div>
-              <div className="library-copy">
-                <strong>{game.title}</strong>
-                <p>{game.developer}</p>
-              </div>
-              <div className="tile-actions">
-                <button type="button" className="button" onClick={() => toggleInstalled(game.id)}>
-                  {game.installed ? "Uninstall" : "Install"}
-                </button>
-                <button type="button" className="button primary">Launch</button>
-                <button type="button" className="button">Cloud Sync</button>
-              </div>
-            </article>
-          ))}
+          {visibleGames.length ? (
+            visibleGames.map((game) => (
+              <article key={game.id} className="library-row">
+                <div className="library-cover" style={{ background: game.art }}>
+                  <span>{game.title.slice(0, 1)}</span>
+                </div>
+                <div className="library-copy">
+                  <strong>{game.title}</strong>
+                  <p>{game.developer}</p>
+                </div>
+                <div className="tile-actions">
+                  <button type="button" className="button" onClick={() => toggleInstalled(game.id)}>
+                    {game.installed ? "Uninstall" : "Install"}
+                  </button>
+                  <button type="button" className="button primary" onClick={() => downloadGame(game.id)}>Download</button>
+                  <button type="button" className="button">Cloud sync</button>
+                </div>
+              </article>
+            ))
+          ) : (
+            <p className="empty-state">Nothing here yet.</p>
+          )}
         </div>
       </section>
     </div>
@@ -672,9 +730,7 @@ export function LibraryPage() {
 export function ProfilePage() {
   const { currentUser, ownedGames, wishlistItems } = useStorefront();
   const [tab, setTab] = useState("Owned Games");
-
-  const content =
-    tab === "Owned Games" ? ownedGames : tab === "Reviews" ? developerGames : wishlistItems;
+  const content = tab === "Owned Games" ? ownedGames : tab === "Reviews" ? [] : wishlistItems;
 
   return (
     <div className="page-grid profile-page">
@@ -690,23 +746,23 @@ export function ProfilePage() {
 
       <section className="panel section-card">
         <div className="tab-row">
-          {[
-            "Owned Games",
-            "Reviews",
-            "Wishlist"
-          ].map((item) => (
+          {["Owned Games", "Reviews", "Wishlist"].map((item) => (
             <button key={item} type="button" className={tab === item ? "chip active" : "chip"} onClick={() => setTab(item)}>
               {item}
             </button>
           ))}
         </div>
         <div className="stack-list">
-          {content.map((item) => (
-            <article key={item.id || item.title} className="summary-item">
-              <strong>{item.title || item.name}</strong>
-              <span>{item.developer || `${item.downloads} downloads`}</span>
-            </article>
-          ))}
+          {content.length ? (
+            content.map((item) => (
+              <article key={item.id || item.title} className="summary-item">
+                <strong>{item.title || item.name}</strong>
+                <span>{item.developer || "Player review"}</span>
+              </article>
+            ))
+          ) : (
+            <p className="empty-state">No entries yet.</p>
+          )}
         </div>
       </section>
     </div>
@@ -714,19 +770,60 @@ export function ProfilePage() {
 }
 
 export function DeveloperDashboardPage() {
+  const { archiveCreatorGame, creatorGames, currentUser, uploadGame, updateCreatorGame } = useStorefront();
   const [panel, setPanel] = useState("Upload Game");
-  const [publishState, setPublishState] = useState("");
+  const [form, setForm] = useState({
+    name: "",
+    description: "",
+    price: "0",
+    version: "1.0.0",
+    genre: "Indie",
+    tags: "Indie",
+    platforms: "Windows",
+    status: "published",
+    file: null
+  });
+  const [message, setMessage] = useState("");
+  const [working, setWorking] = useState(false);
+
+  const submitUpload = async (event) => {
+    event.preventDefault();
+    setMessage("");
+
+    if (!form.file) {
+      setMessage("Choose a .zip build before publishing.");
+      return;
+    }
+
+    const payload = new FormData();
+    payload.set("name", form.name || "Untitled Game");
+    payload.set("description", form.description);
+    payload.set("price", form.price || "0");
+    payload.set("version", form.version || "1.0.0");
+    payload.set("genre", form.genre || "Indie");
+    payload.set("tags", form.tags);
+    payload.set("platforms", form.platforms);
+    payload.set("status", form.status);
+    payload.set("file", form.file);
+
+    setWorking(true);
+    try {
+      await uploadGame(payload);
+      setMessage("Game build published.");
+      setForm((current) => ({ ...current, name: "", description: "", file: null }));
+    } catch (error) {
+      setMessage(error.message);
+    } finally {
+      setWorking(false);
+    }
+  };
 
   return (
     <div className="page-grid developer-page">
       <aside className="panel filter-sidebar compact">
-        <p className="eyebrow">Developer dashboard</p>
-        <h1>Creator tools</h1>
-        {[
-          "Upload Game",
-          "Manage Games",
-          "Analytics"
-        ].map((item) => (
+        <p className="eyebrow">Creator dashboard</p>
+        <h1>{currentUser.name}</h1>
+        {["Upload Game", "Manage Games", "Analytics"].map((item) => (
           <button key={item} type="button" className={panel === item ? "chip active wide" : "chip wide"} onClick={() => setPanel(item)}>
             {item}
           </button>
@@ -735,48 +832,73 @@ export function DeveloperDashboardPage() {
 
       <section className="panel section-card">
         {panel === "Upload Game" && (
-          <div className="stack-list upload-form">
-            <h2>Upload page</h2>
-            {[
-              "Title",
-              "Description",
-              "Price",
-              "Tags",
-              "Upload build file",
-              "Upload images"
-            ].map((label) => (
-              <label key={label}>
-                <span>{label}</span>
-                <input placeholder={label} />
-              </label>
-            ))}
-            <button type="button" className="button primary button-large" onClick={() => setPublishState("Published game build and metadata.")}>
-              Publish game
+          <form className="stack-list upload-form" onSubmit={submitUpload}>
+            <h2>Upload game</h2>
+            <div className="settings-grid">
+              {[
+                ["Title", "name"],
+                ["Version", "version"],
+                ["Price", "price"],
+                ["Genre", "genre"],
+                ["Tags", "tags"],
+                ["Platforms", "platforms"]
+              ].map(([label, key]) => (
+                <label key={key}>
+                  <span>{label}</span>
+                  <input value={form[key]} onChange={(event) => setForm((current) => ({ ...current, [key]: event.target.value }))} />
+                </label>
+              ))}
+            </div>
+            <label>
+              <span>Description</span>
+              <textarea value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} />
+            </label>
+            <label>
+              <span>Visibility</span>
+              <select value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}>
+                <option value="published">Published</option>
+                <option value="draft">Draft</option>
+                <option value="unlisted">Unlisted</option>
+              </select>
+            </label>
+            <label>
+              <span>Build file</span>
+              <input type="file" accept=".zip" onChange={(event) => setForm((current) => ({ ...current, file: event.target.files?.[0] || null }))} />
+            </label>
+            <button type="submit" className="button primary button-large" disabled={working}>
+              {working ? "Publishing..." : "Publish game"}
             </button>
-            {publishState && <p className="banner success">{publishState}</p>}
-          </div>
+            {message && <p className={message.includes("published") ? "banner success" : "banner error"}>{message}</p>}
+          </form>
         )}
 
         {panel === "Manage Games" && (
           <div className="stack-list">
-            {developerGames.map((game) => (
-              <article key={game.id} className="summary-item">
-                <strong>{game.title}</strong>
-                <span>Version {game.version} · {game.downloads} downloads</span>
-                <div className="tile-actions">
-                  <button type="button" className="button">Update versions</button>
-                  <button type="button" className="button">Revenue</button>
-                </div>
-              </article>
-            ))}
+            {creatorGames.length ? (
+              creatorGames.map((game) => (
+                <article key={game.id} className="summary-item creator-row">
+                  <div>
+                    <strong>{game.title || game.name}</strong>
+                    <span>Version {game.version || "1.0.0"} - {game.downloadCount || game.downloads || 0} downloads</span>
+                  </div>
+                  <div className="tile-actions">
+                    <button type="button" className="button" onClick={() => updateCreatorGame(game.id, { status: "published" })}>Publish</button>
+                    <button type="button" className="button" onClick={() => updateCreatorGame(game.id, { status: "draft" })}>Draft</button>
+                    <button type="button" className="button danger" onClick={() => archiveCreatorGame(game.id)}>Archive</button>
+                  </div>
+                </article>
+              ))
+            ) : (
+              <p className="empty-state">No creator games yet.</p>
+            )}
           </div>
         )}
 
         {panel === "Analytics" && (
           <div className="analytics-grid">
-            <article className="stat-card"><span className="stat-label">Downloads</span><strong>62K</strong></article>
-            <article className="stat-card"><span className="stat-label">Revenue</span><strong>$19K</strong></article>
-            <article className="stat-card accent"><span className="stat-label">Conversion</span><strong>7.8%</strong></article>
+            <article className="stat-card"><span className="stat-label">Games</span><strong>{creatorGames.length}</strong></article>
+            <article className="stat-card"><span className="stat-label">Downloads</span><strong>{creatorGames.reduce((sum, game) => sum + Number(game.downloadCount || game.downloads || 0), 0)}</strong></article>
+            <article className="stat-card accent"><span className="stat-label">Published</span><strong>{creatorGames.filter((game) => (game.status || "published") === "published").length}</strong></article>
           </div>
         )}
       </section>
@@ -784,9 +906,111 @@ export function DeveloperDashboardPage() {
   );
 }
 
+export function AdminDashboardPage() {
+  const { catalog } = useStorefront();
+  const [games, setGames] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    Promise.all([apiRequest("/admin/games"), apiRequest("/admin/users")])
+      .then(([gamesPayload, usersPayload]) => {
+        setGames(gamesPayload.items || []);
+        setUsers(usersPayload.items || []);
+      })
+      .catch((error) => {
+        setMessage(error.message);
+        setGames(catalog);
+      });
+  }, [catalog]);
+
+  const setStatus = async (gameId, status) => {
+    const game = await apiRequest(`/admin/games/${gameId}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status })
+    });
+    setGames((current) => current.map((item) => (item.id === game.id ? game : item)));
+  };
+
+  return (
+    <div className="page-grid admin-page">
+      <section className="panel section-card">
+        <p className="eyebrow">Admin</p>
+        <h1>Moderation queue</h1>
+        {message && <p className="banner error">{message}</p>}
+        <div className="stack-list">
+          {games.map((game) => (
+            <article key={game.id} className="summary-item creator-row">
+              <div>
+                <strong>{game.title || game.name}</strong>
+                <span>{game.developer} - {game.status || "published"}</span>
+              </div>
+              <div className="tile-actions">
+                <button type="button" className="button" onClick={() => setStatus(game.id, "published")}>Publish</button>
+                <button type="button" className="button" onClick={() => setStatus(game.id, "unlisted")}>Unlist</button>
+                <button type="button" className="button danger" onClick={() => setStatus(game.id, "archived")}>Archive</button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <aside className="panel summary-card">
+        <h2>Users</h2>
+        <div className="stack-list">
+          {users.map((user) => (
+            <article key={user.id} className="summary-item">
+              <strong>{user.name}</strong>
+              <span>{user.role} - {user.email}</span>
+            </article>
+          ))}
+        </div>
+      </aside>
+    </div>
+  );
+}
+
 export function CommunityPage() {
+  const { isAuthenticated } = useStorefront();
   const [category, setCategory] = useState("Discussions");
-  const [likes, setLikes] = useState(() => Object.fromEntries(communityThreads.map((thread) => [thread.id, thread.likes])));
+  const [threads, setThreads] = useState(communityThreads);
+  const [draft, setDraft] = useState("");
+
+  useEffect(() => {
+    apiRequest("/community/threads", { auth: false })
+      .then((payload) => {
+        if (payload.items?.length) {
+          setThreads(payload.items);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const postThread = async () => {
+    if (!draft.trim()) {
+      return;
+    }
+
+    const localThread = {
+      id: Date.now(),
+      title: draft,
+      author: "You",
+      replies: 0,
+      likes: 0,
+      category
+    };
+    setThreads((current) => [localThread, ...current]);
+    setDraft("");
+
+    if (isAuthenticated) {
+      apiRequest("/community/threads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: draft, category })
+      }).catch(() => {});
+    }
+  };
 
   return (
     <div className="page-grid community-page">
@@ -797,11 +1021,7 @@ export function CommunityPage() {
             <h1>Discussions and forums</h1>
           </div>
           <div className="layout-toggle">
-            {[
-              "Discussions",
-              "Forums",
-              "Comments"
-            ].map((item) => (
+            {["Discussions", "Forums", "Comments"].map((item) => (
               <button key={item} type="button" className={category === item ? "chip active" : "chip"} onClick={() => setCategory(item)}>
                 {item}
               </button>
@@ -809,17 +1029,22 @@ export function CommunityPage() {
           </div>
         </div>
 
+        <div className="community-compose">
+          <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Start a thread" />
+          <button type="button" className="button primary" onClick={postThread}>Post</button>
+        </div>
+
         <div className="stack-list">
-          {communityThreads.filter((thread) => thread.category === category).map((thread) => (
+          {threads.filter((thread) => thread.category === category).map((thread) => (
             <article key={thread.id} className="community-thread">
               <div>
                 <p className="eyebrow">{thread.category}</p>
                 <strong>{thread.title}</strong>
-                <p>By {thread.author} · {thread.replies} replies</p>
+                <p>By {thread.author} - {thread.replies} replies</p>
               </div>
               <div className="tile-actions">
-                <button type="button" className="button" onClick={() => setLikes((current) => ({ ...current, [thread.id]: current[thread.id] + 1 }))}>
-                  Like {likes[thread.id]}
+                <button type="button" className="button" onClick={() => setThreads((current) => current.map((item) => item.id === thread.id ? { ...item, likes: item.likes + 1 } : item))}>
+                  Like {thread.likes}
                 </button>
                 <button type="button" className="button primary">Comment</button>
               </div>
@@ -832,9 +1057,8 @@ export function CommunityPage() {
 }
 
 export function NotificationsPage() {
-  const { notifications, dismissNotification } = useStorefront();
+  const { dismissNotification, notifications } = useStorefront();
   const [filter, setFilter] = useState("All");
-
   const visible = filter === "All" ? notifications : notifications.filter((notification) => notification.type === filter);
 
   return (

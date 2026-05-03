@@ -6,14 +6,37 @@ Node.js + Express API for local self-hosted LazPlay runtime.
 
 - JWT authentication using Authorization Bearer tokens (no cookies)
 - Mock OAuth login flow for local development
-- PostgreSQL schema: users, games, user_games
+- PostgreSQL schema: users, games, user_games, cart_items, wishlist_items, orders, community_threads, notifications
+- Role split:
+  - player: cart, checkout, library, wishlist, downloads, notifications
+  - creator: upload builds, edit game pages, archive own games
+  - admin: list users and moderate game status
 - API routes:
   - GET /auth/login
   - GET /auth/callback
+  - GET /auth/me
   - GET /games
   - GET /games/:id
+  - GET /library
+  - POST /library/:gameId
+  - GET /cart
+  - POST /cart/items
+  - DELETE /cart/items/:gameId
+  - POST /checkout
+  - GET /wishlist
+  - POST /wishlist/:gameId
+  - DELETE /wishlist/:gameId
   - GET /download/:gameId
-  - POST /games/upload (extra endpoint to upload archives)
+  - GET /creator/games
+  - POST /creator/games
+  - PATCH /creator/games/:id
+  - DELETE /creator/games/:id
+  - GET /community/threads
+  - POST /community/threads
+  - GET /admin/users
+  - GET /admin/games
+  - PATCH /admin/games/:id/status
+  - POST /games/upload (compatibility upload endpoint)
 - Local game file serving from storage/games via /games/<file>
 - Range request support for resumable downloads
 - Cache warm-up request after upload
@@ -49,6 +72,8 @@ Use multipart/form-data:
 
 - field file: .zip archive
 - field name: game name
+- field description: store page copy
+- field price: decimal price, for example 9.99
 - field version: semantic or numeric version
 
 Example curl:
@@ -56,5 +81,7 @@ Example curl:
 curl -X POST http://localhost:3000/games/upload \
   -H "Authorization: Bearer <token>" \
   -F "name=My Game" \
+  -F "description=Short store page summary" \
+  -F "price=9.99" \
   -F "version=1" \
   -F "file=@./my-game.zip"

@@ -1,21 +1,20 @@
-@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;700&display=swap");
-
 :root {
-  --bg: #050608;
-  --bg-soft: #0b0e12;
-  --panel: rgba(11, 14, 18, 0.9);
-  --panel-strong: rgba(16, 20, 26, 0.96);
-  --line: rgba(255, 255, 255, 0.08);
-  --line-strong: rgba(255, 255, 255, 0.16);
-  --text: #f5f7fb;
-  --muted: #a7b0bb;
-  --muted-2: #77808d;
+  --bg: #08090c;
+  --bg-soft: #101218;
+  --panel: rgba(18, 20, 27, 0.94);
+  --panel-strong: rgba(24, 27, 36, 0.98);
+  --line: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.2);
+  --text: #f4f6fb;
+  --muted: #a4adba;
+  --muted-2: #747f8f;
   --accent: #ff9d2e;
-  --accent-2: #3de0c3;
+  --accent-2: #35d0b5;
+  --accent-3: #6ba4ff;
   --danger: #ff6c6c;
-  --success: #55e6a2;
-  --shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
-  --shadow-soft: 0 16px 28px rgba(0, 0, 0, 0.35);
+  --success: #58d996;
+  --shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
+  --radius: 8px;
 }
 
 * {
@@ -30,24 +29,12 @@ body {
   margin: 0;
   min-height: 100vh;
   color: var(--text);
-  font-family: "Space Grotesk", sans-serif;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background:
-    radial-gradient(circle at 15% 18%, rgba(255, 157, 46, 0.12), transparent 22%),
-    radial-gradient(circle at 82% 12%, rgba(61, 224, 195, 0.1), transparent 22%),
-    linear-gradient(180deg, #090b0f 0%, #050608 100%);
-  background-attachment: fixed;
-}
-
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
     linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-  background-size: 36px 36px;
-  opacity: 0.35;
+    linear-gradient(180deg, #101218 0%, #08090c 48%, #0c0d12 100%);
+  background-size: 42px 42px, 42px 42px, auto;
 }
 
 a {
@@ -57,8 +44,13 @@ a {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
+}
+
+button {
+  color: inherit;
 }
 
 h1,
@@ -68,40 +60,28 @@ p {
   margin: 0;
 }
 
-h1,
-h2,
-h3,
-.brand-badge,
-.icon-mark,
-.avatar-circle,
-.profile-avatar,
-.library-cover span,
-.store-card-cover span,
-.cover-hero span,
-.game-tile-cover span,
-.suggestion-cover {
-  font-family: "Bebas Neue", sans-serif;
-  letter-spacing: 0.06em;
-}
-
 h1 {
-  font-size: clamp(2.6rem, 6vw, 5.4rem);
-  line-height: 0.92;
+  font-size: clamp(2rem, 5vw, 4.25rem);
+  line-height: 0.98;
 }
 
 h2 {
-  font-size: clamp(1.45rem, 2.5vw, 2rem);
-  line-height: 1;
+  font-size: clamp(1.25rem, 2.4vw, 1.85rem);
+  line-height: 1.1;
+}
+
+strong,
+h1,
+h2,
+h3 {
+  overflow-wrap: anywhere;
 }
 
 .panel {
   border: 1px solid var(--line);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 24%),
-    var(--panel);
+  border-radius: var(--radius);
+  background: var(--panel);
   box-shadow: var(--shadow);
-  backdrop-filter: blur(18px);
-  border-radius: 1.5rem;
 }
 
 .button,
@@ -122,18 +102,31 @@ h2 {
 .community-thread,
 .summary-item,
 .library-row {
-  transition: transform 150ms ease, border-color 150ms ease, background-color 150ms ease, opacity 150ms ease;
+  transition: transform 140ms ease, border-color 140ms ease, background-color 140ms ease, opacity 140ms ease;
+}
+
+.button,
+.chip,
+.wish-toggle,
+.icon-button,
+.profile-pill,
+.shot-card,
+.payment-card,
+.toggle-row,
+.bottom-nav a,
+.site-nav a,
+.filter-sidebar button,
+.dropdown-profile button {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.045);
+  cursor: pointer;
 }
 
 .button {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 0.95rem;
-  padding: 0.62rem 1rem;
-  cursor: pointer;
-  font-weight: 600;
-  box-shadow: var(--shadow-soft);
+  min-height: 2.55rem;
+  padding: 0.62rem 0.9rem;
+  font-weight: 700;
 }
 
 .button:hover:not(:disabled),
@@ -163,44 +156,28 @@ h2 {
 }
 
 .button.primary {
-  color: #140d08;
-  border-color: rgba(255, 157, 46, 0.3);
-  background: linear-gradient(135deg, #ffb14f, #ff7d2e 58%, #f05a28);
+  color: #120c05;
+  border-color: rgba(255, 157, 46, 0.44);
+  background: linear-gradient(135deg, #ffbd67, #ff9d2e);
 }
 
 .button.danger {
-  color: #ffd8d8;
-  border-color: rgba(255, 108, 108, 0.26);
-  background: rgba(255, 108, 108, 0.1);
+  color: #ffd9d9;
+  border-color: rgba(255, 108, 108, 0.36);
+  background: rgba(255, 108, 108, 0.12);
 }
 
 .button-large {
-  padding: 0.9rem 1.2rem;
-  min-height: 3.25rem;
+  min-height: 3rem;
   width: fit-content;
-}
-
-.chip,
-.wish-toggle,
-.icon-button,
-.profile-pill,
-.shot-card,
-.payment-card,
-.toggle-row,
-.bottom-nav a,
-.site-nav a,
-.filter-sidebar button,
-.text-link {
-  border-radius: 0.95rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
 }
 
 .chip,
 .filter-sidebar button,
 .bottom-nav a,
 .site-nav a {
-  padding: 0.56rem 0.9rem;
+  padding: 0.55rem 0.8rem;
+  font-weight: 700;
 }
 
 .chip.active,
@@ -208,8 +185,8 @@ h2 {
 .bottom-nav a.active,
 .payment-card.active,
 .shot-card.active {
-  border-color: rgba(255, 157, 46, 0.35);
-  background: rgba(255, 157, 46, 0.1);
+  border-color: rgba(255, 157, 46, 0.42);
+  background: rgba(255, 157, 46, 0.14);
 }
 
 .wide {
@@ -217,20 +194,21 @@ h2 {
   justify-content: flex-start;
 }
 
+.banner {
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem;
+}
+
 .banner.error {
   border: 1px solid rgba(255, 108, 108, 0.34);
   color: #ffd8d8;
   background: rgba(57, 19, 19, 0.72);
-  border-radius: 1rem;
-  padding: 0.9rem 1rem;
 }
 
 .banner.success {
   border: 1px solid rgba(85, 230, 162, 0.28);
   color: #ddfff0;
   background: rgba(20, 62, 42, 0.55);
-  border-radius: 1rem;
-  padding: 0.9rem 1rem;
 }
 
 .muted-text,
@@ -248,27 +226,25 @@ h2 {
 .auth-form label span,
 .filter-group span,
 .summary-row span,
-.notification-card p {
+.notification-card p,
+.library-copy p {
   color: var(--muted);
   line-height: 1.5;
 }
 
 .eyebrow,
 .stat-label,
-.feature-label,
 .suggestion-meta,
 .filter-group span,
-.notification-dot,
 .rating-pill,
 .tag-pill,
-.social-row span,
 .dropdown-title,
 .hero-banner-card p,
 .summary-row.total span,
 .notification-actions span {
   text-transform: uppercase;
-  letter-spacing: 0.16em;
   font-size: 0.72rem;
+  font-weight: 800;
 }
 
 .eyebrow {
@@ -280,13 +256,12 @@ h2 {
   display: grid;
   grid-template-rows: auto 1fr auto;
   gap: 1rem;
-  position: relative;
-  z-index: 0;
 }
 
 .site-header,
 .site-footer,
-.bottom-nav {
+.bottom-nav,
+.page-shell {
   width: min(1400px, calc(100% - 1.5rem));
   margin: 0 auto;
 }
@@ -296,27 +271,39 @@ h2 {
   top: 0.75rem;
   z-index: 30;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(320px, 1fr) auto;
   gap: 1rem;
   align-items: center;
-  padding: 0.95rem 1rem;
+  padding: 0.8rem;
 }
 
 .brand {
   display: inline-flex;
-  gap: 0.85rem;
+  gap: 0.75rem;
   align-items: center;
+  min-width: 0;
+}
+
+.brand-badge,
+.icon-mark,
+.avatar-circle,
+.profile-avatar,
+.library-cover span,
+.store-card-cover span,
+.cover-hero span,
+.game-tile-cover span,
+.suggestion-cover {
+  display: grid;
+  place-items: center;
+  font-weight: 900;
 }
 
 .brand-badge {
-  width: 3rem;
-  height: 3rem;
-  display: grid;
-  place-items: center;
-  border-radius: 0.9rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius);
   color: #0e0d0a;
-  background: linear-gradient(135deg, #ffb14f, #ff7d2e 56%, #3de0c3);
-  box-shadow: 0 14px 28px rgba(255, 125, 46, 0.24);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
 }
 
 .brand strong,
@@ -326,32 +313,50 @@ h2 {
 
 .brand small {
   color: var(--muted);
-  letter-spacing: 0.08em;
+  font-size: 0.72rem;
   text-transform: uppercase;
-  font-size: 0.68rem;
 }
 
 .header-center {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.65rem;
+  min-width: 0;
 }
 
 .search-shell {
   position: relative;
+  min-width: 0;
 }
 
-.search-input {
+.search-input,
+.filter-group select,
+.auth-form input,
+.coupon-field input,
+.settings-grid input,
+.upload-form input,
+.upload-form select,
+.upload-form textarea,
+.community-compose input,
+.footer-meta select {
   width: 100%;
   border: 1px solid var(--line);
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.035);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.055);
   color: var(--text);
-  padding: 0.88rem 1rem;
+  padding: 0.78rem 0.85rem;
 }
 
-.search-input:focus {
+.upload-form textarea {
+  min-height: 7.5rem;
+  resize: vertical;
+}
+
+.search-input:focus,
+input:focus,
+select:focus,
+textarea:focus {
   outline: none;
-  border-color: rgba(255, 157, 46, 0.35);
+  border-color: rgba(255, 157, 46, 0.42);
   box-shadow: 0 0 0 3px rgba(255, 157, 46, 0.12);
 }
 
@@ -359,31 +364,32 @@ h2 {
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(100% + 0.55rem);
-  padding: 0.85rem;
+  top: calc(100% + 0.45rem);
+  z-index: 50;
+  padding: 0.75rem;
   display: grid;
   gap: 0.55rem;
 }
 
 .suggestion-meta,
-.dropdown-title {
+.dropdown-title,
+.section-heading {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  color: var(--muted-2);
+  align-items: flex-end;
+  gap: 1rem;
 }
 
 .suggestion-row {
   width: 100%;
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.75rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.7rem;
   align-items: center;
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 1rem;
-  padding: 0.6rem;
-  color: var(--text);
+  background: rgba(255, 255, 255, 0.035);
+  border-radius: var(--radius);
+  padding: 0.55rem;
   text-align: left;
   cursor: pointer;
 }
@@ -391,10 +397,7 @@ h2 {
 .suggestion-cover {
   width: 3rem;
   height: 3rem;
-  border-radius: 0.85rem;
-  display: grid;
-  place-items: center;
-  font-size: 1.4rem;
+  border-radius: var(--radius);
 }
 
 .filter-pills,
@@ -413,130 +416,111 @@ h2 {
 .social-row,
 .tab-row,
 .notification-actions,
-.detail-price-row {
+.detail-price-row,
+.segmented-control,
+.auth-switch {
   display: flex;
-  gap: 0.65rem;
+  gap: 0.6rem;
   flex-wrap: wrap;
 }
 
 .site-nav {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.55rem;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.1rem;
 }
 
 .site-nav a {
-  font-size: 0.92rem;
+  white-space: nowrap;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.55rem;
   justify-self: end;
+  min-width: 0;
 }
 
 .icon-button {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.7rem 0.9rem;
-  cursor: pointer;
+  gap: 0.45rem;
+  min-height: 2.6rem;
+  padding: 0.55rem 0.75rem;
 }
 
 .icon-mark {
-  width: 1.4rem;
-  height: 1.4rem;
-  display: grid;
-  place-items: center;
-  border-radius: 0.45rem;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 6px;
   color: #0f0d09;
-  background: linear-gradient(135deg, #ffb14f, #3de0c3);
-  font-size: 0.9rem;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  font-size: 0.82rem;
 }
 
 .profile-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.6rem 0.8rem;
-  cursor: pointer;
+  gap: 0.65rem;
+  min-width: 0;
+  padding: 0.5rem 0.65rem;
 }
 
 .avatar-circle,
 .profile-avatar {
-  width: 2.6rem;
-  height: 2.6rem;
-  display: grid;
-  place-items: center;
-  border-radius: 0.9rem;
+  width: 2.45rem;
+  height: 2.45rem;
+  flex: 0 0 auto;
+  border-radius: var(--radius);
   color: #0f0d09;
-  background: linear-gradient(135deg, #ffb14f, #ff7d2e 56%, #3de0c3);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
 }
 
 .avatar-circle.large,
 .profile-avatar.large {
-  width: 4.6rem;
-  height: 4.6rem;
-  font-size: 1.8rem;
+  width: 4.2rem;
+  height: 4.2rem;
+  font-size: 1.45rem;
 }
 
-.profile-copy,
-.profile-summary,
-.game-tile-top,
-.notification-card,
-.notification-row,
-.community-thread,
-.summary-item,
-.library-row,
-.cart-row,
-.hero-banner-card,
-.store-card,
-.payment-card,
-.shot-card,
-.toggle-row,
-.details-copy,
-.details-media,
-.auth-card,
-.section-card,
-.profile-card,
-.filter-sidebar,
-.store-main {
-  display: grid;
+.profile-copy {
+  min-width: 0;
 }
 
 .profile-copy strong,
+.profile-copy small,
 .profile-summary strong {
   display: block;
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.profile-copy small,
-.profile-summary p {
+.profile-copy small {
   color: var(--muted);
 }
 
 .dropdown-panel {
   position: absolute;
-  top: calc(100% + 0.65rem);
-  z-index: 40;
+  top: calc(100% + 0.55rem);
+  z-index: 60;
   width: min(360px, calc(100vw - 1rem));
-  padding: 0.85rem;
+  padding: 0.75rem;
 }
 
 .dropdown-notifications,
 .dropdown-profile {
-  right: 1rem;
+  right: 0.8rem;
+  display: grid;
   gap: 0.55rem;
 }
 
 .dropdown-profile button {
-  border: 1px solid var(--line);
-  border-radius: 0.95rem;
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text);
-  padding: 0.75rem 0.9rem;
+  padding: 0.7rem 0.8rem;
   text-align: left;
-  cursor: pointer;
 }
 
 .notification-row,
@@ -553,29 +537,49 @@ h2 {
 .toggle-row,
 .auth-form label,
 .game-tile,
-.feature-chip {
+.review-card,
+.stat-card,
+.community-compose {
   padding: 0.8rem;
   border: 1px solid var(--line);
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.035);
   gap: 0.75rem;
 }
 
+.notification-row,
+.profile-summary,
+.notification-card,
+.community-thread,
+.summary-item,
+.cart-row,
+.library-row,
+.store-card,
+.game-tile,
+.details-copy,
+.details-media,
+.auth-card,
+.section-card,
+.profile-card,
+.filter-sidebar,
+.store-main,
+.upload-form,
+.stat-card {
+  display: grid;
+}
+
 .notification-dot {
-  width: 0.65rem;
-  height: 0.65rem;
+  width: 0.62rem;
+  height: 0.62rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.22);
 }
 
 .notification-dot.unread {
   background: var(--accent);
-  box-shadow: 0 0 0 4px rgba(255, 157, 46, 0.14);
 }
 
 .page-shell {
-  width: min(1400px, calc(100% - 1.5rem));
-  margin: 0 auto;
   display: grid;
   gap: 1rem;
 }
@@ -595,72 +599,66 @@ h2 {
 .developer-page,
 .community-page,
 .notifications-page,
-.settings-page {
+.settings-page,
+.admin-page {
   padding-bottom: 0.5rem;
 }
 
 .hero-banner {
-  min-height: 28rem;
-  padding: clamp(1.3rem, 2.5vw, 2rem);
+  min-height: min(34rem, 72vh);
+  padding: clamp(1rem, 2.4vw, 2rem);
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.72fr);
   align-items: end;
   gap: 1rem;
   overflow: hidden;
+  background-size: cover !important;
 }
 
 .hero-banner-copy {
   display: grid;
   gap: 1rem;
-  max-width: 44rem;
+  max-width: 46rem;
 }
 
 .hero-banner-copy p {
-  font-size: 1.02rem;
-  max-width: 48ch;
+  font-size: 1rem;
+  max-width: 58ch;
 }
 
 .hero-banner-card {
   align-content: space-between;
-  min-height: 16rem;
-  background: rgba(8, 10, 14, 0.7);
+  min-height: 13rem;
+  background: rgba(8, 10, 14, 0.76);
 }
 
 .hero-banner-card strong {
   display: block;
-  font-family: "Bebas Neue", sans-serif;
-  font-size: 2.2rem;
+  font-size: clamp(1.6rem, 3vw, 2.5rem);
 }
 
 .filter-strip {
-  padding: 0.85rem;
+  padding: 0.75rem;
   align-items: center;
 }
 
 .page-section {
   display: grid;
-  gap: 0.85rem;
-}
-
-.section-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: end;
-  gap: 1rem;
+  gap: 0.8rem;
 }
 
 .h-scroll-row {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(18rem, 1fr);
-  gap: 0.9rem;
+  grid-auto-columns: minmax(17rem, 1fr);
+  gap: 0.8rem;
   overflow-x: auto;
   padding-bottom: 0.25rem;
   scroll-snap-type: x proximity;
 }
 
 .game-tile {
-  min-height: 22rem;
+  min-height: 21rem;
   scroll-snap-align: start;
 }
 
@@ -674,11 +672,12 @@ h2 {
 .library-cover,
 .suggestion-cover {
   overflow: hidden;
-  border-radius: 1rem;
+  border-radius: var(--radius);
   display: grid;
   place-items: end start;
-  padding: 0.85rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-size: cover !important;
 }
 
 .game-tile-cover {
@@ -686,7 +685,7 @@ h2 {
 }
 
 .store-card-cover {
-  min-height: 12rem;
+  min-height: 11.5rem;
 }
 
 .cover-hero {
@@ -697,7 +696,6 @@ h2 {
   width: 5rem;
   height: 5rem;
   align-self: center;
-  justify-self: start;
 }
 
 .game-tile-cover span,
@@ -705,7 +703,7 @@ h2 {
 .cover-hero span,
 .library-cover span {
   font-size: 2rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.92);
   text-shadow: 0 10px 20px rgba(0, 0, 0, 0.7);
 }
 
@@ -720,20 +718,17 @@ h2 {
   align-content: start;
 }
 
-.game-tile-top,
-.detail-price-row,
-.profile-summary,
-.dropdown-title,
-.section-heading {
-  grid-template-columns: 1fr auto;
+.game-tile-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
 }
 
 .wish-toggle {
-  width: 2.2rem;
-  height: 2.2rem;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
+  min-width: 3.8rem;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.65rem;
+  font-weight: 800;
 }
 
 .wish-toggle.active {
@@ -753,9 +748,9 @@ h2 {
 .tag-pill,
 .rating-pill {
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
-  padding: 0.26rem 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.045);
+  padding: 0.26rem 0.58rem;
 }
 
 .details-page {
@@ -774,15 +769,14 @@ h2 {
 }
 
 .shot-card {
-  min-height: 5.2rem;
-  cursor: pointer;
+  min-height: 5rem;
   text-align: left;
 }
 
 .detail-block {
   display: grid;
   gap: 0.45rem;
-  padding-top: 0.35rem;
+  padding-top: 0.45rem;
   border-top: 1px solid var(--line);
 }
 
@@ -794,10 +788,6 @@ h2 {
 .review-card {
   display: grid;
   gap: 0.35rem;
-  padding: 0.85rem;
-  border: 1px solid var(--line);
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.03);
 }
 
 .bullet-list {
@@ -808,44 +798,32 @@ h2 {
 }
 
 .store-page {
-  grid-template-columns: minmax(260px, 0.38fr) minmax(0, 1fr);
+  grid-template-columns: minmax(250px, 0.32fr) minmax(0, 1fr);
 }
 
 .filter-sidebar,
 .summary-card,
 .section-card,
-.profile-card {
+.profile-card,
+.auth-card {
   padding: 1rem;
 }
 
 .filter-sidebar {
-  gap: 0.9rem;
+  gap: 0.85rem;
   position: sticky;
-  top: 6.9rem;
+  top: 6.6rem;
   align-self: start;
 }
 
-.filter-group {
+.filter-group,
+.coupon-field,
+.auth-form label,
+.settings-grid label,
+.upload-form label,
+.toggle-list {
   display: grid;
-  gap: 0.4rem;
-}
-
-.filter-group select,
-.auth-form input,
-.coupon-field input,
-.settings-grid input {
-  border: 1px solid var(--line);
-  border-radius: 0.9rem;
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--text);
-  padding: 0.8rem 0.9rem;
-}
-
-.segmented-control,
-.layout-toggle,
-.filter-strip,
-.tab-row {
-  align-items: center;
+  gap: 0.42rem;
 }
 
 .store-main {
@@ -857,25 +835,23 @@ h2 {
 .settings-grid,
 .payment-grid {
   display: grid;
-  gap: 0.9rem;
+  gap: 0.85rem;
 }
 
 .game-grid {
-  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
 }
 
 .game-list {
   display: grid;
-  gap: 0.9rem;
+  gap: 0.85rem;
 }
 
 .game-list .store-card {
-  grid-template-columns: 14rem 1fr;
-  align-items: stretch;
+  grid-template-columns: 14rem minmax(0, 1fr);
 }
 
 .store-card {
-  padding: 0.85rem;
   gap: 0.75rem;
 }
 
@@ -884,11 +860,15 @@ h2 {
 .library-page,
 .profile-page,
 .developer-page,
+.admin-page {
+  grid-template-columns: minmax(0, 1fr) minmax(290px, 0.42fr);
+  align-items: start;
+}
+
 .community-page,
 .notifications-page,
 .settings-page {
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.42fr);
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .section-card,
@@ -900,32 +880,14 @@ h2 {
 
 .cart-row,
 .summary-item,
-.library-row,
 .notification-card,
 .community-thread {
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
 }
 
-.cart-row,
-.summary-item,
-.notification-card,
-.community-thread {
-  padding: 0.9rem;
-}
-
-.coupon-field,
-.auth-form label,
-.settings-grid label,
-.toggle-list {
-  display: grid;
-  gap: 0.45rem;
-}
-
-.coupon-field span,
-.auth-form label span,
-.settings-grid label span {
-  color: var(--muted);
+.notification-card {
+  grid-template-columns: auto minmax(0, 1fr) auto;
 }
 
 .summary-row {
@@ -938,25 +900,29 @@ h2 {
 
 .summary-row.total {
   border-bottom: none;
-  padding-top: 0.9rem;
+  padding-top: 0.85rem;
 }
 
 .empty-state {
   color: var(--muted);
-  padding: 1rem 0;
+  padding: 0.75rem 0;
 }
 
 .payment-card {
   text-align: left;
-  cursor: pointer;
-  min-height: 7rem;
+  min-height: 6rem;
+}
+
+.payment-card strong,
+.payment-card span {
+  display: block;
 }
 
 .confirmation-panel {
   display: grid;
   gap: 0.75rem;
-  padding: 0.9rem;
-  border-radius: 1rem;
+  padding: 0.85rem;
+  border-radius: var(--radius);
   border: 1px solid rgba(85, 230, 162, 0.25);
   background: rgba(20, 62, 42, 0.45);
 }
@@ -964,7 +930,7 @@ h2 {
 .library-row,
 .cart-row {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 0.8rem;
 }
 
@@ -973,7 +939,7 @@ h2 {
 }
 
 .profile-card {
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
 }
 
@@ -985,17 +951,27 @@ h2 {
 .developer-page .section-card,
 .community-page .section-card,
 .notifications-page .section-card,
-.settings-page .section-card {
-  min-height: 26rem;
-}
-
-.upload-form {
-  display: grid;
-  gap: 0.75rem;
+.settings-page .section-card,
+.admin-page .section-card {
+  min-height: 24rem;
 }
 
 .analytics-grid {
   grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+
+.stat-card {
+  min-height: 8rem;
+  align-content: space-between;
+}
+
+.stat-card strong {
+  font-size: 2rem;
+}
+
+.stat-card.accent {
+  border-color: rgba(53, 208, 181, 0.35);
+  background: rgba(53, 208, 181, 0.08);
 }
 
 .toggle-list {
@@ -1007,7 +983,6 @@ h2 {
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  cursor: pointer;
 }
 
 .auth-stage {
@@ -1018,31 +993,26 @@ h2 {
 
 .auth-card {
   width: min(820px, 100%);
-  padding: 1.5rem;
-  gap: 1.1rem;
-}
-
-.auth-switch,
-.filter-strip,
-.layout-toggle,
-.tab-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
+  gap: 1rem;
 }
 
 .auth-form {
   display: grid;
-  gap: 0.8rem;
+  gap: 0.75rem;
 }
 
-.auth-form input {
-  width: 100%;
+.creator-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.community-compose {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .site-footer {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(240px, 0.8fr) auto;
+  grid-template-columns: minmax(0, 1.4fr) minmax(220px, 0.8fr) auto;
   gap: 1rem;
   padding: 1rem;
   align-items: center;
@@ -1051,13 +1021,8 @@ h2 {
 
 .site-footer nav {
   display: flex;
-  gap: 0.85rem;
+  gap: 0.8rem;
   flex-wrap: wrap;
-}
-
-.site-footer p,
-.site-footer strong {
-  color: var(--text);
 }
 
 .footer-meta {
@@ -1071,23 +1036,17 @@ h2 {
   color: var(--muted);
 }
 
-.footer-meta select {
-  min-width: 10rem;
-  border: 1px solid var(--line);
-  border-radius: 0.9rem;
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--text);
-  padding: 0.6rem 0.75rem;
-}
-
 .social-row span {
-  width: 2rem;
+  min-width: 2rem;
   height: 2rem;
+  padding: 0 0.45rem;
   display: grid;
   place-items: center;
   border-radius: 999px;
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.045);
+  font-size: 0.75rem;
+  font-weight: 800;
 }
 
 .bottom-nav {
@@ -1095,8 +1054,8 @@ h2 {
   bottom: 0.65rem;
   z-index: 25;
   display: none;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  padding: 0.65rem;
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+  padding: 0.55rem;
 }
 
 .bottom-nav a {
@@ -1114,17 +1073,6 @@ h2 {
   box-shadow: none;
 }
 
-@keyframes fade-up {
-  from {
-    transform: translateY(12px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
 @media (max-width: 1200px) {
   .site-header,
   .hero-banner,
@@ -1135,9 +1083,7 @@ h2 {
   .library-page,
   .profile-page,
   .developer-page,
-  .community-page,
-  .notifications-page,
-  .settings-page,
+  .admin-page,
   .site-footer {
     grid-template-columns: 1fr;
   }
@@ -1148,7 +1094,6 @@ h2 {
 
   .profile-card {
     grid-template-columns: 1fr;
-    text-align: left;
   }
 
   .header-actions {
@@ -1162,20 +1107,25 @@ h2 {
 }
 
 @media (max-width: 900px) {
-  .site-nav,
+  .site-header {
+    position: relative;
+    top: 0;
+  }
+
+  .site-nav {
+    padding-bottom: 0.25rem;
+  }
+
   .search-suggestions,
   .suggestion-row,
   .game-list .store-card,
   .library-row,
   .cart-row,
   .notification-card,
-  .community-thread {
+  .community-thread,
+  .creator-row,
+  .community-compose {
     grid-template-columns: 1fr;
-  }
-
-  .site-header {
-    position: relative;
-    top: 0;
   }
 
   .bottom-nav {
@@ -1200,21 +1150,30 @@ h2 {
   .summary-card,
   .section-card,
   .profile-card {
-    padding: 0.9rem;
+    padding: 0.85rem;
   }
 
   .button-large,
   .action-row .button,
   .tile-actions .button,
-  .topbar-actions .button,
-  .oauth-rail .button {
+  .oauth-rail .button,
+  .hero-actions .button {
     width: 100%;
   }
 
   .game-grid,
   .analytics-grid,
   .settings-grid,
-  .payment-grid {
+  .payment-grid,
+  .screenshot-strip {
     grid-template-columns: 1fr;
+  }
+
+  .h-scroll-row {
+    grid-auto-columns: minmax(15.5rem, 88vw);
+  }
+
+  .cover-hero {
+    min-height: 16rem;
   }
 }

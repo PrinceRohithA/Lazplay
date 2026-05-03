@@ -1,6 +1,6 @@
 import { clearToken, getStoredToken } from "./auth.js";
 
-const API_BASE_URL = "/api";
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "/api").replace(/\/+$/, "");
 
 export function getApiBaseUrl() {
   return API_BASE_URL;
@@ -8,6 +8,7 @@ export function getApiBaseUrl() {
 
 export async function apiRequest(path, options = {}) {
   const { auth = true, headers = {}, ...rest } = options;
+  const urlPath = path.startsWith("/") ? path : `/${path}`;
 
   const requestHeaders = {
     Accept: "application/json",
@@ -21,7 +22,7 @@ export async function apiRequest(path, options = {}) {
     }
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${API_BASE_URL}${urlPath}`, {
     ...rest,
     headers: requestHeaders
   });

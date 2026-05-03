@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { env } from "../config/env.js";
+import { normalizeRole } from "../utils/roles.js";
 
 function toBase64Url(jsonPayload) {
   return Buffer.from(JSON.stringify(jsonPayload), "utf8").toString("base64url");
@@ -17,7 +18,8 @@ function buildDefaultMockIdentity() {
     email: env.MOCK_OAUTH_EMAIL,
     name: env.MOCK_OAUTH_NAME,
     provider: env.MOCK_OAUTH_PROVIDER,
-    oauthId
+    oauthId,
+    role: normalizeRole(env.MOCK_OAUTH_ROLE)
   };
 }
 
@@ -43,6 +45,7 @@ export function resolveOAuthProfileFromCode(code) {
     email: String(profile.email).toLowerCase(),
     name: String(profile.name),
     provider: String(profile.provider || env.MOCK_OAUTH_PROVIDER),
-    oauthId: String(profile.oauthId)
+    oauthId: String(profile.oauthId),
+    role: normalizeRole(profile.role)
   };
 }

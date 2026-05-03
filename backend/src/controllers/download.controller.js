@@ -1,8 +1,9 @@
 import { env } from "../config/env.js";
-import { getGameByIdForUser } from "../services/game.service.js";
+import { getGameByIdForUser, markGameDownloaded } from "../services/game.service.js";
 
 function buildDownloadUrl(filePath) {
-  return `/api/games/${encodeURIComponent(filePath)}`;
+  const base = env.PUBLIC_BASE_URL.replace(/\/+$/, "");
+  return `${base}/games/${encodeURIComponent(filePath)}`;
 }
 
 export async function getDownloadUrl(req, res, next) {
@@ -21,6 +22,8 @@ export async function getDownloadUrl(req, res, next) {
     if (!game.owned) {
       return res.status(403).json({ error: "You do not have access to this game." });
     }
+
+    await markGameDownloaded(req.user.id, game.id);
 
     return res.json({
       gameId: game.id,

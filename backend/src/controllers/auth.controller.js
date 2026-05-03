@@ -29,7 +29,8 @@ export async function callback(req, res, next) {
     const token = createJwtToken({
       sub: user.id,
       email: user.email,
-      name: user.name
+      name: user.name,
+      role: user.role
     });
 
     if (String(req.query.format || "").toLowerCase() === "json") {
