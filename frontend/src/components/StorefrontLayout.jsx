@@ -124,7 +124,7 @@ export default function StorefrontLayout() {
         <div className={"side-top"}>
           <button
             type="button"
-            className="icon-button menu-toggle"
+            className={`icon-button menu-toggle ${sideCollapsed ? "floating" : ""}`}
             aria-label={sideCollapsed ? "Open menu" : "Close menu"}
             onClick={() => setSideCollapsed((s) => !s)}
           >
