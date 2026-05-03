@@ -1,0 +1,27 @@
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  oauth_provider TEXT NOT NULL,
+  oauth_id TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS games (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  version TEXT NOT NULL,
+  file_path TEXT NOT NULL,
+  size BIGINT NOT NULL CHECK (size >= 0),
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  UNIQUE (name, version)
+);
+
+CREATE TABLE IF NOT EXISTS user_games (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+  granted_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, game_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_games_game_id ON user_games(game_id);
