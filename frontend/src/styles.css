@@ -269,6 +269,9 @@ h3 {
   margin: 0 auto;
 }
 
+/* Hide the old top header since we now use a side menu */
+.site-header { display: none; }
+
 .site-header {
   position: sticky;
   top: 0.6rem;
@@ -449,6 +452,46 @@ textarea:focus {
   gap: 0.5rem;
   overflow-x: auto;
   padding-bottom: 0.1rem;
+}
+
+/* Side menu styling */
+.side-menu {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  bottom: 1rem;
+  width: 220px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  align-items: stretch;
+}
+
+.side-menu .brand { align-items: center; gap: 0.5rem; }
+.side-menu .brand-badge { width: 2.2rem; height: 2.2rem; }
+
+.side-menu .search-shell { margin-top: 0.25rem; }
+.side-menu .search-input { width: 100%; }
+
+.side-menu .side-nav { display: flex; flex-direction: column; gap: 0.45rem; margin-top: 0.5rem; }
+.side-menu .side-nav a { padding: 0.5rem 0.6rem; border-radius: 6px; }
+
+/* Right-side profile/actions pane */
+.right-profile { position: fixed; right: 1rem; top: 1rem; z-index: 50; display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end; }
+.right-profile .header-actions { display: flex; gap: 0.5rem; align-items: center; }
+.right-pane { right: 1.1rem; }
+
+/* Adjust main content to account for side menus */
+.page-shell.with-side { margin-left: calc(220px + 2rem); margin-right: calc(120px + 2rem); width: min(1100px, calc(100% - 260px)); }
+
+/* For small screens, revert to top header and hide side menu */
+@media (max-width: 920px) {
+  .side-menu { display: none; }
+  .right-profile { position: static; flex-direction: row; justify-content: center; }
+  .site-header { display: grid; }
+  .page-shell.with-side { margin-left: 0; margin-right: 0; width: calc(100% - 1.5rem); }
 }
 
 .site-nav a {

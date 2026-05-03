@@ -121,7 +121,7 @@ export default function StorefrontLayout() {
 
   return (
     <div className="app-shell">
-      <header className={`site-header panel ${headerDocked ? "docked" : ""} ${headerHidden ? "hidden" : ""}`}>
+      <aside className={`side-menu panel`}>
         <Link className="brand" to="/" aria-label="Go to LazPlay home">
           <span className="brand-badge">L</span>
           <span>
@@ -130,70 +130,52 @@ export default function StorefrontLayout() {
           </span>
         </Link>
 
-        <div className="header-center">
-          <div className="search-shell">
-            <input
-              aria-label="Search games"
-              className="search-input"
-              placeholder="Search games, tags, developers..."
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              onFocus={() => setSearchFocused(true)}
-            />
-            {(searchFocused || searchTerm.trim()) && (
-              <div className="search-suggestions panel">
-                <div className="suggestion-meta">
-                  <span>Matches</span>
-                  <span>{suggestions.length}</span>
-                </div>
-                {suggestions.map((game) => (
-                  <button
-                    type="button"
-                    key={game.id}
-                    className="suggestion-row"
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => navigate(`/game/${game.id}`)}
-                  >
-                    <span className="suggestion-cover" style={{ background: game.art }} />
-                    <span>
-                      <strong>{game.title}</strong>
-                      <small>
-                        {game.developer} - {game.price === 0 ? "Free" : `$${game.price.toFixed(2)}`}
-                      </small>
-                    </span>
-                  </button>
-                ))}
-                <div className="filter-pills">
-                  {[
-                    ["all", "All"],
-                    ["free", "Free"],
-                    ["paid", "Paid"],
-                    ["indie", "Indie"],
-                    ["top", "Top Rated"]
-                  ].map(([value, label]) => (
-                    <button
-                      key={value}
-                      type="button"
-                      className={`chip ${quickFilter === value ? "active" : ""}`}
-                      onClick={() => setQuickFilter(value)}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
+        <div className="search-shell">
+          <input
+            aria-label="Search games"
+            className="search-input"
+            placeholder="Search games, tags, developers..."
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            onFocus={() => setSearchFocused(true)}
+          />
+          {(searchFocused || searchTerm.trim()) && (
+            <div className="search-suggestions panel">
+              <div className="suggestion-meta">
+                <span>Matches</span>
+                <span>{suggestions.length}</span>
               </div>
-            )}
-          </div>
-
-          <nav className="site-nav" aria-label="Primary navigation">
-            {navItems.map((item) => (
-              <NavLink key={item.to} to={item.to} end={item.to === "/"}>
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
+              {suggestions.map((game) => (
+                <button
+                  type="button"
+                  key={game.id}
+                  className="suggestion-row"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => navigate(`/game/${game.id}`)}
+                >
+                  <span className="suggestion-cover" style={{ background: game.art }} />
+                  <span>
+                    <strong>{game.title}</strong>
+                    <small>
+                      {game.developer} - {game.price === 0 ? "Free" : `$${game.price.toFixed(2)}`}
+                    </small>
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
+        <nav className="side-nav" aria-label="Primary navigation">
+          {navItems.map((item) => (
+            <NavLink key={item.to} to={item.to} end={item.to === "/"}>
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
+      </aside>
+
+      <div className="right-profile">
         <div className="header-actions">
           <button
             type="button"
@@ -226,7 +208,7 @@ export default function StorefrontLayout() {
         </div>
 
         {notificationsOpen && (
-          <div className="dropdown-panel panel dropdown-notifications">
+          <div className="dropdown-panel panel dropdown-notifications right-pane">
             <div className="dropdown-title">
               <strong>Notifications</strong>
               <button type="button" className="text-link" onClick={() => navigate("/notifications")}>Open all</button>
@@ -244,7 +226,7 @@ export default function StorefrontLayout() {
         )}
 
         {profileOpen && isAuthenticated && (
-          <div className="dropdown-panel panel dropdown-profile">
+          <div className="dropdown-panel panel dropdown-profile right-pane">
             <div className="profile-summary">
               <span className="avatar-circle large">{getShortName(currentUser.name)}</span>
               <div>
@@ -267,9 +249,9 @@ export default function StorefrontLayout() {
             </button>
           </div>
         )}
-      </header>
+      </div>
 
-      <main className="page-shell">
+      <main className="page-shell with-side">
         <Outlet />
       </main>
 
