@@ -2,8 +2,7 @@ import { env } from "../config/env.js";
 import { getGameByIdForUser } from "../services/game.service.js";
 
 function buildDownloadUrl(filePath) {
-  const base = env.PUBLIC_BASE_URL.replace(/\/+$/, "");
-  return `${base}/games/${encodeURIComponent(filePath)}`;
+  return `/api/games/${encodeURIComponent(filePath)}`;
 }
 
 export async function getDownloadUrl(req, res, next) {
