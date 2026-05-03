@@ -37,7 +37,7 @@ export const env = {
   PUBLIC_BASE_URL: process.env.PUBLIC_BASE_URL || process.env.API_BASE_URL || "http://localhost:3000",
   JWT_SECRET: process.env.JWT_SECRET || "change-me-in-production",
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "2h",
-  DATABASE_URL: process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/lazplay",
+  DATABASE_URL: process.env.DATABASE_URL || "postgresql+psycopg://lazplay:Prince%4018@localhost:5432/lazplay",
   DB_AUTO_INIT: toBoolean(process.env.DB_AUTO_INIT, true),
   DB_AUTO_SEED: toBoolean(process.env.DB_AUTO_SEED, true),
   GAME_STORAGE_DIR: resolveProjectPath(process.env.GAME_STORAGE_DIR, "./storage/games"),
