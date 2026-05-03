@@ -23,6 +23,7 @@ export default function AuthCallbackPage() {
     return (
       <main className="screen auth-screen">
         <section className="panel auth-panel">
+          <p className="eyebrow">Authentication</p>
           <h1>Sign-in failed</h1>
           <p className="subtext">{error}</p>
         </section>
@@ -33,8 +34,9 @@ export default function AuthCallbackPage() {
   return (
     <main className="screen auth-screen">
       <section className="panel auth-panel">
+        <p className="eyebrow">Authentication</p>
         <h1>Completing login</h1>
-        <p className="subtext">Storing session token and redirecting...</p>
+        <p className="subtext">Storing your session token and loading the library...</p>
       </section>
     </main>
   );

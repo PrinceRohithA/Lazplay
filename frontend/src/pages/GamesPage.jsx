@@ -76,10 +76,35 @@ export default function GamesPage() {
 
   return (
     <main className="screen games-screen">
+      <section className="hero panel">
+        <div className="hero-copy">
+          <p className="eyebrow">LazPlay storefront</p>
+          <h1>Black glass, sharp hierarchy, fast access.</h1>
+          <p className="lead">
+            A curated library view inspired by Steam's utility and itch.io's indie energy, tuned for self-hosted game distribution.
+          </p>
+        </div>
+
+        <div className="hero-stats">
+          <article className="stat-card">
+            <span className="stat-label">Owned</span>
+            <strong>{ownedCount}</strong>
+          </article>
+          <article className="stat-card accent">
+            <span className="stat-label">Visible games</span>
+            <strong>{games.length}</strong>
+          </article>
+          <article className="stat-card">
+            <span className="stat-label">Session</span>
+            <strong>Secure JWT</strong>
+          </article>
+        </div>
+      </section>
+
       <header className="topbar panel">
         <div>
           <p className="eyebrow">Game distribution</p>
-          <h1>Library</h1>
+          <h2>Library</h2>
           <p className="subtext">{ownedCount} owned of {games.length} total games</p>
         </div>
         <div className="topbar-actions">
@@ -100,6 +125,9 @@ export default function GamesPage() {
         <section className="grid">
           {games.map((game, index) => (
             <article className="panel game-card" key={game.id} style={{ animationDelay: `${index * 70}ms` }}>
+              <div className="card-art">
+                <span>{game.name.slice(0, 1).toUpperCase()}</span>
+              </div>
               <div className="card-header">
                 <h2>{game.name}</h2>
                 <span className={`pill ${game.owned ? "ok" : "muted"}`}>{game.owned ? "Owned" : "No Access"}</span>
