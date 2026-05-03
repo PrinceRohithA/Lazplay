@@ -95,7 +95,7 @@ function GameTile({ game, compact = false }) {
 
         <div className="tile-actions">
           <button type="button" className="button" onClick={primaryAction}>
-            {game.owned ? "Owned" : game.price === 0 ? "Claim" : game.inCart ? "In cart" : "Add to cart"}
+            {game.owned ? "Owned" : game.price === 0 ? (isAuthenticated ? "Claim" : "Play free") : game.inCart ? "In cart" : "Add to cart"}
           </button>
           <Link className="button primary" to={`/game/${game.id}`}>
             View
@@ -432,7 +432,7 @@ export function StorePage() {
                     {wishlistIds.includes(game.id) ? "Saved" : "Save"}
                   </button>
                   <button type="button" className="button primary" onClick={() => buyAction(game)}>
-                    {game.owned ? "In library" : game.price === 0 ? "Claim" : game.inCart ? "In cart" : formatCurrency(game.price)}
+                    {game.owned ? "In library" : game.price === 0 ? (isAuthenticated ? "Claim" : "Play free") : game.inCart ? "In cart" : formatCurrency(game.price)}
                   </button>
                 </div>
               </div>
@@ -517,7 +517,7 @@ export function GameDetailsPage() {
 
         <div className="action-row">
           <button type="button" className="button primary" disabled={working} onClick={primaryAction}>
-            {working ? "Preparing..." : game.owned ? "Download" : game.price === 0 ? "Claim" : "Buy"}
+            {working ? "Preparing..." : game.owned ? "Download" : game.price === 0 ? (isAuthenticated ? "Claim" : "Play free") : "Buy"}
           </button>
           <button type="button" className="button" onClick={() => toggleWishlist(game.id)}>
             {wishlistIds.includes(game.id) ? "Remove saved" : "Save"}
@@ -897,7 +897,7 @@ export function DeveloperDashboardPage() {
               <input type="file" accept=".zip" onChange={(event) => setForm((current) => ({ ...current, file: event.target.files?.[0] || null }))} />
             </label>
             <button type="submit" className="button primary button-large" disabled={working}>
-              {working ? "Publishing..." : "Publish game"}
+              {working ? "Submitting..." : "Submit for approval"}
             </button>
             {message && <p className={message.includes("published") ? "banner success" : "banner error"}>{message}</p>}
           </form>
