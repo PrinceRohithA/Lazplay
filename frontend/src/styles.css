@@ -470,18 +470,41 @@ textarea:focus {
 }
 
 .side-menu .brand { align-items: center; gap: 0.5rem; }
-.side-menu .brand-badge { width: 2.2rem; height: 2.2rem; }
+.side-menu .brand-badge { width: 2.2rem; height: 2.2rem; display:grid; place-items:center; }
 
-.side-menu .search-shell { margin-top: 0.25rem; }
-.side-menu .search-input { width: 100%; }
+/* collapsed state: small icon button */
+.side-menu.collapsed { width: 64px; padding: 0.6rem; align-items: center; }
+.side-menu.collapsed .brand span { display: none; }
+.side-menu.collapsed .side-nav { display: none; }
 
 .side-menu .side-nav { display: flex; flex-direction: column; gap: 0.45rem; margin-top: 0.5rem; }
+.ide-menu-placeholder { display:none; }
 .side-menu .side-nav a { padding: 0.5rem 0.6rem; border-radius: 6px; }
 
 /* Right-side profile/actions pane */
 .right-profile { position: fixed; right: 1rem; top: 1rem; z-index: 50; display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end; }
 .right-profile .header-actions { display: flex; gap: 0.5rem; align-items: center; }
 .right-pane { right: 1.1rem; }
+
+/* notification badge on avatar */
+.notification-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--accent-2);
+  color: white;
+  font-size: 0.62rem;
+  padding: 0.08rem 0.28rem;
+  border-radius: 999px;
+  line-height: 1;
+}
+
+/* menu toggle button and top area */
+.menu-toggle { background: transparent; border: 1px solid var(--line); padding: 0.5rem; border-radius: 8px; }
+.side-top { display:flex; gap:0.6rem; align-items:center; }
+.brand-badge svg { display:block; }
+.avatar-circle { position: relative; display: inline-grid; place-items:center; }
+.avatar-circle .notification-count { transform: translate(0,0); }
 
 /* Adjust main content to account for side menus */
 .page-shell.with-side { margin-left: calc(220px + 2rem); margin-right: calc(120px + 2rem); width: min(1100px, calc(100% - 260px)); }

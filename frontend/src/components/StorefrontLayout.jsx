@@ -38,16 +38,15 @@ export default function StorefrontLayout() {
     setSearchTerm,
     signOut
   } = useStorefront();
-  const [searchFocused, setSearchFocused] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [headerDocked, setHeaderDocked] = useState(false);
   const [headerHidden, setHeaderHidden] = useState(false);
+  const [sideCollapsed, setSideCollapsed] = useState(true);
 
   useEffect(() => {
     setNotificationsOpen(false);
     setProfileOpen(false);
-    setSearchFocused(false);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -121,84 +120,61 @@ export default function StorefrontLayout() {
 
   return (
     <div className="app-shell">
-      <aside className={`side-menu panel`}>
-        <Link className="brand" to="/" aria-label="Go to LazPlay home">
-          <span className="brand-badge">L</span>
-          <span>
-            <strong>LazPlay</strong>
-            <small>Open game market</small>
-          </span>
-        </Link>
+      <aside className={`side-menu panel ${sideCollapsed ? "collapsed" : ""}`}>
+        <div className={"side-top"}>
+          <button
+            type="button"
+            className="icon-button menu-toggle"
+            aria-label={sideCollapsed ? "Open menu" : "Close menu"}
+            onClick={() => setSideCollapsed((s) => !s)}
+          >
+            {/* hamburger / close icon */}
+            {sideCollapsed ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 6H21M3 12H21M3 18H21" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 18L18 6M6 6L18 18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            )}
+          </button>
 
-        <div className="search-shell">
-          <input
-            aria-label="Search games"
-            className="search-input"
-            placeholder="Search games, tags, developers..."
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            onFocus={() => setSearchFocused(true)}
-          />
-          {(searchFocused || searchTerm.trim()) && (
-            <div className="search-suggestions panel">
-              <div className="suggestion-meta">
-                <span>Matches</span>
-                <span>{suggestions.length}</span>
-              </div>
-              {suggestions.map((game) => (
-                <button
-                  type="button"
-                  key={game.id}
-                  className="suggestion-row"
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => navigate(`/game/${game.id}`)}
-                >
-                  <span className="suggestion-cover" style={{ background: game.art }} />
-                  <span>
-                    <strong>{game.title}</strong>
-                    <small>
-                      {game.developer} - {game.price === 0 ? "Free" : `$${game.price.toFixed(2)}`}
-                    </small>
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
+          <Link className="brand" to="/" aria-label="Go to LazPlay home">
+            <span className="brand-badge">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 7h16v10H4z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M8 11h8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
+            </span>
+            {!sideCollapsed && (
+              <span>
+                <strong>LazPlay</strong>
+                <small>Open game market</small>
+              </span>
+            )}
+          </Link>
+
         </div>
 
-        <nav className="side-nav" aria-label="Primary navigation">
-          {navItems.map((item) => (
-            <NavLink key={item.to} to={item.to} end={item.to === "/"}>
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
+        {!sideCollapsed && (
+          <nav className="side-nav" aria-label="Primary navigation">
+            {navItems.map((item) => (
+              <NavLink key={item.to} to={item.to} end={item.to === "/"}>
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+        )}
       </aside>
 
       <div className="right-profile">
         <div className="header-actions">
-          <button
-            type="button"
-            className="icon-button"
-            onClick={() => setNotificationsOpen((current) => !current)}
-            aria-label="Open notifications"
-          >
-            <span className="icon-mark">!</span>
-            <span>{notifications.length}</span>
-          </button>
-
-          <button type="button" className="icon-button" onClick={() => navigate("/cart")} aria-label="Open cart">
-            <span className="icon-mark">$</span>
-            <span>{cartItems.length}</span>
-          </button>
-
           {isAuthenticated ? (
             <button type="button" className="profile-pill" onClick={() => setProfileOpen((current) => !current)}>
-              <span className="avatar-circle">{getShortName(currentUser.name)}</span>
-              <span className="profile-copy">
-                <strong>{currentUser.name}</strong>
-                <small>{roleLabel(currentUser.role)}</small>
+              <span className="avatar-circle">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><circle cx="12" cy="8" r="3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                {notifications.some((n) => n.unread) && <span className="notification-count">{notifications.filter(n=>n.unread).length}</span>}
               </span>
+              {!sideCollapsed && (
+                <span className="profile-copy">
+                  <strong>{currentUser.name}</strong>
+                  <small>{roleLabel(currentUser.role)}</small>
+                </span>
+              )}
             </button>
           ) : (
             <button type="button" className="button primary" onClick={() => navigate("/login")}>
@@ -207,33 +183,24 @@ export default function StorefrontLayout() {
           )}
         </div>
 
-        {notificationsOpen && (
-          <div className="dropdown-panel panel dropdown-notifications right-pane">
-            <div className="dropdown-title">
-              <strong>Notifications</strong>
-              <button type="button" className="text-link" onClick={() => navigate("/notifications")}>Open all</button>
-            </div>
-            {notifications.slice(0, 3).map((item) => (
-              <article key={item.id} className="notification-row">
-                <span className={`notification-dot ${item.unread ? "unread" : ""}`} />
-                <div>
-                  <strong>{item.title}</strong>
-                  <p>{item.detail}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-
         {profileOpen && isAuthenticated && (
           <div className="dropdown-panel panel dropdown-profile right-pane">
             <div className="profile-summary">
-              <span className="avatar-circle large">{getShortName(currentUser.name)}</span>
+              <span className="avatar-circle large">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><circle cx="12" cy="8" r="3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </span>
               <div>
                 <strong>{currentUser.name}</strong>
                 <p>{currentUser.email}</p>
               </div>
             </div>
+            <div className="dropdown-title">
+              <strong>Account</strong>
+            </div>
+            <button type="button" onClick={() => navigate("/notifications")}>Notifications <span className="muted">({notifications.filter(n=>n.unread).length} unread)</span></button>
+            <button type="button" onClick={() => navigate("/cart")}>Cart <span className="muted">({cartItems.length})</span></button>
+            {currentUser.balance && <div className="balance">Balance: <strong>{currentUser.balance}</strong></div>}
+            <hr />
             <button type="button" onClick={() => navigate("/profile")}>Profile</button>
             <button type="button" onClick={() => navigate("/settings")}>Settings</button>
             {canCreate && <button type="button" onClick={() => navigate("/creator")}>Creator dashboard</button>}
@@ -254,37 +221,6 @@ export default function StorefrontLayout() {
       <main className="page-shell with-side">
         <Outlet />
       </main>
-
-      <footer className="site-footer panel">
-        <div>
-          <strong>LazPlay</strong>
-          <p>Self-hosted game store with player libraries, creator uploads, and community threads.</p>
-        </div>
-
-        <nav aria-label="Footer links">
-          <a href="#about">About</a>
-          <a href="#support">Support</a>
-          <a href="#terms">Terms</a>
-          <a href="#privacy">Privacy</a>
-        </nav>
-
-        <div className="footer-meta">
-          <div className="social-row" aria-label="Social links">
-            <span>X</span>
-            <span>GH</span>
-            <span>RSS</span>
-          </div>
-          <label>
-            Language
-            <select value={language} onChange={(event) => setLanguage(event.target.value)}>
-              <option>English</option>
-              <option>Spanish</option>
-              <option>French</option>
-              <option>Japanese</option>
-            </select>
-          </label>
-        </div>
-      </footer>
 
       <nav className="bottom-nav panel" aria-label="Mobile navigation">
         {navItems.slice(0, 5).map((item) => (
