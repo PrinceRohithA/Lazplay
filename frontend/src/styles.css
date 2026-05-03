@@ -656,7 +656,7 @@ textarea:focus {
   padding: 0.8rem;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: #ffffff;
+  background: rgba(14, 23, 38, 0.92);
   gap: 0.75rem;
 }
 
