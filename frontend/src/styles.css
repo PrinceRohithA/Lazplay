@@ -3,14 +3,14 @@
   --bg-soft: #0b1424;
   --panel: rgba(11, 18, 31, 0.86);
   --panel-strong: rgba(14, 23, 38, 0.94);
-  --line: rgba(120, 166, 255, 0.18);
-  --line-strong: rgba(138, 183, 255, 0.34);
-  --text: #e7eefc;
-  --muted: #a2b3d1;
-  --muted-2: #7f94ba;
-  --accent: #5f8bff;
-  --accent-2: #63c9ff;
-  --accent-3: #3f65d7;
+  --line: rgba(182, 75, 75, 0.12);
+  --line-strong: rgba(212, 90, 90, 0.28);
+  --text: #f3e9e9;
+  --muted: #ccb6b6;
+  --muted-2: #b99a9a;
+  --accent: #b64b4b;
+  --accent-2: #d45a5a;
+  --accent-3: #8b2b2b;
   --danger: #ea6b7f;
   --success: #41cfa0;
   --shadow: 0 14px 34px rgba(1, 5, 14, 0.55);
@@ -31,8 +31,8 @@ body {
   color: var(--text);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background:
-    radial-gradient(circle at 14% 8%, rgba(95, 139, 255, 0.2), transparent 26%),
-    radial-gradient(circle at 82% 14%, rgba(99, 201, 255, 0.14), transparent 24%),
+    radial-gradient(circle at 14% 8%, rgba(182, 75, 75, 0.16), transparent 26%),
+    radial-gradient(circle at 82% 14%, rgba(212, 90, 90, 0.12), transparent 24%),
     linear-gradient(180deg, #0a1324 0%, var(--bg) 56%, #050910 100%);
 }
 
@@ -80,7 +80,7 @@ h3 {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background:
-    linear-gradient(180deg, rgba(122, 173, 255, 0.07), rgba(10, 18, 30, 0.2) 34%, rgba(9, 15, 27, 0.92));
+    linear-gradient(180deg, rgba(182, 75, 75, 0.06), rgba(10, 18, 30, 0.2) 34%, rgba(9, 15, 27, 0.92));
   box-shadow: var(--shadow);
 }
 
@@ -158,8 +158,8 @@ h3 {
 
 .button.primary {
   color: #f5f9ff;
-  border-color: rgba(95, 139, 255, 0.44);
-  background: linear-gradient(135deg, #4c76ea, #5f8bff 55%, #63c9ff);
+  border-color: rgba(182, 75, 75, 0.44);
+  background: linear-gradient(135deg, #7a2b2b, #b64b4b 55%, #d45a5a);
 }
 
 .button.danger {
@@ -187,8 +187,8 @@ h3 {
 .bottom-nav a.active,
 .payment-card.active,
 .shot-card.active {
-  border-color: rgba(95, 139, 255, 0.5);
-  background: rgba(95, 139, 255, 0.2);
+  border-color: rgba(182, 75, 75, 0.5);
+  background: rgba(182, 75, 75, 0.18);
 }
 
 .wide {
