@@ -66,6 +66,8 @@ export async function uploadGame(req, res, next) {
     }
 
     const input = normalizeGameInput(req.body);
+    // New uploads must be reviewed by admins before becoming playable.
+    input.status = "pending";
 
     const movedFile = await moveUploadedFileToStorage({
       tempPath: req.file.path,

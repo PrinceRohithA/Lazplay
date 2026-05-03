@@ -66,7 +66,7 @@ export default function App() {
         <Route
           path="developer"
           element={(
-            <ProtectedRoute role="creator">
+            <ProtectedRoute>
               <DeveloperDashboardPage />
             </ProtectedRoute>
           )}
@@ -74,7 +74,7 @@ export default function App() {
         <Route
           path="creator"
           element={(
-            <ProtectedRoute role="creator">
+            <ProtectedRoute>
               <DeveloperDashboardPage />
             </ProtectedRoute>
           )}

@@ -37,6 +37,15 @@ function GameTile({ game, compact = false }) {
   const inWishlist = wishlistIds.includes(game.id);
 
   const primaryAction = async () => {
+    if (!isAuthenticated && game.price === 0) {
+      if (game.publicUrl) {
+        window.open(game.publicUrl, "_blank", "noopener,noreferrer");
+      } else {
+        navigate(`/game/${game.id}`);
+      }
+      return;
+    }
+
     if (!isAuthenticated) {
       navigate("/login");
       return;
@@ -230,7 +239,15 @@ export function HomePage() {
     <div className="page-grid home-page">
       {apiStatus === "offline" && apiMessage && <p className="banner error">{apiMessage}</p>}
 
-      <section className="hero-banner panel" style={{ background: featuredGame.art }}>
+      {!featuredGame && (
+        <section className="panel section-card">
+          <p className="eyebrow">Storefront</p>
+          <h1>No games published yet</h1>
+          <p className="muted-text">Creators can upload builds, then admins can review and approve them.</p>
+        </section>
+      )}
+
+      {featuredGame && <section className="hero-banner panel" style={{ background: featuredGame.art }}>
         <div className="hero-banner-copy">
           <p className="eyebrow">Featured game</p>
           <h1>{featuredGame.title}</h1>
@@ -251,7 +268,7 @@ export function HomePage() {
           </div>
           <p>{featuredGame.genre}</p>
         </div>
-      </section>
+      </section>}
 
       <div className="filter-strip panel">
         {[
@@ -313,6 +330,15 @@ export function StorePage() {
   }, [catalog, genre, platform, price, searchTerm, sort, tag]);
 
   const buyAction = async (game) => {
+    if (!isAuthenticated && game.price === 0) {
+      if (game.publicUrl) {
+        window.open(game.publicUrl, "_blank", "noopener,noreferrer");
+      } else {
+        navigate(`/game/${game.id}`);
+      }
+      return;
+    }
+
     if (!isAuthenticated) {
       navigate("/login");
       return;
@@ -431,6 +457,13 @@ export function GameDetailsPage() {
   }
 
   const primaryAction = async () => {
+    if (!isAuthenticated && game.price === 0) {
+      if (game.publicUrl) {
+        window.open(game.publicUrl, "_blank", "noopener,noreferrer");
+      }
+      return;
+    }
+
     if (!isAuthenticated) {
       navigate("/login");
       return;
@@ -780,7 +813,7 @@ export function DeveloperDashboardPage() {
     genre: "Indie",
     tags: "Indie",
     platforms: "Windows",
-    status: "published",
+    status: "pending",
     file: null
   });
   const [message, setMessage] = useState("");
@@ -809,7 +842,7 @@ export function DeveloperDashboardPage() {
     setWorking(true);
     try {
       await uploadGame(payload);
-      setMessage("Game build published.");
+      setMessage("Game uploaded for admin approval.");
       setForm((current) => ({ ...current, name: "", description: "", file: null }));
     } catch (error) {
       setMessage(error.message);
@@ -855,10 +888,8 @@ export function DeveloperDashboardPage() {
             </label>
             <label>
               <span>Visibility</span>
-              <select value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}>
-                <option value="published">Published</option>
-                <option value="draft">Draft</option>
-                <option value="unlisted">Unlisted</option>
+              <select value={form.status} disabled>
+                <option value="pending">Pending admin approval</option>
               </select>
             </label>
             <label>
@@ -933,8 +964,27 @@ export function AdminDashboardPage() {
     setGames((current) => current.map((item) => (item.id === game.id ? game : item)));
   };
 
+  const pendingGames = games.filter((game) => (game.status || "").toLowerCase() === "pending");
+
   return (
     <div className="page-grid admin-page">
+      <aside className="panel filter-sidebar compact">
+        <p className="eyebrow">Pending approvals</p>
+        <h2>{pendingGames.length} waiting</h2>
+        <div className="stack-list">
+          {pendingGames.length ? (
+            pendingGames.map((game) => (
+              <article key={game.id} className="summary-item">
+                <strong>{game.title || game.name}</strong>
+                <span>{game.developer || "Creator"}</span>
+              </article>
+            ))
+          ) : (
+            <p className="empty-state">No pending submissions.</p>
+          )}
+        </div>
+      </aside>
+
       <section className="panel section-card">
         <p className="eyebrow">Admin</p>
         <h1>Moderation queue</h1>
@@ -948,6 +998,7 @@ export function AdminDashboardPage() {
               </div>
               <div className="tile-actions">
                 <button type="button" className="button" onClick={() => setStatus(game.id, "published")}>Publish</button>
+                <button type="button" className="button" onClick={() => setStatus(game.id, "pending")}>Mark pending</button>
                 <button type="button" className="button" onClick={() => setStatus(game.id, "unlisted")}>Unlist</button>
                 <button type="button" className="button danger" onClick={() => setStatus(game.id, "archived")}>Archive</button>
               </div>

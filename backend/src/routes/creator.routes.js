@@ -5,12 +5,11 @@ import {
   updateCreatorGame,
   uploadGame
 } from "../controllers/games.controller.js";
-import { requireAuth, requireRole } from "../middleware/auth.middleware.js";
+import { requireAuth } from "../middleware/auth.middleware.js";
 import { uploadGameArchive } from "../middleware/upload.middleware.js";
-import { roles } from "../utils/roles.js";
 
 const router = Router();
-const creatorGate = [requireAuth, requireRole(roles.CREATOR)];
+const creatorGate = [requireAuth];
 
 router.get("/creator/games", creatorGate, listCreatorGames);
 router.post("/creator/games", creatorGate, uploadGameArchive, uploadGame);

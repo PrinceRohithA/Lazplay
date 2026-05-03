@@ -36,5 +36,17 @@ export async function listGamesForAdmin() {
 }
 
 export async function updateGameStatusForAdmin(gameId, status) {
-  return updateGameForOwner(gameId, { id: 0, role: "admin" }, { status });
+  const game = await updateGameForOwner(gameId, { id: 0, role: "admin" }, { status });
+
+  if (game && String(status).toLowerCase() === "published") {
+    await query(
+      `
+        INSERT INTO notifications (user_id, type, title, detail, unread)
+        VALUES ($1, 'Update', 'Game approved', $2, TRUE);
+      `,
+      [game.developerId, `${game.title || game.name} was approved and is now live on LazPlay.`]
+    );
+  }
+
+  return game;
 }

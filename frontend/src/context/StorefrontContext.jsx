@@ -85,7 +85,7 @@ function normalizeGame(remoteGame, fallback) {
       remoteGame.art ||
       remoteGame.coverArt ||
       fallback?.art ||
-      "linear-gradient(135deg, #2d8cff, #171a22 48%, #ff9d2e)",
+      "url('https://picsum.photos/seed/lazplay-fallback/800/450')",
     owned: Boolean(remoteGame.owned ?? fallback?.owned),
     wishlist: Boolean(remoteGame.wishlist ?? fallback?.wishlist),
     inCart: Boolean(remoteGame.inCart ?? fallback?.inCart),
@@ -117,9 +117,9 @@ function mergeCatalog(remoteGames) {
 export function StorefrontProvider({ children }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [quickFilter, setQuickFilter] = useState("all");
-  const [wishlistIds, setWishlistIds] = useState(() => readJson("lazplay_wishlist", [2, 3, 6]));
-  const [cartIds, setCartIds] = useState(() => readJson("lazplay_cart", [2, 6]));
-  const [installedIds, setInstalledIds] = useState(() => readJson("lazplay_installed", [1, 5, 8]));
+  const [wishlistIds, setWishlistIds] = useState(() => readJson("lazplay_wishlist", []));
+  const [cartIds, setCartIds] = useState(() => readJson("lazplay_cart", []));
+  const [installedIds, setInstalledIds] = useState(() => readJson("lazplay_installed", []));
   const [language, setLanguage] = useState(() => localStorage.getItem("lazplay_language") || "English");
   const [notifications, setNotifications] = useState(notificationsSeed);
   const [currentUser, setCurrentUser] = useState(() => getStoredUser() || buildDefaultUser());
@@ -131,7 +131,7 @@ export function StorefrontProvider({ children }) {
 
   const isAuthenticated = Boolean(getStoredToken());
   const userRole = normalizeRole(currentUser.role);
-  const canCreate = roleAtLeast(userRole, "creator");
+  const canCreate = isAuthenticated;
   const canAdmin = roleAtLeast(userRole, "admin");
 
   useEffect(() => {
@@ -230,7 +230,7 @@ export function StorefrontProvider({ children }) {
   }, [cartIds, installedIds, ownedIds, remoteGames, wishlistIds]);
 
   const featuredGame = useMemo(
-    () => catalog.find((game) => game.id === featuredGameId) || catalog[0],
+    () => catalog.find((game) => game.id === featuredGameId) || catalog[0] || null,
     [catalog]
   );
 
@@ -371,6 +371,7 @@ export function StorefrontProvider({ children }) {
   };
 
   const uploadGame = async (form) => {
+    form.set("status", "pending");
     const payload = await apiRequest("/creator/games", {
       method: "POST",
       body: form
