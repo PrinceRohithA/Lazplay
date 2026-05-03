@@ -41,12 +41,40 @@ export default function StorefrontLayout() {
   const [searchFocused, setSearchFocused] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [headerDocked, setHeaderDocked] = useState(false);
+  const [headerHidden, setHeaderHidden] = useState(false);
 
   useEffect(() => {
     setNotificationsOpen(false);
     setProfileOpen(false);
     setSearchFocused(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    let lastY = window.scrollY;
+
+    const onScroll = () => {
+      const currentY = window.scrollY;
+      const delta = currentY - lastY;
+
+      setHeaderDocked(currentY > 72);
+
+      if (currentY < 40) {
+        setHeaderHidden(false);
+      } else if (delta > 5) {
+        setHeaderHidden(true);
+      } else if (delta < -5) {
+        setHeaderHidden(false);
+      }
+
+      lastY = currentY;
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
 
   const navItems = useMemo(() => {
     const items = [
@@ -93,7 +121,7 @@ export default function StorefrontLayout() {
 
   return (
     <div className="app-shell">
-      <header className="site-header panel">
+      <header className={`site-header panel ${headerDocked ? "docked" : ""} ${headerHidden ? "hidden" : ""}`}>
         <Link className="brand" to="/" aria-label="Go to LazPlay home">
           <span className="brand-badge">L</span>
           <span>
