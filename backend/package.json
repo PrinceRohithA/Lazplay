@@ -1,0 +1,16 @@
+{
+  "name": "lazplay-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Self-hosted backend API for the LazPlay game hosting platform.",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "check": "node --check src/app.js && node --check src/server.js",
+    "smoke": "node scripts/smoke-test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

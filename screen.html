@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Player Home - SYSTEM_OS</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-secondary": "#5b005b",
+                        "on-secondary-fixed-variant": "#810081",
+                        "background": "#131313",
+                        "surface": "#131313",
+                        "on-tertiary-container": "#006d6d",
+                        "secondary-fixed-dim": "#ffabf3",
+                        "on-tertiary-fixed": "#002020",
+                        "error": "#ffb4ab",
+                        "surface-bright": "#3a3939",
+                        "primary-fixed": "#79ff5b",
+                        "surface-dim": "#131313",
+                        "on-tertiary-fixed-variant": "#004f4f",
+                        "inverse-surface": "#e5e2e1",
+                        "surface-container-high": "#2a2a2a",
+                        "surface-container-highest": "#353534",
+                        "on-background": "#e5e2e1",
+                        "on-secondary-fixed": "#380038",
+                        "outline": "#85967c",
+                        "error-container": "#93000a",
+                        "inverse-on-surface": "#313030",
+                        "on-surface": "#e5e2e1",
+                        "on-primary-container": "#107100",
+                        "surface-variant": "#353534",
+                        "outline-variant": "#3c4b35",
+                        "tertiary-fixed-dim": "#00dddd",
+                        "on-primary-fixed": "#022100",
+                        "secondary-fixed": "#ffd7f5",
+                        "on-primary-fixed-variant": "#095300",
+                        "primary-container": "#39ff14",
+                        "surface-container": "#201f1f",
+                        "secondary-container": "#fe00fe",
+                        "surface-container-low": "#1c1b1b",
+                        "on-tertiary": "#003737",
+                        "secondary": "#ffabf3",
+                        "on-primary": "#053900",
+                        "tertiary-container": "#00f6f6",
+                        "on-error": "#690005",
+                        "tertiary-fixed": "#00fbfb",
+                        "on-surface-variant": "#baccb0",
+                        "inverse-primary": "#106e00",
+                        "surface-tint": "#2ae500",
+                        "primary": "#efffe3",
+                        "primary-fixed-dim": "#2ae500",
+                        "tertiary": "#e6fffe",
+                        "on-secondary-container": "#500050",
+                        "on-error-container": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "unit": "4px",
+                        "margin": "24px",
+                        "container-max": "1440px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Space Grotesk"],
+                        "label-mono": ["Space Grotesk"],
+                        "headline-xl": ["Space Grotesk"],
+                        "headline-md": ["Space Grotesk"],
+                        "body-lg": ["Space Grotesk"],
+                        "headline-lg": ["Space Grotesk"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "label-mono": ["12px", {"lineHeight": "1.0", "letterSpacing": "0.1em", "fontWeight": "600"}],
+                        "headline-xl": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .scanlines {
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.2) 50%,
+                rgba(0,0,0,0.2)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+        .retro-border {
+            box-shadow: -2px -2px 0 0 #3c4b35, 2px 2px 0 0 #131313;
+        }
+        .retro-border-hover:hover {
+            box-shadow: -2px -2px 0 0 #39ff14, 2px 2px 0 0 #107100;
+        }
+        .neon-glow {
+            box-shadow: 0 0 10px #39ff14;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen relative overflow-x-hidden selection:bg-primary-container selection:text-on-primary-container">
+<!-- CRT Scanline Overlay -->
+<div class="fixed inset-0 scanlines z-50"></div>
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface text-primary-container dark:text-primary-container font-label-mono text-label-mono uppercase tracking-widest docked full-width top-0 border-b-2 border-outline-variant shadow-[0_0_15px_rgba(0,0,0,0.5)] flex justify-between items-center px-gutter py-2 w-full z-40 fixed">
+<div class="flex items-center gap-4">
+<span class="font-headline-md text-headline-md font-bold text-primary-container drop-shadow-[0_0_8px_rgba(57,255,20,0.6)]">CYBER_HOST</span>
+</div>
+<div class="flex-1 max-w-md mx-8 hidden md:block">
+<div class="relative w-full border-2 border-outline-variant bg-surface flex items-center">
+<span class="text-primary-container px-2">&gt;</span>
+<input class="w-full bg-transparent border-none text-primary-container focus:ring-0 placeholder-outline focus:outline-none py-1 font-label-mono text-label-mono" placeholder="SEARCH_DATABASE..." type="text"/>
+<span class="material-symbols-outlined text-primary-container pr-2" style="font-variation-settings: 'FILL' 0;">search</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="hover:text-primary-fixed hover:bg-surface-variant transition-colors p-1 flex items-center justify-center border-2 border-transparent hover:border-primary-container">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">notifications</span>
+</button>
+<button class="hover:text-primary-fixed hover:bg-surface-variant transition-colors p-1 flex items-center justify-center border-2 border-transparent hover:border-primary-container">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">account_circle</span>
+</button>
+</div>
+</header>
+<div class="flex h-screen pt-14">
+<!-- SideNavBar -->
+<nav class="hidden md:flex bg-surface-container dark:bg-surface-container text-primary dark:text-primary-fixed-dim font-label-mono text-label-mono docked left-0 h-full w-64 border-r-2 border-outline-variant flex-col pt-8 pb-4 flex-shrink-0 z-30">
+<div class="px-margin mb-8 border-b-2 border-outline-variant pb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 border-2 border-primary-container bg-surface flex items-center justify-center overflow-hidden">
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">terminal</span>
+</div>
+<div>
+<div class="font-headline-md text-headline-md font-bold text-primary-container">SYSTEM_OS</div>
+<div class="text-[10px] text-on-surface-variant">V_1.0.4_ARCADE</div>
+</div>
+</div>
+</div>
+<div class="flex-1 px-4 space-y-2">
+<a class="flex items-center gap-2 bg-primary-container text-on-primary-fixed-variant font-bold border-l-4 border-primary-fixed shadow-[4px_0_0_0_#39ff14] p-3" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+<span>START</span>
+</a>
+<a class="flex items-center gap-2 text-on-surface-variant opacity-80 hover:opacity-100 hover:bg-surface-bright hover:text-primary transition-all border-l-4 border-transparent p-3" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">sports_esports</span>
+<span>GAMES</span>
+</a>
+<a class="flex items-center gap-2 text-on-surface-variant opacity-80 hover:opacity-100 hover:bg-surface-bright hover:text-primary transition-all border-l-4 border-transparent p-3" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">inventory_2</span>
+<span>LIBRARY</span>
+</a>
+<a class="flex items-center gap-2 text-on-surface-variant opacity-80 hover:opacity-100 hover:bg-surface-bright hover:text-primary transition-all border-l-4 border-transparent p-3" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">terminal</span>
+<span>DEV_CONSOLE</span>
+</a>
+<a class="flex items-center gap-2 text-on-surface-variant opacity-80 hover:opacity-100 hover:bg-surface-bright hover:text-primary transition-all border-l-4 border-transparent p-3" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">shield_person</span>
+<span>ADMIN</span>
+</a>
+<a class="flex items-center gap-2 text-on-surface-variant opacity-80 hover:opacity-100 hover:bg-surface-bright hover:text-primary transition-all border-l-4 border-transparent p-3" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">settings</span>
+<span>OPTIONS</span>
+</a>
+</div>
+<div class="px-4 mt-auto">
+<a class="flex items-center gap-2 text-error opacity-80 hover:opacity-100 hover:bg-surface-bright hover:text-error transition-all border-l-4 border-transparent p-3" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">power_settings_new</span>
+<span>LOGOUT</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto p-gutter md:p-margin bg-background relative z-10 flex flex-col gap-margin">
+<!-- Hero Carousel Area -->
+<section class="w-full relative border-2 border-outline-variant bg-surface-container-low retro-border h-[400px] flex flex-col">
+<div class="bg-surface-container-highest border-b-2 border-outline-variant px-4 py-1 flex justify-between items-center">
+<span class="font-label-mono text-label-mono text-primary-container">&gt; FEATURED_PROTOCOL.EXE</span>
+<div class="flex gap-2">
+<span class="w-3 h-3 bg-error inline-block border border-on-surface"></span>
+<span class="w-3 h-3 bg-secondary-container inline-block border border-on-surface"></span>
+<span class="w-3 h-3 bg-primary-container inline-block border border-on-surface"></span>
+</div>
+</div>
+<div class="flex-1 relative w-full h-full">
+<img alt="Featured Game Hero" class="w-full h-full object-cover opacity-80 mix-blend-luminosity grayscale hover:grayscale-0 transition-all duration-500" data-alt="A stylized retro-futuristic digital landscape resembling an 8-bit or 16-bit arcade game title screen. The scene features a glowing neon grid fading into a dark horizon beneath a deep black sky dotted with pixelated stars. A vibrant, magenta wireframe mountain range dominates the background. The overall aesthetic is strictly Retro-Brutalism, utilizing harsh high-contrast lighting, pure neon green and magenta accents against deep black surfaces, simulating a high-performance arcade cabinet display." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDB5l8_2ZRmLC1n16I24FMMADDCZxwS6JscWsm2D8MvdCzka-NjfuHvd_KjhYScjv_b19ngm1WWqsgwoUxV4ygzPoKB-a8BB4QszlDn6v285IQFQqlgCmVmBrCvYMd4enHnsKJWmOBHBQTNNstZKFFrQLEjCFaeTf-5Hw_KaShDa_2doPNvpvBWjSo47gwaC_Yw5euMOvcnouvcTudO3NwNYXoFnIs8lRnQl2AVpI1AFXFovc9u5MvAocO1uqKXKlaGsiOXoQKVaOi"/>
+<div class="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-background to-transparent flex justify-between items-end">
+<div>
+<h1 class="font-headline-xl text-headline-xl text-primary-container font-bold drop-shadow-[0_0_8px_rgba(57,255,20,0.8)] mb-2 uppercase tracking-tight">Neon_Drifter_84</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl bg-surface-container-highest/80 p-2 border border-outline-variant">
+                                HIGH-SPEED SYNTHWAVE RACING PROTOCOL. ENGAGE HYPER-DRIVE.
+                            </p>
+</div>
+<button class="bg-primary-container text-on-primary-container font-label-mono text-label-mono px-6 py-3 border-2 border-primary-container hover:bg-surface hover:text-primary-container transition-colors shadow-[4px_4px_0_0_#107100] active:translate-y-1 active:translate-x-1 active:shadow-[0_0_0_0_#107100]">
+                            &gt; EXECUTE_PLAY
+                        </button>
+</div>
+</div>
+</section>
+<!-- Layout Grid: Recently Played + Sidebar -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-margin">
+<!-- Main Grid: Recently Played -->
+<div class="lg:col-span-9 space-y-4">
+<div class="flex justify-between items-end border-b-2 border-outline-variant pb-2">
+<h2 class="font-headline-md text-headline-md text-on-surface uppercase tracking-wide flex items-center gap-2">
+<span class="text-primary-container">&gt;</span> RECENT_MEMORY_BANKS
+                        </h2>
+<a class="font-label-mono text-label-mono text-on-surface-variant hover:text-primary-container underline decoration-dotted" href="#">VIEW_ALL</a>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+<!-- Game Card 1 -->
+<div class="bg-surface-container border-2 border-outline-variant retro-border retro-border-hover group transition-all flex flex-col h-full">
+<div class="h-32 border-b-2 border-outline-variant relative overflow-hidden bg-surface-container-lowest">
+<img alt="Game Thumbnail" class="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity grayscale group-hover:grayscale-0" data-alt="A macro shot of a vintage mechanical keyboard or computer terminal button illuminated by harsh, directional neon green light. The texture of the plastic is visible, emphasizing a tactile, hardware-first aesthetic. The surrounding area falls off into deep black shadow, creating a stark, high-contrast Retro-Brutalist look consistent with an 80s command center." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC54pm-DlFwdN1M9aKkTmci1Zz0d7megKplAw_Mc7TTOX7uLShonn-bBLCc7cXpCoaJEvbpeFbBK5hIhZIS2jwNMGNDpJjWbSqi2Fr3cNsnrU1Jy2gnBW2BwF7ogB2l8jrpkOJynVla_CZmJsnzn6FvKxT3vjKF21JJYB7_pm9W8NAIEct109nk6rV1xJ_FCd0xRJD1IbvQaP1GVxe8QCxci3u4RBQ6gSKWdCufRjGqG4WmLbZnPYsXoZg7mIms2ZbZOqH65wIHmGoM"/>
+<div class="absolute top-2 right-2 bg-primary-container text-on-primary-container font-label-mono text-[10px] px-2 py-0.5 border border-on-primary">
+                                    LVL_42
+                                </div>
+</div>
+<div class="p-4 flex flex-col flex-1">
+<h3 class="font-headline-md text-[20px] text-on-surface mb-1 group-hover:text-primary-container transition-colors uppercase">CYBER_CHESS</h3>
+<p class="font-label-mono text-label-mono text-on-surface-variant mb-4">LAST_SYNC: 2H_AGO</p>
+<div class="mt-auto flex justify-between items-center">
+<div class="flex gap-1 h-2 w-16 bg-surface-container-highest border border-outline">
+<div class="bg-primary-container w-3/4"></div>
+</div>
+<button class="text-primary-container hover:text-primary-fixed bg-surface border border-outline-variant hover:border-primary-container px-3 py-1 font-label-mono text-[10px]">
+                                        &gt; RESUME
+                                    </button>
+</div>
+</div>
+</div>
+<!-- Game Card 2 -->
+<div class="bg-surface-container border-2 border-outline-variant retro-border retro-border-hover group transition-all flex flex-col h-full">
+<div class="h-32 border-b-2 border-outline-variant relative overflow-hidden bg-surface-container-lowest">
+<img alt="Game Thumbnail" class="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity grayscale group-hover:grayscale-0" data-alt="A low-angle shot of a classic arcade joystick panel. The joystick has a vibrant magenta ball top, and the surrounding buttons are illuminated with a faint neon glow against a dark, scuffed metal surface. The lighting is dramatic, casting deep shadows and highlighting the tactile nature of the arcade hardware. The color palette relies heavily on stark blacks, deep greys, and intense magenta highlights." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAC02qB3kTw4yYzbToRwzHRyzZQninpcegkni7dL97HDY4tlY-WW1eDvNwumF2MfSm6Nfo9HnUAJYFjSgWjFvqpTvTxrYCU9VuUNG9WIywC31EGj10mqBc94N4kg0sHnym5d8WBy6Lz9YqsgArKRcZbx4afv5aJOjUcPDD52QuJumgwC83339nPromO0bg5tT3YFiUCfCZO1Ca_n2giS6udUrJ6lDpRzZWdd0C_ik9akJUig3fpvAOZkBsA8bSrOFai6zjz_fwaiEQ-"/>
+<div class="absolute top-2 right-2 bg-secondary-container text-on-secondary-container font-label-mono text-[10px] px-2 py-0.5 border border-on-secondary">
+                                    NEW_HS
+                                </div>
+</div>
+<div class="p-4 flex flex-col flex-1">
+<h3 class="font-headline-md text-[20px] text-on-surface mb-1 group-hover:text-secondary-container transition-colors uppercase">ASTRO_BLAST</h3>
+<p class="font-label-mono text-label-mono text-on-surface-variant mb-4">LAST_SYNC: 1D_AGO</p>
+<div class="mt-auto flex justify-between items-center">
+<div class="flex gap-1 h-2 w-16 bg-surface-container-highest border border-outline">
+<div class="bg-secondary-container w-full"></div>
+</div>
+<button class="text-secondary-container hover:text-secondary-fixed bg-surface border border-outline-variant hover:border-secondary-container px-3 py-1 font-label-mono text-[10px]">
+                                        &gt; RESUME
+                                    </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Sidebar Activity -->
+<aside class="lg:col-span-3 space-y-4">
+<div class="border-b-2 border-outline-variant pb-2">
+<h2 class="font-headline-md text-[20px] text-on-surface uppercase tracking-wide flex items-center gap-2">
+<span class="text-primary-container">&gt;</span> NETWORK_STATUS
+                        </h2>
+</div>
+<div class="bg-surface border-2 border-outline-variant p-4 space-y-4 retro-border">
+<!-- Terminal Header for Activity -->
+<div class="bg-surface-container-highest border-b-2 border-outline-variant px-2 py-1 mb-2">
+<span class="font-label-mono text-[10px] text-on-surface-variant">ACTIVE_CONNECTIONS.LOG</span>
+</div>
+<!-- User Item -->
+<div class="flex items-center gap-3 group cursor-pointer">
+<div class="w-8 h-8 bg-surface-container-highest border border-outline-variant flex items-center justify-center relative">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" style="font-variation-settings: 'FILL' 1;">person</span>
+<div class="absolute -bottom-1 -right-1 w-3 h-3 bg-primary-container border border-surface shadow-[0_0_4px_#39ff14]"></div>
+</div>
+<div>
+<div class="font-label-mono text-[12px] text-on-surface group-hover:text-primary-container transition-colors">USER_0x1A</div>
+<div class="font-label-mono text-[10px] text-primary-container opacity-80">&gt; IN_GAME: NEON_DRIFTER</div>
+</div>
+</div>
+</div>
+</aside>
+</div>
+</main>
+</div>
+<!-- Footer -->
+<footer class="bg-surface-container-lowest dark:bg-surface-container-lowest text-on-tertiary-container dark:text-tertiary-fixed font-label-mono text-[10px] uppercase full-width border-t-2 border-outline-variant w-full py-4 px-margin flex flex-col md:flex-row justify-between items-center gap-4 relative z-40">
+<div>
+<span class="font-headline-xl text-headline-xl block mb-2"></span>
+<p>© 198X NEON_LABS_INC // ALL RIGHTS RESERVED</p>
+</div>
+<div class="flex gap-4">
+<a class="text-on-surface-variant hover:text-secondary-container transition-colors hover:underline decoration-dotted" href="#">TERMINAL_DOCS</a>
+<a class="text-on-surface-variant hover:text-secondary-container transition-colors hover:underline decoration-dotted" href="#">DISCORD_RELAY</a>
+<a class="text-on-surface-variant hover:text-secondary-container transition-colors hover:underline decoration-dotted" href="#">GITHUB_REPOS</a>
+</div>
+</footer>
+</body></html>
