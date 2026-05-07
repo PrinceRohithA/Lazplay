@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LAZPLAY OS</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-secondary": "#5b005b",
+                        "on-secondary-fixed-variant": "#810081",
+                        "background": "#131313",
+                        "surface": "#131313",
+                        "on-tertiary-container": "#006d6d",
+                        "secondary-fixed-dim": "#ffabf3",
+                        "on-tertiary-fixed": "#002020",
+                        "error": "#ffb4ab",
+                        "surface-bright": "#3a3939",
+                        "primary-fixed": "#79ff5b",
+                        "surface-dim": "#131313",
+                        "on-tertiary-fixed-variant": "#004f4f",
+                        "inverse-surface": "#e5e2e1",
+                        "surface-container-high": "#2a2a2a",
+                        "surface-container-highest": "#353534",
+                        "on-background": "#e5e2e1",
+                        "on-secondary-fixed": "#380038",
+                        "outline": "#85967c",
+                        "error-container": "#93000a",
+                        "inverse-on-surface": "#313030",
+                        "on-surface": "#e5e2e1",
+                        "on-primary-container": "#107100",
+                        "surface-variant": "#353534",
+                        "outline-variant": "#3c4b35",
+                        "tertiary-fixed-dim": "#00dddd",
+                        "on-primary-fixed": "#022100",
+                        "secondary-fixed": "#ffd7f5",
+                        "on-primary-fixed-variant": "#095300",
+                        "primary-container": "#39ff14",
+                        "surface-container": "#201f1f",
+                        "secondary-container": "#fe00fe",
+                        "surface-container-low": "#1c1b1b",
+                        "on-tertiary": "#003737",
+                        "secondary": "#ffabf3",
+                        "on-primary": "#053900",
+                        "tertiary-container": "#00f6f6",
+                        "on-error": "#690005",
+                        "tertiary-fixed": "#00fbfb",
+                        "on-surface-variant": "#baccb0",
+                        "inverse-primary": "#106e00",
+                        "surface-tint": "#2ae500",
+                        "primary": "#efffe3",
+                        "primary-fixed-dim": "#2ae500",
+                        "tertiary": "#e6fffe",
+                        "on-secondary-container": "#500050",
+                        "on-error-container": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "unit": "4px",
+                        "margin": "24px",
+                        "container-max": "1440px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Space Grotesk"],
+                        "label-mono": ["Space Grotesk"],
+                        "headline-xl": ["Space Grotesk"],
+                        "headline-md": ["Space Grotesk"],
+                        "body-lg": ["Space Grotesk"],
+                        "headline-lg": ["Space Grotesk"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "label-mono": ["12px", {"lineHeight": "1.0", "letterSpacing": "0.1em", "fontWeight": "600"}],
+                        "headline-xl": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .scanlines {
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.2) 50%,
+                rgba(0,0,0,0.2)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+        .retro-border {
+            box-shadow: -2px -2px 0 0 #3c4b35, 2px 2px 0 0 #131313;
+        }
+        .retro-border-hover:hover {
+            box-shadow: -2px -2px 0 0 #39ff14, 2px 2px 0 0 #107100;
+        }
+        .neon-glow {
+            box-shadow: 0 0 10px #39ff14;
+        }
+    </style>
+  </head>
+  <body class="bg-background text-on-background font-body-md min-h-screen relative overflow-x-hidden selection:bg-primary-container selection:text-on-primary-container">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
