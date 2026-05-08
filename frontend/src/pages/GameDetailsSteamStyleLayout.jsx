@@ -1,11 +1,32 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { games as gamesApi } from '../api';
 
 export default function GameDetailsSteamStyleLayout() {
+  const [params] = useSearchParams();
+  const gameId = params.get('id');
+  const [game, setGame] = useState(null);
+  const [media, setMedia] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!gameId) { setLoading(false); return; }
+    Promise.all([
+      gamesApi.get(gameId).then(r => r.data).catch(() => null),
+      gamesApi.media(gameId).then(r => r.data).catch(() => []),
+    ]).then(([g, m]) => { setGame(g); setMedia(m); setLoading(false); });
+  }, [gameId]);
+
   return (
     <div className="flex flex-col min-w-0 p-gutter md:p-margin gap-6">
-      {/*  Hero Section (Steam Style)  */}
-      <section className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-gutter bg-surface-container-low pixel-border p-2">
+      {loading && <div className="text-center py-24 font-label-mono text-primary-container animate-pulse">LOADING_GAME_DATA...</div>}
+      {error && <div className="p-4 border border-error text-error font-label-mono">&gt; ERROR: {error}</div>}
+      {!loading && !game && <div className="text-center py-24 font-label-mono text-on-surface-variant">GAME_NOT_FOUND</div>}
+      {!loading && game && (
+        <>
+        {/*  Hero Section (Steam Style)  */}
+        <section className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-gutter bg-surface-container-low pixel-border p-2">
         {/*  Left: Main Media  */}
         <div className="relative aspect-video xl:h-[450px] overflow-hidden bg-black pixel-border">
           <img alt="Cyber Quest Gameplay" className="w-full h-full object-cover opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9KrQ5YpZIImJ1Kd2RBfr-IeRwo5ttSkse1x9Q71QkonTieCCBK-ZICf1E_3LD5-X4q63if0DYzWnYTFcwoRStnzJtmrdqfhsIouTLhtzkMmCzw0y_69VlGf5INbG4nK77O9oKMw9FDOaqKgWuh-yDPS9BKfJsFzcuP9Ueuv1CFIMfot1RHyyIqegrc4toawTb6VxlS0VnqAc-XiUBOixMQ6hvHARoZbpH1Dlt9IHWrRbvaJaqI_mte6dOhR4-5vmnF9sG75TI6lXu"/>
@@ -129,6 +150,8 @@ export default function GameDetailsSteamStyleLayout() {
           </div>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }

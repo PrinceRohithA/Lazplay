@@ -1,6 +1,18 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { admin as adminApi } from '../api';
 
 export default function AdminMainframe() {
+  const [dash, setDash] = useState(null);
+  const [servers, setServers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      adminApi.dashboard().then(r => r.data).catch(() => null),
+      adminApi.listServers().then(r => r.data).catch(() => []),
+    ]).then(([d, s]) => { setDash(d); setServers(s); setLoading(false); });
+  }, []);
+
   return (
     <div className="p-margin flex-1 flex flex-col gap-margin">
       {/*  Page Header  */}

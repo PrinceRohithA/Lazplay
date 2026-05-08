@@ -1,7 +1,21 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { developer as devApi } from '../api';
 
 export default function DeveloperWorkspace() {
+  const [games, setGames] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
+  const [revenue, setRevenue] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      devApi.listGames({ limit: 10 }).then(r => r.data).catch(() => []),
+      devApi.getAnalytics().then(r => r.data).catch(() => null),
+      devApi.getRevenue().then(r => r.data).catch(() => null),
+    ]).then(([g, a, rev]) => { setGames(g); setAnalytics(a); setRevenue(rev); setLoading(false); });
+  }, []);
+
   return (
     <div className="max-w-container-max mx-auto p-gutter md:p-margin flex flex-col gap-gutter min-h-full">
       {/*  Page Header  */}

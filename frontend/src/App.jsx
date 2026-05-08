@@ -8,7 +8,7 @@ import PlayerDiscoveryHub from './pages/PlayerDiscoveryHub';
 import UserRegistrationCyberEdition from './pages/UserRegistrationCyberEdition';
 import GameLibraryCyberEdition from './pages/GameLibraryCyberEdition';
 import GamesDiscoveryRetroEdition from './pages/GamesDiscoveryRetroEdition';
-import DeveloperWorkspaceNewDeployment from './pages/DeveloperWorkspaceNewDeployment';
+import DeveloperWorkspaceAdvancedDeploymentSuite from './pages/DeveloperWorkspaceAdvancedDeploymentSuite';
 import Layout from './components/Layout';
 
 function App() {
@@ -26,7 +26,7 @@ function App() {
               <Route path="/developer" element={<DeveloperWorkspace />} />
               <Route path="/library" element={<GameLibraryCyberEdition />} />
               <Route path="/games" element={<GamesDiscoveryRetroEdition />} />
-              <Route path="/deployment" element={<DeveloperWorkspaceNewDeployment />} />
+              <Route path="/deployment" element={<DeveloperWorkspaceAdvancedDeploymentSuite />} />
             </Routes>
           </Layout>
         } />

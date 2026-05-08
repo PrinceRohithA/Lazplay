@@ -740,9 +740,9 @@ function publicGame(db, game, user = null) {
     releaseDate: game.releaseDate,
     developer: developer
       ? {
-          id: developer.id,
-          displayName: developer.displayName
-        }
+        id: developer.id,
+        displayName: developer.displayName
+      }
       : null,
     publisher: game.publisher,
     genres: game.genres,
@@ -1012,6 +1012,22 @@ function registerRoutes(router, state) {
     }
     await persist();
     return ok(review, 201);
+  });
+
+  router.add('DELETE', '/games/:gameId/reviews/:reviewId', async (req) => {
+    const user = requireAuth(req, db(), ['PLAYER', 'DEVELOPER', 'ADMIN']);
+    const game = findGame(db(), req.params.gameId);
+    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
+    const reviewIndex = db().gameReviews.findIndex((r) => r.id === req.params.reviewId && r.gameId === game.id);
+    if (reviewIndex === -1) throw new HttpError(404, 'REVIEW_NOT_FOUND', 'Review was not found');
+    const review = db().gameReviews[reviewIndex];
+    const isDev = (() => { const dev = developerForUser(db(), user); return dev && dev.id === game.developerId; })();
+    if (review.userId !== user.id && !user.roles.includes('ADMIN') && !isDev) {
+      throw new HttpError(403, 'FORBIDDEN', 'You cannot delete this review');
+    }
+    db().gameReviews.splice(reviewIndex, 1);
+    await persist();
+    return ok({ reviewId: review.id, deleted: true });
   });
 
   router.add('GET', '/games/:gameId/launch-manifest', async (req) => {
@@ -1474,6 +1490,28 @@ function registerRoutes(router, state) {
     return ok({ processed: true });
   });
 
+  router.add('POST', '/developer/register', async (req) => {
+    const user = requireAuth(req, db());
+    requireFields(req.body, ['displayName']);
+    const existing = developerForUser(db(), user);
+    if (existing) throw new HttpError(409, 'DEVELOPER_EXISTS', 'Developer profile already exists for this account');
+    const profile = {
+      id: createId('dev'),
+      userId: user.id,
+      displayName: req.body.displayName,
+      website: req.body.website || '',
+      supportEmail: req.body.supportEmail || user.email,
+      verificationStatus: 'PENDING',
+      payoutStatus: 'INACTIVE',
+      createdAt: nowIso()
+    };
+    if (!user.roles.includes('DEVELOPER')) user.roles.push('DEVELOPER');
+    db().developerProfiles.push(profile);
+    addAuditLog(db(), user.id, 'DEVELOPER_REGISTERED', 'DEVELOPER', profile.id, { displayName: profile.displayName });
+    await persist();
+    return ok(profile, 201);
+  });
+
   router.add('GET', '/developer/profile', async (req) => {
     const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
     const profile = developerForUser(db(), user);
@@ -1519,6 +1557,15 @@ function registerRoutes(router, state) {
     );
   });
 
+  router.add('GET', '/developer/games/:gameId', async (req) => {
+    const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
+    const game = findGame(db(), req.params.gameId);
+    assertDeveloperOwnsGame(db(), user, game);
+    const latestBuild = db().gameBuilds.find((build) => build.id === game.latestBuildId);
+    const media = db().gameMedia.filter((m) => m.gameId === game.id).sort((a, b) => a.sortOrder - b.sortOrder);
+    return ok({ ...game, latestBuildVersion: latestBuild?.version || null, media });
+  });
+
   router.add('POST', '/developer/games', async (req) => {
     const user = requireAuth(req, db(), ['DEVELOPER']);
     const developer = developerForUser(db(), user);
@@ -1531,23 +1578,30 @@ function registerRoutes(router, state) {
       developerId: developer.id,
       slug,
       title: req.body.title,
+      version: req.body.version || 'v1.0.0',
       shortDescription: req.body.shortDescription,
       description: req.body.description,
       price: Number(req.body.price || 0),
       currency: req.body.currency || 'INR',
       priceType: req.body.priceType || (Number(req.body.price || 0) > 0 ? 'PAID' : 'FREE'),
+      licensingModel: req.body.licensingModel || (Number(req.body.price || 0) > 0 ? 'PREMIUM' : 'FREE_TO_PLAY'),
       releaseDate: req.body.releaseDate || null,
       publisher: req.body.publisher || developer.displayName,
       genres: req.body.genres || [],
       tags: req.body.tags || [],
-      platforms: req.body.platforms || ['WEB'],
+      platforms: req.body.platforms || ['PC'],
+      hardwareSpecs: req.body.hardwareSpecs || ['PC_SYSTEM'],
       status: 'DRAFT',
       featured: false,
       coverUrl: '',
       heroImageUrl: '',
+      heroBannerUrl: '',
       trailerUrl: '',
       latestBuildId: null,
-      systemRequirements: req.body.systemRequirements || {},
+      systemRequirements: req.body.systemRequirements || {
+        minimum: { cpu: '', memory: '', gpu: '', storage: '' },
+        recommended: { cpu: '', memory: '', gpu: '', storage: '' }
+      },
       createdAt: nowIso(),
       updatedAt: nowIso()
     };
@@ -1562,18 +1616,22 @@ function registerRoutes(router, state) {
     assertDeveloperOwnsGame(db(), user, game);
     const editable = [
       'title',
+      'version',
       'shortDescription',
       'description',
       'price',
       'currency',
       'priceType',
+      'licensingModel',
       'releaseDate',
       'publisher',
       'genres',
       'tags',
       'platforms',
+      'hardwareSpecs',
       'coverUrl',
       'heroImageUrl',
+      'heroBannerUrl',
       'trailerUrl',
       'systemRequirements'
     ];
@@ -1581,6 +1639,8 @@ function registerRoutes(router, state) {
       if (req.body[field] !== undefined) game[field] = req.body[field];
     }
     if (req.body.coverObjectKey) game.coverUrl = signedStorageUrl(req.body.coverObjectKey).url;
+    if (req.body.heroBannerObjectKey) game.heroBannerUrl = signedStorageUrl(req.body.heroBannerObjectKey).url;
+    if (req.body.trailerObjectKey) game.trailerUrl = signedStorageUrl(req.body.trailerObjectKey).url;
     game.updatedAt = nowIso();
     await persist();
     return ok(game);
@@ -1629,6 +1689,42 @@ function registerRoutes(router, state) {
     return ok({ gameId: game.id, status: game.status });
   });
 
+  router.add('POST', '/developer/games/:gameId/media', async (req) => {
+    const user = requireAuth(req, db(), ['DEVELOPER']);
+    const game = findGame(db(), req.params.gameId);
+    assertDeveloperOwnsGame(db(), user, game);
+    requireFields(req.body, ['type', 'objectKey']);
+    const validTypes = ['IMAGE', 'VIDEO'];
+    if (!validTypes.includes(req.body.type)) {
+      throw new HttpError(400, 'VALIDATION_ERROR', `type must be one of: ${validTypes.join(', ')}`);
+    }
+    const existingMedia = db().gameMedia.filter((m) => m.gameId === game.id);
+    const sortOrder = req.body.sortOrder ?? (existingMedia.length + 1);
+    const media = {
+      id: createId('media'),
+      gameId: game.id,
+      type: req.body.type,
+      url: signedStorageUrl(req.body.objectKey).url,
+      objectKey: req.body.objectKey,
+      alt: req.body.alt || `${game.title} ${req.body.type.toLowerCase()}`,
+      sortOrder
+    };
+    db().gameMedia.push(media);
+    await persist();
+    return ok(media, 201);
+  });
+
+  router.add('DELETE', '/developer/games/:gameId/media/:mediaId', async (req) => {
+    const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
+    const game = findGame(db(), req.params.gameId);
+    assertDeveloperOwnsGame(db(), user, game);
+    const mediaIndex = db().gameMedia.findIndex((m) => m.id === req.params.mediaId && m.gameId === game.id);
+    if (mediaIndex === -1) throw new HttpError(404, 'MEDIA_NOT_FOUND', 'Media item was not found');
+    const [removed] = db().gameMedia.splice(mediaIndex, 1);
+    await persist();
+    return ok({ mediaId: removed.id, deleted: true });
+  });
+
   router.add('GET', '/developer/games/:gameId/builds', async (req) => {
     const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
     const game = findGame(db(), req.params.gameId);
@@ -1658,6 +1754,24 @@ function registerRoutes(router, state) {
     db().gameBuilds.push(build);
     await persist();
     return ok(build, 201);
+  });
+
+  router.add('GET', '/developer/builds', async (req) => {
+    const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
+    const developer = developerForUser(db(), user);
+    const devGameIds = user.roles.includes('ADMIN') && !developer
+      ? db().games.map((g) => g.id)
+      : db().games.filter((g) => g.developerId === developer?.id).map((g) => g.id);
+    const platform = req.query.get('platform');
+    const status = req.query.get('status');
+    let builds = db().gameBuilds.filter((b) => devGameIds.includes(b.gameId));
+    if (platform) builds = builds.filter((b) => b.platform === platform);
+    if (status) builds = builds.filter((b) => b.status === status);
+    const { pageItems, pagination } = paginate(builds, req.query);
+    return ok(pageItems.map((build) => {
+      const game = db().games.find((g) => g.id === build.gameId);
+      return { ...build, gameTitle: game?.title, gameSlug: game?.slug };
+    }), 200, { pagination });
   });
 
   router.add('GET', '/developer/builds/:buildId', async (req) => {
@@ -1749,6 +1863,19 @@ function registerRoutes(router, state) {
     return ok(deployment, 201);
   });
 
+  router.add('DELETE', '/developer/builds/:buildId', async (req) => {
+    const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
+    const build = findBuild(db(), req.params.buildId);
+    if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
+    const game = findGame(db(), build.gameId);
+    assertDeveloperOwnsGame(db(), user, game);
+    if (build.status === 'DEPLOYED') throw new HttpError(409, 'BUILD_DEPLOYED', 'Cannot delete a deployed build');
+    state.db.gameBuilds = db().gameBuilds.filter((b) => b.id !== build.id);
+    if (game.latestBuildId === build.id) game.latestBuildId = null;
+    await persist();
+    return ok({ buildId: build.id, deleted: true });
+  });
+
   router.add('GET', '/developer/deployments/:deploymentId/logs', async (req) => {
     const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
     const deployment = findDeployment(db(), req.params.deploymentId);
@@ -1777,6 +1904,25 @@ function registerRoutes(router, state) {
         { name: 'activate-release', status: deployment.status === 'COMPLETED' ? 'COMPLETED' : 'PENDING' }
       ]
     });
+  });
+
+  router.add('GET', '/developer/deployments', async (req) => {
+    const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
+    const developer = developerForUser(db(), user);
+    const devGameIds = user.roles.includes('ADMIN') && !developer
+      ? db().games.map((g) => g.id)
+      : db().games.filter((g) => g.developerId === developer?.id).map((g) => g.id);
+    const status = req.query.get('status');
+    const gameId = req.query.get('gameId');
+    let deployments = db().deployments.filter((dep) => devGameIds.includes(dep.gameId));
+    if (status) deployments = deployments.filter((dep) => dep.status === status);
+    if (gameId) deployments = deployments.filter((dep) => dep.gameId === gameId);
+    const { pageItems, pagination } = paginate(deployments, req.query);
+    return ok(pageItems.map((dep) => {
+      const game = db().games.find((g) => g.id === dep.gameId);
+      const build = db().gameBuilds.find((b) => b.id === dep.buildId);
+      return { ...dep, gameTitle: game?.title, buildVersion: build?.version };
+    }), 200, { pagination });
   });
 
   router.add('GET', '/developer/analytics', async (req) => {
@@ -2031,6 +2177,28 @@ function registerRoutes(router, state) {
     return ok({ userId: user.id, roles: user.roles });
   });
 
+  router.add('GET', '/admin/users/:userId', async (req) => {
+    requireAuth(req, db(), ['ADMIN']);
+    const user = db().users.find((item) => item.id === req.params.userId);
+    if (!user) throw new HttpError(404, 'USER_NOT_FOUND', 'User was not found');
+    return ok(sanitizeUser(user));
+  });
+
+  router.add('PATCH', '/admin/users/:userId/status', async (req) => {
+    const admin = requireAuth(req, db(), ['ADMIN']);
+    requireFields(req.body, ['status']);
+    const user = db().users.find((item) => item.id === req.params.userId);
+    if (!user) throw new HttpError(404, 'USER_NOT_FOUND', 'User was not found');
+    const validStatuses = ['ACTIVE', 'INACTIVE', 'SUSPENDED'];
+    if (!validStatuses.includes(req.body.status)) {
+      throw new HttpError(400, 'VALIDATION_ERROR', `status must be one of: ${validStatuses.join(', ')}`);
+    }
+    user.status = req.body.status;
+    addAuditLog(db(), admin.id, 'USER_STATUS_UPDATED', 'USER', user.id, { status: user.status });
+    await persist();
+    return ok({ userId: user.id, status: user.status });
+  });
+
   router.add('POST', '/admin/users/:userId/ban', async (req) => {
     const admin = requireAuth(req, db(), ['ADMIN']);
     const user = db().users.find((item) => item.id === req.params.userId);
@@ -2087,6 +2255,28 @@ function registerRoutes(router, state) {
     return ok({ gameId: game.id, status: game.status });
   });
 
+  router.add('POST', '/admin/games/:gameId/feature', async (req) => {
+    const admin = requireAuth(req, db(), ['ADMIN']);
+    const game = findGame(db(), req.params.gameId);
+    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
+    game.featured = true;
+    game.updatedAt = nowIso();
+    addAuditLog(db(), admin.id, 'GAME_FEATURED', 'GAME', game.id);
+    await persist();
+    return ok({ gameId: game.id, featured: true });
+  });
+
+  router.add('DELETE', '/admin/games/:gameId/feature', async (req) => {
+    const admin = requireAuth(req, db(), ['ADMIN']);
+    const game = findGame(db(), req.params.gameId);
+    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
+    game.featured = false;
+    game.updatedAt = nowIso();
+    addAuditLog(db(), admin.id, 'GAME_UNFEATURED', 'GAME', game.id);
+    await persist();
+    return ok({ gameId: game.id, featured: false });
+  });
+
   router.add('GET', '/admin/deployments', async (req) => {
     requireAuth(req, db(), ['ADMIN']);
     const status = req.query.get('status');
@@ -2094,12 +2284,113 @@ function registerRoutes(router, state) {
     let deployments = db().deployments;
     if (status) deployments = deployments.filter((deployment) => deployment.status === status);
     if (gameId) deployments = deployments.filter((deployment) => deployment.gameId === gameId);
-    return ok(deployments);
+    const { pageItems, pagination } = paginate(deployments, req.query);
+    return ok(pageItems.map((dep) => {
+      const game = db().games.find((g) => g.id === dep.gameId);
+      const build = db().gameBuilds.find((b) => b.id === dep.buildId);
+      return { ...dep, gameTitle: game?.title, buildVersion: build?.version };
+    }), 200, { pagination });
+  });
+
+  router.add('GET', '/admin/deployments/:deploymentId', async (req) => {
+    requireAuth(req, db(), ['ADMIN']);
+    const deployment = findDeployment(db(), req.params.deploymentId);
+    if (!deployment) throw new HttpError(404, 'DEPLOYMENT_NOT_FOUND', 'Deployment was not found');
+    const game = db().games.find((g) => g.id === deployment.gameId);
+    const build = db().gameBuilds.find((b) => b.id === deployment.buildId);
+    const logs = db().deploymentLogs.filter((log) => log.deploymentId === deployment.id);
+    return ok({
+      ...deployment,
+      gameTitle: game?.title,
+      buildVersion: build?.version,
+      steps: [
+        { name: 'extract',        status: deployment.progress >= 25 ? 'COMPLETED' : 'PENDING' },
+        { name: 'scan',           status: deployment.progress >= 50 ? 'COMPLETED' : 'PENDING' },
+        { name: 'publish-assets', status: deployment.progress >= 75 ? 'COMPLETED' : 'PENDING' },
+        { name: 'activate',       status: deployment.status === 'COMPLETED' ? 'COMPLETED' : 'PENDING' }
+      ],
+      logCount: logs.length
+    });
   });
 
   router.add('GET', '/admin/servers', async (req) => {
     requireAuth(req, db(), ['ADMIN']);
     return ok(db().serverNodes);
+  });
+
+  router.add('POST', '/admin/servers', async (req) => {
+    const admin = requireAuth(req, db(), ['ADMIN']);
+    requireFields(req.body, ['id', 'region']);
+    if (db().serverNodes.find((n) => n.id === req.body.id)) {
+      throw new HttpError(409, 'NODE_EXISTS', 'A server node with that ID already exists');
+    }
+    const node = {
+      id: req.body.id,
+      region: req.body.region,
+      status: req.body.status || 'HEALTHY',
+      cpuPercent: 0,
+      memoryPercent: 0,
+      packetLossPercent: 0,
+      activeInstances: 0
+    };
+    db().serverNodes.push(node);
+    addAuditLog(db(), admin.id, 'SERVER_NODE_ADDED', 'SERVER', node.id, { region: node.region });
+    await persist();
+    return ok(node, 201);
+  });
+
+  router.add('PATCH', '/admin/servers/:nodeId', async (req) => {
+    const admin = requireAuth(req, db(), ['ADMIN']);
+    const node = db().serverNodes.find((n) => n.id === req.params.nodeId);
+    if (!node) throw new HttpError(404, 'NODE_NOT_FOUND', 'Server node was not found');
+    const editable = ['status', 'cpuPercent', 'memoryPercent', 'packetLossPercent', 'activeInstances', 'region'];
+    for (const field of editable) {
+      if (req.body[field] !== undefined) node[field] = req.body[field];
+    }
+    addAuditLog(db(), admin.id, 'SERVER_NODE_UPDATED', 'SERVER', node.id, { status: node.status });
+    await persist();
+    return ok(node);
+  });
+
+  router.add('DELETE', '/admin/servers/:nodeId', async (req) => {
+    const admin = requireAuth(req, db(), ['ADMIN']);
+    const nodeIndex = db().serverNodes.findIndex((n) => n.id === req.params.nodeId);
+    if (nodeIndex === -1) throw new HttpError(404, 'NODE_NOT_FOUND', 'Server node was not found');
+    const [removed] = db().serverNodes.splice(nodeIndex, 1);
+    addAuditLog(db(), admin.id, 'SERVER_NODE_REMOVED', 'SERVER', removed.id);
+    await persist();
+    return ok({ nodeId: removed.id, deleted: true });
+  });
+
+  router.add('GET', '/admin/instances', async (req) => {
+    requireAuth(req, db(), ['ADMIN']);
+    const status = req.query.get('status');
+    const gameId = req.query.get('gameId');
+    let instances = db().gameInstances;
+    if (status) instances = instances.filter((i) => i.status === status);
+    if (gameId) instances = instances.filter((i) => i.gameId === gameId);
+    const { pageItems, pagination } = paginate(instances, req.query);
+    return ok(pageItems.map((instance) => {
+      const game = db().games.find((g) => g.id === instance.gameId);
+      const owner = db().users.find((u) => u.id === instance.ownerId);
+      return {
+        ...instance,
+        gameTitle: game?.title,
+        ownerDisplayName: owner?.displayName,
+        playersOnline: db().instancePlayers.filter((p) => p.instanceId === instance.id).length
+      };
+    }), 200, { pagination });
+  });
+
+  router.add('DELETE', '/admin/instances/:instanceId', async (req) => {
+    const admin = requireAuth(req, db(), ['ADMIN']);
+    const instance = db().gameInstances.find((i) => i.id === req.params.instanceId);
+    if (!instance) throw new HttpError(404, 'INSTANCE_NOT_FOUND', 'Instance was not found');
+    state.db.gameInstances = db().gameInstances.filter((i) => i.id !== instance.id);
+    state.db.instancePlayers = db().instancePlayers.filter((i) => i.instanceId !== instance.id);
+    addAuditLog(db(), admin.id, 'INSTANCE_FORCE_DELETED', 'INSTANCE', instance.id, { gameId: instance.gameId });
+    await persist();
+    return ok({ instanceId: instance.id, deleted: true });
   });
 
   router.add('GET', '/admin/payments', async (req) => {
@@ -2111,9 +2402,53 @@ function registerRoutes(router, state) {
     return ok(pageItems, 200, { pagination });
   });
 
+  router.add('GET', '/admin/payments/:paymentId', async (req) => {
+    requireAuth(req, db(), ['ADMIN']);
+    const payment = db().payments.find((p) => p.id === req.params.paymentId);
+    if (!payment) throw new HttpError(404, 'PAYMENT_NOT_FOUND', 'Payment was not found');
+    const order = db().orders.find((o) => o.id === payment.orderId);
+    const user = order ? db().users.find((u) => u.id === order.userId) : null;
+    return ok({ ...payment, order: order || null, user: user ? sanitizeUser(user) : null });
+  });
+
   router.add('GET', '/admin/refunds', async (req) => {
     requireAuth(req, db(), ['ADMIN']);
     return ok(db().refunds);
+  });
+
+  router.add('GET', '/admin/refunds/:refundId', async (req) => {
+    requireAuth(req, db(), ['ADMIN']);
+    const refund = db().refunds.find((r) => r.id === req.params.refundId);
+    if (!refund) throw new HttpError(404, 'REFUND_NOT_FOUND', 'Refund was not found');
+    const order = db().orders.find((o) => o.id === refund.orderId);
+    return ok({ ...refund, order: order || null });
+  });
+
+  router.add('PATCH', '/admin/refunds/:refundId', async (req) => {
+    const admin = requireAuth(req, db(), ['ADMIN']);
+    requireFields(req.body, ['status']);
+    const refund = db().refunds.find((r) => r.id === req.params.refundId);
+    if (!refund) throw new HttpError(404, 'REFUND_NOT_FOUND', 'Refund was not found');
+    const validStatuses = ['APPROVED', 'REJECTED', 'PROCESSED'];
+    if (!validStatuses.includes(req.body.status)) {
+      throw new HttpError(400, 'VALIDATION_ERROR', `status must be one of: ${validStatuses.join(', ')}`);
+    }
+    refund.status = req.body.status;
+    refund.resolvedAt = nowIso();
+    refund.resolvedBy = admin.id;
+    refund.resolvedNote = req.body.note || '';
+    if (req.body.status === 'APPROVED') {
+      const order = db().orders.find((o) => o.id === refund.orderId);
+      if (order) {
+        const entitlement = db().entitlements.find((e) => e.userId === order.userId && e.gameId === order.gameId);
+        if (entitlement) entitlement.status = 'REVOKED';
+        state.db.libraryItems = db().libraryItems.filter((li) => !(li.userId === order.userId && li.gameId === order.gameId));
+        addNotification(db(), order.userId, 'REFUND_APPROVED', 'Refund approved', 'Your refund has been approved and access revoked.');
+      }
+    }
+    addAuditLog(db(), admin.id, 'REFUND_STATUS_UPDATED', 'REFUND', refund.id, { status: refund.status });
+    await persist();
+    return ok(refund);
   });
 
   router.add('GET', '/admin/audit-logs', async (req) => {

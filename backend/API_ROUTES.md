@@ -509,9 +509,11 @@ Response:
     "slug": "cyber-quest",
     "title": "Cyber Quest",
     "description": "A high-octane run-and-gun adventure through neon sectors.",
+    "shortDescription": "Run-and-gun arcade adventure.",
     "price": 49900,
     "currency": "INR",
     "priceType": "PAID",
+    "licensingModel": "PREMIUM",
     "releaseDate": "2026-05-01",
     "developer": {
       "id": "dev_01JZ900",
@@ -519,23 +521,32 @@ Response:
     },
     "publisher": "Neon Labs",
     "genres": ["Platformer", "Action"],
-    "tags": ["Cyberpunk", "Multiplayer"],
-    "platforms": ["PC", "CLOUD"],
+    "tags": ["Cyberpunk", "Multiplayer", "Permadeath"],
+    "platforms": ["PC", "CONSOLE", "VR", "CLOUD"],
+    "hardwareSpecs": ["PC_SYSTEM", "CLOUD_RELAY"],
     "coverUrl": "https://cdn.lazplay.example.com/games/cyber-cover.jpg",
+    "heroBannerUrl": "https://cdn.lazplay.example.com/games/cyber-hero.jpg",
     "trailerUrl": "https://cdn.lazplay.example.com/games/cyber-trailer.mp4",
     "screenshots": [
-      "https://cdn.lazplay.example.com/games/cyber-1.jpg"
+      "https://cdn.lazplay.example.com/games/cyber-1.jpg",
+      "https://cdn.lazplay.example.com/games/cyber-2.jpg"
     ],
+    "binaries": {
+      "windows": "https://cdn.lazplay.example.com/builds/game_01JZ100/v1.0.4/win64.zip",
+      "webgl": "https://cdn.lazplay.example.com/builds/game_01JZ100/v1.0.4/webgl.zip"
+    },
     "systemRequirements": {
       "minimum": {
-        "cpu": "Dual core",
-        "memory": "4 GB",
-        "storage": "2 GB"
+        "cpu": "Intel Core i5-6600K",
+        "memory": "8 GB RAM",
+        "gpu": "NVIDIA GTX 1060 6GB / AMD RX 580",
+        "storage": "50 GB (SSD Preferred)"
       },
       "recommended": {
-        "cpu": "Quad core",
-        "memory": "8 GB",
-        "storage": "4 GB"
+        "cpu": "Intel Core i7-9700K / AMD Ryzen 7 3700X",
+        "memory": "16 GB RAM",
+        "gpu": "NVIDIA RTX 2070 Super / AMD RX 5700 XT",
+        "storage": "50 GB (NVMe SSD Required)"
       }
     },
     "isOwned": true,
@@ -1412,14 +1423,30 @@ Request body:
 {
   "title": "Cyber Quest",
   "slug": "cyber-quest",
+  "version": "v1.0.4",
   "shortDescription": "Run-and-gun arcade adventure.",
   "description": "A high-octane cyberpunk platformer.",
   "price": 49900,
   "currency": "INR",
   "priceType": "PAID",
+  "licensingModel": "PREMIUM",
   "genres": ["Action", "Platformer"],
-  "tags": ["Cyberpunk", "Multiplayer"],
-  "platforms": ["PC", "CLOUD"]
+  "tags": ["Cyberpunk", "Multiplayer", "Permadeath"],
+  "hardwareSpecs": ["PC_SYSTEM", "CLOUD_RELAY"],
+  "systemRequirements": {
+    "minimum": {
+      "cpu": "Intel Core i5-6600K",
+      "memory": "8 GB RAM",
+      "gpu": "NVIDIA GTX 1060 6GB",
+      "storage": "50 GB SSD"
+    },
+    "recommended": {
+      "cpu": "Intel Core i7-9700K",
+      "memory": "16 GB RAM",
+      "gpu": "NVIDIA RTX 2070 Super",
+      "storage": "50 GB NVMe SSD"
+    }
+  }
 }
 ```
 
@@ -1449,7 +1476,9 @@ Request body:
 {
   "shortDescription": "Updated short description.",
   "price": 39900,
-  "coverObjectKey": "games/game_01JZ100/media/cover.png"
+  "coverObjectKey": "games/game_01JZ100/media/cover.png",
+  "heroBannerObjectKey": "games/game_01JZ100/media/hero.png",
+  "trailerObjectKey": "games/game_01JZ100/media/trailer.mp4"
 }
 ```
 
@@ -2812,3 +2841,94 @@ Recommended frontend route map:
 /admin/audit-logs                  Admin audit logs
 /admin/reports                     Admin reports
 ```
+
+---
+
+## 18. Extra Routes (Beyond Original Spec)
+
+The following routes are implemented in `app.js` but were not in the original spec.
+
+### POST /developer/register
+Registers authenticated user as a developer. Creates DeveloperProfile, adds DEVELOPER role.
+Auth: Any authenticated user.
+
+### GET /developer/games/:gameId
+Full developer-scoped game detail with media[], latestBuildVersion, builds[].
+Auth: Developer owner or Admin.
+
+### POST /developer/games/:gameId/media
+Adds IMAGE or VIDEO media item via objectKey. Resolves to signed storage URL.
+Auth: Developer owner.
+
+### DELETE /developer/games/:gameId/media/:mediaId
+Removes a media item from a game.
+Auth: Developer owner.
+
+### GET /developer/builds
+Lists all builds across all developer-owned games. Filters: `?platform`, `?status`.
+Auth: Developer.
+
+### DELETE /developer/builds/:buildId
+Deletes a non-deployed build. Clears game.latestBuildId if it matched.
+Auth: Developer owner.
+
+### GET /developer/deployments
+Lists deployments scoped to the developer's games. Enriched with gameTitle, buildVersion. Filters: `?status`, `?gameId`.
+Auth: Developer.
+
+### DELETE /games/:gameId/reviews/:reviewId
+Deletes a review. Own review (Player), any review on own game (Developer), any review (Admin).
+Auth: Player/Developer/Admin.
+
+### GET /admin/users/:userId
+Returns full detail for a single user (sanitized).
+Auth: Admin.
+
+### PATCH /admin/users/:userId/status
+Sets user account status. Valid: ACTIVE, INACTIVE, SUSPENDED.
+Auth: Admin.
+
+### GET /admin/deployments/:deploymentId
+Full deployment detail with enriched steps[] pipeline and logCount.
+Auth: Admin.
+
+### POST /admin/servers
+Registers a new runtime server node. Body: `{ id, region, status }`.
+Auth: Admin.
+
+### PATCH /admin/servers/:nodeId
+Updates server node fields (status, cpuPercent, memoryPercent, etc.).
+Auth: Admin.
+
+### DELETE /admin/servers/:nodeId
+Removes a server node with audit log entry.
+Auth: Admin.
+
+### POST /admin/games/:gameId/feature
+Marks a game as featured. Response: `{ gameId, featured: true }`.
+Auth: Admin.
+
+### DELETE /admin/games/:gameId/feature
+Removes featured status. Response: `{ gameId, featured: false }`.
+Auth: Admin.
+
+### GET /admin/instances
+Paginated platform-wide instance list. Filters: `?status`, `?gameId`.
+Auth: Admin.
+
+### DELETE /admin/instances/:instanceId
+Force-deletes an instance and all players. Writes audit log.
+Auth: Admin.
+
+### GET /admin/payments/:paymentId
+Single payment detail with linked order and user (sanitized).
+Auth: Admin.
+
+### GET /admin/refunds/:refundId
+Single refund detail with linked order.
+Auth: Admin.
+
+### PATCH /admin/refunds/:refundId
+Approve/reject/process a refund. On APPROVED, revokes entitlement and notifies user.
+Body: `{ status: 'APPROVED'|'REJECTED'|'PROCESSED', note? }`.
+Auth: Admin.

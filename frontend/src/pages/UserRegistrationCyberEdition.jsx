@@ -1,13 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { auth as authApi } from '../api';
 
 export default function UserRegistrationCyberEdition() {
   const navigate = useNavigate();
+  const [form, setForm] = useState({ username: '', email: '', password: '' });
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    navigate('/');
+    setError(null); setLoading(true);
+    try {
+      await authApi.register({ username: form.username, email: form.email, password: form.password });
+      navigate('/login');
+    } catch (err) {
+      setError(err.message || 'Registration failed');
+    } finally { setLoading(false); }
   };
+
+  const set = (field) => (e) => setForm(prev => ({ ...prev, [field]: e.target.value }));
 
   return (
     <>
