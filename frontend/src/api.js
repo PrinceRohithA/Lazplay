@@ -2,7 +2,7 @@
 // Single module for all backend communication.
 // Usage: import api from './api';
 
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+const BASE = import.meta.env.VITE_API_URL || 'https://play.lazplay.tech/api/v1';
 
 function getToken() {
   return localStorage.getItem('accessToken');
