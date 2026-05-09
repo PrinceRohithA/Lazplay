@@ -1,5 +1,7 @@
 import crypto from 'node:crypto';
+import path from 'node:path';
 import Razorpay from 'razorpay';
+import AdmZip from 'adm-zip';
 import { prisma } from './prisma.js';
 
 
@@ -386,6 +388,116 @@ function signedStorageUrl(objectKey, method = 'GET', ttlSeconds = 900) {
   };
 }
 
+const normalizeArchivePath = (entryName) => {
+  const normalized = String(entryName || '').replace(/\\/g, '/').replace(/^\/+/, '');
+  if (!normalized || normalized.includes('..')) return null;
+  return normalized;
+};
+
+const contentTypeForPath = (entryName) => {
+  const ext = path.posix.extname(entryName).toLowerCase();
+  switch (ext) {
+    case '.html': return 'text/html; charset=utf-8';
+    case '.css': return 'text/css; charset=utf-8';
+    case '.js': return 'application/javascript; charset=utf-8';
+    case '.json': return 'application/json; charset=utf-8';
+    case '.png': return 'image/png';
+    case '.jpg':
+    case '.jpeg': return 'image/jpeg';
+    case '.gif': return 'image/gif';
+    case '.svg': return 'image/svg+xml';
+    case '.webp': return 'image/webp';
+    case '.wasm': return 'application/wasm';
+    case '.mp3': return 'audio/mpeg';
+    case '.mp4': return 'video/mp4';
+    case '.woff': return 'font/woff';
+    case '.woff2': return 'font/woff2';
+    default: return 'application/octet-stream';
+  }
+};
+
+const extractObjectKeyFromUrl = (url) => {
+  try {
+    const parsed = new URL(url);
+    const prefix = `/${config.minioBucket}/`;
+    const pathname = decodeURIComponent(parsed.pathname);
+    if (!pathname.startsWith(prefix)) return null;
+    return pathname.slice(prefix.length);
+  } catch {
+    return null;
+  }
+};
+
+const isWebRuntime = (runtime) => {
+  const value = String(runtime || '').toUpperCase();
+  return ['BROWSER', 'WEB', 'WEBGL', 'HTML5'].includes(value);
+};
+
+async function uploadRuntimeObject(objectKey, data, contentType) {
+  const signed = signedStorageUrl(objectKey, 'PUT', 3600);
+  const response = await fetch(signed.url, {
+    method: 'PUT',
+    headers: { 'Content-Type': contentType || 'application/octet-stream' },
+    body: data
+  });
+  if (!response.ok) {
+    throw new HttpError(502, 'STORAGE_UPLOAD_FAILED', `Failed to upload runtime object (${response.status})`);
+  }
+}
+
+async function scanAndPrepareBuild(build, game) {
+  const objectKey = build.artifactObjectKey || extractObjectKeyFromUrl(build.downloadUrl);
+  if (!objectKey) throw new HttpError(409, 'BUILD_ARTIFACT_MISSING', 'Build artifact is missing');
+
+  const download = signedStorageUrl(objectKey, 'GET', 3600);
+  const response = await fetch(download.url);
+  if (!response.ok) {
+    throw new HttpError(502, 'BUILD_DOWNLOAD_FAILED', `Failed to download build artifact (${response.status})`);
+  }
+
+  const archiveBuffer = Buffer.from(await response.arrayBuffer());
+
+  if (isWebRuntime(build.runtime || build.platform)) {
+    let zip;
+    try {
+      zip = new AdmZip(archiveBuffer);
+    } catch {
+      throw new HttpError(400, 'BUILD_ARCHIVE_INVALID', 'Build archive is invalid or not a zip file');
+    }
+
+    const entries = zip.getEntries().filter((entry) => !entry.isDirectory);
+    const normalizedEntries = [];
+    let entrypoint = null;
+
+    for (const entry of entries) {
+      const normalized = normalizeArchivePath(entry.entryName);
+      if (!normalized) continue;
+      normalizedEntries.push({ entry, normalized });
+      if (normalized.toLowerCase() === 'index.html') entrypoint = normalized;
+      if (!entrypoint && normalized.toLowerCase().endsWith('/index.html')) entrypoint = normalized;
+    }
+
+    if (!entrypoint) {
+      throw new HttpError(400, 'BUILD_ENTRYPOINT_MISSING', 'index.html was not found in the build archive');
+    }
+
+    for (const { entry, normalized } of normalizedEntries) {
+      const runtimeKey = `runtime/${game.id}/${build.id}/${normalized}`;
+      await uploadRuntimeObject(runtimeKey, entry.getData(), contentTypeForPath(normalized));
+    }
+
+    return prisma.gameBuild.update({
+      where: { id: build.id },
+      data: { status: 'SCANNED', scanStatus: 'PASSED', entrypoint }
+    });
+  }
+
+  return prisma.gameBuild.update({
+    where: { id: build.id },
+    data: { status: 'SCANNED', scanStatus: 'PASSED' }
+  });
+}
+
 function razorpaySignature(orderId, paymentId) {
   return crypto.createHmac('sha256', config.razorpayKeySecret).update(`${orderId}|${paymentId}`).digest('hex');
 }
@@ -694,8 +806,10 @@ function registerRoutes(router) {
     if (!(await userOwnsGame(user.id, game.id))) throw new HttpError(403, 'GAME_NOT_OWNED', 'You do not own this game');
 
     const build = game.latestBuildId ? await prisma.gameBuild.findUnique({ where: { id: game.latestBuildId } }) : null;
-    const runtimeKey = `runtime/${game.id}/${build?.id || 'latest'}/index.html`;
-    const manifestKey = `runtime/${game.id}/${build?.id || 'latest'}/manifest.json`;
+    const entrypoint = build?.entrypoint || 'index.html';
+    const entryDir = entrypoint.includes('/') ? entrypoint.slice(0, entrypoint.lastIndexOf('/') + 1) : '';
+    const runtimeKey = `runtime/${game.id}/${build?.id || 'latest'}/${entrypoint}`;
+    const manifestKey = `runtime/${game.id}/${build?.id || 'latest'}/${entryDir}manifest.json`;
     return ok({
       gameId: game.id,
       buildId: build?.id || null,
@@ -1299,6 +1413,17 @@ router.add('DELETE', '/developer/games/:gameId', async (req) => {
     if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
     await assertDeveloperOwnsGame(user, game);
 
+    const build = game.latestBuildId
+      ? await prisma.gameBuild.findUnique({ where: { id: game.latestBuildId } })
+      : await prisma.gameBuild.findFirst({ where: { gameId: game.id }, orderBy: { createdAt: 'desc' } });
+
+    if (!build) throw new HttpError(409, 'BUILD_REQUIRED', 'Upload a build before submitting for review');
+    if (build.status === 'WAITING_FOR_UPLOAD') {
+      throw new HttpError(409, 'BUILD_NOT_UPLOADED', 'Build upload must be completed before submission');
+    }
+
+    await scanAndPrepareBuild(build, game);
+
     const updated = await prisma.game.update({
       where: { id: game.id },
       data: { status: 'PENDING_REVIEW', submittedAt: new Date() }
@@ -1475,8 +1600,10 @@ router.add('GET', '/developer/builds', async (req) => {
       where: { id: build.id },
       data: {
         status: 'PROCESSING',
+        artifactObjectKey: req.body.objectKey,
         downloadUrl: `${config.minioPublicUrl}/${config.minioBucket}/${req.body.objectKey}`,
-        sizeBytes: req.body.sizeBytes ? BigInt(req.body.sizeBytes) : undefined
+        sizeBytes: req.body.sizeBytes ? BigInt(req.body.sizeBytes) : undefined,
+        uploadedAt: new Date()
       }
     });
 
@@ -1489,12 +1616,7 @@ router.add('GET', '/developer/builds', async (req) => {
     if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
     await assertDeveloperOwnsGame(user, build.game);
 
-    // Mock scan process
-    const updated = await prisma.gameBuild.update({
-      where: { id: build.id },
-      data: { status: 'SCANNED', scanStatus: 'PASSED', scanLogs: 'Malware scan passed. No threats detected.' }
-    });
-
+    const updated = await scanAndPrepareBuild(build, build.game);
     return ok(updated);
   });
 
@@ -2056,6 +2178,20 @@ const instanceAction = (status) => async (req) => {
     return ok(games, 200, {
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
     });
+  });
+
+  router.add('GET', '/admin/games/:gameId', async (req) => {
+    await requireAuth(req, null, ['ADMIN']);
+    const game = await findGame(req.params.gameId);
+    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
+
+    const [developer, media, builds] = await Promise.all([
+      prisma.developerProfile.findUnique({ where: { id: game.developerId } }),
+      prisma.gameMedia.findMany({ where: { gameId: game.id }, orderBy: { sortOrder: 'asc' } }),
+      prisma.gameBuild.findMany({ where: { gameId: game.id }, orderBy: { createdAt: 'desc' } })
+    ]);
+
+    return ok({ ...game, developer, media, builds });
   });
 
   router.add('PATCH', '/admin/games/:gameId/status', async (req) => {
