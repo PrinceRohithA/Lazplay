@@ -1,1 +1,103 @@
-/* Cleared to use Tailwind styles */
+@import "tailwindcss";
+
+@theme {
+  --color-surface-container-lowest: #0e0e0e;
+  --color-on-secondary: #5b005b;
+  --color-on-secondary-fixed-variant: #810081;
+  --color-background: #131313;
+  --color-surface: #131313;
+  --color-on-tertiary-container: #006d6d;
+  --color-secondary-fixed-dim: #ffabf3;
+  --color-on-tertiary-fixed: #002020;
+  --color-error: #ffb4ab;
+  --color-surface-bright: #3a3939;
+  --color-primary-fixed: var(--primary-fixed);
+  --color-surface-dim: #131313;
+  --color-on-tertiary-fixed-variant: #004f4f;
+  --color-inverse-surface: #e5e2e1;
+  --color-surface-container-high: #2a2a2a;
+  --color-surface-container-highest: #353534;
+  --color-on-background: #e5e2e1;
+  --color-on-secondary-fixed: #380038;
+  --color-outline: var(--primary-container);
+  --color-error-container: #93000a;
+  --color-inverse-on-surface: #313030;
+  --color-on-surface: #e5e2e1;
+  --color-on-primary-container: var(--on-primary-container);
+  --color-surface-variant: #353534;
+  --color-outline-variant: var(--on-primary-container);
+  --color-tertiary-fixed-dim: #00dddd;
+  --color-on-primary-fixed: var(--on-primary);
+  --color-secondary-fixed: #ffd7f5;
+  --color-on-primary-fixed-variant: var(--on-primary-container);
+  --color-primary-container: var(--primary-container);
+  --color-surface-container: #201f1f;
+  --color-secondary-container: #fe00fe;
+  --color-surface-container-low: #1c1b1b;
+  --color-on-tertiary: #003737;
+  --color-secondary: #ffabf3;
+  --color-on-primary: var(--on-primary);
+  --color-tertiary-container: #00f6f6;
+  --color-on-error: #690005;
+  --color-tertiary-fixed: #00fbfb;
+  --color-on-surface-variant: #baccb0;
+  --color-inverse-primary: var(--on-primary-container);
+  --color-surface-tint: var(--surface-tint);
+  --color-primary: var(--primary);
+  --color-primary-fixed-dim: var(--primary-fixed-dim);
+  --color-tertiary: #e6fffe;
+  --color-on-secondary-container: #500050;
+  --color-on-error-container: #ffdad6;
+
+  --radius-default: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+
+  --spacing-gutter: 16px;
+  --spacing-unit: 4px;
+  --spacing-margin: 24px;
+  --spacing-container-max: 1440px;
+
+  --font-body-md: "Space Grotesk";
+  --font-label-mono: "Space Grotesk";
+  --font-headline-xl: "Space Grotesk";
+  --font-headline-md: "Space Grotesk";
+  --font-body-lg: "Space Grotesk";
+  --font-headline-lg: "Space Grotesk";
+}
+
+@utility scanlines {
+  background: linear-gradient(
+    to bottom,
+    rgba(255,255,255,0),
+    rgba(255,255,255,0) 50%,
+    rgba(0,0,0,0.2) 50%,
+    rgba(0,0,0,0.2)
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+}
+
+@utility retro-border {
+  box-shadow: -2px -2px 0 0 var(--color-on-primary-container), 2px 2px 0 0 #131313;
+}
+
+@utility retro-border-hover {
+  &:hover {
+    box-shadow: -2px -2px 0 0 var(--color-primary-container), 2px 2px 0 0 var(--color-on-primary-container);
+  }
+}
+
+@utility neon-glow {
+  box-shadow: 0 0 10px var(--color-primary-container);
+}
+
+/* Autofill Override */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px #131313 inset !important;
+    -webkit-text-fill-color: #e5e2e1 !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
