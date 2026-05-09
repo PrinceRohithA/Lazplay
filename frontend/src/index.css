@@ -101,3 +101,12 @@ input:-webkit-autofill:active {
     -webkit-text-fill-color: #e5e2e1 !important;
     transition: background-color 5000s ease-in-out 0s;
 }
+/*  Rich Text Content Styling  */
+.quill-content ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+.quill-content ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1rem; }
+.quill-content h1 { font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem; color: var(--primary-container); }
+.quill-content h2 { font-size: 1.25rem; font-weight: bold; margin-bottom: 0.75rem; color: var(--primary-container); }
+.quill-content p { margin-bottom: 0.5rem; }
+.quill-content a { color: var(--primary-container); text-decoration: underline; }
+.quill-content strong { font-weight: bold; color: var(--primary-container); }
+.quill-content em { font-style: italic; }

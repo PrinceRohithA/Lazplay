@@ -54,9 +54,10 @@ export default function GameDetailsSteamStyleLayout() {
         <div className="flex flex-col gap-4 p-4 font-label-mono text-label-mono">
           <h1 className="font-headline-lg text-headline-lg text-primary-container uppercase tracking-tighter drop-shadow-[0_0_8px_rgba(57,255,20,0.6)]">{game.title}</h1>
           <div className="flex-1 overflow-y-auto space-y-4">
-            <p className="text-on-surface text-[14px] leading-relaxed">
-              {game.description}
-            </p>
+            <div 
+              className="text-on-surface text-[14px] leading-relaxed quill-content"
+              dangerouslySetInnerHTML={{ __html: game.description }}
+            />
             <div className="grid grid-cols-[100px_1fr] gap-y-2 text-[11px] uppercase">
               <span className="text-on-surface-variant">RECENT_REVIEWS:</span>
               <span className="text-primary-container">OVERWHELMINGLY_POSITIVE</span>
@@ -73,6 +74,9 @@ export default function GameDetailsSteamStyleLayout() {
               {game.genres?.map(g => (
                 <span key={g} className="bg-surface-variant px-1 text-[10px] text-tertiary-container pixel-border uppercase">{g}</span>
               ))}
+            </div>
+            <div className="mb-4 text-headline-sm font-bold text-primary-container">
+              {game.priceType === 'FREE' ? 'FREE_TO_PLAY' : `₹${game.price}`}
             </div>
             {game.isOwned ? (
               <Link to={`/launch/${game.id}`} className="w-full bg-primary-container text-on-primary-container py-3 pixel-border neon-glow hover:bg-primary-fixed transition-all uppercase flex justify-center items-center gap-2 font-bold">
@@ -107,9 +111,8 @@ export default function GameDetailsSteamStyleLayout() {
             <div className="bg-surface-variant text-on-surface border-b-2 border-outline-variant -mx-gutter -mt-gutter mb-gutter px-gutter py-2 font-label-mono text-label-mono">
               &gt;_ README.TXT
             </div>
-            <div className="font-body-md text-on-surface space-y-4">
-              <p><span className="text-primary-container font-bold cursor-blink">&gt; </span>Welcome to the grid, runner. Cyber Quest is the premier 16-bit action platformer hosted exclusively on LAZPLAY servers.</p>
-              <p>Equip a variety of energy weapons, upgrade your cybernetic enhancements, and face off against brutal syndicate bosses.</p>
+            <div className="font-body-md text-on-surface quill-content">
+              <div dangerouslySetInnerHTML={{ __html: game.description }} />
             </div>
           </section>
           <section className="bg-surface-container pixel-border p-gutter font-label-mono">
