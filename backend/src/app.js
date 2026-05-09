@@ -446,7 +446,7 @@ async function uploadRuntimeObject(objectKey, data, contentType) {
 }
 
 async function scanAndPrepareBuild(build, game) {
-  const objectKey = build.artifactObjectKey || extractObjectKeyFromUrl(build.downloadUrl);
+  const objectKey = build.artifactObjectKey;
   if (!objectKey) throw new HttpError(409, 'BUILD_ARTIFACT_MISSING', 'Build artifact is missing');
 
   const download = signedStorageUrl(objectKey, 'GET', 3600);
@@ -1392,7 +1392,7 @@ router.add('DELETE', '/developer/games/:gameId', async (req) => {
 
   // Cleanup build artifacts from storage
   for (const b of game.builds) {
-    await deleteStorageObject(b.artifactObjectKey || extractObjectKeyFromUrl(b.downloadUrl));
+    await deleteStorageObject(b.artifactObjectKey);
   }
 
   const deployments = await prisma.deployment.findMany({
@@ -1615,7 +1615,6 @@ router.add('GET', '/developer/builds', async (req) => {
       data: {
         status: 'PROCESSING',
         artifactObjectKey: req.body.objectKey,
-        downloadUrl: `${config.minioPublicUrl}/${config.minioBucket}/${req.body.objectKey}`,
         sizeBytes: req.body.sizeBytes ? BigInt(req.body.sizeBytes) : undefined,
         uploadedAt: new Date()
       }
