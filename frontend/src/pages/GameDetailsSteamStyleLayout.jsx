@@ -20,16 +20,16 @@ export default function GameDetailsSteamStyleLayout() {
     ]).then(([g, m]) => { setGame(g); setMedia(m); setLoading(false); });
   }, [gameId]);
 
-  const handlePaymentSuccess = (data) => {
+  const handlePaymentSuccess = useCallback((data) => {
     setSuccessMsg("PURCHASE_SUCCESSFUL! Game added to your library.");
     // Refresh game data to show "PLAY NOW"
     gamesApi.get(gameId).then(r => setGame(r.data));
-  };
+  }, [gameId]);
 
-  const handlePaymentError = (msg) => {
+  const handlePaymentError = useCallback((msg) => {
     setError(msg);
     setTimeout(() => setError(null), 5000);
-  };
+  }, []);
 
   return (
     <div className="flex flex-col min-w-0 p-gutter md:p-margin gap-6">

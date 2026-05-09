@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import { payments } from '../api';
 
 /**
@@ -9,10 +9,10 @@ import { payments } from '../api';
  * 2. Opens the Razorpay Standard Checkout modal
  * 3. Verifies the payment signature on the backend
  */
-export default function RazorpayCheckout({ game, onSuccess, onError }) {
+const RazorpayCheckout = memo(({ game, onSuccess, onError }) => {
   const [loading, setLoading] = useState(false);
 
-  const handlePayment = async () => {
+  const handlePayment = useCallback(async () => {
     if (loading) return;
     setLoading(true);
 
@@ -26,6 +26,7 @@ export default function RazorpayCheckout({ game, onSuccess, onError }) {
       // If game is free, backend handles it immediately
       if (orderData.free) {
         onSuccess && onSuccess(orderData);
+        setLoading(false);
         return;
       }
 
@@ -34,6 +35,7 @@ export default function RazorpayCheckout({ game, onSuccess, onError }) {
         key: orderData.razorpayKeyId, // Your Test/Live Key ID
         amount: orderData.amount,    // Amount in paise
         currency: orderData.currency || "INR",
+        language: "en",
         name: "LazPlay",
         description: `Purchase ${game.title}`,
         image: "/favicon.svg",
@@ -78,6 +80,10 @@ export default function RazorpayCheckout({ game, onSuccess, onError }) {
         }
       };
 
+      if (!window.Razorpay) {
+        throw new Error("Razorpay SDK not loaded. Please check your internet connection.");
+      }
+
       const rzp = new window.Razorpay(options);
       
       rzp.on('payment.failed', function (response) {
@@ -89,11 +95,11 @@ export default function RazorpayCheckout({ game, onSuccess, onError }) {
       rzp.open();
     } catch (err) {
       console.error("Order creation failed", err);
-      const msg = err.response?.data?.message || "Failed to initiate payment. Are you logged in?";
+      const msg = err.message || err.response?.data?.message || "Failed to initiate payment. Are you logged in?";
       onError && onError(msg);
       setLoading(false);
     }
-  };
+  }, [game, loading, onSuccess, onError]);
 
   return (
     <button
@@ -113,4 +119,6 @@ export default function RazorpayCheckout({ game, onSuccess, onError }) {
       }
     </button>
   );
-}
+});
+
+export default RazorpayCheckout;
