@@ -8,9 +8,21 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "check": "node --check src/app.js && node --check src/server.js",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev --name",
+    "db:seed": "node prisma/seed.js",
+    "db:studio": "prisma studio",
+    "db:push": "prisma db push",
     "smoke": "node scripts/smoke-test.js"
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.7.0"
+  },
+  "devDependencies": {
+    "prisma": "^6.7.0"
   }
 }

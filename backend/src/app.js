@@ -1,12 +1,5 @@
 import crypto from 'node:crypto';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const BACKEND_ROOT = path.resolve(__dirname, '..');
-const DB_FILE = path.join(BACKEND_ROOT, 'data', 'db.json');
+import { prisma } from './prisma.js';
 
 const config = {
   // Nginx strips /api/ before proxying, so the backend sees /v1/... paths.
@@ -467,23 +460,8 @@ function createSeedData() {
   };
 }
 
-async function loadDb() {
-  await fs.mkdir(path.dirname(DB_FILE), { recursive: true });
-  try {
-    const raw = await fs.readFile(DB_FILE, 'utf8');
-    return JSON.parse(raw);
-  } catch (error) {
-    if (error.code !== 'ENOENT') throw error;
-    const seed = createSeedData();
-    await saveDb(seed);
-    return seed;
-  }
-}
-
-async function saveDb(db) {
-  await fs.mkdir(path.dirname(DB_FILE), { recursive: true });
-  await fs.writeFile(DB_FILE, `${JSON.stringify(db, null, 2)}\n`, 'utf8');
-}
+// Data persistence is now handled by Prisma + PostgreSQL.
+// See prisma/schema.prisma and prisma/seed.js.
 
 async function readJsonBody(req) {
   if (req.method === 'GET' || req.method === 'HEAD') return {};
@@ -560,26 +538,24 @@ function getBearerToken(req) {
   return header.slice('Bearer '.length).trim();
 }
 
-function getOptionalUser(req, db) {
+async function getOptionalUser(req) {
   const token = getBearerToken(req);
   if (!token) return null;
   try {
     const payload = verifyToken(token);
     if (payload.type !== 'access') return null;
-    const user = db.users.find((item) => item.id === payload.sub);
+    const user = await prisma.user.findUnique({ where: { id: payload.sub } });
     if (!user || user.status !== 'ACTIVE') return null;
     return user;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
-function requireAuth(req, db, roles = []) {
+async function requireAuth(req, _db, roles = []) {
   const token = getBearerToken(req);
   if (!token) throw new HttpError(401, 'AUTH_REQUIRED', 'Authentication is required');
   const payload = verifyToken(token);
   if (payload.type !== 'access') throw new HttpError(401, 'INVALID_TOKEN', 'Access token is required');
-  const user = db.users.find((item) => item.id === payload.sub);
+  const user = await prisma.user.findUnique({ where: { id: payload.sub } });
   if (!user || user.status !== 'ACTIVE') throw new HttpError(401, 'USER_INACTIVE', 'User is inactive or missing');
   if (roles.length > 0 && !roles.some((role) => user.roles.includes(role))) {
     throw new HttpError(403, 'FORBIDDEN', 'You do not have permission to access this resource');
@@ -587,182 +563,106 @@ function requireAuth(req, db, roles = []) {
   return user;
 }
 
-function createTokens(db, user) {
+async function createTokens(user) {
   const sessionId = createId('sess');
   const refreshTokenId = createId('rt');
-  const accessToken = signToken(
-    {
-      type: 'access',
-      sub: user.id,
-      roles: user.roles,
-      sid: sessionId
+  const accessToken = signToken({ type: 'access', sub: user.id, roles: user.roles, sid: sessionId }, config.accessTokenTtlSeconds);
+  const refreshToken = signToken({ type: 'refresh', sub: user.id, jti: refreshTokenId, sid: sessionId }, config.refreshTokenTtlSeconds);
+  await prisma.refreshSession.create({
+    data: {
+      id: sessionId, userId: user.id, refreshTokenId,
+      expiresAt: new Date(Date.now() + config.refreshTokenTtlSeconds * 1000),
     },
-    config.accessTokenTtlSeconds
-  );
-  const refreshToken = signToken(
-    {
-      type: 'refresh',
-      sub: user.id,
-      jti: refreshTokenId,
-      sid: sessionId
-    },
-    config.refreshTokenTtlSeconds
-  );
-  db.refreshSessions.push({
-    id: sessionId,
-    userId: user.id,
-    refreshTokenId,
-    expiresAt: addSeconds(config.refreshTokenTtlSeconds),
-    revokedAt: null,
-    createdAt: nowIso()
   });
   return { accessToken, refreshToken };
 }
 
-function developerForUser(db, user) {
-  return db.developerProfiles.find((profile) => profile.userId === user.id);
+async function developerForUser(user) {
+  return prisma.developerProfile.findUnique({ where: { userId: user.id } });
 }
 
-function findGame(db, gameIdOrSlug) {
-  return db.games.find((game) => game.id === gameIdOrSlug || game.slug === gameIdOrSlug);
+async function findGame(gameIdOrSlug) {
+  return prisma.game.findFirst({ where: { OR: [{ id: gameIdOrSlug }, { slug: gameIdOrSlug }] } });
 }
 
-function findBuild(db, buildId) {
-  return db.gameBuilds.find((build) => build.id === buildId);
+async function findBuild(buildId) {
+  return prisma.gameBuild.findUnique({ where: { id: buildId } });
 }
 
-function findDeployment(db, deploymentId) {
-  return db.deployments.find((deployment) => deployment.id === deploymentId);
+async function findDeployment(deploymentId) {
+  return prisma.deployment.findUnique({ where: { id: deploymentId } });
 }
 
-function gameDeveloper(db, game) {
-  return db.developerProfiles.find((profile) => profile.id === game?.developerId);
+async function gameDeveloper(game) {
+  if (!game?.developerId) return null;
+  return prisma.developerProfile.findUnique({ where: { id: game.developerId } });
 }
 
-function assertDeveloperOwnsGame(db, user, game) {
+async function assertDeveloperOwnsGame(user, game) {
   if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
   if (user.roles.includes('ADMIN')) return;
-  const developer = developerForUser(db, user);
+  const developer = await developerForUser(user);
   if (!developer || developer.id !== game.developerId) {
     throw new HttpError(403, 'FORBIDDEN', 'Only the owning developer can access this game');
   }
 }
 
-function userOwnsGame(db, userId, gameId) {
-  const game = db.games.find((item) => item.id === gameId);
+async function userOwnsGame(userId, gameId) {
+  const game = await prisma.game.findUnique({ where: { id: gameId } });
   if (game?.priceType === 'FREE') return true;
-  return db.entitlements.some(
-    (entitlement) => entitlement.userId === userId && entitlement.gameId === gameId && entitlement.status === 'ACTIVE'
-  );
+  const ent = await prisma.entitlement.findFirst({ where: { userId, gameId, status: 'ACTIVE' } });
+  return !!ent;
 }
 
-function ensureLibraryItem(db, userId, gameId, ownershipType = 'PURCHASED') {
-  let libraryItem = db.libraryItems.find((item) => item.userId === userId && item.gameId === gameId);
-  const game = db.games.find((item) => item.id === gameId);
-  const latestBuild = db.gameBuilds.find((build) => build.id === game?.latestBuildId);
-  if (!libraryItem) {
-    libraryItem = {
-      id: createId('lib'),
-      userId,
-      gameId,
-      ownershipType,
-      installedStatus: 'READY',
-      favorite: false,
-      lastPlayedAt: null,
-      playtimeSeconds: 0,
-      installedBuildVersion: latestBuild?.version || null,
-      ownedAt: nowIso()
-    };
-    db.libraryItems.push(libraryItem);
-  }
-  return libraryItem;
+async function ensureLibraryItem(userId, gameId, ownershipType = 'PURCHASED') {
+  const existing = await prisma.libraryItem.findUnique({ where: { userId_gameId: { userId, gameId } } });
+  if (existing) return existing;
+  const game = await prisma.game.findUnique({ where: { id: gameId }, include: { builds: { where: { id: undefined } } } });
+  const latestBuild = game?.latestBuildId ? await prisma.gameBuild.findUnique({ where: { id: game.latestBuildId } }) : null;
+  return prisma.libraryItem.create({
+    data: { id: createId('lib'), userId, gameId, ownershipType, installedStatus: 'READY', favorite: false, playtimeSeconds: 0, installedBuildVersion: latestBuild?.version || null },
+  });
 }
 
-function grantEntitlement(db, userId, gameId, source) {
-  let entitlement = db.entitlements.find((item) => item.userId === userId && item.gameId === gameId);
-  if (!entitlement) {
-    entitlement = {
-      id: createId('ent'),
-      userId,
-      gameId,
-      source,
-      status: 'ACTIVE',
-      grantedAt: nowIso()
-    };
-    db.entitlements.push(entitlement);
-  } else {
-    entitlement.status = 'ACTIVE';
-  }
-  ensureLibraryItem(db, userId, gameId, source === 'FREE' ? 'FREE' : 'PURCHASED');
+async function grantEntitlement(userId, gameId, source) {
+  const existing = await prisma.entitlement.findUnique({ where: { userId_gameId: { userId, gameId } } });
+  const entitlement = existing
+    ? await prisma.entitlement.update({ where: { userId_gameId: { userId, gameId } }, data: { status: 'ACTIVE' } })
+    : await prisma.entitlement.create({ data: { id: createId('ent'), userId, gameId, source, status: 'ACTIVE' } });
+  await ensureLibraryItem(userId, gameId, source === 'FREE' ? 'FREE' : 'PURCHASED');
   return entitlement;
 }
 
-function addNotification(db, userId, type, title, body) {
-  const notification = {
-    id: createId('notif'),
-    userId,
-    type,
-    title,
-    body,
-    read: false,
-    createdAt: nowIso()
-  };
-  db.notifications.push(notification);
-  return notification;
+async function addNotification(userId, type, title, body) {
+  return prisma.notification.create({
+    data: { id: createId('notif'), userId, type, title, body, read: false },
+  });
 }
 
-function addAuditLog(db, actorId, action, targetType, targetId, metadata = {}) {
-  const audit = {
-    id: createId('audit'),
-    actorId,
-    action,
-    targetType,
-    targetId,
-    metadata,
-    createdAt: nowIso()
-  };
-  db.auditLogs.push(audit);
-  return audit;
+async function addAuditLog(actorId, action, targetType, targetId, metadata = {}) {
+  return prisma.auditLog.create({
+    data: { id: createId('audit'), actorId, action, targetType, targetId, metadata },
+  });
 }
 
-function publicGame(db, game, user = null) {
-  const developer = gameDeveloper(db, game);
-  const reviews = db.gameReviews.filter((review) => review.gameId === game.id);
-  const rating =
-    reviews.length === 0 ? 0 : Math.round((reviews.reduce((total, review) => total + review.rating, 0) / reviews.length) * 10) / 10;
+async function publicGame(game, user = null) {
+  const developer = await gameDeveloper(game);
+  const reviews = await prisma.gameReview.findMany({ where: { gameId: game.id } });
+  const rating = reviews.length === 0 ? 0 : Math.round((reviews.reduce((t, r) => t + r.rating, 0) / reviews.length) * 10) / 10;
+  const screenshots = await prisma.gameMedia.findMany({ where: { gameId: game.id, type: 'IMAGE' } });
+  const isOwned = user ? await userOwnsGame(user.id, game.id) : false;
+  const isWishlisted = user ? !!(await prisma.wishlistItem.findFirst({ where: { userId: user.id, gameId: game.id } })) : false;
   return {
-    id: game.id,
-    slug: game.slug,
-    title: game.title,
-    shortDescription: game.shortDescription,
-    description: game.description,
-    price: game.price,
-    currency: game.currency,
-    priceType: game.priceType,
+    id: game.id, slug: game.slug, title: game.title, shortDescription: game.shortDescription,
+    description: game.description, price: game.price, currency: game.currency, priceType: game.priceType,
     releaseDate: game.releaseDate,
-    developer: developer
-      ? {
-        id: developer.id,
-        displayName: developer.displayName
-      }
-      : null,
-    publisher: game.publisher,
-    genres: game.genres,
-    tags: game.tags,
-    platforms: game.platforms,
-    coverUrl: game.coverUrl,
-    heroImageUrl: game.heroImageUrl,
-    trailerUrl: game.trailerUrl,
-    screenshots: db.gameMedia.filter((media) => media.gameId === game.id && media.type === 'IMAGE').map((media) => media.url),
+    developer: developer ? { id: developer.id, displayName: developer.displayName } : null,
+    publisher: game.publisher, genres: game.genres, tags: game.tags, platforms: game.platforms,
+    coverUrl: game.coverUrl, heroImageUrl: game.heroImageUrl, trailerUrl: game.trailerUrl,
+    screenshots: screenshots.map((m) => m.url),
     systemRequirements: game.systemRequirements,
-    isOwned: user ? userOwnsGame(db, user.id, game.id) : false,
-    isWishlisted: user ? db.wishlistItems.some((item) => item.userId === user.id && item.gameId === game.id) : false,
-    rating,
-    reviewCount: reviews.length,
-    status: game.status,
-    publishedAt: game.publishedAt,
-    createdAt: game.createdAt,
-    updatedAt: game.updatedAt
+    isOwned, isWishlisted, rating, reviewCount: reviews.length,
+    status: game.status, publishedAt: game.publishedAt, createdAt: game.createdAt, updatedAt: game.updatedAt,
   };
 }
 
@@ -792,9 +692,11 @@ function assertRazorpayWebhook(req) {
   }
 }
 
-function registerRoutes(router, state) {
-  const db = () => state.db;
-  const persist = () => state.save();
+function registerRoutes(router) {
+  // Compatibility shims — db() and persist() are no-ops; all data access
+  // is done via the async Prisma helper functions above.
+  const db = () => ({});
+  const persist = async () => {};
 
   router.add('GET', '/health', async () =>
     ok({
@@ -2520,14 +2422,10 @@ function registerRoutes(router, state) {
 }
 
 export async function createApp() {
-  const state = {
-    db: await loadDb(),
-    async save() {
-      await saveDb(this.db);
-    }
-  };
+  // Connect to PostgreSQL via Prisma
+  await prisma.$connect();
   const router = createRouter();
-  registerRoutes(router, state);
+  registerRoutes(router);
 
   return async function app(req, res) {
     const requestId = createId('req');

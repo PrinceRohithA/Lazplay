@@ -32,6 +32,15 @@ async function request(method, path, body, options = {}) {
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
+    // Global 401 handler — clear tokens and bounce to login
+    if (res.status === 401) {
+      clearTokens();
+      // Avoid redirect loop if already on /login or /signup
+      const here = window.location.pathname;
+      if (here !== '/login' && here !== '/signup') {
+        window.location.href = '/login';
+      }
+    }
     const err = new Error(data?.error?.message || `HTTP ${res.status}`);
     err.code = data?.error?.code || 'UNKNOWN';
     err.status = res.status;

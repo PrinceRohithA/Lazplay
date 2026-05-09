@@ -1,0 +1,334 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  displayName  String
+  bio          String?
+  avatarUrl    String?
+  roles        String[]
+  status       String   @default("ACTIVE")
+  banReason    String?
+  banExpiresAt DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  refreshSessions  RefreshSession[]
+  developerProfile DeveloperProfile?
+  libraryItems     LibraryItem[]
+  wishlistItems    WishlistItem[]
+  entitlements     Entitlement[]
+  orders           Order[]
+  reviews          GameReview[]
+  hostedInstances  GameInstance[]
+  instancePlayers  InstancePlayer[]
+  notifications    Notification[]
+  auditLogs        AuditLog[]
+}
+
+model RefreshSession {
+  id             String   @id
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenId String   @unique
+  expiresAt      DateTime
+  revokedAt      DateTime?
+  createdAt      DateTime @default(now())
+}
+
+model DeveloperProfile {
+  id                 String  @id
+  userId             String  @unique
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName        String
+  bio                String?
+  website            String?
+  supportEmail       String?
+  verificationStatus String  @default("PENDING")
+  payoutStatus       String  @default("INACTIVE")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  games Game[]
+}
+
+model Game {
+  id                 String   @id
+  developerId        String
+  developer          DeveloperProfile @relation(fields: [developerId], references: [id])
+  slug               String   @unique
+  title              String
+  shortDescription   String?
+  description        String?
+  tagline            String?
+  price              Int      @default(0)
+  currency           String   @default("INR")
+  priceType          String   @default("FREE")
+  releaseDate        String?
+  publisher          String?
+  genres             String[]
+  tags               String[]
+  platforms          String[]
+  status             String   @default("DRAFT")
+  featured           Boolean  @default(false)
+  coverUrl           String?
+  coverObjectKey     String?
+  heroImageUrl       String?
+  heroBannerUrl      String?
+  trailerUrl         String?
+  trailerObjectKey   String?
+  latestBuildId      String?
+  version            String?
+  licensingModel     String?
+  hardwareSpecs      Json?
+  systemRequirements Json?
+  rating             Float?
+  reviewCount        Int      @default(0)
+  submittedAt        DateTime?
+  publishedAt        DateTime?
+  statusReason       String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  media        GameMedia[]
+  builds       GameBuild[]
+  deployments  Deployment[]
+  reviews      GameReview[]
+  libraryItems LibraryItem[]
+  wishlistItems WishlistItem[]
+  entitlements Entitlement[]
+  instances    GameInstance[]
+}
+
+model GameMedia {
+  id        String   @id
+  gameId    String
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  type      String
+  url       String
+  alt       String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model GameBuild {
+  id               String   @id
+  gameId           String
+  game             Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  version          String
+  platform         String
+  runtime          String?
+  entrypoint       String?
+  changelog        String?
+  status           String   @default("WAITING_FOR_UPLOAD")
+  artifactObjectKey String?
+  sizeBytes        BigInt?
+  checksumSha256   String?
+  scanStatus       String?
+  uploadedAt       DateTime?
+  createdAt        DateTime @default(now())
+
+  deployments Deployment[]
+}
+
+model Deployment {
+  id           String    @id
+  gameId       String
+  game         Game      @relation(fields: [gameId], references: [id])
+  buildId      String
+  build        GameBuild @relation(fields: [buildId], references: [id])
+  status       String    @default("QUEUED")
+  environment  String    @default("PRODUCTION")
+  progress     Int       @default(0)
+  releaseNotes String?
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  logs DeploymentLog[]
+}
+
+model DeploymentLog {
+  id           String     @id
+  deploymentId String
+  deployment   Deployment @relation(fields: [deploymentId], references: [id], onDelete: Cascade)
+  level        String
+  message      String
+  createdAt    DateTime   @default(now())
+}
+
+model GameReview {
+  id        String   @id
+  gameId    String
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating    Int
+  body      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([gameId, userId])
+}
+
+model LibraryItem {
+  id                    String    @id
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gameId                String
+  game                  Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  ownershipType         String    @default("PURCHASED")
+  installedStatus       String    @default("READY")
+  favorite              Boolean   @default(false)
+  lastPlayedAt          DateTime?
+  playtimeSeconds       Int       @default(0)
+  installedBuildVersion String?
+  cloudSavesEnabled     Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+
+  @@unique([userId, gameId])
+}
+
+model WishlistItem {
+  id        String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gameId    String
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, gameId])
+}
+
+model Entitlement {
+  id        String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gameId    String
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  source    String   @default("PURCHASE")
+  status    String   @default("ACTIVE")
+  grantedAt DateTime @default(now())
+
+  @@unique([userId, gameId])
+}
+
+model Order {
+  id              String   @id
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  gameId          String
+  razorpayOrderId String?
+  amount          Int
+  currency        String   @default("INR")
+  status          String   @default("CREATED")
+  createdAt       DateTime @default(now())
+
+  payments Payment[]
+  refunds  Refund[]
+  invoices Invoice[]
+}
+
+model Payment {
+  id                String    @id
+  orderId           String
+  order             Order     @relation(fields: [orderId], references: [id])
+  razorpayPaymentId String?
+  amount            Int
+  currency          String    @default("INR")
+  status            String    @default("PENDING")
+  capturedAt        DateTime?
+  createdAt         DateTime  @default(now())
+}
+
+model Refund {
+  id           String    @id
+  orderId      String
+  order        Order     @relation(fields: [orderId], references: [id])
+  amount       Int?
+  status       String    @default("REQUESTED")
+  reason       String?
+  resolvedAt   DateTime?
+  resolvedBy   String?
+  resolvedNote String?
+  createdAt    DateTime  @default(now())
+}
+
+model Invoice {
+  id       String   @id
+  orderId  String
+  order    Order    @relation(fields: [orderId], references: [id])
+  amount   Int
+  currency String   @default("INR")
+  pdfUrl   String?
+  issuedAt DateTime @default(now())
+}
+
+model GameInstance {
+  id         String   @id
+  gameId     String
+  game       Game     @relation(fields: [gameId], references: [id])
+  hostUserId String
+  host       User     @relation(fields: [hostUserId], references: [id])
+  name       String?
+  status     String   @default("PROVISIONING")
+  visibility String   @default("PRIVATE")
+  region     String   @default("ap-south-1")
+  joinCode   String   @unique
+  maxPlayers Int      @default(8)
+  createdAt  DateTime @default(now())
+
+  players InstancePlayer[]
+}
+
+model InstancePlayer {
+  id         String       @id
+  instanceId String
+  instance   GameInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User         @relation(fields: [userId], references: [id])
+  role       String       @default("PLAYER")
+  joinedAt   DateTime     @default(now())
+
+  @@unique([instanceId, userId])
+}
+
+model Notification {
+  id        String    @id
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  body      String?
+  read      Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model AuditLog {
+  id         String   @id
+  actorId    String
+  actor      User     @relation(fields: [actorId], references: [id])
+  action     String
+  targetType String
+  targetId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+}
+
+model ServerNode {
+  id                String @id
+  region            String
+  status            String @default("HEALTHY")
+  cpuPercent        Float  @default(0)
+  memoryPercent     Float  @default(0)
+  packetLossPercent Float  @default(0)
+  activeInstances   Int    @default(0)
+}
