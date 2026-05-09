@@ -196,7 +196,7 @@ export const instances = {
 
 // ─── Admin ────────────────────────────────────────────────────────────────────
 export const admin = {
-  dashboard: () => get('/admin/dashboard'),
+  dashboard: () => get('/admin/analytics'),
 
   // Users
   listUsers: (params) => get('/admin/users', params),
@@ -217,7 +217,7 @@ export const admin = {
   getDeployment: (deploymentId) => get(`/admin/deployments/${deploymentId}`),
 
   // Servers
-  listServers: () => get('/admin/servers'),
+  listServers: () => get('/admin/nodes'),
   addServer: (body) => post('/admin/servers', body),
   updateServer: (nodeId, body) => patch(`/admin/servers/${nodeId}`, body),
   removeServer: (nodeId) => del(`/admin/servers/${nodeId}`),
