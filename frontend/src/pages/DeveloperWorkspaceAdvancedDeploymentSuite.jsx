@@ -154,20 +154,31 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     addLog(`INITIATING_${action.toUpperCase()}_PROTOCOL...`);
     try {
       let res;
-      if (action === 'submit') res = await devApi.submitGame(gameIdParam);
+      if (action === 'submit') {
+          addLog('SYSTEM: PERFORMING_DEEP_LEVEL_ARCHIVE_INSPECTION...');
+          addLog('SYSTEM: VALIDATING_RUNTIME_ENVIRONMENT...');
+          res = await devApi.submitGame(gameIdParam);
+      }
       else if (action === 'publish') res = await devApi.publishGame(gameIdParam);
       else if (action === 'unpublish') res = await devApi.unpublishGame(gameIdParam);
       else if (action === 'delete') {
-        if (!window.confirm('CRITICAL_WARNING: DESTROY_PROJECT?')) return;
+        if (!window.confirm('CRITICAL_WARNING: DESTROY_PROJECT?')) {
+            setLoading(false);
+            return;
+        }
         await devApi.deleteGame(gameIdParam);
         navigate('/developer');
         return;
       }
       
       addLog(`SUCCESS: ${action.toUpperCase()}_COMPLETE`);
-      if (res?.data) setForm(prev => ({ ...prev, status: res.data.status }));
+      if (res?.data) {
+          setForm(prev => ({ ...prev, status: res.data.status }));
+          addLog(`STATUS_TRANSITION: ${res.data.status}`);
+      }
     } catch (err) {
-      addLog(`FAILURE: ${err.message}`);
+      addLog(`FAILURE: ${err.message || 'VALIDATION_FAILED'}`);
+      if (err.details) addLog(`DETAILS: ${err.details}`);
     } finally {
       setLoading(false);
     }

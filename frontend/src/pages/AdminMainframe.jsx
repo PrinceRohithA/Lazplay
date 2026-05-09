@@ -7,7 +7,9 @@ export default function AdminMainframe() {
   const [stats, setStats] = useState({});
   const [nodes, setNodes] = useState([]);
   const [instances, setInstances] = useState([]);
+  const [pendingGames, setPendingGames] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [reviewingGame, setReviewingGame] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,15 +23,17 @@ export default function AdminMainframe() {
           return;
         }
 
-        const [analyticsRes, nodesRes, instancesRes] = await Promise.all([
+        const [analyticsRes, nodesRes, instancesRes, pendingGamesRes] = await Promise.all([
           adminApi.dashboard(),
           adminApi.listServers(),
-          adminApi.listInstances({ limit: 10 })
+          adminApi.listInstances({ limit: 10 }),
+          adminApi.listGames({ status: 'PENDING_REVIEW' })
         ]);
         
         setStats(analyticsRes.data?.stats || {});
         setNodes(nodesRes.data || []);
         setInstances(instancesRes.data || []);
+        setPendingGames(pendingGamesRes.data || []);
       } catch (err) {
         console.error('Admin data fetch failed', err);
         navigate('/');
@@ -40,6 +44,28 @@ export default function AdminMainframe() {
     fetchData();
   }, [navigate]);
 
+  const handleUpdateGameStatus = async (gameId, status) => {
+    try {
+        await adminApi.updateGameStatus(gameId, { status });
+        setPendingGames(prev => prev.filter(g => g.id !== gameId));
+        setReviewingGame(null);
+        // Refresh stats
+        const analyticsRes = await adminApi.dashboard();
+        setStats(analyticsRes.data?.stats || {});
+    } catch (err) {
+        alert(`Failed to update status: ${err.message}`);
+    }
+  };
+
+  const openReviewModal = async (gameId) => {
+      try {
+          const res = await adminApi.getGame(gameId);
+          setReviewingGame(res.data);
+      } catch (err) {
+          alert(`Failed to fetch game details: ${err.message}`);
+      }
+  };
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center font-label-mono text-primary animate-pulse">
@@ -49,7 +75,7 @@ export default function AdminMainframe() {
   }
 
   return (
-    <div className="p-margin flex-1 flex flex-col gap-margin">
+    <div className="p-margin flex-1 flex flex-col gap-margin pb-20">
       {/*  Page Header  */}
       <div className="flex justify-between items-end border-b-4 border-outline-variant pb-2">
         <div>
@@ -77,20 +103,59 @@ export default function AdminMainframe() {
             <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-6 flex-1">
               <div className="flex flex-col gap-1 border-l-2 border-primary-container pl-3">
                 <span className="font-label-caps text-[10px] text-on-surface-variant">TOTAL_USERS</span>
-                <span className="font-headline-md text-primary-container">{stats.users || 0}</span>
+                <span className="font-headline-md text-primary-container">{stats.totalUsers || 0}</span>
               </div>
               <div className="flex flex-col gap-1 border-l-2 border-tertiary-fixed pl-3">
                 <span className="font-label-caps text-[10px] text-on-surface-variant">ACTIVE_GAMES</span>
-                <span className="font-headline-md text-tertiary-fixed">{stats.games || 0}</span>
+                <span className="font-headline-md text-tertiary-fixed">{stats.totalGames || 0}</span>
               </div>
               <div className="flex flex-col gap-1 border-l-2 border-secondary-fixed pl-3">
                 <span className="font-label-caps text-[10px] text-on-surface-variant">DEPLOYMENTS</span>
-                <span className="font-headline-md text-secondary-fixed">{stats.deployments || 0}</span>
+                <span className="font-headline-md text-secondary-fixed">{stats.totalOrders || 0}</span>
               </div>
               <div className="flex flex-col gap-1 border-l-2 border-error pl-3">
                 <span className="font-label-caps text-[10px] text-on-surface-variant">REVENUE</span>
                 <span className="font-headline-md text-error">₹{stats.totalRevenue || 0}</span>
               </div>
+            </div>
+          </div>
+
+          {/* Pending Reviews Section */}
+          <div className="border-2 border-primary-container/30 bg-surface-container-low flex flex-col hover:border-primary-container transition-colors duration-300">
+            <div className="bg-primary-container/10 text-primary-container font-label-mono text-label-mono px-2 py-1 uppercase border-b-2 border-primary-container/20 flex justify-between items-center">
+              <span>Pending_Game_Reviews</span>
+              <span className="material-symbols-outlined text-[16px] animate-pulse">new_releases</span>
+            </div>
+            <div className="p-2 overflow-x-auto">
+              <table className="w-full text-left border-collapse font-label-mono text-label-mono">
+                <thead>
+                  <tr className="border-b border-outline-variant text-on-surface-variant">
+                    <th className="p-2 uppercase text-[10px]">GAME_TITLE</th>
+                    <th className="p-2 uppercase text-[10px]">DEVELOPER</th>
+                    <th className="p-2 uppercase text-[10px]">SUBMITTED</th>
+                    <th className="p-2 uppercase text-[10px] text-right">ACTION</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingGames.map(game => (
+                    <tr key={game.id} className="border-b border-outline-variant/30 hover:bg-surface-bright transition-colors group">
+                      <td className="p-2 text-primary-container">{game.title}</td>
+                      <td className="p-2 text-on-surface-variant">{game.developer?.displayName || 'Unknown'}</td>
+                      <td className="p-2 text-[10px]">{new Date(game.submittedAt || game.updatedAt).toLocaleDateString()}</td>
+                      <td className="p-2 text-right">
+                        <button onClick={() => openReviewModal(game.id)} className="bg-primary-container text-on-primary-container px-3 py-1 hover:brightness-110 transition-all text-[10px]">REVIEW_ASSETS</button>
+                      </td>
+                    </tr>
+                  ))}
+                  {pendingGames.length === 0 && (
+                    <tr>
+                      <td colSpan="4" className="p-8 text-center text-on-surface-variant opacity-50 uppercase text-[10px]">
+                        NO_PENDING_REVIEWS_IN_BUFFER
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -126,51 +191,6 @@ export default function AdminMainframe() {
                       </td>
                     </tr>
                   ))}
-                  {nodes.length === 0 && (
-                    <tr>
-                      <td colSpan="4" className="p-8 text-center text-on-surface-variant opacity-50 uppercase text-[10px]">
-                        NO_ACTIVE_NODES_DETECTED
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div className="border-2 border-outline-variant bg-surface-container-low flex flex-col flex-1 hover:border-secondary-fixed transition-colors duration-300">
-            <div className="bg-surface-variant text-on-surface-variant font-label-mono text-label-mono px-2 py-1 uppercase border-b-2 border-outline-variant flex justify-between items-center">
-              <span>Running_Instances</span>
-              <span className="material-symbols-outlined text-[16px]">sports_esports</span>
-            </div>
-            <div className="p-2 overflow-x-auto">
-              <table className="w-full text-left border-collapse font-label-mono text-label-mono">
-                <thead>
-                  <tr className="border-b-2 border-outline-variant text-on-surface-variant">
-                    <th className="p-2 uppercase text-[10px]">INSTANCE_ID</th>
-                    <th className="p-2 uppercase text-[10px]">GAME</th>
-                    <th className="p-2 uppercase text-[10px]">PLAYERS</th>
-                    <th className="p-2 uppercase text-[10px] text-right">ACTION</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {instances.map(inst => (
-                    <tr key={inst.id} className="border-b border-outline-variant/50 hover:bg-surface-bright transition-colors group">
-                      <td className="p-2 text-on-surface">{inst.id.slice(0, 8)}...</td>
-                      <td className="p-2 text-primary-container">{inst.game?.title || 'Unknown'}</td>
-                      <td className="p-2 text-on-surface-variant">{inst.players?.length || 0} / 32</td>
-                      <td className="p-2 text-right">
-                        <button className="bg-surface border-2 border-outline-variant text-on-surface px-3 py-1 hover:border-error hover:text-error transition-colors text-[10px]">TERMINATE</button>
-                      </td>
-                    </tr>
-                  ))}
-                  {instances.length === 0 && (
-                    <tr>
-                      <td colSpan="4" className="p-8 text-center text-on-surface-variant opacity-50 uppercase text-[10px]">
-                        NO_ACTIVE_INSTANCES
-                      </td>
-                    </tr>
-                  )}
                 </tbody>
               </table>
             </div>
@@ -178,7 +198,7 @@ export default function AdminMainframe() {
         </div>
 
         {/*  Terminal Feed  */}
-        <div className="col-span-12 xl:col-span-4 border-2 border-outline-variant bg-[#050505] flex flex-col h-[500px] xl:h-auto hover:border-primary-container transition-colors duration-300">
+        <div className="col-span-12 xl:col-span-4 border-2 border-outline-variant bg-[#050505] flex flex-col h-[600px] xl:h-auto hover:border-primary-container transition-colors duration-300 relative overflow-hidden">
           <div className="bg-surface-variant text-on-surface-variant font-label-mono text-label-mono px-2 py-1 uppercase border-b-2 border-outline-variant flex justify-between items-center">
             <span>Terminal_Feed</span>
             <div className="flex gap-2">
@@ -195,6 +215,7 @@ export default function AdminMainframe() {
               -- LOGGING_ACTIVE --
               {instances.length > 0 && <div>&gt; {instances.length} ACTIVE_INSTANCES_DETECTED</div>}
               {nodes.length > 0 && <div>&gt; {nodes.length} SERVER_NODES_ONLINE</div>}
+              {pendingGames.length > 0 && <div className="text-error">&gt; ATTENTION: {pendingGames.length} PROJECTS_AWAITING_APPROVAL</div>}
               &gt; MONITORING_ALL_TRAFFIC...
             </div>
             <div className="mt-auto pt-4 flex gap-2">
@@ -204,6 +225,49 @@ export default function AdminMainframe() {
           </div>
         </div>
       </div>
+
+      {/* Review Modal */}
+      {reviewingGame && (
+          <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-surface-container-low border-2 border-primary-container max-w-4xl w-full max-h-[90vh] overflow-y-auto pixel-border-active flex flex-col">
+                  <div className="bg-primary-container text-on-primary-container p-4 flex justify-between items-center">
+                      <h2 className="font-headline-sm uppercase tracking-tighter">PROJECT_REVIEW: {reviewingGame.title}</h2>
+                      <button onClick={() => setReviewingGame(null)} className="hover:rotate-90 transition-transform"><span className="material-symbols-outlined">close</span></button>
+                  </div>
+                  <div className="p-6 grid grid-cols-12 gap-6">
+                      <div className="col-span-12 md:col-span-8 space-y-6">
+                          <div className="aspect-video bg-black border border-outline-variant overflow-hidden">
+                              {reviewingGame.media?.length > 0 && (
+                                  <img src={reviewingGame.media[0].url} className="w-full h-full object-cover" alt="Review" />
+                              )}
+                          </div>
+                          <div className="prose prose-invert max-w-none font-label-mono text-[12px] opacity-80" dangerouslySetInnerHTML={{ __html: reviewingGame.description }}></div>
+                      </div>
+                      <div className="col-span-12 md:col-span-4 space-y-4">
+                          <div className="bg-surface-container-high p-4 border border-outline-variant">
+                              <h3 className="font-label-mono text-[10px] text-primary-container mb-2 uppercase">BUILD_STATUS</h3>
+                              <div className="font-label-mono text-[11px] space-y-1">
+                                  <p>_ID: {reviewingGame.latestBuildId || 'NONE'}</p>
+                                  <p>_PLATFORMS: {reviewingGame.platforms?.join(', ')}</p>
+                                  <p>_PRICE: ₹{reviewingGame.price}</p>
+                              </div>
+                          </div>
+                          <div className="bg-surface-container-high p-4 border border-outline-variant">
+                              <h3 className="font-label-mono text-[10px] text-secondary-container mb-2 uppercase">DEVELOPER_INFO</h3>
+                              <div className="font-label-mono text-[11px] space-y-1">
+                                  <p>_NAME: {reviewingGame.developer?.displayName}</p>
+                                  <p>_VERIFIED: {reviewingGame.developer?.verificationStatus}</p>
+                              </div>
+                          </div>
+                          <div className="flex flex-col gap-2 pt-4">
+                              <button onClick={() => handleUpdateGameStatus(reviewingGame.id, 'PUBLISHED')} className="w-full bg-primary-container text-on-primary-container py-3 font-label-mono uppercase hover:brightness-110 transition-all">APPROVE_AND_PUBLISH</button>
+                              <button onClick={() => handleUpdateGameStatus(reviewingGame.id, 'DRAFT')} className="w-full border border-error text-error py-3 font-label-mono uppercase hover:bg-error/10 transition-all">REJECT_TO_DRAFT</button>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      )}
     </div>
   );
 }
