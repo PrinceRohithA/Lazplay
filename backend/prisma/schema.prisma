@@ -333,3 +333,18 @@ model ServerNode {
   packetLossPercent Float  @default(0)
   activeInstances   Int    @default(0)
 }
+
+model StorageObject {
+  id          String    @id
+  ownerId     String
+  objectKey   String    @unique
+  uploadId    String?
+  purpose     String
+  fileName    String
+  contentType String
+  sizeBytes   BigInt?
+  status      String    @default("PENDING")
+  etag        String?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+}

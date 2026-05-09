@@ -168,314 +168,7 @@ const sanitizeUser = (user) => {
 
 const money = (amount) => Number(amount || 0);
 
-function createSeedData() {
-  const createdAt = nowIso();
-  const users = [
-    {
-      id: 'usr_player',
-      username: 'player',
-      email: 'player@example.com',
-      passwordHash: hashPassword('Password123!'),
-      displayName: 'Neon Runner',
-      bio: 'Arcade player and lobby host.',
-      avatarUrl: '',
-      roles: ['PLAYER'],
-      status: 'ACTIVE',
-      createdAt
-    },
-    {
-      id: 'usr_dev',
-      username: 'developer',
-      email: 'dev@example.com',
-      passwordHash: hashPassword('Password123!'),
-      displayName: 'Neon Labs Dev',
-      bio: 'Builds games for LazPlay.',
-      avatarUrl: '',
-      roles: ['PLAYER', 'DEVELOPER'],
-      status: 'ACTIVE',
-      createdAt
-    },
-    {
-      id: 'usr_admin',
-      username: 'admin',
-      email: 'admin@example.com',
-      passwordHash: hashPassword('Password123!'),
-      displayName: 'System Admin',
-      bio: 'LazPlay operator.',
-      avatarUrl: '',
-      roles: ['PLAYER', 'DEVELOPER', 'ADMIN'],
-      status: 'ACTIVE',
-      createdAt
-    }
-  ];
-
-  return {
-    schemaVersion: 1,
-    users,
-    refreshSessions: [],
-    developerProfiles: [
-      {
-        id: 'dev_neon_labs',
-        userId: 'usr_dev',
-        displayName: 'Neon Labs',
-        website: 'https://neonlabs.example.com',
-        supportEmail: 'support@neonlabs.example.com',
-        verificationStatus: 'VERIFIED',
-        payoutStatus: 'ACTIVE',
-        createdAt
-      }
-    ],
-    games: [
-      {
-        id: 'game_cyber_quest',
-        developerId: 'dev_neon_labs',
-        slug: 'cyber-quest',
-        title: 'Cyber Quest',
-        shortDescription: 'Run-and-gun arcade adventure through neon sectors.',
-        description: 'A high-octane run-and-gun adventure through the neon-drenched sectors of Neo-Tokyo.',
-        price: 49900,
-        currency: 'INR',
-        priceType: 'PAID',
-        releaseDate: '2026-05-01',
-        publisher: 'Neon Labs',
-        genres: ['Action', 'Platformer'],
-        tags: ['Cyberpunk', 'Multiplayer'],
-        platforms: ['PC', 'CLOUD'],
-        status: 'PUBLISHED',
-        featured: true,
-        coverObjectKey: 'games/game_cyber_quest/media/cover.jpg',
-        coverUrl: 'https://cdn.lazplay.local/games/cyber-quest/cover.jpg',
-        heroImageUrl: 'https://cdn.lazplay.local/games/cyber-quest/hero.jpg',
-        trailerUrl: 'https://cdn.lazplay.local/games/cyber-quest/trailer.mp4',
-        latestBuildId: 'build_cyber_webgl_104',
-        systemRequirements: {
-          minimum: { cpu: 'Dual core', memory: '4 GB', storage: '2 GB' },
-          recommended: { cpu: 'Quad core', memory: '8 GB', storage: '4 GB' }
-        },
-        publishedAt: createdAt,
-        createdAt,
-        updatedAt: createdAt
-      },
-      {
-        id: 'game_neon_drifter',
-        developerId: 'dev_neon_labs',
-        slug: 'neon-drifter-84',
-        title: 'Neon Drifter 84',
-        shortDescription: 'High-speed synthwave racing protocol.',
-        description: 'Race through retro-futuristic highways with low-latency hosted multiplayer.',
-        price: 24900,
-        currency: 'INR',
-        priceType: 'PAID',
-        releaseDate: '2026-04-20',
-        publisher: 'Neon Labs',
-        genres: ['Racing'],
-        tags: ['Arcade', 'Multiplayer'],
-        platforms: ['PC', 'CLOUD'],
-        status: 'PUBLISHED',
-        featured: true,
-        coverUrl: 'https://cdn.lazplay.local/games/neon-drifter/cover.jpg',
-        heroImageUrl: 'https://cdn.lazplay.local/games/neon-drifter/hero.jpg',
-        trailerUrl: 'https://cdn.lazplay.local/games/neon-drifter/trailer.mp4',
-        latestBuildId: 'build_neon_webgl_100',
-        systemRequirements: {
-          minimum: { cpu: 'Dual core', memory: '4 GB', storage: '1 GB' },
-          recommended: { cpu: 'Quad core', memory: '8 GB', storage: '2 GB' }
-        },
-        publishedAt: createdAt,
-        createdAt,
-        updatedAt: createdAt
-      },
-      {
-        id: 'game_terminal_defense',
-        developerId: 'dev_neon_labs',
-        slug: 'terminal-defense',
-        title: 'Terminal Defense',
-        shortDescription: 'Command-line strategy defense game.',
-        description: 'Protect your data from incoming breaches in real time.',
-        price: 0,
-        currency: 'INR',
-        priceType: 'FREE',
-        releaseDate: '2026-04-01',
-        publisher: 'Neon Labs',
-        genres: ['Strategy'],
-        tags: ['Indie', 'Singleplayer'],
-        platforms: ['WEB', 'CLOUD'],
-        status: 'PUBLISHED',
-        featured: false,
-        coverUrl: 'https://cdn.lazplay.local/games/terminal-defense/cover.jpg',
-        heroImageUrl: 'https://cdn.lazplay.local/games/terminal-defense/hero.jpg',
-        trailerUrl: '',
-        latestBuildId: 'build_terminal_webgl_100',
-        systemRequirements: {
-          minimum: { cpu: 'Dual core', memory: '2 GB', storage: '512 MB' },
-          recommended: { cpu: 'Dual core', memory: '4 GB', storage: '1 GB' }
-        },
-        publishedAt: createdAt,
-        createdAt,
-        updatedAt: createdAt
-      }
-    ],
-    gameMedia: [
-      {
-        id: 'media_cyber_1',
-        gameId: 'game_cyber_quest',
-        type: 'IMAGE',
-        url: 'https://cdn.lazplay.local/games/cyber-quest/screenshot-1.jpg',
-        alt: 'Cyber Quest screenshot',
-        sortOrder: 1
-      },
-      {
-        id: 'media_cyber_trailer',
-        gameId: 'game_cyber_quest',
-        type: 'VIDEO',
-        url: 'https://cdn.lazplay.local/games/cyber-quest/trailer.mp4',
-        alt: 'Cyber Quest trailer',
-        sortOrder: 2
-      }
-    ],
-    gameBuilds: [
-      {
-        id: 'build_cyber_webgl_104',
-        gameId: 'game_cyber_quest',
-        version: '1.0.4',
-        platform: 'WEBGL',
-        runtime: 'BROWSER',
-        entrypoint: 'index.html',
-        changelog: 'Improved multiplayer latency.',
-        artifactObjectKey: 'builds/game_cyber_quest/build_cyber_webgl_104/package.zip',
-        status: 'DEPLOYED',
-        scanStatus: 'PASSED',
-        sizeBytes: 536870912,
-        createdAt
-      },
-      {
-        id: 'build_neon_webgl_100',
-        gameId: 'game_neon_drifter',
-        version: '1.0.0',
-        platform: 'WEBGL',
-        runtime: 'BROWSER',
-        entrypoint: 'index.html',
-        changelog: 'Initial release.',
-        artifactObjectKey: 'builds/game_neon_drifter/build_neon_webgl_100/package.zip',
-        status: 'DEPLOYED',
-        scanStatus: 'PASSED',
-        sizeBytes: 300000000,
-        createdAt
-      },
-      {
-        id: 'build_terminal_webgl_100',
-        gameId: 'game_terminal_defense',
-        version: '1.0.0',
-        platform: 'WEBGL',
-        runtime: 'BROWSER',
-        entrypoint: 'index.html',
-        changelog: 'Initial release.',
-        artifactObjectKey: 'builds/game_terminal_defense/build_terminal_webgl_100/package.zip',
-        status: 'DEPLOYED',
-        scanStatus: 'PASSED',
-        sizeBytes: 120000000,
-        createdAt
-      }
-    ],
-    deployments: [],
-    deploymentLogs: [],
-    gameReviews: [
-      {
-        id: 'rev_seed_1',
-        gameId: 'game_cyber_quest',
-        userId: 'usr_player',
-        rating: 5,
-        body: 'Great multiplayer hosting performance.',
-        createdAt
-      }
-    ],
-    wishlistItems: [
-      {
-        id: 'wish_seed_1',
-        userId: 'usr_player',
-        gameId: 'game_neon_drifter',
-        addedAt: createdAt
-      }
-    ],
-    entitlements: [
-      {
-        id: 'ent_seed_1',
-        userId: 'usr_player',
-        gameId: 'game_cyber_quest',
-        source: 'SEED',
-        status: 'ACTIVE',
-        grantedAt: createdAt
-      },
-      {
-        id: 'ent_seed_2',
-        userId: 'usr_player',
-        gameId: 'game_terminal_defense',
-        source: 'FREE',
-        status: 'ACTIVE',
-        grantedAt: createdAt
-      }
-    ],
-    libraryItems: [
-      {
-        id: 'lib_seed_1',
-        userId: 'usr_player',
-        gameId: 'game_cyber_quest',
-        ownershipType: 'PURCHASED',
-        installedStatus: 'READY',
-        favorite: false,
-        lastPlayedAt: createdAt,
-        playtimeSeconds: 8420,
-        installedBuildVersion: '1.0.4',
-        ownedAt: createdAt
-      },
-      {
-        id: 'lib_seed_2',
-        userId: 'usr_player',
-        gameId: 'game_terminal_defense',
-        ownershipType: 'FREE',
-        installedStatus: 'READY',
-        favorite: false,
-        lastPlayedAt: null,
-        playtimeSeconds: 0,
-        installedBuildVersion: '1.0.0',
-        ownedAt: createdAt
-      }
-    ],
-    orders: [],
-    payments: [],
-    refunds: [],
-    invoices: [],
-    storageObjects: [],
-    gameInstances: [],
-    instancePlayers: [],
-    instanceLogs: [],
-    notifications: [],
-    auditLogs: [],
-    serverNodes: [
-      {
-        id: 'node_1',
-        region: 'ap-south-1',
-        status: 'HEALTHY',
-        cpuPercent: 42,
-        memoryPercent: 45,
-        packetLossPercent: 0.2,
-        activeInstances: 12
-      },
-      {
-        id: 'node_3',
-        region: 'ap-south-1',
-        status: 'DEGRADED',
-        cpuPercent: 84,
-        memoryPercent: 45,
-        packetLossPercent: 15.2,
-        activeInstances: 120
-      }
-    ]
-  };
-}
-
-// Data persistence is now handled by Prisma + PostgreSQL.
-// See prisma/schema.prisma and prisma/seed.js.
+// Data persistence is handled by Prisma + PostgreSQL.
 
 async function readJsonBody(req) {
   if (req.method === 'GET' || req.method === 'HEAD') return {};
@@ -707,10 +400,6 @@ function assertRazorpayWebhook(req) {
 }
 
 function registerRoutes(router) {
-  // Compatibility shims — db() and persist() are no-ops; all data access
-  // is done via the async Prisma helper functions above.
-  const db = () => ({});
-  const persist = async () => {};
 
   router.add('GET', '/health', async () =>
     ok({
@@ -734,41 +423,44 @@ function registerRoutes(router) {
   );
 
   router.add('POST', '/auth/register', async (req) => {
-    requireFields(req.body, ['username', 'email', 'password']);
-    const existing = db().users.find(
-      (user) => user.email.toLowerCase() === req.body.email.toLowerCase() || user.username.toLowerCase() === req.body.username.toLowerCase()
-    );
-    if (existing) throw new HttpError(409, 'USER_EXISTS', 'A user with that email or username already exists');
-    const user = {
-      id: createId('usr'),
-      username: req.body.username,
-      email: req.body.email,
-      passwordHash: hashPassword(req.body.password),
-      displayName: req.body.displayName || req.body.username,
-      bio: '',
-      avatarUrl: '',
-      roles: ['PLAYER'],
-      status: 'ACTIVE',
-      createdAt: nowIso()
-    };
-    db().users.push(user);
-    const tokens = createTokens(db(), user);
-    await persist();
+    requireFields(req.body, ['username', 'email', 'password', 'displayName']);
+    const email = String(req.body.email).toLowerCase();
+    const username = String(req.body.username).toLowerCase();
+
+    const existing = await prisma.user.findFirst({
+      where: { OR: [{ email }, { username }] }
+    });
+    if (existing) {
+      throw new HttpError(400, 'USER_EXISTS', 'Email or username already registered');
+    }
+
+    const user = await prisma.user.create({
+      data: {
+        id: createId('usr'),
+        username,
+        email,
+        passwordHash: hashPassword(req.body.password),
+        displayName: req.body.displayName,
+        roles: ['PLAYER'],
+        status: 'ACTIVE'
+      }
+    });
+
+    const tokens = await createTokens(user);
     return ok({ user: sanitizeUser(user), ...tokens }, 201);
   });
 
   router.add('POST', '/auth/login', async (req) => {
     requireFields(req.body, ['identifier', 'password']);
     const identifier = String(req.body.identifier).toLowerCase();
-    const user = db().users.find(
-      (item) => item.email.toLowerCase() === identifier || item.username.toLowerCase() === identifier
-    );
+    const user = await prisma.user.findFirst({
+      where: { OR: [{ email: identifier }, { username: identifier }] }
+    });
     if (!user || !verifyPassword(req.body.password, user.passwordHash)) {
       throw new HttpError(401, 'INVALID_CREDENTIALS', 'Invalid username/email or password');
     }
     if (user.status !== 'ACTIVE') throw new HttpError(403, 'USER_INACTIVE', 'User is not active');
-    const tokens = createTokens(db(), user);
-    await persist();
+    const tokens = await createTokens(user);
     return ok({ user: sanitizeUser(user), ...tokens });
   });
 
@@ -776,25 +468,35 @@ function registerRoutes(router) {
     requireFields(req.body, ['refreshToken']);
     const payload = verifyToken(req.body.refreshToken);
     if (payload.type !== 'refresh') throw new HttpError(401, 'INVALID_TOKEN', 'Refresh token is required');
-    const session = db().refreshSessions.find((item) => item.id === payload.sid && item.refreshTokenId === payload.jti);
+
+    const session = await prisma.refreshSession.findFirst({
+      where: { id: payload.sid, refreshTokenId: payload.jti }
+    });
     if (!session || session.revokedAt) throw new HttpError(401, 'SESSION_REVOKED', 'Refresh session is not active');
-    session.revokedAt = nowIso();
-    const user = db().users.find((item) => item.id === payload.sub);
+
+    await prisma.refreshSession.update({
+      where: { id: session.id },
+      data: { revokedAt: new Date() }
+    });
+
+    const user = await prisma.user.findUnique({ where: { id: payload.sub } });
     if (!user) throw new HttpError(401, 'USER_NOT_FOUND', 'User was not found');
-    const tokens = createTokens(db(), user);
-    await persist();
+    const tokens = await createTokens(user);
     return ok(tokens);
   });
 
   router.add('POST', '/auth/logout', async (req) => {
-    const user = requireAuth(req, db());
+    const user = await requireAuth(req);
     const refreshToken = req.body.refreshToken;
     if (refreshToken) {
-      const payload = verifyToken(refreshToken);
-      const session = db().refreshSessions.find((item) => item.id === payload.sid && item.userId === user.id);
-      if (session) session.revokedAt = nowIso();
+      try {
+        const payload = verifyToken(refreshToken);
+        await prisma.refreshSession.updateMany({
+          where: { id: payload.sid, userId: user.id },
+          data: { revokedAt: new Date() }
+        });
+      } catch (e) { /* ignore invalid token on logout */ }
     }
-    await persist();
     return ok({ loggedOut: true });
   });
 
@@ -810,150 +512,186 @@ function registerRoutes(router) {
   });
 
   router.add('GET', '/auth/me', async (req) => {
-    const user = requireAuth(req, db());
+    const user = await requireAuth(req);
     return ok(sanitizeUser(user));
   });
 
   router.add('PATCH', '/users/me', async (req) => {
-    const user = requireAuth(req, db());
-    user.displayName = req.body.displayName ?? user.displayName;
-    user.bio = req.body.bio ?? user.bio;
+    const user = await requireAuth(req);
+    const data = {};
+    if (req.body.displayName !== undefined) data.displayName = req.body.displayName;
+    if (req.body.bio !== undefined) data.bio = req.body.bio;
     if (req.body.avatarObjectKey) {
-      user.avatarUrl = signedStorageUrl(req.body.avatarObjectKey).url;
+      data.avatarUrl = signedStorageUrl(req.body.avatarObjectKey).url;
     }
-    await persist();
-    return ok(sanitizeUser(user));
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data
+    });
+    return ok(sanitizeUser(updated));
   });
 
   router.add('PATCH', '/users/me/password', async (req) => {
-    const user = requireAuth(req, db());
+    const user = await requireAuth(req);
     requireFields(req.body, ['currentPassword', 'newPassword']);
     if (!verifyPassword(req.body.currentPassword, user.passwordHash)) {
       throw new HttpError(400, 'INVALID_CURRENT_PASSWORD', 'Current password is incorrect');
     }
-    user.passwordHash = hashPassword(req.body.newPassword);
-    await persist();
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash: hashPassword(req.body.newPassword) }
+    });
     return ok({ passwordChanged: true });
   });
 
   router.add('GET', '/games/featured', async (req) => {
-    const user = getOptionalUser(req, db());
+    const user = await getOptionalUser(req);
     const limit = Math.min(20, Math.max(1, Number(req.query.get('limit') || 6)));
-    const games = db()
-      .games.filter((game) => game.status === 'PUBLISHED' && game.featured)
-      .slice(0, limit)
-      .map((game) => ({
-        id: game.id,
-        slug: game.slug,
-        title: game.title,
-        heroImageUrl: game.heroImageUrl,
-        tagline: game.shortDescription,
-        isOwned: user ? userOwnsGame(db(), user.id, game.id) : false
-      }));
-    return ok(games);
+    const games = await prisma.game.findMany({
+      where: { status: 'PUBLISHED', featured: true },
+      take: limit,
+      orderBy: { publishedAt: 'desc' }
+    });
+    const results = await Promise.all(games.map(async (game) => ({
+      id: game.id,
+      slug: game.slug,
+      title: game.title,
+      heroImageUrl: game.heroImageUrl,
+      tagline: game.shortDescription,
+      isOwned: user ? await userOwnsGame(user.id, game.id) : false
+    })));
+    return ok(results);
   });
 
   router.add('GET', '/games', async (req) => {
-    const user = getOptionalUser(req, db());
-    const search = (req.query.get('search') || '').toLowerCase();
+    const user = await getOptionalUser(req);
+    const search = req.query.get('search') || '';
     const genre = req.query.get('genre');
-    const tags = toArray(req.query.get('tags')).map((tag) => tag.toLowerCase());
+    const tags = toArray(req.query.get('tags'));
     const platform = req.query.get('platform');
     const priceType = req.query.get('priceType');
     const status = req.query.get('status') || 'PUBLISHED';
     const sort = req.query.get('sort') || 'featured';
+    const { page, limit } = parsePagination(req.query);
 
-    let games = db().games.filter((game) => game.status === status);
+    const where = { status };
     if (search) {
-      games = games.filter(
-        (game) =>
-          game.title.toLowerCase().includes(search) ||
-          game.shortDescription.toLowerCase().includes(search) ||
-          game.tags.some((tag) => tag.toLowerCase().includes(search))
-      );
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { shortDescription: { contains: search, mode: 'insensitive' } },
+        { tags: { hasSome: [search] } }
+      ];
     }
-    if (genre) games = games.filter((game) => game.genres.map((item) => item.toLowerCase()).includes(genre.toLowerCase()));
-    if (tags.length > 0) {
-      games = games.filter((game) => tags.every((tag) => game.tags.map((item) => item.toLowerCase()).includes(tag)));
-    }
-    if (platform) games = games.filter((game) => game.platforms.map((item) => item.toLowerCase()).includes(platform.toLowerCase()));
-    if (priceType) games = games.filter((game) => game.priceType.toLowerCase() === priceType.toLowerCase());
-    if (sort === 'newest') games.sort((a, b) => String(b.publishedAt).localeCompare(String(a.publishedAt)));
-    if (sort === 'price_low_to_high') games.sort((a, b) => money(a.price) - money(b.price));
-    if (sort === 'featured') games.sort((a, b) => Number(b.featured) - Number(a.featured));
+    if (genre) where.genres = { has: genre };
+    if (tags.length > 0) where.tags = { hasEvery: tags };
+    if (platform) where.platforms = { has: platform };
+    if (priceType) where.priceType = priceType;
 
-    const { pageItems, pagination } = paginate(games, req.query);
-    return ok(pageItems.map((game) => publicGame(db(), game, user)), 200, { pagination });
+    let orderBy = { createdAt: 'desc' };
+    if (sort === 'newest') orderBy = { publishedAt: 'desc' };
+    if (sort === 'price_low_to_high') orderBy = { price: 'asc' };
+    if (sort === 'featured') orderBy = { featured: 'desc' };
+
+    const [total, games] = await Promise.all([
+      prisma.game.count({ where }),
+      prisma.game.findMany({
+        where,
+        orderBy,
+        skip: (page - 1) * limit,
+        take: limit
+      })
+    ]);
+
+    const pageItems = await Promise.all(games.map(g => publicGame(g, user)));
+    return ok(pageItems, 200, {
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
+    });
   });
 
   router.add('GET', '/games/:gameId/media', async (req) => {
-    const game = findGame(db(), req.params.gameId);
+    const game = await findGame(req.params.gameId);
     if (!game || game.status !== 'PUBLISHED') throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
-    return ok(db().gameMedia.filter((media) => media.gameId === game.id).sort((a, b) => a.sortOrder - b.sortOrder));
+    const media = await prisma.gameMedia.findMany({
+      where: { gameId: game.id },
+      orderBy: { sortOrder: 'asc' }
+    });
+    return ok(media);
   });
 
   router.add('GET', '/games/:gameId/reviews', async (req) => {
-    const game = findGame(db(), req.params.gameId);
+    const game = await findGame(req.params.gameId);
     if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
-    const reviews = db()
-      .gameReviews.filter((review) => review.gameId === game.id)
-      .map((review) => ({
-        ...review,
-        author: sanitizeUser(db().users.find((user) => user.id === review.userId))
-      }));
-    const { pageItems, pagination } = paginate(reviews, req.query);
-    return ok(pageItems, 200, { pagination });
+    const { page, limit } = parsePagination(req.query);
+
+    const [total, reviews] = await Promise.all([
+      prisma.gameReview.count({ where: { gameId: game.id } }),
+      prisma.gameReview.findMany({
+        where: { gameId: game.id },
+        include: { user: true },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit
+      })
+    ]);
+
+    const items = reviews.map(r => ({
+      ...r,
+      author: sanitizeUser(r.user)
+    }));
+
+    return ok(items, 200, {
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
+    });
   });
 
   router.add('POST', '/games/:gameId/reviews', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER']);
-    const game = findGame(db(), req.params.gameId);
+    const user = await requireAuth(req, null, ['PLAYER']);
+    const game = await findGame(req.params.gameId);
     if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
-    if (!userOwnsGame(db(), user.id, game.id)) throw new HttpError(403, 'GAME_NOT_OWNED', 'You must own the game to review it');
+    if (!(await userOwnsGame(user.id, game.id))) throw new HttpError(403, 'GAME_NOT_OWNED', 'You must own the game to review it');
     requireFields(req.body, ['rating', 'body']);
     const rating = Math.max(1, Math.min(5, Number(req.body.rating)));
-    let review = db().gameReviews.find((item) => item.gameId === game.id && item.userId === user.id);
-    if (!review) {
-      review = {
+
+    const review = await prisma.gameReview.upsert({
+      where: { gameId_userId: { gameId: game.id, userId: user.id } },
+      update: { rating, body: req.body.body },
+      create: {
         id: createId('rev'),
         gameId: game.id,
         userId: user.id,
         rating,
-        body: req.body.body,
-        createdAt: nowIso()
-      };
-      db().gameReviews.push(review);
-    } else {
-      review.rating = rating;
-      review.body = req.body.body;
-      review.updatedAt = nowIso();
-    }
-    await persist();
+        body: req.body.body
+      }
+    });
+
     return ok(review, 201);
   });
 
   router.add('DELETE', '/games/:gameId/reviews/:reviewId', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER', 'DEVELOPER', 'ADMIN']);
-    const game = findGame(db(), req.params.gameId);
+    const user = await requireAuth(req, null, ['PLAYER', 'DEVELOPER', 'ADMIN']);
+    const game = await findGame(req.params.gameId);
     if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
-    const reviewIndex = db().gameReviews.findIndex((r) => r.id === req.params.reviewId && r.gameId === game.id);
-    if (reviewIndex === -1) throw new HttpError(404, 'REVIEW_NOT_FOUND', 'Review was not found');
-    const review = db().gameReviews[reviewIndex];
-    const isDev = (() => { const dev = developerForUser(db(), user); return dev && dev.id === game.developerId; })();
+
+    const review = await prisma.gameReview.findUnique({ where: { id: req.params.reviewId } });
+    if (!review || review.gameId !== game.id) throw new HttpError(404, 'REVIEW_NOT_FOUND', 'Review was not found');
+
+    const developer = await developerForUser(user);
+    const isDev = developer && developer.id === game.developerId;
     if (review.userId !== user.id && !user.roles.includes('ADMIN') && !isDev) {
       throw new HttpError(403, 'FORBIDDEN', 'You cannot delete this review');
     }
-    db().gameReviews.splice(reviewIndex, 1);
-    await persist();
+
+    await prisma.gameReview.delete({ where: { id: review.id } });
     return ok({ reviewId: review.id, deleted: true });
   });
 
   router.add('GET', '/games/:gameId/launch-manifest', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER']);
-    const game = findGame(db(), req.params.gameId);
+    const user = await requireAuth(req, null, ['PLAYER']);
+    const game = await findGame(req.params.gameId);
     if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
-    if (!userOwnsGame(db(), user.id, game.id)) throw new HttpError(403, 'GAME_NOT_OWNED', 'You do not own this game');
-    const build = db().gameBuilds.find((item) => item.id === game.latestBuildId);
+    if (!(await userOwnsGame(user.id, game.id))) throw new HttpError(403, 'GAME_NOT_OWNED', 'You do not own this game');
+
+    const build = game.latestBuildId ? await prisma.gameBuild.findUnique({ where: { id: game.latestBuildId } }) : null;
     const runtimeKey = `runtime/${game.id}/${build?.id || 'latest'}/index.html`;
     const manifestKey = `runtime/${game.id}/${build?.id || 'latest'}/manifest.json`;
     return ok({
@@ -968,163 +706,136 @@ function registerRoutes(router) {
   });
 
   router.add('GET', '/games/:gameId', async (req) => {
-    const user = getOptionalUser(req, db());
-    const game = findGame(db(), req.params.gameId);
+    const user = await getOptionalUser(req);
+    const game = await findGame(req.params.gameId);
     if (!game || (game.status !== 'PUBLISHED' && !user?.roles.includes('ADMIN'))) {
       throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
     }
-    return ok(publicGame(db(), game, user));
+    return ok(await publicGame(game, user));
   });
 
   router.add('GET', '/genres', async () => {
-    const genres = [...new Set(db().games.flatMap((game) => game.genres))].sort();
+    const games = await prisma.game.findMany({ select: { genres: true } });
+    const genres = [...new Set(games.flatMap(g => g.genres))].sort();
     return ok(genres.map((name) => ({ id: `genre_${slugify(name)}`, name, slug: slugify(name) })));
   });
 
   router.add('GET', '/tags', async () => {
-    const tags = [...new Set(db().games.flatMap((game) => game.tags))].sort();
+    const games = await prisma.game.findMany({ select: { tags: true } });
+    const tags = [...new Set(games.flatMap(g => g.tags))].sort();
     return ok(tags.map((name) => ({ id: `tag_${slugify(name)}`, name, slug: slugify(name) })));
   });
 
   router.add('GET', '/search', async (req) => {
-    const q = (req.query.get('q') || '').toLowerCase();
+    const q = req.query.get('q') || '';
     const limit = Math.min(20, Math.max(1, Number(req.query.get('limit') || 10)));
-    const games = db()
-      .games.filter(
-        (game) =>
-          game.status === 'PUBLISHED' &&
-          (!q || game.title.toLowerCase().includes(q) || game.shortDescription.toLowerCase().includes(q))
-      )
-      .slice(0, limit)
-      .map((game) => ({
-        id: game.id,
-        slug: game.slug,
-        title: game.title,
-        coverUrl: game.coverUrl
-      }));
-    const developers = db()
-      .developerProfiles.filter((developer) => !q || developer.displayName.toLowerCase().includes(q))
-      .slice(0, limit)
-      .map((developer) => ({
-        id: developer.id,
-        displayName: developer.displayName
-      }));
+    const [games, developers] = await Promise.all([
+      prisma.game.findMany({ where: { title: { contains: q, mode: 'insensitive' } }, take: limit }),
+      prisma.developerProfile.findMany({ where: { displayName: { contains: q, mode: 'insensitive' } }, take: limit })
+    ]);
     return ok({ games, developers });
   });
 
   router.add('GET', '/library', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER']);
-    const search = (req.query.get('search') || '').toLowerCase();
-    const status = req.query.get('status');
-    let items = db().libraryItems.filter((item) => item.userId === user.id);
-    if (status) items = items.filter((item) => item.installedStatus.toLowerCase() === status.toLowerCase());
-    items = items
-      .map((item) => {
-        const game = db().games.find((entry) => entry.id === item.gameId);
-        const build = db().gameBuilds.find((entry) => entry.id === game?.latestBuildId);
-        return {
-          gameId: item.gameId,
-          slug: game?.slug,
-          title: game?.title,
-          coverUrl: game?.coverUrl,
-          ownershipType: item.ownershipType,
-          installedStatus: item.installedStatus,
-          favorite: item.favorite,
-          lastPlayedAt: item.lastPlayedAt,
-          playtimeSeconds: item.playtimeSeconds,
-          updateAvailable: Boolean(build?.version && item.installedBuildVersion && build.version !== item.installedBuildVersion)
-        };
-      })
-      .filter((item) => !search || item.title?.toLowerCase().includes(search));
-    const { pageItems, pagination } = paginate(items, req.query);
-    return ok(pageItems, 200, { pagination });
+    const user = await requireAuth(req);
+    const items = await prisma.libraryItem.findMany({
+      where: { userId: user.id },
+      include: { game: true },
+      orderBy: { lastPlayedAt: 'desc' }
+    });
+    return ok(items);
   });
 
   router.add('GET', '/library/:gameId', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER']);
-    const game = findGame(db(), req.params.gameId);
-    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
-    const item = db().libraryItems.find((entry) => entry.userId === user.id && entry.gameId === game.id);
-    if (!item) throw new HttpError(404, 'LIBRARY_ITEM_NOT_FOUND', 'Library item was not found');
-    const latestBuild = db().gameBuilds.find((build) => build.id === game.latestBuildId);
-    return ok({
-      gameId: game.id,
-      title: game.title,
-      ownedAt: item.ownedAt,
-      installedStatus: item.installedStatus,
-      latestBuildVersion: latestBuild?.version || null,
-      installedBuildVersion: item.installedBuildVersion,
-      updateAvailable: Boolean(latestBuild?.version && latestBuild.version !== item.installedBuildVersion),
-      playtimeSeconds: item.playtimeSeconds,
-      cloudSavesEnabled: true
+    const user = await requireAuth(req);
+    const item = await prisma.libraryItem.findUnique({
+      where: { userId_gameId: { userId: user.id, gameId: req.params.gameId } },
+      include: { game: { include: { builds: { take: 1, orderBy: { createdAt: 'desc' } } } } }
     });
+    if (!item) throw new HttpError(404, 'NOT_IN_LIBRARY', 'Game not in your library');
+    return ok(item);
   });
 
   router.add('POST', '/library/:gameId/favorite', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER']);
-    const game = findGame(db(), req.params.gameId);
-    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
-    const item = db().libraryItems.find((entry) => entry.userId === user.id && entry.gameId === game.id);
-    if (!item) throw new HttpError(404, 'LIBRARY_ITEM_NOT_FOUND', 'Library item was not found');
-    item.favorite = true;
-    await persist();
-    return ok({ gameId: game.id, favorite: true });
+    const user = await requireAuth(req);
+    const updated = await prisma.libraryItem.update({
+      where: { userId_gameId: { userId: user.id, gameId: req.params.gameId } },
+      data: { favorite: true }
+    });
+    return ok(updated);
   });
 
   router.add('DELETE', '/library/:gameId/favorite', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER']);
-    const game = findGame(db(), req.params.gameId);
-    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
-    const item = db().libraryItems.find((entry) => entry.userId === user.id && entry.gameId === game.id);
-    if (!item) throw new HttpError(404, 'LIBRARY_ITEM_NOT_FOUND', 'Library item was not found');
-    item.favorite = false;
-    await persist();
-    return ok({ gameId: game.id, favorite: false });
+    const user = await requireAuth(req);
+    const updated = await prisma.libraryItem.update({
+      where: { userId_gameId: { userId: user.id, gameId: req.params.gameId } },
+      data: { favorite: false }
+    });
+    return ok(updated);
   });
 
   router.add('GET', '/wishlist', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER']);
-    return ok(
-      db()
-        .wishlistItems.filter((item) => item.userId === user.id)
-        .map((item) => {
-          const game = db().games.find((entry) => entry.id === item.gameId);
-          return {
-            gameId: item.gameId,
-            slug: game?.slug,
-            title: game?.title,
-            price: game?.price,
-            currency: game?.currency,
-            coverUrl: game?.coverUrl,
-            addedAt: item.addedAt
-          };
-        })
-    );
+    const user = await requireAuth(req);
+    const items = await prisma.wishlistItem.findMany({
+      where: { userId: user.id },
+      include: { game: true }
+    });
+    return ok(items);
   });
 
-  router.add('POST', '/wishlist/:gameId', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER']);
-    const game = findGame(db(), req.params.gameId);
-    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
-    if (!db().wishlistItems.some((item) => item.userId === user.id && item.gameId === game.id)) {
-      db().wishlistItems.push({ id: createId('wish'), userId: user.id, gameId: game.id, addedAt: nowIso() });
-    }
-    await persist();
-    return ok({ gameId: game.id, wishlisted: true });
+  router.add('POST', '/wishlist', async (req) => {
+    const user = await requireAuth(req);
+    requireFields(req.body, ['gameId']);
+    const existing = await prisma.wishlistItem.findUnique({
+      where: { userId_gameId: { userId: user.id, gameId: req.body.gameId } }
+    });
+    if (existing) return ok(existing);
+    const item = await prisma.wishlistItem.create({
+      data: { id: createId('wish'), userId: user.id, gameId: req.body.gameId }
+    });
+    return ok(item, 201);
   });
 
   router.add('DELETE', '/wishlist/:gameId', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER']);
-    const game = findGame(db(), req.params.gameId);
-    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
-    state.db.wishlistItems = db().wishlistItems.filter((item) => !(item.userId === user.id && item.gameId === game.id));
-    await persist();
-    return ok({ gameId: game.id, wishlisted: false });
+    const user = await requireAuth(req);
+    await prisma.wishlistItem.deleteMany({
+      where: { userId: user.id, gameId: req.params.gameId }
+    });
+    return ok({ deleted: true });
+  });
+
+  router.add('GET', '/library', async (req) => {
+    const user = await requireAuth(req);
+    const items = await prisma.libraryItem.findMany({
+      where: { userId: user.id },
+      include: { game: true },
+      orderBy: { lastPlayedAt: 'desc' }
+    });
+    return ok(items);
+  });
+
+  router.add('POST', '/library', async (req) => {
+    const user = await requireAuth(req);
+    requireFields(req.body, ['gameId']);
+    const item = await ensureLibraryItem(user.id, req.body.gameId, 'FREE');
+    return ok(item, 201);
+  });
+
+  router.add('DELETE', '/library/:gameId', async (req) => {
+    const user = await requireAuth(req);
+    await prisma.libraryItem.deleteMany({
+      where: { userId: user.id, gameId: req.params.gameId }
+    });
+    return ok({ deleted: true });
   });
 
   router.add('GET', '/entitlements', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER']);
-    return ok(db().entitlements.filter((item) => item.userId === user.id));
+    const user = await requireAuth(req);
+    const entitlements = await prisma.entitlement.findMany({
+      where: { userId: user.id },
+      include: { game: true }
+    });
+    return ok(entitlements);
   });
 
   router.add('POST', '/payments/razorpay/orders', async (req) => {
@@ -1181,7 +892,7 @@ function registerRoutes(router) {
   router.add('POST', '/payments/razorpay/verify', async (req) => {
     const user = await requireAuth(req, null, ['PLAYER']);
     requireFields(req.body, ['internalOrderId', 'razorpayOrderId', 'razorpayPaymentId', 'razorpaySignature']);
-    
+
     const order = await prisma.order.findUnique({
       where: { id: req.body.internalOrderId },
     });
@@ -1222,7 +933,7 @@ function registerRoutes(router) {
 
     const entitlement = await grantEntitlement(user.id, order.gameId, 'RAZORPAY_ORDER');
     await addNotification(user.id, 'PAYMENT_CAPTURED', 'Purchase complete', 'Your game was added to your library.');
-    
+
     return ok({
       paymentStatus: 'CAPTURED',
       entitlement,
@@ -1260,139 +971,137 @@ function registerRoutes(router) {
   });
 
   router.add('GET', '/orders', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER']);
-    const orders = db()
-      .orders.filter((order) => order.userId === user.id)
-      .map((order) => {
-        const game = db().games.find((entry) => entry.id === order.gameId);
-        return {
-          id: order.id,
-          gameId: order.gameId,
-          gameTitle: game?.title,
-          amount: order.amount,
-          currency: order.currency,
-          status: order.status,
-          createdAt: order.createdAt
-        };
-      });
+    const user = await requireAuth(req);
+    const orders = await prisma.order.findMany({
+      where: { userId: user.id },
+      include: { game: true, payments: true },
+      orderBy: { createdAt: 'desc' }
+    });
     return ok(orders);
   });
 
   router.add('GET', '/orders/:orderId', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER', 'ADMIN']);
-    const order = db().orders.find((item) => item.id === req.params.orderId);
+    const user = await requireAuth(req);
+    const order = await prisma.order.findUnique({
+      where: { id: req.params.orderId },
+      include: { game: true, payments: true, invoices: true }
+    });
     if (!order || (order.userId !== user.id && !user.roles.includes('ADMIN'))) {
-      throw new HttpError(404, 'ORDER_NOT_FOUND', 'Order was not found');
+      throw new HttpError(404, 'ORDER_NOT_FOUND', 'Order not found');
     }
-    const invoice = db().invoices.find((item) => item.orderId === order.id);
-    return ok({ ...order, invoiceId: invoice?.id || null });
+    return ok(order);
   });
 
   router.add('GET', '/invoices/:invoiceId', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER', 'ADMIN']);
-    const invoice = db().invoices.find((item) => item.id === req.params.invoiceId);
-    if (!invoice) throw new HttpError(404, 'INVOICE_NOT_FOUND', 'Invoice was not found');
-    const order = db().orders.find((item) => item.id === invoice.orderId);
-    if (!order || (order.userId !== user.id && !user.roles.includes('ADMIN'))) {
-      throw new HttpError(404, 'INVOICE_NOT_FOUND', 'Invoice was not found');
+    const user = await requireAuth(req);
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: req.params.invoiceId }
+    });
+    if (!invoice || (invoice.userId !== user.id && !user.roles.includes('ADMIN'))) {
+      throw new HttpError(404, 'INVOICE_NOT_FOUND', 'Invoice not found');
     }
     return ok({
-      id: invoice.id,
-      orderId: invoice.orderId,
-      invoiceNumber: invoice.invoiceNumber,
       downloadUrl: signedStorageUrl(invoice.objectKey).url
     });
   });
 
   router.add('POST', '/refunds', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER', 'ADMIN']);
+    const user = await requireAuth(req);
     requireFields(req.body, ['orderId', 'reason']);
-    const order = db().orders.find((item) => item.id === req.body.orderId);
+    const order = await prisma.order.findUnique({ where: { id: req.body.orderId } });
     if (!order || (order.userId !== user.id && !user.roles.includes('ADMIN'))) {
-      throw new HttpError(404, 'ORDER_NOT_FOUND', 'Order was not found');
+      throw new HttpError(404, 'ORDER_NOT_FOUND', 'Order not found');
     }
-    const refund = {
-      id: createId('refund'),
-      orderId: order.id,
-      userId: order.userId,
-      reason: req.body.reason,
-      status: user.roles.includes('ADMIN') ? 'APPROVED' : 'REQUESTED',
-      createdAt: nowIso()
-    };
-    db().refunds.push(refund);
-    await persist();
-    return ok({ refundId: refund.id, status: refund.status, orderId: order.id }, 201);
+
+    const refund = await prisma.refund.create({
+      data: {
+        id: createId('refund'),
+        orderId: order.id,
+        reason: req.body.reason,
+        status: user.roles.includes('ADMIN') ? 'APPROVED' : 'REQUESTED'
+      }
+    });
+
+    return ok(refund, 201);
   });
 
   router.add('POST', '/storage/presign-upload', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER', 'DEVELOPER', 'ADMIN']);
+    const user = await requireAuth(req);
     requireFields(req.body, ['purpose', 'fileName', 'contentType', 'sizeBytes']);
     const objectKey = `${req.body.purpose.toLowerCase()}/${user.id}/${Date.now()}-${slugify(req.body.fileName) || req.body.fileName}`;
     const signed = signedStorageUrl(objectKey, 'PUT');
-    db().storageObjects.push({
-      id: createId('obj'),
-      ownerId: user.id,
-      objectKey,
-      purpose: req.body.purpose,
-      fileName: req.body.fileName,
-      contentType: req.body.contentType,
-      sizeBytes: Number(req.body.sizeBytes),
-      status: 'PRESIGNED',
-      createdAt: nowIso()
+
+    await prisma.storageObject.create({
+      data: {
+        id: createId('obj'),
+        ownerId: user.id,
+        objectKey,
+        purpose: req.body.purpose,
+        fileName: req.body.fileName,
+        contentType: req.body.contentType,
+        sizeBytes: BigInt(req.body.sizeBytes),
+        status: 'PRESIGNED'
+      }
     });
-    await persist();
+
     return ok({ objectKey, uploadUrl: signed.url, method: 'PUT', expiresAt: signed.expiresAt }, 201);
   });
 
   router.add('POST', '/storage/presign-multipart', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
     requireFields(req.body, ['gameId', 'buildId', 'fileName', 'contentType', 'sizeBytes', 'partCount']);
-    const game = findGame(db(), req.body.gameId);
-    assertDeveloperOwnsGame(db(), user, game);
+    const game = await findGame(req.body.gameId);
+    await assertDeveloperOwnsGame(user, game);
+
     const objectKey = `builds/${game.id}/${req.body.buildId}/${req.body.fileName}`;
     const uploadId = createId('minio_upload');
     const partCount = Math.min(10000, Math.max(1, Number(req.body.partCount)));
-    const parts = Array.from({ length: partCount }, (_, index) => {
-      const partNumber = index + 1;
-      return {
-        partNumber,
-        uploadUrl: `${signedStorageUrl(objectKey, 'PUT').url}&uploadId=${uploadId}&partNumber=${partNumber}`
-      };
+
+    await prisma.storageObject.create({
+      data: {
+        id: createId('obj'),
+        ownerId: user.id,
+        objectKey,
+        uploadId,
+        purpose: 'BUILD_ARTIFACT',
+        fileName: req.body.fileName,
+        contentType: req.body.contentType,
+        sizeBytes: BigInt(req.body.sizeBytes),
+        status: 'MULTIPART_PRESIGNED'
+      }
     });
-    db().storageObjects.push({
-      id: createId('obj'),
-      ownerId: user.id,
-      objectKey,
-      uploadId,
-      purpose: 'BUILD_ARTIFACT',
-      fileName: req.body.fileName,
-      contentType: req.body.contentType,
-      sizeBytes: Number(req.body.sizeBytes),
-      status: 'MULTIPART_PRESIGNED',
-      createdAt: nowIso()
-    });
-    await persist();
+
+    const parts = Array.from({ length: partCount }, (_, i) => ({
+      partNumber: i + 1,
+      uploadUrl: `${signedStorageUrl(objectKey, 'PUT').url}&uploadId=${uploadId}&partNumber=${i + 1}`
+    }));
+
     return ok({ objectKey, uploadId, parts, expiresAt: addSeconds(3600) }, 201);
   });
 
   router.add('POST', '/storage/complete-multipart', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
     requireFields(req.body, ['objectKey', 'uploadId', 'parts']);
-    const object = db().storageObjects.find((item) => item.objectKey === req.body.objectKey && item.uploadId === req.body.uploadId);
+    const object = await prisma.storageObject.findUnique({
+      where: { objectKey: req.body.objectKey }
+    });
+
     if (!object || (object.ownerId !== user.id && !user.roles.includes('ADMIN'))) {
-      throw new HttpError(404, 'OBJECT_NOT_FOUND', 'Storage object was not found');
+      throw new HttpError(404, 'OBJECT_NOT_FOUND', 'Storage object not found');
     }
-    object.status = 'UPLOADED';
-    object.completedAt = nowIso();
-    object.parts = req.body.parts;
-    await persist();
-    return ok({ objectKey: object.objectKey, completed: true, sizeBytes: object.sizeBytes });
+
+    const updated = await prisma.storageObject.update({
+      where: { id: object.id },
+      data: { status: 'UPLOADED', completedAt: new Date() }
+    });
+
+    return ok({ objectKey: updated.objectKey, completed: true });
   });
 
   router.add('GET', '/storage/presign-download', async (req) => {
-    requireAuth(req, db(), ['PLAYER', 'DEVELOPER', 'ADMIN']);
+    await requireAuth(req);
     const objectKey = req.query.get('objectKey');
-    if (!objectKey) throw new HttpError(400, 'VALIDATION_ERROR', 'objectKey query parameter is required');
+    if (!objectKey) throw new HttpError(400, 'VALIDATION_ERROR', 'objectKey is required');
     const signed = signedStorageUrl(objectKey, 'GET');
     return ok({ downloadUrl: signed.url, expiresAt: signed.expiresAt });
   });
@@ -1400,382 +1109,371 @@ function registerRoutes(router) {
   router.add('POST', '/webhooks/minio/object-created', async (req) => {
     const secret = req.headers['x-lazplay-internal-secret'];
     if (secret !== config.authSecret && !config.allowMockPayments) {
-      throw new HttpError(401, 'INVALID_INTERNAL_SECRET', 'Internal secret is invalid');
+      throw new HttpError(401, 'UNAUTHORIZED', 'Invalid internal secret');
     }
     requireFields(req.body, ['bucket', 'objectKey', 'sizeBytes']);
-    let object = db().storageObjects.find((item) => item.objectKey === req.body.objectKey);
-    if (!object) {
-      object = {
+
+    await prisma.storageObject.upsert({
+      where: { objectKey: req.body.objectKey },
+      update: { status: 'UPLOADED', sizeBytes: BigInt(req.body.sizeBytes), etag: req.body.etag },
+      create: {
         id: createId('obj'),
         ownerId: 'system',
         objectKey: req.body.objectKey,
         purpose: 'UNKNOWN',
         fileName: path.basename(req.body.objectKey),
         contentType: 'application/octet-stream',
-        sizeBytes: Number(req.body.sizeBytes),
-        status: 'UPLOADED',
-        createdAt: nowIso()
-      };
-      db().storageObjects.push(object);
-    }
-    object.status = 'UPLOADED';
-    object.etag = req.body.etag || object.etag;
-    object.sizeBytes = Number(req.body.sizeBytes);
-    await persist();
+        sizeBytes: BigInt(req.body.sizeBytes),
+        status: 'UPLOADED'
+      }
+    });
+
     return ok({ processed: true });
   });
 
   router.add('POST', '/developer/register', async (req) => {
-    const user = requireAuth(req, db());
+    const user = await requireAuth(req);
     requireFields(req.body, ['displayName']);
-    const existing = developerForUser(db(), user);
-    if (existing) throw new HttpError(409, 'DEVELOPER_EXISTS', 'Developer profile already exists for this account');
-    const profile = {
-      id: createId('dev'),
-      userId: user.id,
-      displayName: req.body.displayName,
-      website: req.body.website || '',
-      supportEmail: req.body.supportEmail || user.email,
-      verificationStatus: 'PENDING',
-      payoutStatus: 'INACTIVE',
-      createdAt: nowIso()
-    };
-    if (!user.roles.includes('DEVELOPER')) user.roles.push('DEVELOPER');
-    db().developerProfiles.push(profile);
-    addAuditLog(db(), user.id, 'DEVELOPER_REGISTERED', 'DEVELOPER', profile.id, { displayName: profile.displayName });
-    await persist();
+    const existing = await developerForUser(user);
+    if (existing) throw new HttpError(409, 'DEVELOPER_EXISTS', 'Developer profile already exists');
+
+    const profile = await prisma.developerProfile.create({
+      data: {
+        id: createId('dev'),
+        userId: user.id,
+        displayName: req.body.displayName,
+        website: req.body.website,
+        supportEmail: req.body.supportEmail || user.email
+      }
+    });
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { roles: { set: [...new Set([...user.roles, 'DEVELOPER'])] } }
+    });
+
+    await addAuditLog(user.id, 'DEVELOPER_REGISTERED', 'DEVELOPER', profile.id, { displayName: profile.displayName });
     return ok(profile, 201);
   });
-
   router.add('GET', '/developer/profile', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
-    const profile = developerForUser(db(), user);
-    if (!profile) throw new HttpError(404, 'DEVELOPER_PROFILE_NOT_FOUND', 'Developer profile was not found');
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+    const profile = await developerForUser(user);
+    if (!profile) throw new HttpError(404, 'PROFILE_NOT_FOUND', 'Developer profile not found');
     return ok(profile);
   });
 
   router.add('PATCH', '/developer/profile', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER']);
-    const profile = developerForUser(db(), user);
-    if (!profile) throw new HttpError(404, 'DEVELOPER_PROFILE_NOT_FOUND', 'Developer profile was not found');
-    profile.displayName = req.body.displayName ?? profile.displayName;
-    profile.website = req.body.website ?? profile.website;
-    profile.supportEmail = req.body.supportEmail ?? profile.supportEmail;
-    await persist();
-    return ok(profile);
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+    const profile = await developerForUser(user);
+    if (!profile) throw new HttpError(404, 'PROFILE_NOT_FOUND', 'Developer profile not found');
+
+    const data = {};
+    if (req.body.displayName !== undefined) data.displayName = req.body.displayName;
+    if (req.body.bio !== undefined) data.bio = req.body.bio;
+    if (req.body.website !== undefined) data.website = req.body.website;
+    if (req.body.supportEmail !== undefined) data.supportEmail = req.body.supportEmail;
+
+    const updated = await prisma.developerProfile.update({
+      where: { id: profile.id },
+      data
+    });
+    return ok(updated);
   });
 
   router.add('GET', '/developer/games', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
-    const developer = developerForUser(db(), user);
-    const status = req.query.get('status');
-    let games = user.roles.includes('ADMIN') && !developer ? db().games : db().games.filter((game) => game.developerId === developer?.id);
-    if (status) games = games.filter((game) => game.status.toLowerCase() === status.toLowerCase());
-    const { pageItems, pagination } = paginate(games, req.query);
-    return ok(
-      pageItems.map((game) => {
-        const latestBuild = db().gameBuilds.find((build) => build.id === game.latestBuildId);
-        return {
-          id: game.id,
-          title: game.title,
-          slug: game.slug,
-          status: game.status,
-          latestBuildVersion: latestBuild?.version || null,
-          downloads30d: 8492,
-          revenue30d: db()
-            .orders.filter((order) => order.gameId === game.id && order.status === 'PAID')
-            .reduce((total, order) => total + order.amount, 0)
-        };
-      }),
-      200,
-      { pagination }
-    );
-  });
-
-  router.add('GET', '/developer/games/:gameId', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
-    const game = findGame(db(), req.params.gameId);
-    assertDeveloperOwnsGame(db(), user, game);
-    const latestBuild = db().gameBuilds.find((build) => build.id === game.latestBuildId);
-    const media = db().gameMedia.filter((m) => m.gameId === game.id).sort((a, b) => a.sortOrder - b.sortOrder);
-    return ok({ ...game, latestBuildVersion: latestBuild?.version || null, media });
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+    const profile = await developerForUser(user);
+    if (!profile) throw new HttpError(404, 'PROFILE_NOT_FOUND', 'Developer profile not found');
+    const games = await prisma.game.findMany({ where: { developerId: profile.id } });
+    return ok(games);
   });
 
   router.add('POST', '/developer/games', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER']);
-    const developer = developerForUser(db(), user);
-    if (!developer) throw new HttpError(404, 'DEVELOPER_PROFILE_NOT_FOUND', 'Developer profile was not found');
-    requireFields(req.body, ['title', 'shortDescription', 'description']);
-    const slug = req.body.slug ? slugify(req.body.slug) : slugify(req.body.title);
-    if (db().games.some((game) => game.slug === slug)) throw new HttpError(409, 'SLUG_EXISTS', 'Game slug already exists');
-    const game = {
-      id: createId('game'),
-      developerId: developer.id,
-      slug,
-      title: req.body.title,
-      version: req.body.version || 'v1.0.0',
-      shortDescription: req.body.shortDescription,
-      description: req.body.description,
-      price: Number(req.body.price || 0),
-      currency: req.body.currency || 'INR',
-      priceType: req.body.priceType || (Number(req.body.price || 0) > 0 ? 'PAID' : 'FREE'),
-      licensingModel: req.body.licensingModel || (Number(req.body.price || 0) > 0 ? 'PREMIUM' : 'FREE_TO_PLAY'),
-      releaseDate: req.body.releaseDate || null,
-      publisher: req.body.publisher || developer.displayName,
-      genres: req.body.genres || [],
-      tags: req.body.tags || [],
-      platforms: req.body.platforms || ['PC'],
-      hardwareSpecs: req.body.hardwareSpecs || ['PC_SYSTEM'],
-      status: 'DRAFT',
-      featured: false,
-      coverUrl: '',
-      heroImageUrl: '',
-      heroBannerUrl: '',
-      trailerUrl: '',
-      latestBuildId: null,
-      systemRequirements: req.body.systemRequirements || {
-        minimum: { cpu: '', memory: '', gpu: '', storage: '' },
-        recommended: { cpu: '', memory: '', gpu: '', storage: '' }
-      },
-      createdAt: nowIso(),
-      updatedAt: nowIso()
-    };
-    db().games.push(game);
-    await persist();
-    return ok({ id: game.id, title: game.title, slug: game.slug, status: game.status }, 201);
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+    const profile = await developerForUser(user);
+    if (!profile) throw new HttpError(404, 'PROFILE_NOT_FOUND', 'Developer profile not found');
+    requireFields(req.body, ['title']);
+
+    const game = await prisma.game.create({
+      data: {
+        id: createId('game'),
+        developerId: profile.id,
+        title: req.body.title,
+        slug: slugify(req.body.title) + '-' + createId('').slice(-4),
+        status: 'DRAFT',
+        price: 0,
+        currency: 'INR',
+        priceType: 'FREE'
+      }
+    });
+    return ok(game, 201);
   });
 
   router.add('PATCH', '/developer/games/:gameId', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
-    const game = findGame(db(), req.params.gameId);
-    assertDeveloperOwnsGame(db(), user, game);
-    const editable = [
-      'title',
-      'version',
-      'shortDescription',
-      'description',
-      'price',
-      'currency',
-      'priceType',
-      'licensingModel',
-      'releaseDate',
-      'publisher',
-      'genres',
-      'tags',
-      'platforms',
-      'hardwareSpecs',
-      'coverUrl',
-      'heroImageUrl',
-      'heroBannerUrl',
-      'trailerUrl',
-      'systemRequirements'
-    ];
-    for (const field of editable) {
-      if (req.body[field] !== undefined) game[field] = req.body[field];
-    }
-    if (req.body.coverObjectKey) game.coverUrl = signedStorageUrl(req.body.coverObjectKey).url;
-    if (req.body.heroBannerObjectKey) game.heroBannerUrl = signedStorageUrl(req.body.heroBannerObjectKey).url;
-    if (req.body.trailerObjectKey) game.trailerUrl = signedStorageUrl(req.body.trailerObjectKey).url;
-    game.updatedAt = nowIso();
-    await persist();
-    return ok(game);
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+    const game = await findGame(req.params.gameId);
+    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
+    await assertDeveloperOwnsGame(user, game);
+
+    const updated = await prisma.game.update({
+      where: { id: game.id },
+      data: {
+        title: req.body.title,
+        shortDescription: req.body.shortDescription,
+        description: req.body.description,
+        tagline: req.body.tagline,
+        price: req.body.price !== undefined ? Number(req.body.price) : undefined,
+        priceType: req.body.priceType,
+        genres: req.body.genres,
+        tags: req.body.tags,
+        platforms: req.body.platforms
+      }
+    });
+
+    return ok(updated);
   });
 
-  router.add('DELETE', '/developer/games/:gameId', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
-    const game = findGame(db(), req.params.gameId);
-    assertDeveloperOwnsGame(db(), user, game);
-    if (game.status === 'PUBLISHED') throw new HttpError(409, 'PUBLISHED_GAME', 'Unpublish the game before deleting it');
-    state.db.games = db().games.filter((item) => item.id !== game.id);
-    await persist();
-    return ok({ deleted: true });
-  });
+router.add('DELETE', '/developer/games/:gameId', async (req) => {
+  const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+  const game = await findGame(req.params.gameId);
+  if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
+  await assertDeveloperOwnsGame(user, game);
 
-  router.add('POST', '/developer/games/:gameId/submit-review', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER']);
-    const game = findGame(db(), req.params.gameId);
-    assertDeveloperOwnsGame(db(), user, game);
-    game.status = 'IN_REVIEW';
-    game.reviewNotes = req.body.notes || '';
-    game.submittedAt = nowIso();
-    await persist();
-    return ok({ gameId: game.id, status: game.status, submittedAt: game.submittedAt });
+  await prisma.game.delete({ where: { id: game.id } });
+  return ok({ deleted: true });
+});
+
+  router.add('POST', '/developer/games/:gameId/submit', async (req) => {
+    const user = await requireAuth(req, null, ['DEVELOPER']);
+    const game = await findGame(req.params.gameId);
+    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
+    await assertDeveloperOwnsGame(user, game);
+
+    const updated = await prisma.game.update({
+      where: { id: game.id },
+      data: { status: 'PENDING_REVIEW', submittedAt: new Date() }
+    });
+
+    return ok(updated);
   });
 
   router.add('POST', '/developer/games/:gameId/publish', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
-    const game = findGame(db(), req.params.gameId);
-    assertDeveloperOwnsGame(db(), user, game);
-    game.status = 'PUBLISHED';
-    game.publishedAt = nowIso();
-    game.updatedAt = nowIso();
-    await persist();
-    return ok({ gameId: game.id, status: game.status, publishedAt: game.publishedAt });
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+    const game = await findGame(req.params.gameId);
+    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
+    await assertDeveloperOwnsGame(user, game);
+
+    const updated = await prisma.game.update({
+      where: { id: game.id },
+      data: { status: 'PUBLISHED', publishedAt: new Date() }
+    });
+
+    return ok(updated);
   });
 
   router.add('POST', '/developer/games/:gameId/unpublish', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
-    const game = findGame(db(), req.params.gameId);
-    assertDeveloperOwnsGame(db(), user, game);
-    game.status = 'UNPUBLISHED';
-    game.unpublishReason = req.body.reason || '';
-    game.updatedAt = nowIso();
-    await persist();
-    return ok({ gameId: game.id, status: game.status });
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+    const game = await findGame(req.params.gameId);
+    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
+    await assertDeveloperOwnsGame(user, game);
+
+    const updated = await prisma.game.update({
+      where: { id: game.id },
+      data: { status: 'DRAFT' }
+    });
+
+    return ok(updated);
+  });
+
+  router.add('POST', '/developer/games/:gameId/visibility', async (req) => {
+    const user = await requireAuth(req, null, ['DEVELOPER']);
+    const game = await findGame(req.params.gameId);
+    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
+    await assertDeveloperOwnsGame(user, game);
+    requireFields(req.body, ['visibility']);
+
+    const updated = await prisma.game.update({
+      where: { id: game.id },
+      data: { status: req.body.visibility === 'PUBLIC' ? 'PUBLISHED' : 'DRAFT' }
+    });
+
+    return ok(updated);
   });
 
   router.add('POST', '/developer/games/:gameId/media', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER']);
-    const game = findGame(db(), req.params.gameId);
-    assertDeveloperOwnsGame(db(), user, game);
-    requireFields(req.body, ['type', 'objectKey']);
-    const validTypes = ['IMAGE', 'VIDEO'];
-    if (!validTypes.includes(req.body.type)) {
-      throw new HttpError(400, 'VALIDATION_ERROR', `type must be one of: ${validTypes.join(', ')}`);
-    }
-    const existingMedia = db().gameMedia.filter((m) => m.gameId === game.id);
-    const sortOrder = req.body.sortOrder ?? (existingMedia.length + 1);
-    const media = {
-      id: createId('media'),
-      gameId: game.id,
-      type: req.body.type,
-      url: signedStorageUrl(req.body.objectKey).url,
-      objectKey: req.body.objectKey,
-      alt: req.body.alt || `${game.title} ${req.body.type.toLowerCase()}`,
-      sortOrder
-    };
-    db().gameMedia.push(media);
-    await persist();
+    const user = await requireAuth(req, null, ['DEVELOPER']);
+    const game = await findGame(req.params.gameId);
+    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
+    await assertDeveloperOwnsGame(user, game);
+    requireFields(req.body, ['type', 'url']);
+
+    const media = await prisma.gameMedia.create({
+      data: {
+        id: createId('media'),
+        gameId: game.id,
+        type: req.body.type,
+        url: req.body.url,
+        alt: req.body.alt
+      }
+    });
+
     return ok(media, 201);
   });
 
   router.add('DELETE', '/developer/games/:gameId/media/:mediaId', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
-    const game = findGame(db(), req.params.gameId);
-    assertDeveloperOwnsGame(db(), user, game);
-    const mediaIndex = db().gameMedia.findIndex((m) => m.id === req.params.mediaId && m.gameId === game.id);
-    if (mediaIndex === -1) throw new HttpError(404, 'MEDIA_NOT_FOUND', 'Media item was not found');
-    const [removed] = db().gameMedia.splice(mediaIndex, 1);
-    await persist();
-    return ok({ mediaId: removed.id, deleted: true });
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+    const game = await findGame(req.params.gameId);
+    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
+    await assertDeveloperOwnsGame(user, game);
+
+    await prisma.gameMedia.delete({
+      where: { id: req.params.mediaId, gameId: game.id }
+    });
+
+    return ok({ deleted: true });
   });
 
   router.add('GET', '/developer/games/:gameId/builds', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
-    const game = findGame(db(), req.params.gameId);
-    assertDeveloperOwnsGame(db(), user, game);
-    return ok(db().gameBuilds.filter((build) => build.gameId === game.id));
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+    const game = await findGame(req.params.gameId);
+    await assertDeveloperOwnsGame(user, game);
+    const builds = await prisma.gameBuild.findMany({
+      where: { gameId: game.id },
+      orderBy: { createdAt: 'desc' }
+    });
+    return ok(builds);
   });
 
   router.add('POST', '/developer/games/:gameId/builds', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER']);
-    const game = findGame(db(), req.params.gameId);
-    assertDeveloperOwnsGame(db(), user, game);
-    requireFields(req.body, ['version', 'platform', 'runtime', 'entrypoint']);
-    const build = {
-      id: createId('build'),
-      gameId: game.id,
-      version: req.body.version,
-      platform: req.body.platform,
-      runtime: req.body.runtime,
-      entrypoint: req.body.entrypoint,
-      changelog: req.body.changelog || '',
-      artifactObjectKey: null,
-      status: 'WAITING_FOR_UPLOAD',
-      scanStatus: 'NOT_STARTED',
-      sizeBytes: 0,
-      createdAt: nowIso()
-    };
-    db().gameBuilds.push(build);
-    await persist();
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+    const game = await findGame(req.params.gameId);
+    await assertDeveloperOwnsGame(user, game);
+    requireFields(req.body, ['version', 'platform']);
+
+    const build = await prisma.gameBuild.create({
+      data: {
+        id: createId('build'),
+        gameId: game.id,
+        version: req.body.version,
+        platform: req.body.platform,
+        runtime: req.body.runtime,
+        entrypoint: req.body.entrypoint,
+        changelog: req.body.changelog,
+        status: 'WAITING_FOR_UPLOAD'
+      }
+    });
     return ok(build, 201);
   });
 
-  router.add('GET', '/developer/builds', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
-    const developer = developerForUser(db(), user);
-    const devGameIds = user.roles.includes('ADMIN') && !developer
-      ? db().games.map((g) => g.id)
-      : db().games.filter((g) => g.developerId === developer?.id).map((g) => g.id);
-    const platform = req.query.get('platform');
-    const status = req.query.get('status');
-    let builds = db().gameBuilds.filter((b) => devGameIds.includes(b.gameId));
-    if (platform) builds = builds.filter((b) => b.platform === platform);
-    if (status) builds = builds.filter((b) => b.status === status);
-    const { pageItems, pagination } = paginate(builds, req.query);
-    return ok(pageItems.map((build) => {
-      const game = db().games.find((g) => g.id === build.gameId);
-      return { ...build, gameTitle: game?.title, gameSlug: game?.slug };
-    }), 200, { pagination });
-  });
+router.add('GET', '/developer/builds', async (req) => {
+  const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+  const profile = await developerForUser(user);
+  if (!profile && !user.roles.includes('ADMIN')) throw new HttpError(403, 'FORBIDDEN', 'Developer profile not found');
 
-  router.add('GET', '/developer/builds/:buildId', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
-    const build = findBuild(db(), req.params.buildId);
-    if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
-    const game = findGame(db(), build.gameId);
-    assertDeveloperOwnsGame(db(), user, game);
-    return ok(build);
+  const where = user.roles.includes('ADMIN') ? {} : { game: { developerId: profile.id } };
+  const builds = await prisma.gameBuild.findMany({
+    where,
+    include: { game: true },
+    orderBy: { createdAt: 'desc' }
   });
+  return ok(builds);
+});
 
-  router.add('POST', '/developer/builds/:buildId/upload-url', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER']);
-    const build = findBuild(db(), req.params.buildId);
-    if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
-    const game = findGame(db(), build.gameId);
-    assertDeveloperOwnsGame(db(), user, game);
-    requireFields(req.body, ['fileName', 'contentType', 'sizeBytes']);
-    const objectKey = `builds/${game.id}/${build.id}/${req.body.fileName}`;
-    if (req.body.multipart) {
-      const uploadId = createId('minio_upload');
-      const partCount = Math.max(1, Number(req.body.partCount || 1));
-      const parts = Array.from({ length: partCount }, (_, index) => ({
-        partNumber: index + 1,
-        uploadUrl: `${signedStorageUrl(objectKey, 'PUT').url}&uploadId=${uploadId}&partNumber=${index + 1}`
-      }));
-      return ok({ objectKey, uploadType: 'MULTIPART', uploadId, parts }, 201);
+router.add('POST', '/developer/games/:gameId/deploy', async (req) => {
+  const user = await requireAuth(req, null, ['DEVELOPER']);
+  requireFields(req.body, ['buildId']);
+  const build = await prisma.gameBuild.findUnique({ where: { id: req.body.buildId } });
+  if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build not found');
+  const game = await findGame(build.gameId);
+  await assertDeveloperOwnsGame(user, game);
+
+  const deployment = await prisma.deployment.create({
+    data: {
+      id: createId('dep'),
+      gameId: game.id,
+      buildId: build.id,
+      status: 'QUEUED',
+      progress: 0,
+      logs: {
+        create: { id: createId('deplog'), level: 'INFO', message: 'Deployment queued by developer' }
+      }
     }
-    const signed = signedStorageUrl(objectKey, 'PUT');
-    return ok({ objectKey, uploadType: 'SINGLE', uploadUrl: signed.url, expiresAt: signed.expiresAt }, 201);
   });
 
-  router.add('POST', '/developer/builds/:buildId/uploads/complete', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER']);
-    const build = findBuild(db(), req.params.buildId);
-    if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
-    const game = findGame(db(), build.gameId);
-    assertDeveloperOwnsGame(db(), user, game);
-    requireFields(req.body, ['objectKey', 'sizeBytes']);
-    build.artifactObjectKey = req.body.objectKey;
-    build.sizeBytes = Number(req.body.sizeBytes);
-    build.checksumSha256 = req.body.checksumSha256 || null;
-    build.status = 'PROCESSING';
-    const jobId = createId('job_extract');
-    await persist();
-    return ok({ buildId: build.id, status: build.status, jobId });
-  });
+  return ok(deployment, 201);
+});
 
-  router.add('POST', '/developer/builds/:buildId/scan', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
-    const build = findBuild(db(), req.params.buildId);
-    if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
-    const game = findGame(db(), build.gameId);
-    assertDeveloperOwnsGame(db(), user, game);
-    build.scanStatus = 'PASSED';
-    build.status = 'SCANNED';
-    const jobId = createId('job_scan');
-    await persist();
-    return ok({ buildId: build.id, scanStatus: 'QUEUED', jobId });
-  });
+router.add('GET', '/developer/builds/:buildId', async (req) => {
+  const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+  const build = await prisma.gameBuild.findUnique({ where: { id: req.params.buildId } });
+  if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
+  const game = await findGame(build.gameId);
+  await assertDeveloperOwnsGame(user, game);
+  return ok(build);
+});
 
-  router.add('POST', '/developer/builds/:buildId/deploy', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER']);
-    const build = findBuild(db(), req.params.buildId);
-    if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
-    const game = findGame(db(), build.gameId);
-    assertDeveloperOwnsGame(db(), user, game);
-    if (build.scanStatus !== 'PASSED') throw new HttpError(409, 'BUILD_NOT_SCANNED', 'Build must pass scan before deployment');
-    const deployment = {
+router.add('POST', '/developer/builds/:buildId/upload-url', async (req) => {
+  const user = await requireAuth(req, null, ['DEVELOPER']);
+  const build = await prisma.gameBuild.findUnique({ where: { id: req.params.buildId } });
+  if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
+  const game = await findGame(build.gameId);
+  await assertDeveloperOwnsGame(user, game);
+  requireFields(req.body, ['fileName', 'contentType', 'sizeBytes']);
+  const objectKey = `builds/${game.id}/${build.id}/${req.body.fileName}`;
+  if (req.body.multipart) {
+    const uploadId = createId('minio_upload');
+    const partCount = Math.max(1, Number(req.body.partCount || 1));
+    const parts = Array.from({ length: partCount }, (_, index) => ({
+      partNumber: index + 1,
+      uploadUrl: `${signedStorageUrl(objectKey, 'PUT').url}&uploadId=${uploadId}&partNumber=${index + 1}`
+    }));
+    return ok({ objectKey, uploadType: 'MULTIPART', uploadId, parts }, 201);
+  }
+  const signed = signedStorageUrl(objectKey, 'PUT');
+  return ok({ objectKey, uploadType: 'SINGLE', uploadUrl: signed.url, expiresAt: signed.expiresAt }, 201);
+});
+
+router.add('POST', '/developer/builds/:buildId/uploads/complete', async (req) => {
+  const user = await requireAuth(req, null, ['DEVELOPER']);
+  const build = await prisma.gameBuild.findUnique({ where: { id: req.params.buildId } });
+  if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
+  const game = await findGame(build.gameId);
+  await assertDeveloperOwnsGame(user, game);
+  requireFields(req.body, ['objectKey', 'sizeBytes']);
+  const updated = await prisma.gameBuild.update({
+    where: { id: build.id },
+    data: {
+      artifactObjectKey: req.body.objectKey,
+      sizeBytes: Number(req.body.sizeBytes),
+      checksumSha256: req.body.checksumSha256 || null,
+      status: 'PROCESSING'
+    }
+  });
+  return ok({ buildId: updated.id, status: updated.status, jobId: createId('job_extract') });
+});
+
+router.add('POST', '/developer/builds/:buildId/scan', async (req) => {
+  const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+  const build = await prisma.gameBuild.findUnique({ where: { id: req.params.buildId } });
+  if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
+  const game = await findGame(build.gameId);
+  await assertDeveloperOwnsGame(user, game);
+  await prisma.gameBuild.update({
+    where: { id: build.id },
+    data: { scanStatus: 'PASSED', status: 'SCANNED' }
+  });
+  return ok({ buildId: build.id, scanStatus: 'QUEUED', jobId: createId('job_scan') });
+});
+
+router.add('POST', '/developer/builds/:buildId/deploy', async (req) => {
+  const user = await requireAuth(req, null, ['DEVELOPER']);
+  const build = await prisma.gameBuild.findUnique({ where: { id: req.params.buildId } });
+  if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
+  const game = await findGame(build.gameId);
+  await assertDeveloperOwnsGame(user, game);
+  if (build.scanStatus !== 'PASSED') throw new HttpError(409, 'BUILD_NOT_SCANNED', 'Build must pass scan before deployment');
+  const deployment = await prisma.deployment.create({
+    data: {
       id: createId('dep'),
       gameId: game.id,
       buildId: build.id,
@@ -1783,290 +1481,288 @@ function registerRoutes(router) {
       environment: req.body.environment || 'PRODUCTION',
       progress: 0,
       releaseNotes: req.body.releaseNotes || '',
-      createdAt: nowIso()
-    };
-    db().deployments.push(deployment);
-    db().deploymentLogs.push({
-      id: createId('log'),
-      deploymentId: deployment.id,
-      level: 'INFO',
-      message: 'Deployment queued',
-      timestamp: nowIso()
-    });
-    if (req.body.makeLatest) game.latestBuildId = build.id;
-    await persist();
-    return ok(deployment, 201);
+      logs: { create: { id: createId('log'), level: 'INFO', message: 'Deployment queued' } }
+    }
   });
+  if (req.body.makeLatest) await prisma.game.update({ where: { id: game.id }, data: { latestBuildId: build.id } });
+  return ok(deployment, 201);
+});
 
-  router.add('DELETE', '/developer/builds/:buildId', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
-    const build = findBuild(db(), req.params.buildId);
-    if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
-    const game = findGame(db(), build.gameId);
-    assertDeveloperOwnsGame(db(), user, game);
-    if (build.status === 'DEPLOYED') throw new HttpError(409, 'BUILD_DEPLOYED', 'Cannot delete a deployed build');
-    state.db.gameBuilds = db().gameBuilds.filter((b) => b.id !== build.id);
-    if (game.latestBuildId === build.id) game.latestBuildId = null;
-    await persist();
-    return ok({ buildId: build.id, deleted: true });
+router.add('DELETE', '/developer/builds/:buildId', async (req) => {
+  const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+  const build = await prisma.gameBuild.findUnique({ where: { id: req.params.buildId } });
+  if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
+  const game = await findGame(build.gameId);
+  await assertDeveloperOwnsGame(user, game);
+  if (build.status === 'DEPLOYED') throw new HttpError(409, 'BUILD_DEPLOYED', 'Cannot delete a deployed build');
+  await prisma.gameBuild.delete({ where: { id: build.id } });
+  if (game.latestBuildId === build.id) await prisma.game.update({ where: { id: game.id }, data: { latestBuildId: null } });
+  return ok({ buildId: build.id, deleted: true });
+});
+
+router.add('GET', '/developer/deployments/:deploymentId/logs', async (req) => {
+  const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+  const logs = await prisma.deploymentLog.findMany({
+    where: { deploymentId: req.params.deploymentId },
+    orderBy: { createdAt: 'asc' }
   });
+  return ok(logs, 200, { nextCursor: logs.at(-1)?.id || null });
+});
 
-  router.add('GET', '/developer/deployments/:deploymentId/logs', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
-    const deployment = findDeployment(db(), req.params.deploymentId);
-    if (!deployment) throw new HttpError(404, 'DEPLOYMENT_NOT_FOUND', 'Deployment was not found');
-    const game = findGame(db(), deployment.gameId);
-    assertDeveloperOwnsGame(db(), user, game);
-    const limit = Math.min(500, Math.max(1, Number(req.query.get('limit') || 100)));
-    const logs = db()
-      .deploymentLogs.filter((log) => log.deploymentId === deployment.id)
-      .slice(-limit);
-    return ok(logs, 200, { nextCursor: logs.at(-1)?.id || null });
+router.add('GET', '/developer/deployments/:deploymentId', async (req) => {
+  const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+  const deployment = await prisma.deployment.findUnique({
+    where: { id: req.params.deploymentId },
+    include: { logs: { orderBy: { createdAt: 'asc' } } }
   });
+  if (!deployment) throw new HttpError(404, 'DEPLOYMENT_NOT_FOUND', 'Deployment not found');
+  const game = await findGame(deployment.gameId);
+  await assertDeveloperOwnsGame(user, game);
+  return ok(deployment);
+});
 
-  router.add('GET', '/developer/deployments/:deploymentId', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
-    const deployment = findDeployment(db(), req.params.deploymentId);
-    if (!deployment) throw new HttpError(404, 'DEPLOYMENT_NOT_FOUND', 'Deployment was not found');
-    const game = findGame(db(), deployment.gameId);
-    assertDeveloperOwnsGame(db(), user, game);
+router.add('GET', '/developer/deployments', async (req) => {
+  const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+  const profile = await developerForUser(user);
+  if (!profile && !user.roles.includes('ADMIN')) throw new HttpError(403, 'FORBIDDEN', 'Developer profile not found');
+
+  const where = user.roles.includes('ADMIN') ? {} : { game: { developerId: profile.id } };
+  const deployments = await prisma.deployment.findMany({
+    where,
+    include: { game: true, build: true },
+    orderBy: { createdAt: 'desc' }
+  });
+  return ok(deployments);
+});
+
+  router.add('GET', '/developer/dashboard', async (req) => {
+    const user = await requireAuth(req, null, ['DEVELOPER']);
+    const profile = await developerForUser(user);
+    if (!profile) throw new HttpError(404, 'PROFILE_NOT_FOUND', 'Developer profile not found');
+
+    const games = await prisma.game.findMany({ where: { developerId: profile.id } });
+    const gameIds = games.map(g => g.id);
+
+    const [orderStats, instanceCount] = await Promise.all([
+      prisma.order.aggregate({
+        where: { gameId: { in: gameIds }, status: 'PAID' },
+        _sum: { amount: true },
+        _count: true
+      }),
+      prisma.gameInstance.count({
+        where: { gameId: { in: gameIds } }
+      })
+    ]);
+
     return ok({
-      ...deployment,
-      steps: [
-        { name: 'extract', status: deployment.progress >= 25 ? 'COMPLETED' : 'PENDING' },
-        { name: 'scan', status: deployment.progress >= 50 ? 'COMPLETED' : 'PENDING' },
-        { name: 'publish-assets', status: deployment.progress >= 75 ? 'COMPLETED' : 'PENDING' },
-        { name: 'activate-release', status: deployment.status === 'COMPLETED' ? 'COMPLETED' : 'PENDING' }
-      ]
+      stats: {
+        totalGames: games.length,
+        totalRevenue: orderStats._sum.amount || 0,
+        totalSales: orderStats._count,
+        activeInstances: instanceCount
+      }
     });
-  });
-
-  router.add('GET', '/developer/deployments', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER', 'ADMIN']);
-    const developer = developerForUser(db(), user);
-    const devGameIds = user.roles.includes('ADMIN') && !developer
-      ? db().games.map((g) => g.id)
-      : db().games.filter((g) => g.developerId === developer?.id).map((g) => g.id);
-    const status = req.query.get('status');
-    const gameId = req.query.get('gameId');
-    let deployments = db().deployments.filter((dep) => devGameIds.includes(dep.gameId));
-    if (status) deployments = deployments.filter((dep) => dep.status === status);
-    if (gameId) deployments = deployments.filter((dep) => dep.gameId === gameId);
-    const { pageItems, pagination } = paginate(deployments, req.query);
-    return ok(pageItems.map((dep) => {
-      const game = db().games.find((g) => g.id === dep.gameId);
-      const build = db().gameBuilds.find((b) => b.id === dep.buildId);
-      return { ...dep, gameTitle: game?.title, buildVersion: build?.version };
-    }), 200, { pagination });
   });
 
   router.add('GET', '/developer/analytics', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER']);
-    const developer = developerForUser(db(), user);
-    const gameIds = db().games.filter((game) => game.developerId === developer?.id).map((game) => game.id);
-    const paidOrders = db().orders.filter((order) => gameIds.includes(order.gameId) && order.status === 'PAID');
-    const grossRevenue = paidOrders.reduce((total, order) => total + order.amount, 0);
-    return ok({
-      downloads: 8492,
-      activeInstances: db().gameInstances.filter((instance) => gameIds.includes(instance.gameId)).length,
-      grossRevenue,
-      netRevenue: Math.floor(grossRevenue * 0.8),
-      averageSessionSeconds: 1440,
-      series: [{ date: new Date().toISOString().slice(0, 10), downloads: 1200, revenue: grossRevenue }]
-    });
-  });
+    const user = await requireAuth(req, null, ['DEVELOPER']);
+    const profile = await developerForUser(user);
+    if (!profile) throw new HttpError(403, 'FORBIDDEN', 'Developer profile not found');
 
-  router.add('GET', '/developer/revenue', async (req) => {
-    const user = requireAuth(req, db(), ['DEVELOPER']);
-    const developer = developerForUser(db(), user);
-    const gameIds = db().games.filter((game) => game.developerId === developer?.id).map((game) => game.id);
-    const grossRevenue = db()
-      .orders.filter((order) => gameIds.includes(order.gameId) && order.status === 'PAID')
-      .reduce((total, order) => total + order.amount, 0);
-    const platformFee = Math.floor(grossRevenue * 0.2);
+    const stats = await prisma.order.aggregate({
+      where: { game: { developerId: profile.id }, status: 'COMPLETED' },
+      _sum: { amount: true },
+      _count: { id: true }
+    });
+
+    const recentSales = await prisma.order.findMany({
+      where: { game: { developerId: profile.id }, status: 'COMPLETED' },
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+      include: { game: true }
+    });
+
     return ok({
-      currency: 'INR',
-      grossRevenue,
-      platformFee,
-      taxes: 0,
-      netRevenue: grossRevenue - platformFee,
-      pendingPayout: grossRevenue - platformFee,
-      paidOut: 0
+      totalRevenue: stats._sum.amount || 0,
+      totalSales: stats._count.id || 0,
+      recentSales
     });
   });
 
   router.add('POST', '/instances', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER']);
+    const user = await requireAuth(req, null, ['PLAYER']);
     requireFields(req.body, ['gameId']);
-    const game = findGame(db(), req.body.gameId);
-    if (!game || game.status !== 'PUBLISHED') throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
-    if (!userOwnsGame(db(), user.id, game.id)) throw new HttpError(403, 'GAME_NOT_OWNED', 'You must own the game to host it');
-    const instance = {
-      id: createId('inst'),
-      gameId: game.id,
-      ownerId: user.id,
-      status: 'PROVISIONING',
-      region: req.body.region || 'ap-south-1',
-      visibility: req.body.visibility || 'PRIVATE',
-      maxPlayers: Number(req.body.maxPlayers || 8),
-      name: req.body.name || `${game.title} Lobby`,
-      joinCode: crypto.randomBytes(4).toString('hex').toUpperCase(),
-      endpoint: null,
-      createdAt: nowIso()
-    };
-    db().gameInstances.push(instance);
-    db().instancePlayers.push({
-      id: createId('iplayer'),
-      instanceId: instance.id,
-      userId: user.id,
-      role: 'HOST',
-      joinedAt: nowIso()
+    const game = await findGame(req.body.gameId);
+    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
+    if (!(await userOwnsGame(user.id, game.id))) throw new HttpError(403, 'GAME_NOT_OWNED', 'You must own the game to host it');
+
+    const instanceId = createId('inst');
+    const instance = await prisma.gameInstance.create({
+      data: {
+        id: instanceId,
+        gameId: game.id,
+        hostUserId: user.id,
+        name: req.body.name || `${user.displayName}'s Lobby`,
+        visibility: req.body.visibility || 'PRIVATE',
+        region: req.body.region || 'ap-south-1',
+        joinCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+        maxPlayers: Number(req.body.maxPlayers || 8),
+        status: 'READY',
+        players: {
+          create: { id: createId('instp'), userId: user.id, role: 'HOST' }
+        }
+      },
+      include: { game: true, players: true }
     });
-    await persist();
+
     return ok(instance, 201);
   });
 
   router.add('GET', '/instances', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER']);
-    const gameId = req.query.get('gameId');
-    const status = req.query.get('status');
-    const memberInstanceIds = db().instancePlayers.filter((player) => player.userId === user.id).map((player) => player.instanceId);
-    let instances = db().gameInstances.filter((instance) => instance.ownerId === user.id || memberInstanceIds.includes(instance.id));
-    if (gameId) instances = instances.filter((instance) => instance.gameId === gameId);
-    if (status) instances = instances.filter((instance) => instance.status.toLowerCase() === status.toLowerCase());
-    return ok(
-      instances.map((instance) => {
-        const game = db().games.find((item) => item.id === instance.gameId);
-        return {
-          id: instance.id,
-          gameId: instance.gameId,
-          gameTitle: game?.title,
-          status: instance.status,
-          playersOnline: db().instancePlayers.filter((player) => player.instanceId === instance.id).length,
-          maxPlayers: instance.maxPlayers,
-          region: instance.region
-        };
-      })
-    );
+    const user = await requireAuth(req);
+    const instances = await prisma.gameInstance.findMany({
+      where: {
+        OR: [
+          { hostUserId: user.id },
+          { players: { some: { userId: user.id } } }
+        ]
+      },
+      include: { game: true, players: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    return ok(instances);
   });
 
   router.add('GET', '/instances/:instanceId', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER', 'ADMIN']);
-    const instance = db().gameInstances.find((item) => item.id === req.params.instanceId);
-    if (!instance) throw new HttpError(404, 'INSTANCE_NOT_FOUND', 'Instance was not found');
-    const isMember = db().instancePlayers.some((player) => player.instanceId === instance.id && player.userId === user.id);
-    if (!isMember && instance.ownerId !== user.id && !user.roles.includes('ADMIN')) {
-      throw new HttpError(403, 'FORBIDDEN', 'You cannot access this instance');
-    }
-    return ok({
-      ...instance,
-      endpoint: instance.endpoint || `wss://runtime.lazplay.local/instances/${instance.id}`,
-      players: db()
-        .instancePlayers.filter((player) => player.instanceId === instance.id)
-        .map((player) => ({
-          userId: player.userId,
-          displayName: db().users.find((entry) => entry.id === player.userId)?.displayName,
-          role: player.role
-        }))
+    const user = await requireAuth(req);
+    const instance = await prisma.gameInstance.findUnique({
+      where: { id: req.params.instanceId },
+      include: { hostUser: true, game: true, players: { include: { user: true } } }
     });
+    if (!instance) throw new HttpError(404, 'INSTANCE_NOT_FOUND', 'Instance not found');
+
+    return ok(instance);
   });
 
-  const instanceAction = (status) => async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER', 'ADMIN']);
-    const instance = db().gameInstances.find((item) => item.id === req.params.instanceId);
-    if (!instance) throw new HttpError(404, 'INSTANCE_NOT_FOUND', 'Instance was not found');
-    if (instance.ownerId !== user.id && !user.roles.includes('ADMIN')) {
-      throw new HttpError(403, 'FORBIDDEN', 'Only the instance owner can manage it');
-    }
-    instance.status = status;
-    if (status === 'STARTING') instance.endpoint = `wss://runtime.lazplay.local/instances/${instance.id}`;
-    db().instanceLogs.push({
-      id: createId('ilog'),
-      instanceId: instance.id,
-      level: 'INFO',
-      message: `Instance status changed to ${status}`,
-      timestamp: nowIso()
-    });
-    await persist();
-    return ok({ instanceId: instance.id, status });
-  };
+const instanceAction = (status) => async (req) => {
+  const user = await requireAuth(req);
+  const instance = await prisma.gameInstance.findUnique({ where: { id: req.params.instanceId } });
+  if (!instance) throw new HttpError(404, 'INSTANCE_NOT_FOUND', 'Instance not found');
+  if (instance.hostUserId !== user.id && !user.roles.includes('ADMIN')) {
+    throw new HttpError(403, 'FORBIDDEN', 'Only the host or admin can manage it');
+  }
+
+  const updated = await prisma.gameInstance.update({
+    where: { id: instance.id },
+    data: { status }
+  });
+
+  return ok(updated);
+};
 
   router.add('POST', '/instances/:instanceId/start', instanceAction('STARTING'));
   router.add('POST', '/instances/:instanceId/stop', instanceAction('STOPPING'));
   router.add('POST', '/instances/:instanceId/restart', instanceAction('RESTARTING'));
 
+  router.add('POST', '/instances/:instanceId/logs', async (req) => {
+    const user = await requireAuth(req);
+    const instance = await prisma.gameInstance.findUnique({ where: { id: req.params.instanceId } });
+    if (!instance) throw new HttpError(404, 'INSTANCE_NOT_FOUND', 'Instance not found');
+    requireFields(req.body, ['level', 'message']);
+
+    console.log(`[Instance ${instance.id}] [${req.body.level}] ${req.body.message}`);
+    return ok({ logged: true });
+  });
+
   router.add('DELETE', '/instances/:instanceId', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER', 'ADMIN']);
-    const instance = db().gameInstances.find((item) => item.id === req.params.instanceId);
-    if (!instance) throw new HttpError(404, 'INSTANCE_NOT_FOUND', 'Instance was not found');
-    if (instance.ownerId !== user.id && !user.roles.includes('ADMIN')) {
-      throw new HttpError(403, 'FORBIDDEN', 'Only the instance owner can delete it');
+    const user = await requireAuth(req);
+    const instance = await prisma.gameInstance.findUnique({ where: { id: req.params.instanceId } });
+    if (!instance) throw new HttpError(404, 'INSTANCE_NOT_FOUND', 'Instance not found');
+    if (instance.hostUserId !== user.id && !user.roles.includes('ADMIN')) {
+      throw new HttpError(403, 'FORBIDDEN', 'Only the host or admin can delete the instance');
     }
-    state.db.gameInstances = db().gameInstances.filter((item) => item.id !== instance.id);
-    state.db.instancePlayers = db().instancePlayers.filter((item) => item.instanceId !== instance.id);
-    await persist();
-    return ok({ instanceId: instance.id, deleted: true });
+
+    await prisma.gameInstance.delete({ where: { id: instance.id } });
+    return ok({ deleted: true });
   });
 
   router.add('GET', '/instances/:instanceId/logs', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER', 'ADMIN']);
-    const instance = db().gameInstances.find((item) => item.id === req.params.instanceId);
-    if (!instance) throw new HttpError(404, 'INSTANCE_NOT_FOUND', 'Instance was not found');
-    const isMember = db().instancePlayers.some((player) => player.instanceId === instance.id && player.userId === user.id);
-    if (!isMember && instance.ownerId !== user.id && !user.roles.includes('ADMIN')) {
-      throw new HttpError(403, 'FORBIDDEN', 'You cannot access this instance');
+    const user = await requireAuth(req);
+    const instance = await prisma.gameInstance.findUnique({ where: { id: req.params.instanceId } });
+    if (!instance) throw new HttpError(404, 'INSTANCE_NOT_FOUND', 'Instance not found');
+
+    const isMember = await prisma.instancePlayer.findUnique({
+      where: { instanceId_userId: { instanceId: instance.id, userId: user.id } }
+    });
+
+    if (!isMember && instance.hostUserId !== user.id && !user.roles.includes('ADMIN')) {
+      throw new HttpError(403, 'FORBIDDEN', 'Access denied');
     }
-    return ok(db().instanceLogs.filter((log) => log.instanceId === instance.id));
+
+    return ok([]); // Return empty logs as we moved to console.log/external logging
   });
 
   router.add('GET', '/instances/:instanceId/metrics', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER', 'ADMIN']);
-    const instance = db().gameInstances.find((item) => item.id === req.params.instanceId);
+    const user = await requireAuth(req, null, ['PLAYER', 'ADMIN']);
+    const instance = await prisma.gameInstance.findUnique({
+      where: { id: req.params.instanceId },
+      include: { players: true }
+    });
     if (!instance) throw new HttpError(404, 'INSTANCE_NOT_FOUND', 'Instance was not found');
-    if (instance.ownerId !== user.id && !user.roles.includes('ADMIN')) {
-      const isMember = db().instancePlayers.some((player) => player.instanceId === instance.id && player.userId === user.id);
-      if (!isMember) throw new HttpError(403, 'FORBIDDEN', 'You cannot access this instance');
+
+    const isMember = instance.players.some(p => p.userId === user.id);
+    if (instance.hostUserId !== user.id && !user.roles.includes('ADMIN') && !isMember) {
+      throw new HttpError(403, 'FORBIDDEN', 'You cannot access this instance');
     }
+
     return ok({
       cpuPercent: 42,
       memoryMb: 820,
       networkInKbps: 1200,
       networkOutKbps: 2400,
-      playersOnline: db().instancePlayers.filter((player) => player.instanceId === instance.id).length,
+      playersOnline: instance.players.length,
       latencyMs: 14
     });
   });
 
   router.add('POST', '/instances/:instanceId/join', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER']);
-    const instance = db().gameInstances.find((item) => item.id === req.params.instanceId);
-    if (!instance) throw new HttpError(404, 'INSTANCE_NOT_FOUND', 'Instance was not found');
-    if (instance.visibility === 'PRIVATE' && req.body.joinCode !== instance.joinCode) {
-      throw new HttpError(403, 'INVALID_JOIN_CODE', 'Join code is invalid');
-    }
-    if (!db().instancePlayers.some((player) => player.instanceId === instance.id && player.userId === user.id)) {
-      db().instancePlayers.push({
-        id: createId('iplayer'),
-        instanceId: instance.id,
-        userId: user.id,
-        role: 'PLAYER',
-        joinedAt: nowIso()
-      });
-    }
-    await persist();
-    return ok({
-      instanceId: instance.id,
-      joined: true,
-      connectToken: signToken({ type: 'runtime', sub: user.id, instanceId: instance.id }, config.runtimeTokenTtlSeconds)
+    const user = await requireAuth(req, null, ['PLAYER']);
+    const instance = await prisma.gameInstance.findUnique({
+      where: { id: req.params.instanceId },
+      include: { players: true }
     });
+    if (!instance) throw new HttpError(404, 'INSTANCE_NOT_FOUND', 'Instance not found');
+    if (instance.status !== 'READY') throw new HttpError(400, 'INSTANCE_NOT_READY', 'Instance is not ready to join');
+    if (instance.players.length >= instance.maxPlayers) throw new HttpError(400, 'INSTANCE_FULL', 'Instance is full');
+
+    const updated = await prisma.gameInstance.update({
+      where: { id: instance.id },
+      data: {
+        players: {
+          upsert: {
+            where: { instanceId_userId: { instanceId: instance.id, userId: user.id } },
+            update: { role: 'PLAYER' },
+            create: { id: createId('instp'), userId: user.id, role: 'PLAYER' }
+          }
+        }
+      },
+      include: { game: true, players: { include: { user: true } } }
+    });
+
+    return ok(updated);
   });
 
   router.add('GET', '/instances/:instanceId/connect-token', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER']);
-    const instance = db().gameInstances.find((item) => item.id === req.params.instanceId);
+    const user = await requireAuth(req, null, ['PLAYER']);
+    const instance = await prisma.gameInstance.findUnique({
+      where: { id: req.params.instanceId },
+      include: { players: true }
+    });
     if (!instance) throw new HttpError(404, 'INSTANCE_NOT_FOUND', 'Instance was not found');
-    const isMember = db().instancePlayers.some((player) => player.instanceId === instance.id && player.userId === user.id);
+
+    const isMember = instance.players.some(p => p.userId === user.id);
     if (!isMember) throw new HttpError(403, 'FORBIDDEN', 'You must join this instance first');
+
     return ok({
       connectToken: signToken({ type: 'runtime', sub: user.id, instanceId: instance.id }, config.runtimeTokenTtlSeconds),
       endpoint: instance.endpoint || `wss://runtime.lazplay.local/instances/${instance.id}`,
@@ -2075,380 +1771,428 @@ function registerRoutes(router) {
   });
 
   router.add('GET', '/admin/dashboard', async (req) => {
-    requireAuth(req, db(), ['ADMIN']);
+    await requireAuth(req, null, ['ADMIN']);
+    const [userCount, gameCount, orderCount, revenue] = await Promise.all([
+      prisma.user.count(),
+      prisma.game.count(),
+      prisma.order.count(),
+      prisma.order.aggregate({
+        where: { status: 'PAID' },
+        _sum: { amount: true }
+      })
+    ]);
     return ok({
-      usersOnline: db().refreshSessions.filter((session) => !session.revokedAt).length,
-      activeInstances: db().gameInstances.length,
-      serverLoadPercent: 89.4,
-      revenue24h: db().orders.filter((order) => order.status === 'PAID').reduce((total, order) => total + order.amount, 0),
-      pendingGameReviews: db().games.filter((game) => game.status === 'IN_REVIEW').length,
-      alerts: db()
-        .serverNodes.filter((node) => node.status !== 'HEALTHY')
-        .map((node) => ({ severity: 'CRITICAL', message: `Node ${node.id} is ${node.status}` }))
+      stats: {
+        totalUsers: userCount,
+        totalGames: gameCount,
+        totalOrders: orderCount,
+        totalRevenue: revenue._sum.amount || 0
+      }
     });
   });
 
   router.add('GET', '/admin/users', async (req) => {
-    requireAuth(req, db(), ['ADMIN']);
-    const search = (req.query.get('search') || '').toLowerCase();
-    const role = req.query.get('role');
-    const status = req.query.get('status');
-    let users = db().users;
-    if (search) users = users.filter((user) => user.email.toLowerCase().includes(search) || user.username.toLowerCase().includes(search));
-    if (role) users = users.filter((user) => user.roles.includes(role));
-    if (status) users = users.filter((user) => user.status.toLowerCase() === status.toLowerCase());
-    const { pageItems, pagination } = paginate(users, req.query);
-    return ok(pageItems.map(sanitizeUser), 200, { pagination });
-  });
+    await requireAuth(req, null, ['ADMIN']);
+    const search = req.query.get('search') || '';
+    const { page, limit } = parsePagination(req.query);
 
-  router.add('PATCH', '/admin/users/:userId/role', async (req) => {
-    const admin = requireAuth(req, db(), ['ADMIN']);
-    requireFields(req.body, ['roles']);
-    const user = db().users.find((item) => item.id === req.params.userId);
-    if (!user) throw new HttpError(404, 'USER_NOT_FOUND', 'User was not found');
-    user.roles = req.body.roles;
-    addAuditLog(db(), admin.id, 'USER_ROLE_UPDATED', 'USER', user.id, { roles: user.roles });
-    await persist();
-    return ok({ userId: user.id, roles: user.roles });
-  });
-
-  router.add('GET', '/admin/users/:userId', async (req) => {
-    requireAuth(req, db(), ['ADMIN']);
-    const user = db().users.find((item) => item.id === req.params.userId);
-    if (!user) throw new HttpError(404, 'USER_NOT_FOUND', 'User was not found');
-    return ok(sanitizeUser(user));
-  });
-
-  router.add('PATCH', '/admin/users/:userId/status', async (req) => {
-    const admin = requireAuth(req, db(), ['ADMIN']);
-    requireFields(req.body, ['status']);
-    const user = db().users.find((item) => item.id === req.params.userId);
-    if (!user) throw new HttpError(404, 'USER_NOT_FOUND', 'User was not found');
-    const validStatuses = ['ACTIVE', 'INACTIVE', 'SUSPENDED'];
-    if (!validStatuses.includes(req.body.status)) {
-      throw new HttpError(400, 'VALIDATION_ERROR', `status must be one of: ${validStatuses.join(', ')}`);
+    const where = {};
+    if (search) {
+      where.OR = [
+        { username: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { displayName: { contains: search, mode: 'insensitive' } }
+      ];
     }
-    user.status = req.body.status;
-    addAuditLog(db(), admin.id, 'USER_STATUS_UPDATED', 'USER', user.id, { status: user.status });
-    await persist();
-    return ok({ userId: user.id, status: user.status });
-  });
 
-  router.add('POST', '/admin/users/:userId/ban', async (req) => {
-    const admin = requireAuth(req, db(), ['ADMIN']);
-    const user = db().users.find((item) => item.id === req.params.userId);
-    if (!user) throw new HttpError(404, 'USER_NOT_FOUND', 'User was not found');
-    user.status = 'BANNED';
-    user.banReason = req.body.reason || 'No reason provided';
-    user.banExpiresAt = req.body.expiresAt || null;
-    addAuditLog(db(), admin.id, 'USER_BANNED', 'USER', user.id, { reason: user.banReason });
-    await persist();
-    return ok({ userId: user.id, status: user.status });
-  });
+    const [total, users] = await Promise.all([
+      prisma.user.count({ where }),
+      prisma.user.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: 'desc' }
+      })
+    ]);
 
-  router.add('POST', '/admin/users/:userId/unban', async (req) => {
-    const admin = requireAuth(req, db(), ['ADMIN']);
-    const user = db().users.find((item) => item.id === req.params.userId);
-    if (!user) throw new HttpError(404, 'USER_NOT_FOUND', 'User was not found');
-    user.status = 'ACTIVE';
-    user.banReason = null;
-    user.banExpiresAt = null;
-    addAuditLog(db(), admin.id, 'USER_UNBANNED', 'USER', user.id);
-    await persist();
-    return ok({ userId: user.id, status: user.status });
-  });
-
-  router.add('GET', '/admin/games', async (req) => {
-    requireAuth(req, db(), ['ADMIN']);
-    const status = req.query.get('status');
-    let games = db().games;
-    if (status) games = games.filter((game) => game.status === status);
-    const { pageItems, pagination } = paginate(games, req.query);
-    return ok(
-      pageItems.map((game) => ({
-        id: game.id,
-        title: game.title,
-        developerName: gameDeveloper(db(), game)?.displayName,
-        status: game.status,
-        submittedAt: game.submittedAt || null
-      })),
-      200,
-      { pagination }
-    );
-  });
-
-  router.add('PATCH', '/admin/games/:gameId/status', async (req) => {
-    const admin = requireAuth(req, db(), ['ADMIN']);
-    requireFields(req.body, ['status']);
-    const game = findGame(db(), req.params.gameId);
-    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
-    game.status = req.body.status;
-    game.statusReason = req.body.reason || '';
-    game.updatedAt = nowIso();
-    addAuditLog(db(), admin.id, 'GAME_STATUS_UPDATED', 'GAME', game.id, { status: game.status, reason: game.statusReason });
-    await persist();
-    return ok({ gameId: game.id, status: game.status });
-  });
-
-  router.add('POST', '/admin/games/:gameId/feature', async (req) => {
-    const admin = requireAuth(req, db(), ['ADMIN']);
-    const game = findGame(db(), req.params.gameId);
-    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
-    game.featured = true;
-    game.updatedAt = nowIso();
-    addAuditLog(db(), admin.id, 'GAME_FEATURED', 'GAME', game.id);
-    await persist();
-    return ok({ gameId: game.id, featured: true });
-  });
-
-  router.add('DELETE', '/admin/games/:gameId/feature', async (req) => {
-    const admin = requireAuth(req, db(), ['ADMIN']);
-    const game = findGame(db(), req.params.gameId);
-    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
-    game.featured = false;
-    game.updatedAt = nowIso();
-    addAuditLog(db(), admin.id, 'GAME_UNFEATURED', 'GAME', game.id);
-    await persist();
-    return ok({ gameId: game.id, featured: false });
-  });
-
-  router.add('GET', '/admin/deployments', async (req) => {
-    requireAuth(req, db(), ['ADMIN']);
-    const status = req.query.get('status');
-    const gameId = req.query.get('gameId');
-    let deployments = db().deployments;
-    if (status) deployments = deployments.filter((deployment) => deployment.status === status);
-    if (gameId) deployments = deployments.filter((deployment) => deployment.gameId === gameId);
-    const { pageItems, pagination } = paginate(deployments, req.query);
-    return ok(pageItems.map((dep) => {
-      const game = db().games.find((g) => g.id === dep.gameId);
-      const build = db().gameBuilds.find((b) => b.id === dep.buildId);
-      return { ...dep, gameTitle: game?.title, buildVersion: build?.version };
-    }), 200, { pagination });
-  });
-
-  router.add('GET', '/admin/deployments/:deploymentId', async (req) => {
-    requireAuth(req, db(), ['ADMIN']);
-    const deployment = findDeployment(db(), req.params.deploymentId);
-    if (!deployment) throw new HttpError(404, 'DEPLOYMENT_NOT_FOUND', 'Deployment was not found');
-    const game = db().games.find((g) => g.id === deployment.gameId);
-    const build = db().gameBuilds.find((b) => b.id === deployment.buildId);
-    const logs = db().deploymentLogs.filter((log) => log.deploymentId === deployment.id);
-    return ok({
-      ...deployment,
-      gameTitle: game?.title,
-      buildVersion: build?.version,
-      steps: [
-        { name: 'extract',        status: deployment.progress >= 25 ? 'COMPLETED' : 'PENDING' },
-        { name: 'scan',           status: deployment.progress >= 50 ? 'COMPLETED' : 'PENDING' },
-        { name: 'publish-assets', status: deployment.progress >= 75 ? 'COMPLETED' : 'PENDING' },
-        { name: 'activate',       status: deployment.status === 'COMPLETED' ? 'COMPLETED' : 'PENDING' }
-      ],
-      logCount: logs.length
+    return ok(users.map(sanitizeUser), 200, {
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
     });
   });
 
-  router.add('GET', '/admin/servers', async (req) => {
-    requireAuth(req, db(), ['ADMIN']);
-    return ok(db().serverNodes);
+  router.add('PATCH', '/admin/users/:userId/roles', async (req) => {
+    const admin = await requireAuth(req, null, ['ADMIN']);
+    const user = await prisma.user.findUnique({ where: { id: req.params.userId } });
+    if (!user) throw new HttpError(404, 'USER_NOT_FOUND', 'User not found');
+    requireFields(req.body, ['roles']);
+
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: { roles: req.body.roles }
+    });
+
+    await addAuditLog(admin.id, 'USER_ROLE_UPDATED', 'USER', user.id, { roles: req.body.roles });
+    return ok(sanitizeUser(updated));
   });
 
-  router.add('POST', '/admin/servers', async (req) => {
-    const admin = requireAuth(req, db(), ['ADMIN']);
-    requireFields(req.body, ['id', 'region']);
-    if (db().serverNodes.find((n) => n.id === req.body.id)) {
-      throw new HttpError(409, 'NODE_EXISTS', 'A server node with that ID already exists');
+  router.add('PATCH', '/admin/users/:userId/status', async (req) => {
+    const admin = await requireAuth(req, null, ['ADMIN']);
+    const user = await prisma.user.findUnique({ where: { id: req.params.userId } });
+    if (!user) throw new HttpError(404, 'USER_NOT_FOUND', 'User not found');
+    requireFields(req.body, ['status']);
+
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: { status: req.body.status }
+    });
+
+    await addAuditLog(admin.id, 'USER_STATUS_UPDATED', 'USER', user.id, { status: req.body.status });
+    return ok(sanitizeUser(updated));
+  });
+
+  router.add('POST', '/admin/users/:userId/ban', async (req) => {
+    const admin = await requireAuth(req, null, ['ADMIN']);
+    const user = await prisma.user.findUnique({ where: { id: req.params.userId } });
+    if (!user) throw new HttpError(404, 'USER_NOT_FOUND', 'User not found');
+
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: { status: 'BANNED' }
+    });
+
+    await addAuditLog(admin.id, 'USER_BANNED', 'USER', user.id, { reason: req.body.reason });
+    return ok(sanitizeUser(updated));
+  });
+
+  router.add('POST', '/admin/users/:userId/unban', async (req) => {
+    const admin = await requireAuth(req, null, ['ADMIN']);
+    const user = await prisma.user.findUnique({ where: { id: req.params.userId } });
+    if (!user) throw new HttpError(404, 'USER_NOT_FOUND', 'User not found');
+
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: { status: 'ACTIVE' }
+    });
+
+    await addAuditLog(admin.id, 'USER_UNBANNED', 'USER', user.id);
+    return ok(sanitizeUser(updated));
+  });
+
+  router.add('GET', '/admin/games', async (req) => {
+    await requireAuth(req, null, ['ADMIN']);
+    const search = req.query.get('search') || '';
+    const status = req.query.get('status');
+    const { page, limit } = parsePagination(req.query);
+
+    const where = {};
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { slug: { contains: search, mode: 'insensitive' } }
+      ];
     }
-    const node = {
-      id: req.body.id,
-      region: req.body.region,
-      status: req.body.status || 'HEALTHY',
-      cpuPercent: 0,
-      memoryPercent: 0,
-      packetLossPercent: 0,
-      activeInstances: 0
-    };
-    db().serverNodes.push(node);
-    addAuditLog(db(), admin.id, 'SERVER_NODE_ADDED', 'SERVER', node.id, { region: node.region });
-    await persist();
+    if (status) where.status = status;
+
+    const [total, games] = await Promise.all([
+      prisma.game.count({ where }),
+      prisma.game.findMany({
+        where,
+        include: { developer: true },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: 'desc' }
+      })
+    ]);
+
+    return ok(games, 200, {
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
+    });
+  });
+
+  router.add('PATCH', '/admin/games/:gameId/status', async (req) => {
+    const admin = await requireAuth(req, null, ['ADMIN']);
+    const game = await findGame(req.params.gameId);
+    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
+    requireFields(req.body, ['status']);
+
+    const updated = await prisma.game.update({
+      where: { id: game.id },
+      data: {
+        status: req.body.status,
+        statusReason: req.body.reason,
+        publishedAt: req.body.status === 'PUBLISHED' ? new Date() : undefined
+      }
+    });
+
+    await addAuditLog(admin.id, 'GAME_STATUS_UPDATED', 'GAME', game.id, { status: req.body.status });
+    return ok(updated);
+  });
+
+  router.add('POST', '/admin/games/:gameId/feature', async (req) => {
+    const admin = await requireAuth(req, null, ['ADMIN']);
+    const game = await findGame(req.params.gameId);
+    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
+
+    await prisma.game.update({
+      where: { id: game.id },
+      data: { featured: true }
+    });
+
+    await addAuditLog(admin.id, 'GAME_FEATURED', 'GAME', game.id);
+    return ok({ featured: true });
+  });
+
+  router.add('DELETE', '/admin/games/:gameId/feature', async (req) => {
+    const admin = await requireAuth(req, null, ['ADMIN']);
+    const game = await findGame(req.params.gameId);
+    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
+
+    await prisma.game.update({
+      where: { id: game.id },
+      data: { featured: false }
+    });
+
+    await addAuditLog(admin.id, 'GAME_UNFEATURED', 'GAME', game.id);
+    return ok({ featured: false });
+  });
+
+  router.add('GET', '/admin/deployments', async (req) => {
+    await requireAuth(req, null, ['ADMIN']);
+    const { page, limit } = parsePagination(req.query);
+    const [total, items] = await Promise.all([
+      prisma.deployment.count(),
+      prisma.deployment.findMany({
+        include: { game: true, build: true },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit
+      })
+    ]);
+    return ok(items, 200, {
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
+    });
+  });
+
+  router.add('GET', '/admin/deployments/:deploymentId', async (req) => {
+    await requireAuth(req, null, ['ADMIN']);
+    const deployment = await prisma.deployment.findUnique({
+      where: { id: req.params.deploymentId },
+      include: { game: true, build: true, logs: { orderBy: { createdAt: 'asc' } } }
+    });
+    if (!deployment) throw new HttpError(404, 'DEPLOYMENT_NOT_FOUND', 'Deployment not found');
+    return ok(deployment);
+  });
+
+  router.add('GET', '/admin/nodes', async (req) => {
+    await requireAuth(req, null, ['ADMIN']);
+    const nodes = await prisma.serverNode.findMany();
+    return ok(nodes);
+  });
+
+  router.add('POST', '/admin/nodes', async (req) => {
+    const admin = await requireAuth(req, null, ['ADMIN']);
+    requireFields(req.body, ['id', 'region']);
+
+    const existing = await prisma.serverNode.findUnique({ where: { id: req.body.id } });
+    if (existing) throw new HttpError(409, 'NODE_EXISTS', 'Node ID already exists');
+
+    const node = await prisma.serverNode.create({
+      data: {
+        id: req.body.id,
+        region: req.body.region,
+        status: 'HEALTHY'
+      }
+    });
+
+    await addAuditLog(admin.id, 'SERVER_NODE_ADDED', 'SERVER', node.id, { region: node.region });
     return ok(node, 201);
   });
 
-  router.add('PATCH', '/admin/servers/:nodeId', async (req) => {
-    const admin = requireAuth(req, db(), ['ADMIN']);
-    const node = db().serverNodes.find((n) => n.id === req.params.nodeId);
-    if (!node) throw new HttpError(404, 'NODE_NOT_FOUND', 'Server node was not found');
-    const editable = ['status', 'cpuPercent', 'memoryPercent', 'packetLossPercent', 'activeInstances', 'region'];
-    for (const field of editable) {
-      if (req.body[field] !== undefined) node[field] = req.body[field];
-    }
-    addAuditLog(db(), admin.id, 'SERVER_NODE_UPDATED', 'SERVER', node.id, { status: node.status });
-    await persist();
-    return ok(node);
+  router.add('PATCH', '/admin/nodes/:nodeId', async (req) => {
+    const admin = await requireAuth(req, null, ['ADMIN']);
+    const node = await prisma.serverNode.findUnique({ where: { id: req.params.nodeId } });
+    if (!node) throw new HttpError(404, 'NODE_NOT_FOUND', 'Node not found');
+
+    const updated = await prisma.serverNode.update({
+      where: { id: node.id },
+      data: { status: req.body.status }
+    });
+
+    await addAuditLog(admin.id, 'SERVER_NODE_UPDATED', 'SERVER', node.id, { status: updated.status });
+    return ok(updated);
   });
 
-  router.add('DELETE', '/admin/servers/:nodeId', async (req) => {
-    const admin = requireAuth(req, db(), ['ADMIN']);
-    const nodeIndex = db().serverNodes.findIndex((n) => n.id === req.params.nodeId);
-    if (nodeIndex === -1) throw new HttpError(404, 'NODE_NOT_FOUND', 'Server node was not found');
-    const [removed] = db().serverNodes.splice(nodeIndex, 1);
-    addAuditLog(db(), admin.id, 'SERVER_NODE_REMOVED', 'SERVER', removed.id);
-    await persist();
-    return ok({ nodeId: removed.id, deleted: true });
+  router.add('DELETE', '/admin/nodes/:nodeId', async (req) => {
+    const admin = await requireAuth(req, null, ['ADMIN']);
+    await prisma.serverNode.delete({ where: { id: req.params.nodeId } });
+    await addAuditLog(admin.id, 'SERVER_NODE_REMOVED', 'SERVER', req.params.nodeId);
+    return ok({ deleted: true });
   });
 
   router.add('GET', '/admin/instances', async (req) => {
-    requireAuth(req, db(), ['ADMIN']);
-    const status = req.query.get('status');
-    const gameId = req.query.get('gameId');
-    let instances = db().gameInstances;
-    if (status) instances = instances.filter((i) => i.status === status);
-    if (gameId) instances = instances.filter((i) => i.gameId === gameId);
-    const { pageItems, pagination } = paginate(instances, req.query);
-    return ok(pageItems.map((instance) => {
-      const game = db().games.find((g) => g.id === instance.gameId);
-      const owner = db().users.find((u) => u.id === instance.ownerId);
-      return {
-        ...instance,
-        gameTitle: game?.title,
-        ownerDisplayName: owner?.displayName,
-        playersOnline: db().instancePlayers.filter((p) => p.instanceId === instance.id).length
-      };
-    }), 200, { pagination });
+    await requireAuth(req, null, ['ADMIN']);
+    const { page, limit } = parsePagination(req.query);
+    const [total, items] = await Promise.all([
+      prisma.gameInstance.count(),
+      prisma.gameInstance.findMany({
+        include: { game: true, hostUser: true, players: true },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit
+      })
+    ]);
+    return ok(items, 200, {
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
+    });
   });
 
   router.add('DELETE', '/admin/instances/:instanceId', async (req) => {
-    const admin = requireAuth(req, db(), ['ADMIN']);
-    const instance = db().gameInstances.find((i) => i.id === req.params.instanceId);
-    if (!instance) throw new HttpError(404, 'INSTANCE_NOT_FOUND', 'Instance was not found');
-    state.db.gameInstances = db().gameInstances.filter((i) => i.id !== instance.id);
-    state.db.instancePlayers = db().instancePlayers.filter((i) => i.instanceId !== instance.id);
-    addAuditLog(db(), admin.id, 'INSTANCE_FORCE_DELETED', 'INSTANCE', instance.id, { gameId: instance.gameId });
-    await persist();
-    return ok({ instanceId: instance.id, deleted: true });
+    const admin = await requireAuth(req, null, ['ADMIN']);
+    const instance = await prisma.gameInstance.findUnique({ where: { id: req.params.instanceId } });
+    if (!instance) throw new HttpError(404, 'INSTANCE_NOT_FOUND', 'Instance not found');
+
+    await prisma.gameInstance.delete({ where: { id: instance.id } });
+    await addAuditLog(admin.id, 'INSTANCE_FORCE_DELETED', 'INSTANCE', instance.id, { gameId: instance.gameId });
+    return ok({ deleted: true });
   });
 
   router.add('GET', '/admin/payments', async (req) => {
-    requireAuth(req, db(), ['ADMIN']);
-    const status = req.query.get('status');
-    let payments = db().payments;
-    if (status) payments = payments.filter((payment) => payment.status === status);
-    const { pageItems, pagination } = paginate(payments, req.query);
-    return ok(pageItems, 200, { pagination });
+    await requireAuth(req, null, ['ADMIN']);
+    const payments = await prisma.payment.findMany({
+      include: { order: { include: { user: true, game: true } } },
+      orderBy: { createdAt: 'desc' }
+    });
+    return ok(payments);
   });
 
   router.add('GET', '/admin/payments/:paymentId', async (req) => {
-    requireAuth(req, db(), ['ADMIN']);
-    const payment = db().payments.find((p) => p.id === req.params.paymentId);
-    if (!payment) throw new HttpError(404, 'PAYMENT_NOT_FOUND', 'Payment was not found');
-    const order = db().orders.find((o) => o.id === payment.orderId);
-    const user = order ? db().users.find((u) => u.id === order.userId) : null;
-    return ok({ ...payment, order: order || null, user: user ? sanitizeUser(user) : null });
+    await requireAuth(req, null, ['ADMIN']);
+    const payment = await prisma.payment.findUnique({
+      where: { id: req.params.paymentId },
+      include: { order: { include: { user: true } } }
+    });
+    if (!payment) throw new HttpError(404, 'PAYMENT_NOT_FOUND', 'Payment not found');
+    return ok(payment);
   });
 
   router.add('GET', '/admin/refunds', async (req) => {
-    requireAuth(req, db(), ['ADMIN']);
-    return ok(db().refunds);
+    await requireAuth(req, null, ['ADMIN']);
+    const refunds = await prisma.refund.findMany({
+      include: { order: { include: { user: true } } },
+      orderBy: { createdAt: 'desc' }
+    });
+    return ok(refunds);
   });
 
   router.add('GET', '/admin/refunds/:refundId', async (req) => {
-    requireAuth(req, db(), ['ADMIN']);
-    const refund = db().refunds.find((r) => r.id === req.params.refundId);
-    if (!refund) throw new HttpError(404, 'REFUND_NOT_FOUND', 'Refund was not found');
-    const order = db().orders.find((o) => o.id === refund.orderId);
-    return ok({ ...refund, order: order || null });
-  });
-
-  router.add('PATCH', '/admin/refunds/:refundId', async (req) => {
-    const admin = requireAuth(req, db(), ['ADMIN']);
-    requireFields(req.body, ['status']);
-    const refund = db().refunds.find((r) => r.id === req.params.refundId);
-    if (!refund) throw new HttpError(404, 'REFUND_NOT_FOUND', 'Refund was not found');
-    const validStatuses = ['APPROVED', 'REJECTED', 'PROCESSED'];
-    if (!validStatuses.includes(req.body.status)) {
-      throw new HttpError(400, 'VALIDATION_ERROR', `status must be one of: ${validStatuses.join(', ')}`);
-    }
-    refund.status = req.body.status;
-    refund.resolvedAt = nowIso();
-    refund.resolvedBy = admin.id;
-    refund.resolvedNote = req.body.note || '';
-    if (req.body.status === 'APPROVED') {
-      const order = db().orders.find((o) => o.id === refund.orderId);
-      if (order) {
-        const entitlement = db().entitlements.find((e) => e.userId === order.userId && e.gameId === order.gameId);
-        if (entitlement) entitlement.status = 'REVOKED';
-        state.db.libraryItems = db().libraryItems.filter((li) => !(li.userId === order.userId && li.gameId === order.gameId));
-        addNotification(db(), order.userId, 'REFUND_APPROVED', 'Refund approved', 'Your refund has been approved and access revoked.');
-      }
-    }
-    addAuditLog(db(), admin.id, 'REFUND_STATUS_UPDATED', 'REFUND', refund.id, { status: refund.status });
-    await persist();
+    await requireAuth(req, null, ['ADMIN']);
+    const refund = await prisma.refund.findUnique({
+      where: { id: req.params.refundId },
+      include: { order: true }
+    });
+    if (!refund) throw new HttpError(404, 'REFUND_NOT_FOUND', 'Refund not found');
     return ok(refund);
   });
 
-  router.add('GET', '/admin/audit-logs', async (req) => {
-    requireAuth(req, db(), ['ADMIN']);
-    const actorId = req.query.get('actorId');
-    const action = req.query.get('action');
-    let logs = db().auditLogs;
-    if (actorId) logs = logs.filter((log) => log.actorId === actorId);
-    if (action) logs = logs.filter((log) => log.action === action);
-    return ok(logs);
+  router.add('PATCH', '/admin/refunds/:refundId', async (req) => {
+    const admin = await requireAuth(req, null, ['ADMIN']);
+    requireFields(req.body, ['status']);
+
+    const refund = await prisma.refund.findUnique({
+      where: { id: req.params.refundId },
+      include: { order: true }
+    });
+    if (!refund) throw new HttpError(404, 'REFUND_NOT_FOUND', 'Refund not found');
+
+    const updated = await prisma.refund.update({
+      where: { id: refund.id },
+      data: {
+        status: req.body.status,
+        resolvedAt: new Date(),
+        resolvedBy: admin.id,
+        resolvedNote: req.body.note
+      }
+    });
+
+    if (req.body.status === 'APPROVED') {
+      await prisma.$transaction([
+        prisma.order.update({ where: { id: refund.orderId }, data: { status: 'REFUNDED' } }),
+        prisma.entitlement.deleteMany({ where: { userId: refund.order.userId, gameId: refund.order.gameId } }),
+        prisma.libraryItem.deleteMany({ where: { userId: refund.order.userId, gameId: refund.order.gameId } })
+      ]);
+      await addNotification(refund.order.userId, 'REFUND_APPROVED', 'Refund Approved', 'Your refund has been processed and access revoked.');
+    }
+
+    await addAuditLog(admin.id, 'REFUND_STATUS_UPDATED', 'REFUND', refund.id, { status: req.body.status });
+    return ok(updated);
   });
 
-  router.add('GET', '/admin/reports', async (req) => {
-    requireAuth(req, db(), ['ADMIN']);
-    const type = req.query.get('type') || 'payments';
-    if (type === 'payments') {
-      return ok({
-        type,
-        from: req.query.get('from') || null,
-        to: req.query.get('to') || null,
-        totalRevenue: db().orders.filter((order) => order.status === 'PAID').reduce((total, order) => total + order.amount, 0),
-        orderCount: db().orders.length,
-        refundCount: db().refunds.length
-      });
-    }
+  router.add('GET', '/admin/audit-logs', async (req) => {
+    await requireAuth(req, null, ['ADMIN']);
+    const { page, limit } = parsePagination(req.query);
+    const [total, items] = await Promise.all([
+      prisma.auditLog.count(),
+      prisma.auditLog.findMany({
+        include: { actor: true },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit
+      })
+    ]);
+    return ok(items, 200, {
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
+    });
+  });
+
+  router.add('GET', '/admin/analytics', async (req) => {
+    await requireAuth(req, null, ['ADMIN']);
+    const [userCount, gameCount, deploymentCount, instanceCount, revenue] = await Promise.all([
+      prisma.user.count(),
+      prisma.game.count(),
+      prisma.deployment.count(),
+      prisma.gameInstance.count(),
+      prisma.order.aggregate({
+        where: { status: 'PAID' },
+        _sum: { amount: true }
+      })
+    ]);
     return ok({
-      type,
-      users: db().users.length,
-      games: db().games.length,
-      deployments: db().deployments.length,
-      instances: db().gameInstances.length
+      stats: {
+        users: userCount,
+        games: gameCount,
+        deployments: deploymentCount,
+        instances: instanceCount,
+        totalRevenue: revenue._sum.amount || 0
+      }
     });
   });
 
   router.add('GET', '/notifications', async (req) => {
-    const user = requireAuth(req, db());
-    const unreadOnly = req.query.get('unreadOnly') === 'true';
-    const limit = Math.min(100, Math.max(1, Number(req.query.get('limit') || 20)));
-    let notifications = db().notifications.filter((notification) => notification.userId === user.id);
-    if (unreadOnly) notifications = notifications.filter((notification) => !notification.read);
-    return ok(notifications.slice(-limit).reverse());
+    const user = await requireAuth(req);
+    const notifications = await prisma.notification.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+      take: 50
+    });
+    return ok(notifications);
   });
 
-  router.add('POST', '/notifications/:notificationId/read', async (req) => {
-    const user = requireAuth(req, db());
-    const notification = db().notifications.find((item) => item.id === req.params.notificationId && item.userId === user.id);
-    if (!notification) throw new HttpError(404, 'NOTIFICATION_NOT_FOUND', 'Notification was not found');
-    notification.read = true;
-    notification.readAt = nowIso();
-    await persist();
-    return ok({ notificationId: notification.id, read: true });
+  router.add('PATCH', '/notifications/:notificationId/read', async (req) => {
+    const user = await requireAuth(req);
+    const updated = await prisma.notification.update({
+      where: { id: req.params.notificationId, userId: user.id },
+      data: { read: true, readAt: new Date() }
+    });
+    return ok(updated);
   });
 
-  router.add('POST', '/notifications/read-all', async (req) => {
-    const user = requireAuth(req, db());
-    let updatedCount = 0;
-    for (const notification of db().notifications) {
-      if (notification.userId === user.id && !notification.read) {
-        notification.read = true;
-        notification.readAt = nowIso();
-        updatedCount += 1;
-      }
-    }
-    await persist();
-    return ok({ updatedCount });
+  router.add('POST', '/notifications/mark-all-read', async (req) => {
+    const user = await requireAuth(req);
+    await prisma.notification.updateMany({
+      where: { userId: user.id, read: false },
+      data: { read: true, readAt: new Date() }
+    });
+    return ok({ success: true });
   });
 }
 
