@@ -2,6 +2,14 @@ import { createServer } from 'node:http';
 import { createApp, config } from './app.js';
 
 const port = Number(process.env.PORT || 2000);
+
+console.log('--- Environment Check ---');
+console.log(`PORT: ${port}`);
+console.log(`DATABASE_URL: ${process.env.DATABASE_URL ? (process.env.DATABASE_URL.includes(':') ? process.env.DATABASE_URL.split(':')[0] + ':***' : 'DEFINED') : 'UNDEFINED'}`);
+console.log(`APP_ENV: ${process.env.APP_ENV}`);
+console.log(`AUTH_SECRET: ${process.env.AUTH_SECRET ? '***' : 'UNDEFINED'}`);
+console.log('------------------------');
+
 const app = await createApp();
 const server = createServer(app);
 
