@@ -2035,7 +2035,7 @@ const instanceAction = (status) => async (req) => {
     const [total, items] = await Promise.all([
       prisma.gameInstance.count(),
       prisma.gameInstance.findMany({
-        include: { game: true, hostUser: true, players: true },
+        include: { game: true, host: true, players: true },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit
