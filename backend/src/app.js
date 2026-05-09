@@ -19,7 +19,7 @@ const config = {
   runtimeTokenTtlSeconds: Number(process.env.RUNTIME_TOKEN_TTL_SECONDS || 900),
   minioPublicUrl: process.env.MINIO_PUBLIC_URL || 'https://cdn.lazplay.tech',
   minioBucket: process.env.MINIO_BUCKET || 'lazplay',
-  minioSecretKey: process.env.MINIO_SECRET_KEY || 'minioadmin',
+  minioSecretKey: process.env.MINIO_SECRET_KEY || 'Lazplay@18',
   razorpayKeyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_lazplay',
   razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET || 'lazplay-razorpay-dev-secret',
   razorpayWebhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || 'lazplay-webhook-dev-secret',
@@ -496,6 +496,18 @@ async function scanAndPrepareBuild(build, game) {
     where: { id: build.id },
     data: { status: 'SCANNED', scanStatus: 'PASSED' }
   });
+}
+
+async function deleteStorageObject(objectKey) {
+  if (!objectKey) return;
+  const signed = signedStorageUrl(objectKey, 'DELETE', 3600);
+  await fetch(signed.url, { method: 'DELETE' }).catch(() => {});
+}
+
+async function deleteStorageObjectFromUrl(url) {
+  const objectKey = extractObjectKeyFromUrl(url);
+  if (!objectKey) return;
+  await deleteStorageObject(objectKey);
 }
 
 function razorpaySignature(orderId, paymentId) {
@@ -1375,33 +1387,35 @@ router.add('DELETE', '/developer/games/:gameId', async (req) => {
 
   // Cleanup all media from storage
   for (const m of game.media) {
-      try {
-          const url = new URL(m.url);
-          const objectKey = decodeURIComponent(url.pathname.replace(`/${config.minioBucket}/`, ''));
-          if (objectKey) {
-              const expires = Math.floor((Date.now() + 300000) / 1000);
-              const signature = signHmac(`DELETE:${config.minioBucket}:${objectKey}:${expires}`, config.minioSecretKey || config.authSecret);
-              const deleteUrl = `${config.minioPublicUrl.replace(/\/+$/g, '')}/${config.minioBucket}/${encodeURIComponent(objectKey).replaceAll('%2F', '/')}?expires=${expires}&signature=${signature}`;
-              await fetch(deleteUrl, { method: 'DELETE' }).catch(() => {});
-          }
-      } catch {}
+    await deleteStorageObjectFromUrl(m.url);
   }
 
-  // Cleanup all builds from storage
+  // Cleanup build artifacts from storage
   for (const b of game.builds) {
-      if (b.downloadUrl) {
-          try {
-              const url = new URL(b.downloadUrl);
-              const objectKey = decodeURIComponent(url.pathname.replace(`/${config.minioBucket}/`, ''));
-              if (objectKey) {
-                  const expires = Math.floor((Date.now() + 300000) / 1000);
-                  const signature = signHmac(`DELETE:${config.minioBucket}:${objectKey}:${expires}`, config.minioSecretKey || config.authSecret);
-                  const deleteUrl = `${config.minioPublicUrl.replace(/\/+$/g, '')}/${config.minioBucket}/${encodeURIComponent(objectKey).replaceAll('%2F', '/')}?expires=${expires}&signature=${signature}`;
-                  await fetch(deleteUrl, { method: 'DELETE' }).catch(() => {});
-              }
-          } catch {}
-      }
+    await deleteStorageObject(b.artifactObjectKey || extractObjectKeyFromUrl(b.downloadUrl));
   }
+
+  const deployments = await prisma.deployment.findMany({
+    where: { gameId: game.id },
+    select: { id: true }
+  });
+  const deploymentIds = deployments.map((deployment) => deployment.id);
+
+  if (deploymentIds.length > 0) {
+    await prisma.deploymentLog.deleteMany({
+      where: { deploymentId: { in: deploymentIds } }
+    });
+  }
+
+  await prisma.deployment.deleteMany({ where: { gameId: game.id } });
+  await prisma.instancePlayer.deleteMany({ where: { instance: { gameId: game.id } } });
+  await prisma.gameInstance.deleteMany({ where: { gameId: game.id } });
+  await prisma.libraryItem.deleteMany({ where: { gameId: game.id } });
+  await prisma.wishlistItem.deleteMany({ where: { gameId: game.id } });
+  await prisma.entitlement.deleteMany({ where: { gameId: game.id } });
+  await prisma.gameReview.deleteMany({ where: { gameId: game.id } });
+  await prisma.gameMedia.deleteMany({ where: { gameId: game.id } });
+  await prisma.gameBuild.deleteMany({ where: { gameId: game.id } });
 
   await prisma.game.delete({ where: { id: game.id } });
   return ok({ deleted: true });
