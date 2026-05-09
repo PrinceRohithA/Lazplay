@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import AdminMainframe from './pages/AdminMainframe';
 import SystemLoginCyberEdition from './pages/SystemLoginCyberEdition';
 import DeveloperWorkspace from './pages/DeveloperWorkspace';
@@ -18,20 +18,16 @@ function App() {
       <Routes>
         <Route path="/login" element={<SystemLoginCyberEdition />} />
         <Route path="/signup" element={<UserRegistrationCyberEdition />} />
-        <Route path="*" element={
-          <Layout>
-            <Routes>
-              <Route path="/" element={<PlayerDiscoveryHub />} />
-              <Route path="/game" element={<GameDetailsSteamStyleLayout />} />
-              <Route path="/admin" element={<AdminMainframe />} />
-              <Route path="/developer" element={<DeveloperWorkspace />} />
-              <Route path="/library" element={<GameLibraryCyberEdition />} />
-              <Route path="/games" element={<GamesDiscoveryRetroEdition />} />
-              <Route path="/options" element={<Options />} />
-              <Route path="/deployment" element={<DeveloperWorkspaceAdvancedDeploymentSuite />} />
-            </Routes>
-          </Layout>
-        } />
+        <Route element={<Layout />}>
+          <Route index element={<PlayerDiscoveryHub />} />
+          <Route path="game" element={<GameDetailsSteamStyleLayout />} />
+          <Route path="admin" element={<AdminMainframe />} />
+          <Route path="developer" element={<DeveloperWorkspace />} />
+          <Route path="library" element={<GameLibraryCyberEdition />} />
+          <Route path="games" element={<GamesDiscoveryRetroEdition />} />
+          <Route path="options" element={<Options />} />
+          <Route path="deployment" element={<DeveloperWorkspaceAdvancedDeploymentSuite />} />
+        </Route>
       </Routes>
     </Router>
   );

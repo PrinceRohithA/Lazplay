@@ -9,24 +9,20 @@ import fs from 'node:fs';
  */
 
 const envFile = path.resolve('.env');
-if (!fs.existsSync(envFile)) {
-  console.error('Error: .env file not found.');
-  process.exit(1);
-}
-
-const envContent = fs.readFileSync(envFile, 'utf8');
+const envContent = fs.existsSync(envFile) ? fs.readFileSync(envFile, 'utf8') : '';
 const dbUrlLine = envContent.split('\n').find(line => line.startsWith('DATABASE_URL='));
+const dbUrlFromFile = dbUrlLine ? dbUrlLine.split('=')[1].replace(/["']/g, '').trim() : '';
+const urlValue = process.env.DATABASE_URL || dbUrlFromFile;
 
-if (!dbUrlLine) {
-  console.error('Error: DATABASE_URL not found in .env');
+if (!urlValue) {
+  console.error('Error: DATABASE_URL not found in environment or .env');
   process.exit(1);
 }
-
-const urlValue = dbUrlLine.split('=')[1].replace(/["']/g, '').trim();
 
 // Very simple parsing for standard postgresql://user:pass@host:port/db
 try {
-  const url = new URL(urlValue);
+  const normalizedUrl = urlValue.replace(/^postgresql\+psycopg:\/\//, 'postgresql://');
+  const url = new URL(normalizedUrl);
   const user = url.username;
   const password = url.password;
   const host = url.hostname;
@@ -51,10 +47,13 @@ try {
   console.log('> Running schema (prisma/init.sql)...');
   execSync(`${psqlBase} -d ${dbName} -f prisma/init.sql`, { stdio: 'inherit' });
 
-  // 3. Run Seed Data
-  if (fs.existsSync('prisma/seed-data.sql')) {
+  // 3. Run Seed Data (dev only)
+  const appEnv = (process.env.APP_ENV || 'development').toLowerCase();
+  if (appEnv !== 'production' && fs.existsSync('prisma/seed-data.sql')) {
     console.log('> Running seed data (prisma/seed-data.sql)...');
     execSync(`${psqlBase} -d ${dbName} -f prisma/seed-data.sql`, { stdio: 'inherit' });
+  } else if (appEnv === 'production') {
+    console.log('> Skipping seed data (production environment).');
   }
 
   console.log('SUCCESS: Database initialized successfully.');

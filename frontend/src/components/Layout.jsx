@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, NavLink, Outlet } from 'react-router-dom';
 
-export default function Layout({ children }) {
+export default function Layout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const location = useLocation();
 
   const navItems = [
     { name: 'START', path: '/', icon: 'play_arrow' },
@@ -65,23 +64,25 @@ export default function Layout({ children }) {
           </div>
 
           <div className="flex-1 px-2 space-y-1 overflow-y-auto overflow-x-hidden">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <Link 
-                  key={item.name}
-                  to={item.path} 
-                  className={`flex items-center gap-3 p-3 transition-all font-label-mono text-label-mono border-l-4 ${
-                    isActive 
-                    ? 'bg-primary-container text-on-primary-fixed-variant font-bold border-primary-fixed shadow-[4px_0_0_0_var(--primary-container)]' 
-                    : 'text-on-surface-variant opacity-80 hover:opacity-100 hover:bg-surface-bright hover:text-primary border-transparent'
-                  }`}
-                >
-                  <span className="material-symbols-outlined shrink-0" style={{fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0"}}>{item.icon}</span>
-                  {!isCollapsed && <span className="whitespace-nowrap">{item.name}</span>}
-                </Link>
-              );
-            })}
+            {navItems.map((item) => (
+              <NavLink
+                key={item.name}
+                to={item.path}
+                end={item.path === '/'}
+                className={({ isActive }) => `flex items-center gap-3 p-3 transition-all font-label-mono text-label-mono border-l-4 ${
+                  isActive
+                  ? 'bg-primary-container text-on-primary-fixed-variant font-bold border-primary-fixed shadow-[4px_0_0_0_var(--primary-container)]'
+                  : 'text-on-surface-variant opacity-80 hover:opacity-100 hover:bg-surface-bright hover:text-primary border-transparent'
+                }`}
+              >
+                {({ isActive }) => (
+                  <>
+                    <span className="material-symbols-outlined shrink-0" style={{fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0"}}>{item.icon}</span>
+                    {!isCollapsed && <span className="whitespace-nowrap">{item.name}</span>}
+                  </>
+                )}
+              </NavLink>
+            ))}
           </div>
 
           <div className="px-2 mt-auto border-t-2 border-outline-variant pt-4">
@@ -94,8 +95,7 @@ export default function Layout({ children }) {
 
         {/* Main Content Area */}
         <main className={`flex-1 transition-all duration-300 min-h-[calc(100vh-64px)] ${isCollapsed ? 'ml-20' : 'ml-64'}`}>
-          {children}
-          
+          <Outlet />
         </main>
       </div>
     </div>
