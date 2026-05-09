@@ -18,6 +18,7 @@ const config = {
   refreshTokenTtlSeconds: Number(process.env.REFRESH_TOKEN_TTL_SECONDS || 604800),
   runtimeTokenTtlSeconds: Number(process.env.RUNTIME_TOKEN_TTL_SECONDS || 900),
   minioPublicUrl: process.env.MINIO_PUBLIC_URL || 'https://cdn.lazplay.tech',
+  minioInternalUrl: process.env.MINIO_INTERNAL_URL || process.env.MINIO_PUBLIC_URL || 'https://cdn.lazplay.tech',
   minioBucket: process.env.MINIO_BUCKET || 'lazplay',
   minioSecretKey: process.env.MINIO_SECRET_KEY || 'Lazplay@18',
   razorpayKeyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_lazplay',
@@ -377,15 +378,25 @@ async function publicGame(game, user = null) {
   };
 }
 
-function signedStorageUrl(objectKey, method = 'GET', ttlSeconds = 900) {
+function signedStorageUrl(objectKey, method = 'GET', ttlSeconds = 900, baseUrl = config.minioPublicUrl) {
   const expiresAt = addSeconds(ttlSeconds);
   const expires = Math.floor(new Date(expiresAt).getTime() / 1000);
   const signature = signHmac(`${method}:${config.minioBucket}:${objectKey}:${expires}`, config.minioSecretKey || config.authSecret);
-  const normalizedBase = config.minioPublicUrl.replace(/\/+$/g, '');
+  const normalizedBase = baseUrl.replace(/\/+$/g, '');
   return {
     url: `${normalizedBase}/${config.minioBucket}/${encodeURIComponent(objectKey).replaceAll('%2F', '/')}?expires=${expires}&signature=${signature}`,
     expiresAt
   };
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = 45000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 const normalizeArchivePath = (entryName) => {
@@ -434,8 +445,8 @@ const isWebRuntime = (runtime) => {
 };
 
 async function uploadRuntimeObject(objectKey, data, contentType) {
-  const signed = signedStorageUrl(objectKey, 'PUT', 3600);
-  const response = await fetch(signed.url, {
+  const signed = signedStorageUrl(objectKey, 'PUT', 3600, config.minioInternalUrl);
+  const response = await fetchWithTimeout(signed.url, {
     method: 'PUT',
     headers: { 'Content-Type': contentType || 'application/octet-stream' },
     body: data
@@ -449,8 +460,8 @@ async function scanAndPrepareBuild(build, game) {
   const objectKey = build.artifactObjectKey;
   if (!objectKey) throw new HttpError(409, 'BUILD_ARTIFACT_MISSING', 'Build artifact is missing');
 
-  const download = signedStorageUrl(objectKey, 'GET', 3600);
-  const response = await fetch(download.url);
+  const download = signedStorageUrl(objectKey, 'GET', 3600, config.minioInternalUrl);
+  const response = await fetchWithTimeout(download.url);
   if (!response.ok) {
     throw new HttpError(502, 'BUILD_DOWNLOAD_FAILED', `Failed to download build artifact (${response.status})`);
   }
@@ -500,8 +511,8 @@ async function scanAndPrepareBuild(build, game) {
 
 async function deleteStorageObject(objectKey) {
   if (!objectKey) return;
-  const signed = signedStorageUrl(objectKey, 'DELETE', 3600);
-  await fetch(signed.url, { method: 'DELETE' }).catch(() => {});
+  const signed = signedStorageUrl(objectKey, 'DELETE', 3600, config.minioInternalUrl);
+  await fetchWithTimeout(signed.url, { method: 'DELETE' }).catch(() => {});
 }
 
 async function deleteStorageObjectFromUrl(url) {
