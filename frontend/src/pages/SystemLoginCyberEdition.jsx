@@ -18,7 +18,7 @@ export default function SystemLoginCyberEdition() {
     setError(null); 
     setLoading(true);
     try {
-      await authApi.login({ email: form.email, password: form.password });
+      await authApi.login({ identifier: form.email, password: form.password });
       navigate('/');
     } catch (err) {
       setError(err.message || 'Login failed');
