@@ -243,16 +243,19 @@ export default function DeveloperWorkspace() {
                   <div className="col-span-3 text-right">CREATED_AT</div>
                 </div>
                 {games.map(game => (
-                  <Link key={game.id} to={`/deployment`} className="grid grid-cols-12 gap-2 text-primary-container hover:bg-surface-container cursor-pointer transition-colors py-1 group">
-                    <div className="col-span-4 truncate font-bold">{game.title}</div>
+                  <div key={game.id} className="grid grid-cols-12 gap-2 text-primary-container hover:bg-surface-container cursor-pointer transition-colors py-1 group items-center">
+                    <Link to={`/deployment?id=${game.id}`} className="col-span-4 truncate font-bold hover:underline">{game.title}</Link>
                     <div className="col-span-2">
-                      <span className={`text-[10px] ${game.status === 'PUBLISHED' ? 'text-secondary-container' : 'text-on-surface-variant'}`}>
+                      <span className={`text-[10px] px-1 border ${game.status === 'PUBLISHED' ? 'border-secondary-container text-secondary-container shadow-[0_0_5px_#fe00fe]' : 'border-outline-variant text-on-surface-variant'}`}>
                         {game.status}
                       </span>
                     </div>
                     <div className="col-span-3">₹{game.price} [{game.priceType}]</div>
-                    <div className="col-span-3 text-right text-[10px] opacity-70">{new Date(game.createdAt).toLocaleDateString()}</div>
-                  </Link>
+                    <div className="col-span-3 text-right flex items-center justify-end gap-3">
+                      <span className="text-[10px] opacity-70">{new Date(game.createdAt).toLocaleDateString()}</span>
+                      <Link to={`/deployment?id=${game.id}`} className="material-symbols-outlined text-sm text-on-surface-variant hover:text-primary transition-colors">edit_square</Link>
+                    </div>
+                  </div>
                 ))}
                 {games.length === 0 && (
                   <div className="p-4 text-center text-on-surface-variant opacity-50 italic">

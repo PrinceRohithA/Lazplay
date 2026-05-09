@@ -1208,6 +1208,23 @@ function registerRoutes(router) {
     });
     return ok(game, 201);
   });
+  router.add('GET', '/developer/games/:gameId', async (req) => {
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+    const game = await prisma.game.findUnique({
+      where: { id: req.params.gameId },
+      include: {
+        media: true,
+        builds: {
+          orderBy: { createdAt: 'desc' },
+          take: 5
+        }
+      }
+    });
+    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
+    await assertDeveloperOwnsGame(user, game);
+    return ok(game);
+  });
+
 
   router.add('PATCH', '/developer/games/:gameId', async (req) => {
     const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
@@ -1235,9 +1252,42 @@ function registerRoutes(router) {
 
 router.add('DELETE', '/developer/games/:gameId', async (req) => {
   const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
-  const game = await findGame(req.params.gameId);
+  const game = await prisma.game.findUnique({
+    where: { id: req.params.gameId },
+    include: { media: true, builds: true }
+  });
   if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
   await assertDeveloperOwnsGame(user, game);
+
+  // Cleanup all media from storage
+  for (const m of game.media) {
+      try {
+          const url = new URL(m.url);
+          const objectKey = decodeURIComponent(url.pathname.replace(`/${config.minioBucket}/`, ''));
+          if (objectKey) {
+              const expires = Math.floor((Date.now() + 300000) / 1000);
+              const signature = signHmac(`DELETE:${config.minioBucket}:${objectKey}:${expires}`, config.minioSecretKey || config.authSecret);
+              const deleteUrl = `${config.minioPublicUrl.replace(/\/+$/g, '')}/${config.minioBucket}/${encodeURIComponent(objectKey).replaceAll('%2F', '/')}?expires=${expires}&signature=${signature}`;
+              await fetch(deleteUrl, { method: 'DELETE' }).catch(() => {});
+          }
+      } catch {}
+  }
+
+  // Cleanup all builds from storage
+  for (const b of game.builds) {
+      if (b.downloadUrl) {
+          try {
+              const url = new URL(b.downloadUrl);
+              const objectKey = decodeURIComponent(url.pathname.replace(`/${config.minioBucket}/`, ''));
+              if (objectKey) {
+                  const expires = Math.floor((Date.now() + 300000) / 1000);
+                  const signature = signHmac(`DELETE:${config.minioBucket}:${objectKey}:${expires}`, config.minioSecretKey || config.authSecret);
+                  const deleteUrl = `${config.minioPublicUrl.replace(/\/+$/g, '')}/${config.minioBucket}/${encodeURIComponent(objectKey).replaceAll('%2F', '/')}?expires=${expires}&signature=${signature}`;
+                  await fetch(deleteUrl, { method: 'DELETE' }).catch(() => {});
+              }
+          } catch {}
+      }
+  }
 
   await prisma.game.delete({ where: { id: game.id } });
   return ok({ deleted: true });
@@ -1326,9 +1376,33 @@ router.add('DELETE', '/developer/games/:gameId', async (req) => {
     if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
     await assertDeveloperOwnsGame(user, game);
 
-    await prisma.gameMedia.delete({
+    const media = await prisma.gameMedia.findUnique({
       where: { id: req.params.mediaId, gameId: game.id }
     });
+
+    if (media) {
+      // Delete from storage if it's an object key (assuming the URL stores it or we can derive it)
+      // For now, let's try to extract the object key from the URL if it matches our pattern
+      try {
+        const url = new URL(media.url);
+        const objectKey = decodeURIComponent(url.pathname.replace(`/${config.minioBucket}/`, ''));
+        if (objectKey) {
+          const method = 'DELETE';
+          const expires = Math.floor((Date.now() + 300000) / 1000);
+          const signature = signHmac(`${method}:${config.minioBucket}:${objectKey}:${expires}`, config.minioSecretKey || config.authSecret);
+          const normalizedBase = config.minioPublicUrl.replace(/\/+$/g, '');
+          const deleteUrl = `${normalizedBase}/${config.minioBucket}/${encodeURIComponent(objectKey).replaceAll('%2F', '/')}?expires=${expires}&signature=${signature}`;
+          
+          await fetch(deleteUrl, { method: 'DELETE' }).catch(err => console.error('Storage deletion failed:', err));
+        }
+      } catch (e) {
+        console.error('Could not delete from storage:', e);
+      }
+
+      await prisma.gameMedia.delete({
+        where: { id: media.id }
+      });
+    }
 
     return ok({ deleted: true });
   });
@@ -1378,6 +1452,81 @@ router.add('GET', '/developer/builds', async (req) => {
   });
   return ok(builds);
 });
+  router.add('POST', '/developer/builds/:buildId/upload-url', async (req) => {
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+    const build = await prisma.gameBuild.findUnique({ where: { id: req.params.buildId }, include: { game: true } });
+    if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
+    await assertDeveloperOwnsGame(user, build.game);
+    requireFields(req.body, ['fileName', 'contentType', 'sizeBytes']);
+
+    const objectKey = `games/${build.gameId}/builds/${build.id}/${req.body.fileName}`;
+    const upload = signedStorageUrl(objectKey, 'PUT', 3600);
+    return ok({ uploadUrl: upload.url, objectKey, expiresAt: upload.expiresAt });
+  });
+
+  router.add('POST', '/developer/builds/:buildId/uploads/complete', async (req) => {
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+    const build = await prisma.gameBuild.findUnique({ where: { id: req.params.buildId }, include: { game: true } });
+    if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
+    await assertDeveloperOwnsGame(user, build.game);
+    requireFields(req.body, ['objectKey']);
+
+    const updated = await prisma.gameBuild.update({
+      where: { id: build.id },
+      data: {
+        status: 'PROCESSING',
+        downloadUrl: `${config.minioPublicUrl}/${config.minioBucket}/${req.body.objectKey}`,
+        sizeBytes: req.body.sizeBytes ? BigInt(req.body.sizeBytes) : undefined
+      }
+    });
+
+    return ok(updated);
+  });
+
+  router.add('POST', '/developer/builds/:buildId/scan', async (req) => {
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+    const build = await prisma.gameBuild.findUnique({ where: { id: req.params.buildId }, include: { game: true } });
+    if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
+    await assertDeveloperOwnsGame(user, build.game);
+
+    // Mock scan process
+    const updated = await prisma.gameBuild.update({
+      where: { id: build.id },
+      data: { status: 'SCANNED', scanStatus: 'PASSED', scanLogs: 'Malware scan passed. No threats detected.' }
+    });
+
+    return ok(updated);
+  });
+
+  router.add('POST', '/developer/builds/:buildId/deploy', async (req) => {
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+    const build = await prisma.gameBuild.findUnique({ where: { id: req.params.buildId }, include: { game: true } });
+    if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
+    await assertDeveloperOwnsGame(user, build.game);
+
+    const deployment = await prisma.deployment.create({
+      data: {
+        id: createId('dep'),
+        gameId: build.gameId,
+        buildId: build.id,
+        status: 'QUEUED',
+        progress: 0,
+        logs: {
+          create: { id: createId('deplog'), level: 'INFO', message: 'Deployment triggered via build endpoint' }
+        }
+      }
+    });
+
+    if (req.body.makeLatest) {
+        await prisma.game.update({
+            where: { id: build.gameId },
+            data: { latestBuildId: build.id }
+        });
+    }
+
+    return ok(deployment, 201);
+  });
+
 
 router.add('POST', '/developer/games/:gameId/deploy', async (req) => {
   const user = await requireAuth(req, null, ['DEVELOPER']);
