@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { games as gamesApi } from '../api';
+import { games as gamesApi, payments } from '../api';
+import RazorpayCheckout from '../components/RazorpayCheckout';
 
 export default function GameDetailsSteamStyleLayout() {
   const [params] = useSearchParams();
@@ -9,6 +10,7 @@ export default function GameDetailsSteamStyleLayout() {
   const [media, setMedia] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [successMsg, setSuccessMsg] = useState(null);
 
   useEffect(() => {
     if (!gameId) { setLoading(false); return; }
@@ -18,10 +20,22 @@ export default function GameDetailsSteamStyleLayout() {
     ]).then(([g, m]) => { setGame(g); setMedia(m); setLoading(false); });
   }, [gameId]);
 
+  const handlePaymentSuccess = (data) => {
+    setSuccessMsg("PURCHASE_SUCCESSFUL! Game added to your library.");
+    // Refresh game data to show "PLAY NOW"
+    gamesApi.get(gameId).then(r => setGame(r.data));
+  };
+
+  const handlePaymentError = (msg) => {
+    setError(msg);
+    setTimeout(() => setError(null), 5000);
+  };
+
   return (
     <div className="flex flex-col min-w-0 p-gutter md:p-margin gap-6">
       {loading && <div className="text-center py-24 font-label-mono text-primary-container animate-pulse">LOADING_GAME_DATA...</div>}
-      {error && <div className="p-4 border border-error text-error font-label-mono">&gt; ERROR: {error}</div>}
+      {error && <div className="p-4 border border-error text-error font-label-mono bg-error/10 pixel-border">&gt; ERROR: {error}</div>}
+      {successMsg && <div className="p-4 border border-primary-container text-primary-container font-label-mono bg-primary-container/10 pixel-border">&gt; SUCCESS: {successMsg}</div>}
       {!loading && !game && <div className="text-center py-24 font-label-mono text-on-surface-variant">GAME_NOT_FOUND</div>}
       {!loading && game && (
         <>
@@ -29,7 +43,7 @@ export default function GameDetailsSteamStyleLayout() {
         <section className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-gutter bg-surface-container-low pixel-border p-2">
         {/*  Left: Main Media  */}
         <div className="relative aspect-video xl:h-[450px] overflow-hidden bg-black pixel-border">
-          <img alt="Cyber Quest Gameplay" className="w-full h-full object-cover opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9KrQ5YpZIImJ1Kd2RBfr-IeRwo5ttSkse1x9Q71QkonTieCCBK-ZICf1E_3LD5-X4q63if0DYzWnYTFcwoRStnzJtmrdqfhsIouTLhtzkMmCzw0y_69VlGf5INbG4nK77O9oKMw9FDOaqKgWuh-yDPS9BKfJsFzcuP9Ueuv1CFIMfot1RHyyIqegrc4toawTb6VxlS0VnqAc-XiUBOixMQ6hvHARoZbpH1Dlt9IHWrRbvaJaqI_mte6dOhR4-5vmnF9sG75TI6lXu"/>
+          <img alt={game.title} className="w-full h-full object-cover opacity-80" src={game.bannerUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuC9KrQ5YpZIImJ1Kd2RBfr-IeRwo5ttSkse1x9Q71QkonTieCCBK-ZICf1E_3LD5-X4q63if0DYzWnYTFcwoRStnzJtmrdqfhsIouTLhtzkMmCzw0y_69VlGf5INbG4nK77O9oKMw9FDOaqKgWuh-yDPS9BKfJsFzcuP9Ueuv1CFIMfot1RHyyIqegrc4toawTb6VxlS0VnqAc-XiUBOixMQ6hvHARoZbpH1Dlt9IHWrRbvaJaqI_mte6dOhR4-5vmnF9sG75TI6lXu"}/>
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="bg-surface/80 p-4 pixel-border">
               <span className="material-symbols-outlined text-primary-container text-6xl">play_circle</span>
@@ -38,32 +52,40 @@ export default function GameDetailsSteamStyleLayout() {
         </div>
         {/*  Right: Game Info Box  */}
         <div className="flex flex-col gap-4 p-4 font-label-mono text-label-mono">
-          <h1 className="font-headline-lg text-headline-lg text-primary-container uppercase tracking-tighter drop-shadow-[0_0_8px_rgba(57,255,20,0.6)]">Cyber Quest</h1>
+          <h1 className="font-headline-lg text-headline-lg text-primary-container uppercase tracking-tighter drop-shadow-[0_0_8px_rgba(57,255,20,0.6)]">{game.title}</h1>
           <div className="flex-1 overflow-y-auto space-y-4">
             <p className="text-on-surface text-[14px] leading-relaxed">
-              A high-octane run-and-gun adventure through the neon-drenched sectors of Neo-Tokyo. Hack the mainframe, defeat the cyber-syndicate.
+              {game.description}
             </p>
             <div className="grid grid-cols-[100px_1fr] gap-y-2 text-[11px] uppercase">
               <span className="text-on-surface-variant">RECENT_REVIEWS:</span>
               <span className="text-primary-container">OVERWHELMINGLY_POSITIVE</span>
               <span className="text-on-surface-variant">RELEASE_DATE:</span>
-              <span className="text-on-surface">OCT_12_1988</span>
+              <span className="text-on-surface">{new Date(game.createdAt).toLocaleDateString()}</span>
               <span className="text-on-surface-variant">DEVELOPER:</span>
-              <span className="text-secondary-container">NEON_LABS_INC</span>
+              <span className="text-secondary-container">{game.developer?.displayName || 'UNKNOWN_DEV'}</span>
               <span className="text-on-surface-variant">PUBLISHER:</span>
-              <span className="text-secondary-container">NEON_LABS_INC</span>
+              <span className="text-secondary-container">LAZPLAY_STUDIOS</span>
             </div>
           </div>
           <div className="pt-4 border-t border-outline-variant">
             <div className="flex flex-wrap gap-1 mb-4">
-              <span className="bg-surface-variant px-1 text-[10px] text-tertiary-container pixel-border uppercase">Platformer</span>
-              <span className="bg-surface-variant px-1 text-[10px] text-tertiary-container pixel-border uppercase">Cyberpunk</span>
-              <span className="bg-surface-variant px-1 text-[10px] text-tertiary-container pixel-border uppercase">Multiplayer</span>
+              {game.genres?.map(g => (
+                <span key={g} className="bg-surface-variant px-1 text-[10px] text-tertiary-container pixel-border uppercase">{g}</span>
+              ))}
             </div>
-            <button className="w-full bg-primary-container text-on-primary-container py-3 pixel-border neon-glow hover:bg-primary-fixed transition-all uppercase flex justify-center items-center gap-2 font-bold">
-              <span className="material-symbols-outlined">play_circle</span>
-              PRESS START
-            </button>
+            {game.isOwned ? (
+              <Link to={`/launch/${game.id}`} className="w-full bg-primary-container text-on-primary-container py-3 pixel-border neon-glow hover:bg-primary-fixed transition-all uppercase flex justify-center items-center gap-2 font-bold">
+                <span className="material-symbols-outlined">play_circle</span>
+                PLAY NOW
+              </Link>
+            ) : (
+              <RazorpayCheckout 
+                game={game} 
+                onSuccess={handlePaymentSuccess} 
+                onError={handlePaymentError} 
+              />
+            )}
           </div>
         </div>
       </section>

@@ -1,5 +1,7 @@
 import crypto from 'node:crypto';
+import Razorpay from 'razorpay';
 import { prisma } from './prisma.js';
+
 
 const config = {
   // Nginx strips /api/ before proxying, so the backend sees /v1/... paths.
@@ -20,6 +22,18 @@ const config = {
   razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET || 'lazplay-razorpay-dev-secret',
   razorpayWebhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || 'lazplay-webhook-dev-secret',
   allowMockPayments: (process.env.ALLOW_MOCK_PAYMENTS || 'true') === 'true'
+};
+
+// Lazy Razorpay SDK client — created once when first needed
+let _rzp = null;
+const getRazorpay = () => {
+  if (!_rzp) {
+    _rzp = new Razorpay({
+      key_id: config.razorpayKeyId,
+      key_secret: config.razorpayKeySecret,
+    });
+  }
+  return _rzp;
 };
 
 class HttpError extends Error {
@@ -1114,86 +1128,101 @@ function registerRoutes(router) {
   });
 
   router.add('POST', '/payments/razorpay/orders', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER']);
+    const user = await requireAuth(req, null, ['PLAYER']);
     requireFields(req.body, ['gameId']);
-    const game = findGame(db(), req.body.gameId);
+    const game = await prisma.game.findUnique({ where: { id: req.body.gameId } });
     if (!game || game.status !== 'PUBLISHED') throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
-    if (userOwnsGame(db(), user.id, game.id)) throw new HttpError(409, 'ALREADY_OWNED', 'You already own this game');
+    if (await userOwnsGame(user.id, game.id)) throw new HttpError(409, 'ALREADY_OWNED', 'You already own this game');
+
     if (game.priceType === 'FREE') {
-      const entitlement = grantEntitlement(db(), user.id, game.id, 'FREE');
-      addNotification(db(), user.id, 'GAME_ADDED', 'Game added to library', `${game.title} was added to your library.`);
-      await persist();
+      const entitlement = await grantEntitlement(user.id, game.id, 'FREE');
+      await addNotification(user.id, 'GAME_ADDED', 'Game added to library', `${game.title} was added to your library.`);
       return ok({ free: true, entitlement, libraryItemCreated: true }, 201);
     }
+
     const discount = req.body.couponCode === 'LAZ10' ? Math.floor(game.price * 0.1) : 0;
     const amount = game.price - discount;
     const internalOrderId = createId('ord');
-    const razorpayOrderId = `order_${crypto.randomUUID().replaceAll('-', '').slice(0, 14)}`;
-    const order = {
-      id: internalOrderId,
-      userId: user.id,
-      gameId: game.id,
-      razorpayOrderId,
-      razorpayPaymentId: null,
-      amount,
-      currency: req.body.currency || game.currency,
-      receipt: `lazplay_${internalOrderId}`,
-      status: 'CREATED',
-      couponCode: req.body.couponCode || null,
-      createdAt: nowIso()
-    };
-    db().orders.push(order);
-    await persist();
-    return ok(
-      {
-        internalOrderId,
-        razorpayOrderId,
+
+    try {
+      const rzpOrder = await getRazorpay().orders.create({
         amount,
-        currency: order.currency,
-        receipt: order.receipt,
+        currency: game.currency || 'INR',
+        receipt: `receipt_${internalOrderId}`,
+      });
+
+      const order = await prisma.order.create({
+        data: {
+          id: internalOrderId,
+          userId: user.id,
+          gameId: game.id,
+          razorpayOrderId: rzpOrder.id,
+          amount,
+          currency: rzpOrder.currency,
+          status: 'CREATED',
+        },
+      });
+
+      return ok({
+        internalOrderId: order.id,
+        razorpayOrderId: rzpOrder.id,
+        amount: rzpOrder.amount,
+        currency: rzpOrder.currency,
+        receipt: rzpOrder.receipt,
         game: { id: game.id, title: game.title },
         razorpayKeyId: config.razorpayKeyId
-      },
-      201
-    );
+      }, 201);
+    } catch (error) {
+      console.error('Razorpay Order Creation Error:', error);
+      throw new HttpError(500, 'PAYMENT_PROVIDER_ERROR', 'Could not create payment order');
+    }
   });
 
   router.add('POST', '/payments/razorpay/verify', async (req) => {
-    const user = requireAuth(req, db(), ['PLAYER']);
+    const user = await requireAuth(req, null, ['PLAYER']);
     requireFields(req.body, ['internalOrderId', 'razorpayOrderId', 'razorpayPaymentId', 'razorpaySignature']);
-    const order = db().orders.find(
-      (item) => item.id === req.body.internalOrderId && item.razorpayOrderId === req.body.razorpayOrderId && item.userId === user.id
-    );
-    if (!order) throw new HttpError(404, 'ORDER_NOT_FOUND', 'Order was not found');
+    
+    const order = await prisma.order.findUnique({
+      where: { id: req.body.internalOrderId },
+    });
+
+    if (!order || order.razorpayOrderId !== req.body.razorpayOrderId || order.userId !== user.id) {
+      throw new HttpError(404, 'ORDER_NOT_FOUND', 'Order was not found');
+    }
+
     const expected = razorpaySignature(req.body.razorpayOrderId, req.body.razorpayPaymentId);
     if (req.body.razorpaySignature !== expected && !(config.allowMockPayments && req.body.razorpaySignature === 'mock_signature')) {
       throw new HttpError(400, 'INVALID_PAYMENT_SIGNATURE', 'Razorpay payment signature is invalid');
     }
-    order.status = 'PAID';
-    order.razorpayPaymentId = req.body.razorpayPaymentId;
-    order.paidAt = nowIso();
-    const payment = {
-      id: createId('pay'),
-      orderId: order.id,
-      razorpayOrderId: order.razorpayOrderId,
-      razorpayPaymentId: req.body.razorpayPaymentId,
-      amount: order.amount,
-      currency: order.currency,
-      status: 'CAPTURED',
-      createdAt: nowIso()
-    };
-    db().payments.push(payment);
-    const entitlement = grantEntitlement(db(), user.id, order.gameId, 'RAZORPAY_ORDER');
-    const invoice = {
-      id: createId('inv'),
-      orderId: order.id,
-      invoiceNumber: `LP-${new Date().getFullYear()}-${String(db().invoices.length + 1).padStart(4, '0')}`,
-      objectKey: `invoices/${order.id}.pdf`,
-      createdAt: nowIso()
-    };
-    db().invoices.push(invoice);
-    addNotification(db(), user.id, 'PAYMENT_CAPTURED', 'Purchase complete', 'Your game was added to your library.');
-    await persist();
+
+    await prisma.$transaction([
+      prisma.order.update({
+        where: { id: order.id },
+        data: { status: 'PAID' },
+      }),
+      prisma.payment.create({
+        data: {
+          id: createId('pay'),
+          orderId: order.id,
+          razorpayPaymentId: req.body.razorpayPaymentId,
+          amount: order.amount,
+          currency: order.currency,
+          status: 'CAPTURED',
+        },
+      }),
+      prisma.invoice.create({
+        data: {
+          id: createId('inv'),
+          orderId: order.id,
+          amount: order.amount,
+          currency: order.currency,
+        },
+      }),
+    ]);
+
+    const entitlement = await grantEntitlement(user.id, order.gameId, 'RAZORPAY_ORDER');
+    await addNotification(user.id, 'PAYMENT_CAPTURED', 'Purchase complete', 'Your game was added to your library.');
+    
     return ok({
       paymentStatus: 'CAPTURED',
       entitlement,
@@ -1206,25 +1235,27 @@ function registerRoutes(router) {
     const event = req.body.event;
     const entity = req.body.payload?.payment?.entity;
     if (event === 'payment.captured' && entity?.order_id) {
-      const order = db().orders.find((item) => item.razorpayOrderId === entity.order_id);
+      const order = await prisma.order.findFirst({ where: { razorpayOrderId: entity.order_id } });
       if (order && order.status !== 'PAID') {
-        order.status = 'PAID';
-        order.razorpayPaymentId = entity.id;
-        order.paidAt = nowIso();
-        db().payments.push({
-          id: createId('pay'),
-          orderId: order.id,
-          razorpayOrderId: order.razorpayOrderId,
-          razorpayPaymentId: entity.id,
-          amount: entity.amount,
-          currency: entity.currency,
-          status: 'CAPTURED',
-          createdAt: nowIso()
-        });
-        grantEntitlement(db(), order.userId, order.gameId, 'RAZORPAY_WEBHOOK');
+        await prisma.$transaction([
+          prisma.order.update({
+            where: { id: order.id },
+            data: { status: 'PAID' },
+          }),
+          prisma.payment.create({
+            data: {
+              id: createId('pay'),
+              orderId: order.id,
+              razorpayPaymentId: entity.id,
+              amount: entity.amount,
+              currency: entity.currency,
+              status: 'CAPTURED',
+            },
+          }),
+        ]);
+        await grantEntitlement(order.userId, order.gameId, 'RAZORPAY_WEBHOOK');
       }
     }
-    await persist();
     return ok({ received: true });
   });
 
