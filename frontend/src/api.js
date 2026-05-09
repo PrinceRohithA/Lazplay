@@ -145,6 +145,8 @@ export const developer = {
   register: (body) => post('/developer/register', body),
   getProfile: () => get('/developer/profile'),
   updateProfile: (body) => patch('/developer/profile', body),
+  dashboard: () => get('/developer/dashboard'),
+  getAnalytics: (params) => get('/developer/analytics', params),
 
   // Games
   listGames: (params) => get('/developer/games', params),
@@ -152,9 +154,9 @@ export const developer = {
   createGame: (body) => post('/developer/games', body),
   updateGame: (gameId, body) => patch(`/developer/games/${gameId}`, body),
   deleteGame: (gameId) => del(`/developer/games/${gameId}`),
-  submitReview: (gameId, body) => post(`/developer/games/${gameId}/submit-review`, body),
+  submitGame: (gameId) => post(`/developer/games/${gameId}/submit`),
   publishGame: (gameId) => post(`/developer/games/${gameId}/publish`),
-  unpublishGame: (gameId, body) => post(`/developer/games/${gameId}/unpublish`, body),
+  unpublishGame: (gameId) => post(`/developer/games/${gameId}/unpublish`),
   addMedia: (gameId, body) => post(`/developer/games/${gameId}/media`, body),
   deleteMedia: (gameId, mediaId) => del(`/developer/games/${gameId}/media/${mediaId}`),
 
@@ -173,10 +175,6 @@ export const developer = {
   listDeployments: (params) => get('/developer/deployments', params),
   getDeployment: (deploymentId) => get(`/developer/deployments/${deploymentId}`),
   getDeploymentLogs: (deploymentId, params) => get(`/developer/deployments/${deploymentId}/logs`, params),
-
-  // Analytics & Revenue
-  getAnalytics: (params) => get('/developer/analytics', params),
-  getRevenue: () => get('/developer/revenue'),
 };
 
 // ─── Instances ────────────────────────────────────────────────────────────────
