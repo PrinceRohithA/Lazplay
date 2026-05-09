@@ -9,16 +9,18 @@ const BACKEND_ROOT = path.resolve(__dirname, '..');
 const DB_FILE = path.join(BACKEND_ROOT, 'data', 'db.json');
 
 const config = {
-  apiPrefix: process.env.API_PREFIX || '/api/v1',
+  // Nginx strips /api/ before proxying, so the backend sees /v1/... paths.
+  // Override with API_PREFIX=/api/v1 for local dev without nginx.
+  apiPrefix: process.env.API_PREFIX || '/v1',
   appVersion: process.env.APP_VERSION || '1.0.0',
   appEnv: process.env.APP_ENV || 'development',
-  publicApiUrl: process.env.PUBLIC_API_URL || 'http://localhost:3000/api/v1',
-  publicWebUrl: process.env.PUBLIC_WEB_URL || 'http://localhost:5173',
+  publicApiUrl: process.env.PUBLIC_API_URL || 'https://play.lazplay.tech/api/v1',
+  publicWebUrl: process.env.PUBLIC_WEB_URL || 'https://play.lazplay.tech',
   authSecret: process.env.AUTH_SECRET || 'lazplay-dev-secret-change-before-production',
   accessTokenTtlSeconds: Number(process.env.ACCESS_TOKEN_TTL_SECONDS || 900),
   refreshTokenTtlSeconds: Number(process.env.REFRESH_TOKEN_TTL_SECONDS || 604800),
   runtimeTokenTtlSeconds: Number(process.env.RUNTIME_TOKEN_TTL_SECONDS || 900),
-  minioPublicUrl: process.env.MINIO_PUBLIC_URL || 'http://localhost:9000',
+  minioPublicUrl: process.env.MINIO_PUBLIC_URL || 'https://cdn.lazplay.tech',
   minioBucket: process.env.MINIO_BUCKET || 'lazplay',
   minioSecretKey: process.env.MINIO_SECRET_KEY || 'minioadmin',
   razorpayKeyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_lazplay',
