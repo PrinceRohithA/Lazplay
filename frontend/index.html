@@ -161,6 +161,15 @@
         .neon-glow {
             box-shadow: 0 0 10px var(--primary-container);
         }
+        /* Autofill Override to prevent white background */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus, 
+        input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 30px #131313 inset !important;
+            -webkit-text-fill-color: #e5e2e1 !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
     </style>
   </head>
   <body class="bg-background text-on-background font-body-md min-h-screen relative overflow-x-hidden selection:bg-primary-container selection:text-on-primary-container">
