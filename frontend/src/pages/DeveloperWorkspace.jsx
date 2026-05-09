@@ -1,34 +1,119 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { developer as devApi } from '../api';
+import { developer as devApi, auth as authApi } from '../api';
 
 export default function DeveloperWorkspace() {
+  const [user, setUser] = useState(null);
   const [games, setGames] = useState([]);
   const [dash, setDash] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  // Registration form state
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [regForm, setRegForm] = useState({ displayName: '', website: '', supportEmail: '' });
+  const [regError, setRegError] = useState(null);
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
+  async function fetchData() {
+    setLoading(true);
+    try {
+      const me = await authApi.me();
+      setUser(me.data);
+
+      if (me.data.roles.includes('DEVELOPER') || me.data.roles.includes('ADMIN')) {
         const [gamesRes, dashRes] = await Promise.all([
           devApi.listGames({ limit: 10 }),
           devApi.dashboard(),
         ]);
         setGames(gamesRes.data || []);
         setDash(dashRes.data || null);
-      } catch (err) {
-        console.error('Failed to fetch developer data', err);
-      } finally {
-        setLoading(false);
       }
+    } catch (err) {
+      console.error('Failed to fetch developer data', err);
+    } finally {
+      setLoading(false);
     }
+  }
+
+  useEffect(() => {
     fetchData();
   }, []);
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setRegError(null);
+    try {
+      await devApi.register(regForm);
+      // Refresh data to show the workspace
+      await fetchData();
+    } catch (err) {
+      setRegError(err.message || 'Registration failed');
+    }
+  };
 
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center font-label-mono text-secondary-container animate-pulse">
         [ INITIALIZING_DEVELOPER_WORKSPACE_ENV... ]
+      </div>
+    );
+  }
+
+  // If not a developer, show the "Become a Developer" screen
+  if (user && !user.roles.includes('DEVELOPER') && !user.roles.includes('ADMIN')) {
+    return (
+      <div className="max-w-container-max mx-auto p-gutter md:p-margin flex flex-col items-center justify-center min-h-[70vh] gap-8">
+        <div className="text-center max-w-2xl">
+          <h1 className="font-headline-lg text-headline-lg text-secondary-container uppercase mb-4 animate-pulse glow-primary-text">
+            BECOME_A_CREATOR
+          </h1>
+          <p className="font-body-md text-on-surface-variant mb-8 leading-relaxed">
+            Ready to deploy your reality into the LazPlay Grid? Join our elite circle of architects. 
+            Upload games, monitor real-time telemetry, and monetize your creations.
+          </p>
+          
+          <div className="border-2 border-outline-variant bg-surface-container p-8 text-left relative overflow-hidden group">
+             <div className="absolute top-0 right-0 p-2 opacity-20 font-label-mono text-[10px]">AUTH_LEVEL: PLAYER</div>
+             <form onSubmit={handleRegister} className="flex flex-col gap-6">
+                <div className="flex flex-col gap-2">
+                  <label className="font-label-mono text-label-mono text-on-surface uppercase tracking-wider">Public_Display_Name</label>
+                  <input 
+                    required
+                    className="bg-surface border-2 border-outline-variant p-3 text-on-surface font-label-mono focus:border-secondary-container outline-none transition-colors"
+                    placeholder="e.g. Cyberdyne_Systems"
+                    value={regForm.displayName}
+                    onChange={e => setRegForm({...regForm, displayName: e.target.value})}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="font-label-mono text-label-mono text-on-surface uppercase tracking-wider">Portfolio_Link (Optional)</label>
+                  <input 
+                    className="bg-surface border-2 border-outline-variant p-3 text-on-surface font-label-mono focus:border-secondary-container outline-none transition-colors"
+                    placeholder="https://your-portfolio.com"
+                    value={regForm.website}
+                    onChange={e => setRegForm({...regForm, website: e.target.value})}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="font-label-mono text-label-mono text-on-surface uppercase tracking-wider">Support_Email (Optional)</label>
+                  <input 
+                    className="bg-surface border-2 border-outline-variant p-3 text-on-surface font-label-mono focus:border-secondary-container outline-none transition-colors"
+                    placeholder="support@yourdev.com"
+                    value={regForm.supportEmail}
+                    onChange={e => setRegForm({...regForm, supportEmail: e.target.value})}
+                  />
+                </div>
+
+                {regError && <p className="text-error font-label-mono text-[12px] animate-bounce">{regError}</p>}
+
+                <button 
+                  type="submit"
+                  className="mt-4 bg-secondary-container text-on-secondary py-4 font-label-mono font-bold uppercase tracking-widest hover:bg-transparent hover:text-secondary-container border-2 border-secondary-container transition-all shadow-[8px_8px_0_0_#5b005b]"
+                >
+                  INITIALIZE_DEVELOPER_PROTOCOL
+                </button>
+             </form>
+          </div>
+        </div>
       </div>
     );
   }
@@ -45,12 +130,12 @@ export default function DeveloperWorkspace() {
             WORKSPACE_ENV
           </h1>
           <p className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-widest">
-            NODE: ALPHA_TANGO // STATUS: ONLINE // UPTIME: 99.9%
+            OPERATOR: {user?.displayName} // NODE: ALPHA_TANGO // STATUS: ONLINE
           </p>
         </div>
         <div className="flex gap-2">
           <button 
-            onClick={() => window.location.reload()}
+            onClick={() => fetchData()}
             className="bg-surface-container border-2 border-outline-variant px-4 py-2 font-label-mono text-label-mono text-on-surface hover:border-primary hover:text-primary transition-colors flex items-center gap-2 group"
           >
             <span className="material-symbols-outlined text-sm group-hover:animate-spin">sync</span>
@@ -89,7 +174,6 @@ export default function DeveloperWorkspace() {
             </div>
             <div className="flex-1 flex items-end gap-1 mt-4 h-32 w-full border-b-2 border-l-2 border-outline-variant pt-2 pr-2 relative">
               <div className="absolute inset-0 bg-[linear-gradient(rgba(60,75,53,0.3)_1px,transparent_1px)] bg-[length:100%_20px] pointer-events-none"></div>
-              {/* Fake chart data based on real stats scale */}
               <div className="flex-1 bg-surface-container border-t-2 border-outline-variant h-[20%] group-hover:bg-secondary-fixed-dim transition-all"></div>
               <div className="flex-1 bg-surface-container border-t-2 border-outline-variant h-[35%] group-hover:bg-secondary-fixed-dim transition-all"></div>
               <div className="flex-1 bg-surface-container border-t-2 border-outline-variant h-[25%] group-hover:bg-secondary-fixed-dim transition-all"></div>
@@ -147,7 +231,7 @@ export default function DeveloperWorkspace() {
           </div>
           <div className="flex-1 p-4 font-label-mono text-label-mono text-primary-container overflow-y-auto flex flex-col gap-1 leading-relaxed">
             <p className="text-on-surface-variant opacity-70">LAZPLAY OS v.1.0.4 - Authentication Successful.</p>
-            <p className="text-on-surface-variant opacity-70">Session initialized for DEV_USER.</p>
+            <p className="text-on-surface-variant opacity-70">Session initialized for {user?.username}.</p>
             <p className="mt-4"><span className="text-secondary-container">sys_admin@lazplay:~$</span> list_projects --status=all</p>
             
             <div className="mt-2 border border-outline-variant p-2 bg-surface-dim overflow-x-auto">

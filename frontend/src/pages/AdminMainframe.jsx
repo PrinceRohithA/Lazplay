@@ -1,41 +1,52 @@
 import React, { useState, useEffect } from 'react';
-import { admin as adminApi } from '../api';
+import { useNavigate } from 'react-router-dom';
+import { admin as adminApi, auth as authApi } from '../api';
 
 export default function AdminMainframe() {
-  const [dash, setDash] = useState(null);
-  const [servers, setServers] = useState([]);
+  const [user, setUser] = useState(null);
+  const [stats, setStats] = useState({});
+  const [nodes, setNodes] = useState([]);
   const [instances, setInstances] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [dashRes, serversRes, instancesRes] = await Promise.all([
+        const me = await authApi.me();
+        setUser(me.data);
+
+        if (!me.data.roles.includes('ADMIN')) {
+          navigate('/');
+          return;
+        }
+
+        const [analyticsRes, nodesRes, instancesRes] = await Promise.all([
           adminApi.dashboard(),
           adminApi.listServers(),
-          adminApi.listInstances({ limit: 10 }),
+          adminApi.listInstances({ limit: 10 })
         ]);
-        setDash(dashRes.data);
-        setServers(serversRes.data || []);
+        
+        setStats(analyticsRes.data || {});
+        setNodes(nodesRes.data || []);
         setInstances(instancesRes.data || []);
       } catch (err) {
-        console.error('Failed to fetch admin data', err);
+        console.error('Admin data fetch failed', err);
+        navigate('/');
       } finally {
         setLoading(false);
       }
     }
     fetchData();
-  }, []);
+  }, [navigate]);
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center font-label-mono text-primary-container animate-pulse">
-        [ INITIALIZING_ADMIN_MAINFRAME_DATA_LINK... ]
+      <div className="flex-1 flex items-center justify-center font-label-mono text-primary animate-pulse">
+        [ ACCESSING_CORE_MAINFRAME... ]
       </div>
     );
   }
-
-  const stats = dash?.stats || {};
 
   return (
     <div className="p-margin flex-1 flex flex-col gap-margin">
