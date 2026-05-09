@@ -205,7 +205,12 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
           price: form.licensing === 'FREE' ? 0 : parseFloat(form.price),
           priceType: form.licensing === 'PAID' ? 'PAID' : 'FREE',
           genres: form.genres,
-          tags: form.customTags
+          tags: form.customTags,
+          platforms: form.hardwareSpecs,
+          systemRequirements: {
+              minimum: form.minSpecs,
+              recommended: form.recSpecs
+          }
         });
         gameId = gameRes.data.id;
         addLog(`SUCCESS: GAME_INITIALIZED (ID: ${gameId})`);
@@ -217,7 +222,12 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
           price: form.licensing === 'FREE' ? 0 : parseFloat(form.price),
           priceType: form.licensing === 'PAID' ? 'PAID' : 'FREE',
           genres: form.genres,
-          tags: form.customTags
+          tags: form.customTags,
+          platforms: form.hardwareSpecs,
+          systemRequirements: {
+              minimum: form.minSpecs,
+              recommended: form.recSpecs
+          }
         });
         addLog('SUCCESS: METADATA_SYNC_COMPLETE');
       }
@@ -398,12 +408,13 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         </div>
 
         {/*  Hardware Specs Card  */}
-        <div className="col-span-12 lg:col-span-5 bg-surface-container-low pixel-border p-6 flex flex-col">
-          <div className="flex items-center justify-between border-b border-outline-variant pb-3 mb-6">
+        <div className="col-span-12 lg:col-span-5 bg-surface-container-low pixel-border p-6 flex flex-col gap-6">
+          <div className="flex items-center justify-between border-b border-outline-variant pb-3">
             <h3 className="font-label-mono text-primary-fixed text-label-mono flex items-center gap-2 uppercase">
               <span className="material-symbols-outlined">settings_input_component</span> PLATFORM_SPECS
             </h3>
           </div>
+          
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {PLATFORMS.map((spec) => (
               <label key={spec.id} className={`group flex items-center gap-3 p-3 bg-surface-container border transition-all cursor-pointer ${form.hardwareSpecs.includes(spec.id) ? 'border-primary-container bg-primary-container/10' : 'border-outline-variant hover:border-primary-container/50'}`}>
@@ -424,14 +435,44 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
               </label>
             ))}
           </div>
-          <div className="mt-auto pt-6 border-t border-outline-variant mt-8 space-y-4">
-             <div className="flex justify-between items-center">
-              <span className="font-label-mono text-[10px] text-on-surface-variant uppercase">HARDWARE_OPTIMIZATION</span>
-              <span className="font-label-mono text-[10px] text-tertiary-fixed">ENABLED</span>
-            </div>
-            <div className="h-1 w-full bg-surface-container relative overflow-hidden">
-              <div className="h-full bg-primary-container/40 animate-pulse" style={{ width: "85%" }}></div>
-            </div>
+
+          <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                  <span className="font-label-mono text-[10px] text-primary-container uppercase">HARDWARE_REQUIREMENTS</span>
+                  <div className="h-px flex-1 mx-4 bg-outline-variant/30"></div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                  {/* Minimum Specs */}
+                  <div className="space-y-3 bg-surface-container/50 p-4 border border-outline-variant/30">
+                      <p className="font-label-mono text-[9px] text-secondary-container uppercase mb-2 underline underline-offset-4">MINIMUM_SPECS</p>
+                      {['cpu', 'gpu', 'ram', 'storage'].map(field => (
+                          <div key={field} className="space-y-1">
+                              <label className="block font-label-mono text-[8px] text-on-surface-variant uppercase">{field}</label>
+                              <input 
+                                  className="w-full bg-surface-container border border-outline-variant p-2 text-[10px] font-label-mono text-on-surface focus:border-primary-container outline-none"
+                                  value={form.minSpecs[field]}
+                                  onChange={(e) => handleSpecChange('minSpecs', field, e.target.value)}
+                              />
+                          </div>
+                      ))}
+                  </div>
+
+                  {/* Recommended Specs */}
+                  <div className="space-y-3 bg-surface-container/50 p-4 border border-outline-variant/30">
+                      <p className="font-label-mono text-[9px] text-tertiary-fixed uppercase mb-2 underline underline-offset-4">RECOMMENDED_SPECS</p>
+                      {['cpu', 'gpu', 'ram', 'storage'].map(field => (
+                          <div key={field} className="space-y-1">
+                              <label className="block font-label-mono text-[8px] text-on-surface-variant uppercase">{field}</label>
+                              <input 
+                                  className="w-full bg-surface-container border border-outline-variant p-2 text-[10px] font-label-mono text-on-surface focus:border-primary-container outline-none"
+                                  value={form.recSpecs[field]}
+                                  onChange={(e) => handleSpecChange('recSpecs', field, e.target.value)}
+                              />
+                          </div>
+                      ))}
+                  </div>
+              </div>
           </div>
         </div>
 

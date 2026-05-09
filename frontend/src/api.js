@@ -206,6 +206,7 @@ export const admin = {
 
   // Games
   listGames: (params) => get('/admin/games', params),
+  getGame: (gameId) => get(`/admin/games/${gameId}`),
   updateGameStatus: (gameId, body) => patch(`/admin/games/${gameId}/status`, body),
   featureGame: (gameId) => post(`/admin/games/${gameId}/feature`),
   unfeatureGame: (gameId) => del(`/admin/games/${gameId}/feature`),
