@@ -190,7 +190,9 @@ function sendJson(res, status, body) {
     return;
   }
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
-  res.end(JSON.stringify(body, null, 2));
+  res.end(JSON.stringify(body, (key, value) => 
+    typeof value === 'bigint' ? value.toString() : value
+  , 2));
 }
 
 function createRouter() {
@@ -1210,19 +1212,17 @@ function registerRoutes(router) {
   });
   router.add('GET', '/developer/games/:gameId', async (req) => {
     const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
-    const game = await prisma.game.findUnique({
-      where: { id: req.params.gameId },
-      include: {
-        media: true,
-        builds: {
-          orderBy: { createdAt: 'desc' },
-          take: 5
-        }
-      }
-    });
+    const game = await findGame(req.params.gameId);
     if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
     await assertDeveloperOwnsGame(user, game);
-    return ok(game);
+    
+    // Fetch media and builds separately to avoid complex join hangs
+    const [media, builds] = await Promise.all([
+        prisma.gameMedia.findMany({ where: { gameId: game.id } }),
+        prisma.gameBuild.findMany({ where: { gameId: game.id }, orderBy: { createdAt: 'desc' }, take: 5 })
+    ]);
+
+    return ok({ ...game, media, builds });
   });
 
 
