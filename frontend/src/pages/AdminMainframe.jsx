@@ -27,7 +27,7 @@ export default function AdminMainframe() {
           adminApi.listInstances({ limit: 10 })
         ]);
         
-        setStats(analyticsRes.data || {});
+        setStats(analyticsRes.data?.stats || {});
         setNodes(nodesRes.data || []);
         setInstances(instancesRes.data || []);
       } catch (err) {
@@ -61,7 +61,7 @@ export default function AdminMainframe() {
         </div>
         <div className="font-label-mono text-label-mono text-on-surface-variant text-right">
           LAZPLAY_CORE: ONLINE<br />
-          NODE_COUNT: {servers.length}
+          NODE_COUNT: {nodes.length}
         </div>
       </div>
 
@@ -110,7 +110,7 @@ export default function AdminMainframe() {
                   </tr>
                 </thead>
                 <tbody>
-                  {servers.map(node => (
+                  {nodes.map(node => (
                     <tr key={node.id} className="border-b border-outline-variant/50 hover:bg-surface-bright transition-colors">
                       <td className="p-2 text-on-surface">{node.id}</td>
                       <td className="p-2 text-primary-container">{node.region}</td>
@@ -126,7 +126,7 @@ export default function AdminMainframe() {
                       </td>
                     </tr>
                   ))}
-                  {servers.length === 0 && (
+                  {nodes.length === 0 && (
                     <tr>
                       <td colSpan="4" className="p-8 text-center text-on-surface-variant opacity-50 uppercase text-[10px]">
                         NO_ACTIVE_NODES_DETECTED
@@ -194,7 +194,7 @@ export default function AdminMainframe() {
             <div className="mt-4 border-t border-outline-variant/30 pt-2 opacity-50">
               -- LOGGING_ACTIVE --
               {instances.length > 0 && <div>&gt; {instances.length} ACTIVE_INSTANCES_DETECTED</div>}
-              {servers.length > 0 && <div>&gt; {servers.length} SERVER_NODES_ONLINE</div>}
+              {nodes.length > 0 && <div>&gt; {nodes.length} SERVER_NODES_ONLINE</div>}
               &gt; MONITORING_ALL_TRAFFIC...
             </div>
             <div className="mt-auto pt-4 flex gap-2">
