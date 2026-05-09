@@ -87,10 +87,10 @@ export default function DeveloperWorkspace() {
             </span>
             <span className="font-headline-md text-headline-md text-on-surface mt-2 block group-hover:text-primary-container transition-colors">402 / 500</span>
             <div className="flex gap-1 mt-4 h-3 w-full">
-              <div className="flex-1 bg-primary-container shadow-[0_0_5px_#39ff14]"></div>
-              <div className="flex-1 bg-primary-container shadow-[0_0_5px_#39ff14]"></div>
-              <div className="flex-1 bg-primary-container shadow-[0_0_5px_#39ff14]"></div>
-              <div className="flex-1 bg-primary-container shadow-[0_0_5px_#39ff14]"></div>
+              <div className="flex-1 bg-primary-container shadow-[0_0_5px_var(--primary-container)]"></div>
+              <div className="flex-1 bg-primary-container shadow-[0_0_5px_var(--primary-container)]"></div>
+              <div className="flex-1 bg-primary-container shadow-[0_0_5px_var(--primary-container)]"></div>
+              <div className="flex-1 bg-primary-container shadow-[0_0_5px_var(--primary-container)]"></div>
               <div className="flex-1 bg-surface-container border border-outline-variant"></div>
             </div>
           </div>

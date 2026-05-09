@@ -10,6 +10,42 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script id="tailwind-config">
+        const updateThemeColors = (hex) => {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+
+            const root = document.documentElement;
+            
+            // Primary Container (The main neon color)
+            root.style.setProperty('--primary-container', hex);
+            root.style.setProperty('--primary-container-rgb', `${r}, ${g}, ${b}`);
+            
+            // On Primary Container (Dark version for text on neon)
+            const onPrimaryContainer = `rgb(${Math.floor(r * 0.3)}, ${Math.floor(g * 0.3)}, ${Math.floor(b * 0.3)})`;
+            root.style.setProperty('--on-primary-container', onPrimaryContainer);
+
+            // Primary (Light version)
+            const primary = `rgb(${Math.min(255, r + 200)}, ${Math.min(255, g + 200)}, ${Math.min(255, b + 200)})`;
+            root.style.setProperty('--primary', primary);
+
+            // On Primary (Very dark version)
+            const onPrimary = `rgb(${Math.floor(r * 0.1)}, ${Math.floor(g * 0.1)}, ${Math.floor(b * 0.1)})`;
+            root.style.setProperty('--on-primary', onPrimary);
+
+            // Surface Tint
+            root.style.setProperty('--surface-tint', hex);
+
+            // Primary Fixed & Fixed Dim
+            root.style.setProperty('--primary-fixed', hex);
+            root.style.setProperty('--primary-fixed-dim', hex);
+        };
+
+        // Initialize from localStorage
+        const savedColor = localStorage.getItem('lazplay-theme-color') || '#39ff14';
+        document.documentElement.style.setProperty('--primary-container', savedColor);
+        // We'll call updateThemeColors in a bit to set the rest, but let's define the config first
+
         tailwind.config = {
             darkMode: "class",
             theme: {
@@ -25,7 +61,7 @@
                         "on-tertiary-fixed": "#002020",
                         "error": "#ffb4ab",
                         "surface-bright": "#3a3939",
-                        "primary-fixed": "#79ff5b",
+                        "primary-fixed": "var(--primary-fixed)",
                         "surface-dim": "#131313",
                         "on-tertiary-fixed-variant": "#004f4f",
                         "inverse-surface": "#e5e2e1",
@@ -33,32 +69,32 @@
                         "surface-container-highest": "#353534",
                         "on-background": "#e5e2e1",
                         "on-secondary-fixed": "#380038",
-                        "outline": "#85967c",
+                        "outline": "var(--primary-container)", // Use primary for outline too
                         "error-container": "#93000a",
                         "inverse-on-surface": "#313030",
                         "on-surface": "#e5e2e1",
-                        "on-primary-container": "#107100",
+                        "on-primary-container": "var(--on-primary-container)",
                         "surface-variant": "#353534",
-                        "outline-variant": "#3c4b35",
+                        "outline-variant": "var(--on-primary-container)", // Dimmer outline
                         "tertiary-fixed-dim": "#00dddd",
-                        "on-primary-fixed": "#022100",
+                        "on-primary-fixed": "var(--on-primary)",
                         "secondary-fixed": "#ffd7f5",
-                        "on-primary-fixed-variant": "#095300",
-                        "primary-container": "#39ff14",
+                        "on-primary-fixed-variant": "var(--on-primary-container)",
+                        "primary-container": "var(--primary-container)",
                         "surface-container": "#201f1f",
                         "secondary-container": "#fe00fe",
                         "surface-container-low": "#1c1b1b",
                         "on-tertiary": "#003737",
                         "secondary": "#ffabf3",
-                        "on-primary": "#053900",
+                        "on-primary": "var(--on-primary)",
                         "tertiary-container": "#00f6f6",
                         "on-error": "#690005",
                         "tertiary-fixed": "#00fbfb",
                         "on-surface-variant": "#baccb0",
-                        "inverse-primary": "#106e00",
-                        "surface-tint": "#2ae500",
-                        "primary": "#efffe3",
-                        "primary-fixed-dim": "#2ae500",
+                        "inverse-primary": "var(--on-primary-container)",
+                        "surface-tint": "var(--surface-tint)",
+                        "primary": "var(--primary)",
+                        "primary-fixed-dim": "var(--primary-fixed-dim)",
                         "tertiary": "#e6fffe",
                         "on-secondary-container": "#500050",
                         "on-error-container": "#ffdad6"
@@ -93,7 +129,16 @@
                     }
                 }
             }
-        }
+        };
+        
+        // Apply saved color immediately
+        updateThemeColors(savedColor);
+
+        // Expose to window for React to use
+        window.setThemeColor = (color) => {
+            localStorage.setItem('lazplay-theme-color', color);
+            updateThemeColors(color);
+        };
     </script>
     <style>
         .scanlines {
@@ -108,13 +153,13 @@
             pointer-events: none;
         }
         .retro-border {
-            box-shadow: -2px -2px 0 0 #3c4b35, 2px 2px 0 0 #131313;
+            box-shadow: -2px -2px 0 0 var(--on-primary-container), 2px 2px 0 0 #131313;
         }
         .retro-border-hover:hover {
-            box-shadow: -2px -2px 0 0 #39ff14, 2px 2px 0 0 #107100;
+            box-shadow: -2px -2px 0 0 var(--primary-container), 2px 2px 0 0 var(--on-primary-container);
         }
         .neon-glow {
-            box-shadow: 0 0 10px #39ff14;
+            box-shadow: 0 0 10px var(--primary-container);
         }
     </style>
   </head>

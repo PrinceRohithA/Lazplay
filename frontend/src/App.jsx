@@ -9,6 +9,7 @@ import UserRegistrationCyberEdition from './pages/UserRegistrationCyberEdition';
 import GameLibraryCyberEdition from './pages/GameLibraryCyberEdition';
 import GamesDiscoveryRetroEdition from './pages/GamesDiscoveryRetroEdition';
 import DeveloperWorkspaceAdvancedDeploymentSuite from './pages/DeveloperWorkspaceAdvancedDeploymentSuite';
+import Options from './pages/Options';
 import Layout from './components/Layout';
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
               <Route path="/developer" element={<DeveloperWorkspace />} />
               <Route path="/library" element={<GameLibraryCyberEdition />} />
               <Route path="/games" element={<GamesDiscoveryRetroEdition />} />
+              <Route path="/options" element={<Options />} />
               <Route path="/deployment" element={<DeveloperWorkspaceAdvancedDeploymentSuite />} />
             </Routes>
           </Layout>

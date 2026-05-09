@@ -11,7 +11,7 @@ export default function Layout({ children }) {
     { name: 'LIBRARY', path: '/library', icon: 'inventory_2' },
     { name: 'DEV_CONSOLE', path: '/developer', icon: 'terminal' },
     { name: 'ADMIN', path: '/admin', icon: 'shield_person' },
-    { name: 'OPTIONS', path: '/', icon: 'settings' },
+    { name: 'OPTIONS', path: '/options', icon: 'settings' },
   ];
 
   return (
@@ -28,7 +28,7 @@ export default function Layout({ children }) {
           >
             <span className="material-symbols-outlined">{isCollapsed ? 'menu' : 'menu_open'}</span>
           </button>
-          <Link to="/" className="font-headline-md text-headline-md font-bold text-primary-container drop-shadow-[0_0_8px_rgba(57,255,20,0.6)]">LAZPLAY</Link>
+          <Link to="/" className="font-headline-md text-headline-md font-bold text-primary-container drop-shadow-[0_0_8px_rgba(var(--primary-container-rgb),0.6)]">LAZPLAY</Link>
         </div>
         
         <div className="flex-1 max-w-md mx-8 hidden md:block">
@@ -73,7 +73,7 @@ export default function Layout({ children }) {
                   to={item.path} 
                   className={`flex items-center gap-3 p-3 transition-all font-label-mono text-label-mono border-l-4 ${
                     isActive 
-                    ? 'bg-primary-container text-on-primary-fixed-variant font-bold border-primary-fixed shadow-[4px_0_0_0_#39ff14]' 
+                    ? 'bg-primary-container text-on-primary-fixed-variant font-bold border-primary-fixed shadow-[4px_0_0_0_var(--primary-container)]' 
                     : 'text-on-surface-variant opacity-80 hover:opacity-100 hover:bg-surface-bright hover:text-primary border-transparent'
                   }`}
                 >
@@ -96,21 +96,6 @@ export default function Layout({ children }) {
         <main className={`flex-1 transition-all duration-300 min-h-[calc(100vh-64px)] ${isCollapsed ? 'ml-20' : 'ml-64'}`}>
           {children}
           
-          {/* Footer */}
-          <footer className="bg-surface-container-lowest text-on-surface-variant font-label-mono text-[10px] uppercase border-t-2 border-outline-variant py-8 px-margin flex flex-col md:flex-row justify-between items-center gap-6 mt-auto">
-            <div className="flex flex-col gap-1">
-              <p className="text-primary opacity-50 font-headline-md">LAZPLAY</p>
-              <p>© 198X NEON_LABS_INC // ALL RIGHTS RESERVED</p>
-            </div>
-            <div className="flex gap-8">
-              <a className="hover:text-secondary-container transition-colors hover:underline decoration-dotted" href="#">TERMINAL_DOCS</a>
-              <a className="hover:text-secondary-container transition-colors hover:underline decoration-dotted" href="#">DISCORD_RELAY</a>
-              <a className="hover:text-secondary-container transition-colors hover:underline decoration-dotted" href="#">GITHUB_REPOS</a>
-            </div>
-            <div className="opacity-40">
-              STATION_ID: LAZPLAY_NODE_0991_ARCADE
-            </div>
-          </footer>
         </main>
       </div>
     </div>
