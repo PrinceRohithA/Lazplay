@@ -334,8 +334,12 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         }
 
         /* Fix potential white background in standard inputs */
-        input { background-color: transparent !important; color: inherit; }
+        input { background-color: transparent !important; color: inherit; border: none !important; outline: none !important; box-shadow: none !important; }
+        input:focus { outline: none !important; box-shadow: none !important; border: none !important; }
         input::placeholder { color: var(--on-surface-variant); opacity: 0.4; }
+        
+        /* Global focus reset to prevent white outlines */
+        *:focus { outline: none !important; }
       `}</style>
 
       {/*  Header Section  */}
