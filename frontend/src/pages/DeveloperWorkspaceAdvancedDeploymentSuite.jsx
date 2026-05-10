@@ -31,6 +31,8 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     { time: new Date().toLocaleTimeString(), msg: 'LINKING_TO_MAINFRAME_CENTRAL_CORE...' },
     { time: new Date().toLocaleTimeString(), msg: 'READY_FOR_DEPLOYMENT_COMMAND_SIGNAL' }
   ]);
+  const [uploadProgress, setUploadProgress] = useState(null);
+  const [uploadLabel, setUploadLabel] = useState('');
 
   const [form, setForm] = useState({
     title: '',
@@ -136,6 +138,27 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
       addLog(`ASSET_STAGED: ${type} (${selectedFiles[0].name})`);
     }
   };
+
+  const uploadBuildArtifact = useCallback((file, uploadUrl) => new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', uploadUrl, true);
+    xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+
+    xhr.upload.onprogress = (event) => {
+      if (!event.lengthComputable) return;
+      const percent = Math.round((event.loaded / event.total) * 100);
+      setUploadProgress(percent);
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) return resolve();
+      return reject(new Error(`Upload failed (${xhr.status})`));
+    };
+    xhr.onerror = () => reject(new Error('Upload failed (network error)'));
+    xhr.onabort = () => reject(new Error('Upload aborted'));
+
+    xhr.send(file);
+  }), []);
 
   const handleDeleteMedia = async (mediaId) => {
     if (!window.confirm('PROTOCOL_WARNING: PERMANENTLY_PURGE_DATA? (THIS WILL ALSO DELETE FROM BUCKET)')) return;
@@ -261,7 +284,10 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         });
         
         addLog(`STEP_05: STREAMING_PAYLOAD (${(files.GAME_BINARIES.size / 1024 / 1024).toFixed(2)} MB)...`);
-        // Actual upload happens here in production
+        setUploadLabel(files.GAME_BINARIES.name);
+        setUploadProgress(0);
+        await uploadBuildArtifact(files.GAME_BINARIES, uploadInfo.data.uploadUrl);
+        setUploadProgress(100);
         
         await devApi.completeBuildUpload(buildId, {
           objectKey: uploadInfo.data.objectKey,
@@ -287,6 +313,8 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
       console.error(err);
       addLog(`CRITICAL_FAILURE: ${err.message || 'UNKNOWN_ERROR'}`);
     } finally {
+      setUploadProgress(null);
+      setUploadLabel('');
       setLoading(false);
     }
   };
@@ -664,6 +692,20 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
             ))}
             <div className="animate-pulse flex items-center gap-1"><span className="w-1 h-3 bg-primary-container"></span></div>
           </div>
+          {uploadProgress !== null && (
+            <div className="mt-3 border-t border-outline-variant pt-3">
+              <div className="flex items-center justify-between text-[10px] font-label-mono text-on-surface-variant mb-2 uppercase tracking-widest">
+                <span>UPLOAD_PROGRESS</span>
+                <span>{uploadLabel ? `${uploadLabel} · ` : ''}{uploadProgress}%</span>
+              </div>
+              <div className="h-2 bg-surface-container-highest border border-outline-variant">
+                <div
+                  className="h-full bg-primary-container transition-all"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/*  Action Area  */}
