@@ -19,6 +19,7 @@ const config = {
   runtimeTokenTtlSeconds: Number(process.env.RUNTIME_TOKEN_TTL_SECONDS || 900),
   minioPublicUrl: process.env.MINIO_PUBLIC_URL || 'https://cdn.lazplay.tech',
   minioInternalUrl: process.env.MINIO_INTERNAL_URL || process.env.MINIO_PUBLIC_URL || 'https://cdn.lazplay.tech',
+  minioUploadUrl: process.env.MINIO_UPLOAD_URL || process.env.MINIO_PUBLIC_URL || 'https://cdn.lazplay.tech',
   minioBucket: process.env.MINIO_BUCKET || 'lazplay',
   minioSecretKey: process.env.MINIO_SECRET_KEY || 'Lazplay@18',
   razorpayKeyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_lazplay',
@@ -27,7 +28,6 @@ const config = {
   allowMockPayments: (process.env.ALLOW_MOCK_PAYMENTS || 'true') === 'true'
 };
 
-// Lazy Razorpay SDK client — created once when first needed
 let _rzp = null;
 const getRazorpay = () => {
   if (!_rzp) {
@@ -1173,7 +1173,7 @@ function registerRoutes(router) {
     const user = await requireAuth(req);
     requireFields(req.body, ['purpose', 'fileName', 'contentType', 'sizeBytes']);
     const objectKey = `${req.body.purpose.toLowerCase()}/${user.id}/${Date.now()}-${slugify(req.body.fileName) || req.body.fileName}`;
-    const signed = signedStorageUrl(objectKey, 'PUT');
+    const signed = signedStorageUrl(objectKey, 'PUT', 900, config.minioUploadUrl);
 
     await prisma.storageObject.create({
       data: {
@@ -1217,7 +1217,7 @@ function registerRoutes(router) {
 
     const parts = Array.from({ length: partCount }, (_, i) => ({
       partNumber: i + 1,
-      uploadUrl: `${signedStorageUrl(objectKey, 'PUT').url}&uploadId=${uploadId}&partNumber=${i + 1}`
+      uploadUrl: `${signedStorageUrl(objectKey, 'PUT', 900, config.minioUploadUrl).url}&uploadId=${uploadId}&partNumber=${i + 1}`
     }));
 
     return ok({ objectKey, uploadId, parts, expiresAt: addSeconds(3600) }, 201);
@@ -1616,7 +1616,7 @@ router.add('GET', '/developer/builds', async (req) => {
 
     const objectKey = `games/${build.gameId}/builds/${build.id}/${req.body.fileName}`;
     console.log('[build-upload-url]', { buildId: build.id, gameId: build.gameId, objectKey, sizeBytes: req.body.sizeBytes });
-    const upload = signedStorageUrl(objectKey, 'PUT', 3600);
+    const upload = signedStorageUrl(objectKey, 'PUT', 3600, config.minioUploadUrl);
     return ok({ uploadUrl: upload.url, objectKey, expiresAt: upload.expiresAt });
   });
 
@@ -1729,11 +1729,11 @@ router.add('POST', '/developer/builds/:buildId/upload-url', async (req) => {
     const partCount = Math.max(1, Number(req.body.partCount || 1));
     const parts = Array.from({ length: partCount }, (_, index) => ({
       partNumber: index + 1,
-      uploadUrl: `${signedStorageUrl(objectKey, 'PUT').url}&uploadId=${uploadId}&partNumber=${index + 1}`
+      uploadUrl: `${signedStorageUrl(objectKey, 'PUT', 900, config.minioUploadUrl).url}&uploadId=${uploadId}&partNumber=${index + 1}`
     }));
     return ok({ objectKey, uploadType: 'MULTIPART', uploadId, parts }, 201);
   }
-  const signed = signedStorageUrl(objectKey, 'PUT');
+  const signed = signedStorageUrl(objectKey, 'PUT', 900, config.minioUploadUrl);
   return ok({ objectKey, uploadType: 'SINGLE', uploadUrl: signed.url, expiresAt: signed.expiresAt }, 201);
 });
 
