@@ -312,13 +312,30 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
   return (
     <div className="p-gutter min-h-screen flex flex-col gap-gutter bg-background pb-12">
       <style>{`
-        .ql-container.ql-snow { border: none !important; font-family: inherit; font-size: 14px; color: var(--on-surface); }
-        .ql-editor { min-height: 200px; background: var(--surface-container); }
+        .ql-container.ql-snow { border: none !important; font-family: inherit; font-size: 14px; color: var(--on-surface); background: var(--surface-container); }
+        .ql-editor { min-height: 200px; }
+        .ql-editor.ql-blank::before { color: var(--on-surface-variant) !important; opacity: 0.5; font-style: normal; }
         .ql-toolbar.ql-snow { background: var(--surface-container-high); border: 1px solid var(--outline-variant) !important; border-bottom: none !important; }
         .ql-snow .ql-stroke { stroke: var(--primary-container); }
         .ql-snow .ql-fill { fill: var(--primary-container); }
         .ql-snow .ql-picker { color: var(--primary-container); }
-        .ql-snow .ql-picker-options { background-color: var(--surface-container-highest) !important; color: var(--on-surface) !important; border: 1px solid var(--outline-variant) !important; }
+        .ql-snow .ql-picker-options { background-color: var(--surface-container-highest) !important; color: var(--on-surface) !important; border: 1px solid var(--outline-variant) !important; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+        .ql-snow .ql-tooltip { background-color: var(--surface-container-highest) !important; color: var(--on-surface) !important; border: 1px solid var(--outline-variant) !important; }
+        .ql-snow .ql-tooltip input[type=text] { background: var(--surface-container) !important; color: var(--on-surface) !important; border: 1px solid var(--outline-variant) !important; }
+        
+        /* Fix white box on autofill */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 30px var(--surface-container) inset !important;
+            -webkit-text-fill-color: var(--on-surface) !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+        /* Fix potential white background in standard inputs */
+        input { background-color: transparent !important; color: inherit; }
+        input::placeholder { color: var(--on-surface-variant); opacity: 0.4; }
       `}</style>
 
       {/*  Header Section  */}
@@ -376,6 +393,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
                   name="title"
                   value={form.title}
                   onChange={handleInputChange}
+                  autoComplete="off"
                 />
               </div>
             </div>
@@ -389,6 +407,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
                   name="version"
                   value={form.version}
                   onChange={handleInputChange}
+                  autoComplete="off"
                 />
               </div>
             </div>
@@ -453,6 +472,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
                                   className="w-full bg-surface-container border border-outline-variant p-2 text-[10px] font-label-mono text-on-surface focus:border-primary-container outline-none"
                                   value={form.minSpecs[field]}
                                   onChange={(e) => handleSpecChange('minSpecs', field, e.target.value)}
+                                  autoComplete="off"
                               />
                           </div>
                       ))}
