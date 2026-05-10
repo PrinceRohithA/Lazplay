@@ -185,10 +185,10 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
 
   const uploadMediaFile = useCallback(async (file, purpose, label) => {
     const presign = await storageApi.presignUpload({
-      purpose,
-      fileName: file.name,
+      purpose: String(purpose || 'GAME_MEDIA'),
+      fileName: file.name || 'upload.bin',
       contentType: file.type || 'application/octet-stream',
-      sizeBytes: file.size
+      sizeBytes: Number(file.size || 0)
     });
     setUploadLabel(label || file.name);
     setUploadProgress(0);
@@ -361,9 +361,9 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
 
         addLog('STEP_04: STAGING_BINARIES...');
         const uploadInfo = await devApi.getBuildUploadUrl(buildId, {
-          fileName: files.GAME_BINARIES.name,
-          contentType: files.GAME_BINARIES.type,
-          sizeBytes: files.GAME_BINARIES.size
+          fileName: files.GAME_BINARIES.name || 'build.zip',
+          contentType: files.GAME_BINARIES.type || 'application/octet-stream',
+          sizeBytes: Number(files.GAME_BINARIES.size || 0)
         });
 
         addLog(`STEP_05: STREAMING_PAYLOAD (${(files.GAME_BINARIES.size / 1024 / 1024).toFixed(2)} MB)...`);
@@ -374,7 +374,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
 
         await devApi.completeBuildUpload(buildId, {
           objectKey: uploadInfo.data.objectKey,
-          sizeBytes: files.GAME_BINARIES.size
+          sizeBytes: Number(files.GAME_BINARIES.size || 0)
         });
         addLog('SUCCESS: PAYLOAD_STATIONED');
 
