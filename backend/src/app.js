@@ -452,6 +452,7 @@ async function uploadRuntimeObject(objectKey, data, contentType) {
     body: data
   });
   if (!response.ok) {
+    console.error('[runtime-upload-failed]', { objectKey, status: response.status });
     throw new HttpError(502, 'STORAGE_UPLOAD_FAILED', `Failed to upload runtime object (${response.status})`);
   }
 }
@@ -463,6 +464,7 @@ async function scanAndPrepareBuild(build, game) {
   const download = signedStorageUrl(objectKey, 'GET', 3600, config.minioInternalUrl);
   const response = await fetchWithTimeout(download.url);
   if (!response.ok) {
+    console.error('[build-download-failed]', { buildId: build.id, objectKey, status: response.status });
     throw new HttpError(502, 'BUILD_DOWNLOAD_FAILED', `Failed to download build artifact (${response.status})`);
   }
 
@@ -489,8 +491,11 @@ async function scanAndPrepareBuild(build, game) {
     }
 
     if (!entrypoint) {
+      console.error('[build-entrypoint-missing]', { buildId: build.id, objectKey });
       throw new HttpError(400, 'BUILD_ENTRYPOINT_MISSING', 'index.html was not found in the build archive');
     }
+
+    console.log('[build-zip-entries]', { buildId: build.id, entries: normalizedEntries.length, entrypoint });
 
     for (const { entry, normalized } of normalizedEntries) {
       const runtimeKey = `runtime/${game.id}/${build.id}/${normalized}`;
@@ -1610,6 +1615,7 @@ router.add('GET', '/developer/builds', async (req) => {
     requireFields(req.body, ['fileName', 'contentType', 'sizeBytes']);
 
     const objectKey = `games/${build.gameId}/builds/${build.id}/${req.body.fileName}`;
+    console.log('[build-upload-url]', { buildId: build.id, gameId: build.gameId, objectKey, sizeBytes: req.body.sizeBytes });
     const upload = signedStorageUrl(objectKey, 'PUT', 3600);
     return ok({ uploadUrl: upload.url, objectKey, expiresAt: upload.expiresAt });
   });
@@ -1621,6 +1627,7 @@ router.add('GET', '/developer/builds', async (req) => {
     await assertDeveloperOwnsGame(user, build.game);
     requireFields(req.body, ['objectKey']);
 
+    console.log('[build-upload-complete]', { buildId: build.id, gameId: build.gameId, objectKey: req.body.objectKey, sizeBytes: req.body.sizeBytes });
     const updated = await prisma.gameBuild.update({
       where: { id: build.id },
       data: {
@@ -1640,7 +1647,9 @@ router.add('GET', '/developer/builds', async (req) => {
     if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
     await assertDeveloperOwnsGame(user, build.game);
 
+    console.log('[build-scan-start]', { buildId: build.id, gameId: build.gameId, runtime: build.runtime, platform: build.platform, artifactObjectKey: build.artifactObjectKey });
     const updated = await scanAndPrepareBuild(build, build.game);
+    console.log('[build-scan-complete]', { buildId: updated.id, status: updated.status, scanStatus: updated.scanStatus, entrypoint: updated.entrypoint });
     return ok(updated);
   });
 
@@ -2542,6 +2551,15 @@ export async function createApp() {
       const status = error instanceof HttpError ? error.status : 500;
       const code = error instanceof HttpError ? error.code : 'INTERNAL_SERVER_ERROR';
       const message = error instanceof HttpError ? error.message : 'Unexpected server error';
+      console.error('[request-error]', {
+        requestId,
+        method: req.method,
+        url: req.url,
+        status,
+        code,
+        message,
+        stack: error?.stack
+      });
       sendJson(res, status, {
         success: false,
         error: {
