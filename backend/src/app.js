@@ -17,7 +17,7 @@ const config = {
   accessTokenTtlSeconds: Number(process.env.ACCESS_TOKEN_TTL_SECONDS || 7200),
   refreshTokenTtlSeconds: Number(process.env.REFRESH_TOKEN_TTL_SECONDS || 2592000),
   runtimeTokenTtlSeconds: Number(process.env.RUNTIME_TOKEN_TTL_SECONDS || 900),
-  minioPublicUrl: process.env.MINIO_PUBLIC_URL || 'https://cdn.lazplay.tech',
+  minioPublicUrl: process.env.MINIO_PUBLIC_URL || 'https://s3.lazplay.tech',
   minioInternalUrl: process.env.MINIO_INTERNAL_URL || process.env.MINIO_PUBLIC_URL || 'https://cdn.lazplay.tech',
   minioUploadUrl: process.env.MINIO_UPLOAD_URL || process.env.MINIO_PUBLIC_URL || 'https://cdn.lazplay.tech',
   minioBucket: process.env.MINIO_BUCKET || 'lazplay',
