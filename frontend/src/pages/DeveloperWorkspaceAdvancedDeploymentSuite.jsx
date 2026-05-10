@@ -194,7 +194,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     setUploadProgress(0);
     await uploadBuildArtifact(file, presign.data.uploadUrl);
     setUploadProgress(100);
-    const publicUrl = presign.data.uploadUrl.split('?')[0];
+    const publicUrl = presign.data.publicUrl || presign.data.uploadUrl.split('?')[0];
     return { url: publicUrl, objectKey: presign.data.objectKey };
   }, [uploadBuildArtifact]);
 

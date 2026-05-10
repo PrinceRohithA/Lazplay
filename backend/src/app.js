@@ -2,6 +2,8 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import Razorpay from 'razorpay';
 import AdmZip from 'adm-zip';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { prisma } from './prisma.js';
 
 
@@ -17,16 +19,27 @@ const config = {
   accessTokenTtlSeconds: Number(process.env.ACCESS_TOKEN_TTL_SECONDS || 7200),
   refreshTokenTtlSeconds: Number(process.env.REFRESH_TOKEN_TTL_SECONDS || 2592000),
   runtimeTokenTtlSeconds: Number(process.env.RUNTIME_TOKEN_TTL_SECONDS || 900),
-  minioPublicUrl: process.env.MINIO_PUBLIC_URL || 'https://s3.lazplay.tech',
-  minioInternalUrl: process.env.MINIO_INTERNAL_URL || process.env.MINIO_PUBLIC_URL || 'https://cdn.lazplay.tech',
-  minioUploadUrl: process.env.MINIO_UPLOAD_URL || process.env.MINIO_PUBLIC_URL || 'https://cdn.lazplay.tech',
-  minioBucket: process.env.MINIO_BUCKET || 'lazplay',
-  minioSecretKey: process.env.MINIO_SECRET_KEY || 'Lazplay@18',
+  r2Endpoint: process.env.R2_ENDPOINT,
+  r2Bucket: process.env.R2_BUCKET,
+  r2AccessKeyId: process.env.R2_ACCESS_KEY_ID,
+  r2SecretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+  r2Region: process.env.R2_REGION || 'auto',
+  r2PublicUrl: process.env.R2_PUBLIC_URL,
+  r2UploadUrl: process.env.R2_UPLOAD_URL,
   razorpayKeyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_lazplay',
   razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET || 'lazplay-razorpay-dev-secret',
   razorpayWebhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || 'lazplay-webhook-dev-secret',
   allowMockPayments: (process.env.ALLOW_MOCK_PAYMENTS || 'true') === 'true'
 };
+
+const r2 = new S3Client({
+  region: config.r2Region,
+  endpoint: config.r2Endpoint,
+  credentials: config.r2AccessKeyId && config.r2SecretAccessKey
+    ? { accessKeyId: config.r2AccessKeyId, secretAccessKey: config.r2SecretAccessKey }
+    : undefined,
+  forcePathStyle: true
+});
 
 let _rzp = null;
 const getRazorpay = () => {
@@ -378,15 +391,31 @@ async function publicGame(game, user = null) {
   };
 }
 
-function signedStorageUrl(objectKey, method = 'GET', ttlSeconds = 900, baseUrl = config.minioPublicUrl) {
+const assertR2Config = () => {
+  if (!config.r2Endpoint || !config.r2Bucket || !config.r2AccessKeyId || !config.r2SecretAccessKey) {
+    throw new HttpError(500, 'R2_CONFIG_MISSING', 'R2 configuration is missing');
+  }
+};
+
+const publicObjectUrl = (objectKey) => {
+  if (!config.r2PublicUrl) return null;
+  const base = config.r2PublicUrl.replace(/\/+$/g, '');
+  return `${base}/${objectKey}`;
+};
+
+async function signedStorageUrl(objectKey, method = 'GET', ttlSeconds = 900) {
+  assertR2Config();
   const expiresAt = addSeconds(ttlSeconds);
-  const expires = Math.floor(new Date(expiresAt).getTime() / 1000);
-  const signature = signHmac(`${method}:${config.minioBucket}:${objectKey}:${expires}`, config.minioSecretKey || config.authSecret);
-  const normalizedBase = baseUrl.replace(/\/+$/g, '');
-  return {
-    url: `${normalizedBase}/${config.minioBucket}/${encodeURIComponent(objectKey).replaceAll('%2F', '/')}?expires=${expires}&signature=${signature}`,
-    expiresAt
-  };
+  let command;
+
+  if (method === 'GET') command = new GetObjectCommand({ Bucket: config.r2Bucket, Key: objectKey });
+  if (method === 'PUT') command = new PutObjectCommand({ Bucket: config.r2Bucket, Key: objectKey });
+  if (method === 'DELETE') command = new DeleteObjectCommand({ Bucket: config.r2Bucket, Key: objectKey });
+
+  if (!command) throw new HttpError(400, 'INVALID_METHOD', 'Unsupported storage method');
+
+  const url = await getSignedUrl(r2, command, { expiresIn: ttlSeconds });
+  return { url, expiresAt };
 }
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = 45000) {
@@ -430,10 +459,15 @@ const contentTypeForPath = (entryName) => {
 const extractObjectKeyFromUrl = (url) => {
   try {
     const parsed = new URL(url);
-    const prefix = `/${config.minioBucket}/`;
-    const pathname = decodeURIComponent(parsed.pathname);
-    if (!pathname.startsWith(prefix)) return null;
-    return pathname.slice(prefix.length);
+    const pathname = decodeURIComponent(parsed.pathname).replace(/^\/+/, '');
+    if (config.r2PublicUrl) {
+      const publicOrigin = new URL(config.r2PublicUrl).origin;
+      if (parsed.origin === publicOrigin) return pathname;
+    }
+    if (config.r2Bucket && pathname.startsWith(`${config.r2Bucket}/`)) {
+      return pathname.slice(config.r2Bucket.length + 1);
+    }
+    return pathname || null;
   } catch {
     return null;
   }
@@ -445,15 +479,17 @@ const isWebRuntime = (runtime) => {
 };
 
 async function uploadRuntimeObject(objectKey, data, contentType) {
-  const signed = signedStorageUrl(objectKey, 'PUT', 3600, config.minioInternalUrl);
-  const response = await fetchWithTimeout(signed.url, {
-    method: 'PUT',
-    headers: { 'Content-Type': contentType || 'application/octet-stream' },
-    body: data
-  });
-  if (!response.ok) {
-    console.error('[runtime-upload-failed]', { objectKey, status: response.status });
-    throw new HttpError(502, 'STORAGE_UPLOAD_FAILED', `Failed to upload runtime object (${response.status})`);
+  assertR2Config();
+  try {
+    await r2.send(new PutObjectCommand({
+      Bucket: config.r2Bucket,
+      Key: objectKey,
+      Body: data,
+      ContentType: contentType || 'application/octet-stream'
+    }));
+  } catch (error) {
+    console.error('[runtime-upload-failed]', { objectKey, message: error?.message });
+    throw new HttpError(502, 'STORAGE_UPLOAD_FAILED', 'Failed to upload runtime object');
   }
 }
 
@@ -461,14 +497,17 @@ async function scanAndPrepareBuild(build, game) {
   const objectKey = build.artifactObjectKey;
   if (!objectKey) throw new HttpError(409, 'BUILD_ARTIFACT_MISSING', 'Build artifact is missing');
 
-  const download = signedStorageUrl(objectKey, 'GET', 3600, config.minioInternalUrl);
-  const response = await fetchWithTimeout(download.url);
-  if (!response.ok) {
-    console.error('[build-download-failed]', { buildId: build.id, objectKey, status: response.status });
-    throw new HttpError(502, 'BUILD_DOWNLOAD_FAILED', `Failed to download build artifact (${response.status})`);
+  let archiveBuffer;
+  try {
+    const response = await r2.send(new GetObjectCommand({ Bucket: config.r2Bucket, Key: objectKey }));
+    const bodyStream = response.Body;
+    const chunks = [];
+    for await (const chunk of bodyStream) chunks.push(Buffer.from(chunk));
+    archiveBuffer = Buffer.concat(chunks);
+  } catch (error) {
+    console.error('[build-download-failed]', { buildId: build.id, objectKey, message: error?.message });
+    throw new HttpError(502, 'BUILD_DOWNLOAD_FAILED', 'Failed to download build artifact');
   }
-
-  const archiveBuffer = Buffer.from(await response.arrayBuffer());
 
   if (isWebRuntime(build.runtime || build.platform)) {
     let zip;
@@ -516,8 +555,9 @@ async function scanAndPrepareBuild(build, game) {
 
 async function deleteStorageObject(objectKey) {
   if (!objectKey) return;
-  const signed = signedStorageUrl(objectKey, 'DELETE', 3600, config.minioInternalUrl);
-  await fetchWithTimeout(signed.url, { method: 'DELETE' }).catch(() => {});
+  try {
+    await r2.send(new DeleteObjectCommand({ Bucket: config.r2Bucket, Key: objectKey }));
+  } catch {}
 }
 
 async function deleteStorageObjectFromUrl(url) {
@@ -664,7 +704,7 @@ function registerRoutes(router) {
     if (req.body.displayName !== undefined) data.displayName = req.body.displayName;
     if (req.body.bio !== undefined) data.bio = req.body.bio;
     if (req.body.avatarObjectKey) {
-      data.avatarUrl = signedStorageUrl(req.body.avatarObjectKey).url;
+      data.avatarUrl = (await signedStorageUrl(req.body.avatarObjectKey)).url;
     }
     const updated = await prisma.user.update({
       where: { id: user.id },
@@ -838,13 +878,15 @@ function registerRoutes(router) {
     const entryDir = entrypoint.includes('/') ? entrypoint.slice(0, entrypoint.lastIndexOf('/') + 1) : '';
     const runtimeKey = `runtime/${game.id}/${build?.id || 'latest'}/${entrypoint}`;
     const manifestKey = `runtime/${game.id}/${build?.id || 'latest'}/${entryDir}manifest.json`;
+    const runtimeSigned = await signedStorageUrl(runtimeKey);
+    const manifestSigned = await signedStorageUrl(manifestKey);
     return ok({
       gameId: game.id,
       buildId: build?.id || null,
       version: build?.version || null,
       runtime: build?.runtime || 'BROWSER',
-      entrypointUrl: signedStorageUrl(runtimeKey).url,
-      assetManifestUrl: signedStorageUrl(manifestKey).url,
+      entrypointUrl: runtimeSigned.url,
+      assetManifestUrl: manifestSigned.url,
       expiresAt: addSeconds(config.runtimeTokenTtlSeconds)
     });
   });
@@ -1144,8 +1186,9 @@ function registerRoutes(router) {
     if (!invoice || (invoice.userId !== user.id && !user.roles.includes('ADMIN'))) {
       throw new HttpError(404, 'INVOICE_NOT_FOUND', 'Invoice not found');
     }
+    const invoiceSigned = await signedStorageUrl(invoice.objectKey);
     return ok({
-      downloadUrl: signedStorageUrl(invoice.objectKey).url
+      downloadUrl: invoiceSigned.url
     });
   });
 
@@ -1173,7 +1216,8 @@ function registerRoutes(router) {
     const user = await requireAuth(req);
     requireFields(req.body, ['purpose', 'fileName', 'contentType', 'sizeBytes']);
     const objectKey = `${req.body.purpose.toLowerCase()}/${user.id}/${Date.now()}-${slugify(req.body.fileName) || req.body.fileName}`;
-    const signed = signedStorageUrl(objectKey, 'PUT', 900, config.minioUploadUrl);
+    const signed = await signedStorageUrl(objectKey, 'PUT', 900);
+    const publicUrl = publicObjectUrl(objectKey);
 
     await prisma.storageObject.create({
       data: {
@@ -1188,39 +1232,11 @@ function registerRoutes(router) {
       }
     });
 
-    return ok({ objectKey, uploadUrl: signed.url, method: 'PUT', expiresAt: signed.expiresAt }, 201);
+    return ok({ objectKey, uploadUrl: signed.url, publicUrl, method: 'PUT', expiresAt: signed.expiresAt }, 201);
   });
 
-  router.add('POST', '/storage/presign-multipart', async (req) => {
-    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
-    requireFields(req.body, ['gameId', 'buildId', 'fileName', 'contentType', 'sizeBytes', 'partCount']);
-    const game = await findGame(req.body.gameId);
-    await assertDeveloperOwnsGame(user, game);
-
-    const objectKey = `builds/${game.id}/${req.body.buildId}/${req.body.fileName}`;
-    const uploadId = createId('minio_upload');
-    const partCount = Math.min(10000, Math.max(1, Number(req.body.partCount)));
-
-    await prisma.storageObject.create({
-      data: {
-        id: createId('obj'),
-        ownerId: user.id,
-        objectKey,
-        uploadId,
-        purpose: 'BUILD_ARTIFACT',
-        fileName: req.body.fileName,
-        contentType: req.body.contentType,
-        sizeBytes: BigInt(req.body.sizeBytes),
-        status: 'MULTIPART_PRESIGNED'
-      }
-    });
-
-    const parts = Array.from({ length: partCount }, (_, i) => ({
-      partNumber: i + 1,
-      uploadUrl: `${signedStorageUrl(objectKey, 'PUT', 900, config.minioUploadUrl).url}&uploadId=${uploadId}&partNumber=${i + 1}`
-    }));
-
-    return ok({ objectKey, uploadId, parts, expiresAt: addSeconds(3600) }, 201);
+  router.add('POST', '/storage/presign-multipart', async () => {
+    throw new HttpError(501, 'MULTIPART_NOT_SUPPORTED', 'Multipart uploads are not enabled for R2');
   });
 
   router.add('POST', '/storage/complete-multipart', async (req) => {
@@ -1246,7 +1262,7 @@ function registerRoutes(router) {
     await requireAuth(req);
     const objectKey = req.query.get('objectKey');
     if (!objectKey) throw new HttpError(400, 'VALIDATION_ERROR', 'objectKey is required');
-    const signed = signedStorageUrl(objectKey, 'GET');
+    const signed = await signedStorageUrl(objectKey, 'GET');
     return ok({ downloadUrl: signed.url, expiresAt: signed.expiresAt });
   });
 
@@ -1616,7 +1632,7 @@ router.add('GET', '/developer/builds', async (req) => {
 
     const objectKey = `games/${build.gameId}/builds/${build.id}/${req.body.fileName}`;
     console.log('[build-upload-url]', { buildId: build.id, gameId: build.gameId, objectKey, sizeBytes: req.body.sizeBytes });
-    const upload = signedStorageUrl(objectKey, 'PUT', 3600, config.minioUploadUrl);
+    const upload = await signedStorageUrl(objectKey, 'PUT', 3600);
     return ok({ uploadUrl: upload.url, objectKey, expiresAt: upload.expiresAt });
   });
 
@@ -1725,15 +1741,9 @@ router.add('POST', '/developer/builds/:buildId/upload-url', async (req) => {
   requireFields(req.body, ['fileName', 'contentType', 'sizeBytes']);
   const objectKey = `builds/${game.id}/${build.id}/${req.body.fileName}`;
   if (req.body.multipart) {
-    const uploadId = createId('minio_upload');
-    const partCount = Math.max(1, Number(req.body.partCount || 1));
-    const parts = Array.from({ length: partCount }, (_, index) => ({
-      partNumber: index + 1,
-      uploadUrl: `${signedStorageUrl(objectKey, 'PUT', 900, config.minioUploadUrl).url}&uploadId=${uploadId}&partNumber=${index + 1}`
-    }));
-    return ok({ objectKey, uploadType: 'MULTIPART', uploadId, parts }, 201);
+    throw new HttpError(501, 'MULTIPART_NOT_SUPPORTED', 'Multipart uploads are not enabled for R2');
   }
-  const signed = signedStorageUrl(objectKey, 'PUT', 900, config.minioUploadUrl);
+  const signed = await signedStorageUrl(objectKey, 'PUT', 900);
   return ok({ objectKey, uploadType: 'SINGLE', uploadUrl: signed.url, expiresAt: signed.expiresAt }, 201);
 });
 
