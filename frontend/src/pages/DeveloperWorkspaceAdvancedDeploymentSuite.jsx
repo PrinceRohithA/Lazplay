@@ -488,6 +488,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
                                   className="w-full bg-surface-container border border-outline-variant p-2 text-[10px] font-label-mono text-on-surface focus:border-primary-container outline-none"
                                   value={form.recSpecs[field]}
                                   onChange={(e) => handleSpecChange('recSpecs', field, e.target.value)}
+                                  autoComplete="off"
                               />
                           </div>
                       ))}
