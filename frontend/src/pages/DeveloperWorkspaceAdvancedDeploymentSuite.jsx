@@ -644,6 +644,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
                   className="bg-transparent border-none focus:ring-0 p-0 w-full font-label-mono text-[12px] uppercase placeholder:opacity-30" 
                   placeholder="ADD_TAG_AND_PRESS_ENTER" 
                   type="text" 
+                  autoComplete="off"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && e.target.value) {
                       const newTag = e.target.value.toUpperCase();
@@ -701,6 +702,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
                   value={form.price}
                   onChange={handleInputChange}
                   disabled={form.licensing === 'FREE'}
+                  autoComplete="off"
                 />
               </div>
             </div>
