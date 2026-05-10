@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { developer as devApi } from '../api';
+import { developer as devApi, storage as storageApi } from '../api';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
@@ -49,6 +49,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
   });
 
   const [existingMedia, setExistingMedia] = useState([]);
+  const [existingBuilds, setExistingBuilds] = useState([]);
   const [files, setFiles] = useState({
     HERO_BANNER: null,
     SCREENSHOTS: [],
@@ -72,9 +73,10 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     try {
       const res = await devApi.getGame(gameIdParam);
       const game = res.data;
+      const builds = Array.isArray(game.builds) ? game.builds : [];
       setForm({
         title: game.title,
-        version: game.version || 'v1.0.0',
+        version: game.version || builds[0]?.version || 'v1.0.0',
         description: game.description || '',
         hardwareSpecs: game.platforms || ['PC'],
         genres: game.genres || ['ACTION'],
@@ -90,6 +92,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
       // Note: Backend might not have devApi.media, let's check if we have it or if it's gamesApi.media
       // Based on my previous view, gamesApi.media(gameId) works. devApi might have one too.
       setExistingMedia(game.media || []);
+      setExistingBuilds(builds);
     } catch (err) {
       addLog(`ERROR: FAILED_TO_FETCH_PROJECT_DATA - ${err.message}`);
     } finally {
@@ -130,6 +133,26 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     const selectedFiles = Array.from(e.target.files);
     if (!selectedFiles.length) return;
 
+    if (type === 'HERO_BANNER') {
+      const existingHero = existingMedia.filter((m) => m.alt === 'HERO_BANNER');
+      if (existingHero.length > 0 && !window.confirm('HERO_BANNER_ALREADY_EXISTS. REPLACE_IT? THIS WILL DELETE THE CURRENT ONE.')) {
+        return;
+      }
+    }
+
+    if (type === 'VIDEO_TRAILER') {
+      const existingVideos = existingMedia.filter((m) => m.type === 'VIDEO' || m.alt === 'VIDEO_TRAILER');
+      if (existingVideos.length > 0 && !window.confirm('VIDEO_TRAILER_ALREADY_EXISTS. REPLACE_IT? THIS WILL DELETE THE CURRENT ONE.')) {
+        return;
+      }
+    }
+
+    if (type === 'GAME_BINARIES') {
+      if (existingBuilds.length > 0 && !window.confirm('BUILD_ALREADY_EXISTS. REPLACE_IT? THIS WILL DELETE THE CURRENT BUILD.')) {
+        return;
+      }
+    }
+
     if (type === 'SCREENSHOTS') {
       setFiles(prev => ({ ...prev, SCREENSHOTS: [...prev.SCREENSHOTS, ...selectedFiles].slice(0, 10) }));
       addLog(`ASSET_STAGED: SCREENSHOTS (${selectedFiles.length} ADDED)`);
@@ -159,6 +182,48 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
 
     xhr.send(file);
   }), []);
+
+  const uploadMediaFile = useCallback(async (file, purpose, label) => {
+    const presign = await storageApi.presignUpload({
+      purpose,
+      fileName: file.name,
+      contentType: file.type || 'application/octet-stream',
+      sizeBytes: file.size
+    });
+    setUploadLabel(label || file.name);
+    setUploadProgress(0);
+    await uploadBuildArtifact(file, presign.data.uploadUrl);
+    setUploadProgress(100);
+    const publicUrl = presign.data.uploadUrl.split('?')[0];
+    return { url: publicUrl, objectKey: presign.data.objectKey };
+  }, [uploadBuildArtifact]);
+
+  const replaceHeroBannerIfNeeded = useCallback(async () => {
+    const existingHero = existingMedia.filter((m) => m.alt === 'HERO_BANNER');
+    if (existingHero.length === 0) return;
+    for (const media of existingHero) {
+      await devApi.deleteMedia(gameIdParam, media.id);
+    }
+  }, [existingMedia, gameIdParam]);
+
+  const replaceVideoTrailerIfNeeded = useCallback(async () => {
+    const existingVideos = existingMedia.filter((m) => m.type === 'VIDEO' || m.alt === 'VIDEO_TRAILER');
+    if (existingVideos.length === 0) return;
+    for (const media of existingVideos) {
+      await devApi.deleteMedia(gameIdParam, media.id);
+    }
+  }, [existingMedia, gameIdParam]);
+
+  const replaceBuildsIfNeeded = useCallback(async () => {
+    if (existingBuilds.length === 0) return;
+    for (const build of existingBuilds) {
+      try {
+        await devApi.deleteBuild(build.id);
+      } catch (err) {
+        addLog(`WARN: BUILD_DELETE_FAILED (${build.id})`);
+      }
+    }
+  }, [existingBuilds, addLog]);
 
   const handleDeleteMedia = async (mediaId) => {
     if (!window.confirm('PROTOCOL_WARNING: PERMANENTLY_PURGE_DATA? (THIS WILL ALSO DELETE FROM BUCKET)')) return;
@@ -255,54 +320,74 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         addLog('SUCCESS: METADATA_SYNC_COMPLETE');
       }
 
-      // 2. Upload Assets (Simplified)
-      // For images/videos, we would use storage/presign-upload
-      // I'll skip detailed file upload loop for brevity but structure is here
+      // 2. Upload Assets
       if (files.HERO_BANNER) {
         addLog('STEP_02: TRANSMITTING_HERO_ASSETS...');
-        // await devApi.addMedia(...)
+        await replaceHeroBannerIfNeeded();
+        const hero = await uploadMediaFile(files.HERO_BANNER, 'GAME_MEDIA', files.HERO_BANNER.name);
+        await devApi.addMedia(gameId, { type: 'IMAGE', url: hero.url, alt: 'HERO_BANNER' });
+        addLog('SUCCESS: HERO_BANNER_UPLOADED');
       }
 
-      // 3. Create Build
-      addLog('STEP_03: INITIALIZING_BUILD_NODE...');
-      const buildRes = await devApi.createBuild(gameId, {
-        version: form.version,
-        platform: form.hardwareSpecs[0] || 'PC',
-        runtime: 'NATIVE',
-        entrypoint: 'game.exe'
-      });
-      const buildId = buildRes.data.id;
-      addLog(`SUCCESS: BUILD_READY (ID: ${buildId})`);
+      if (files.SCREENSHOTS.length > 0) {
+        addLog(`STEP_02B: TRANSMITTING_SCREENSHOTS (${files.SCREENSHOTS.length})...`);
+        for (const screenshot of files.SCREENSHOTS) {
+          const shot = await uploadMediaFile(screenshot, 'GAME_MEDIA', screenshot.name);
+          await devApi.addMedia(gameId, { type: 'IMAGE', url: shot.url, alt: 'SCREENSHOT' });
+        }
+        addLog('SUCCESS: SCREENSHOTS_UPLOADED');
+      }
 
-      // 4. Handle Binary Upload
+      if (files.VIDEO_TRAILER) {
+        addLog('STEP_02C: TRANSMITTING_VIDEO_TRAILER...');
+        await replaceVideoTrailerIfNeeded();
+        const trailer = await uploadMediaFile(files.VIDEO_TRAILER, 'GAME_MEDIA', files.VIDEO_TRAILER.name);
+        await devApi.addMedia(gameId, { type: 'VIDEO', url: trailer.url, alt: 'VIDEO_TRAILER' });
+        addLog('SUCCESS: VIDEO_TRAILER_UPLOADED');
+      }
+
+      // 3. Create Build + Upload Binary
       if (files.GAME_BINARIES) {
+        await replaceBuildsIfNeeded();
+        addLog('STEP_03: INITIALIZING_BUILD_NODE...');
+        const buildRes = await devApi.createBuild(gameId, {
+          version: form.version,
+          platform: form.hardwareSpecs[0] || 'PC',
+          runtime: form.hardwareSpecs.includes('WEB') ? 'WEB' : 'NATIVE',
+          entrypoint: form.hardwareSpecs.includes('WEB') ? 'index.html' : 'game.exe'
+        });
+        const buildId = buildRes.data.id;
+        addLog(`SUCCESS: BUILD_READY (ID: ${buildId})`);
+
         addLog('STEP_04: STAGING_BINARIES...');
         const uploadInfo = await devApi.getBuildUploadUrl(buildId, {
           fileName: files.GAME_BINARIES.name,
           contentType: files.GAME_BINARIES.type,
           sizeBytes: files.GAME_BINARIES.size
         });
-        
+
         addLog(`STEP_05: STREAMING_PAYLOAD (${(files.GAME_BINARIES.size / 1024 / 1024).toFixed(2)} MB)...`);
         setUploadLabel(files.GAME_BINARIES.name);
         setUploadProgress(0);
         await uploadBuildArtifact(files.GAME_BINARIES, uploadInfo.data.uploadUrl);
         setUploadProgress(100);
-        
+
         await devApi.completeBuildUpload(buildId, {
           objectKey: uploadInfo.data.objectKey,
           sizeBytes: files.GAME_BINARIES.size
         });
         addLog('SUCCESS: PAYLOAD_STATIONED');
+
+        addLog('STEP_06: GRID_SECURITY_SCAN...');
+        await devApi.scanBuild(buildId);
+        addLog('SUCCESS: SCAN_PASSED');
+
+        addLog('STEP_07: TRIGGERING_LIVE_DEPLOYMENT...');
+        await devApi.deployBuild(buildId, { environment: 'PRODUCTION', makeLatest: true });
+        addLog('DEPLOYMENT_SYNC_SUCCESSFUL!');
+      } else {
+        addLog('WARN: NO_BUILD_SELECTED. SKIPPING_BINARY_UPLOAD.');
       }
-
-      addLog('STEP_06: GRID_SECURITY_SCAN...');
-      await devApi.scanBuild(buildId);
-      addLog('SUCCESS: SCAN_PASSED');
-
-      addLog('STEP_07: TRIGGERING_LIVE_DEPLOYMENT...');
-      await devApi.deployBuild(buildId, { environment: 'PRODUCTION', makeLatest: true });
-      addLog('DEPLOYMENT_SYNC_SUCCESSFUL!');
 
       if (!gameIdParam) {
           setTimeout(() => navigate(`/deployment?id=${gameId}`), 2000);
@@ -657,7 +742,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
             ))}
           </div>
 
-          {gameIdParam && existingMedia.length > 0 && (
+            {gameIdParam && existingMedia.length > 0 && (
               <div className="space-y-4 mt-8 pt-8 border-t border-outline-variant">
                   <h4 className="font-label-mono text-[10px] text-primary-container uppercase tracking-widest">STATIONED_MEDIA_ASSETS</h4>
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -676,6 +761,36 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
                   </div>
               </div>
           )}
+
+                {gameIdParam && existingBuilds.length > 0 && (
+                  <div className="space-y-4 mt-8 pt-8 border-t border-outline-variant">
+                    <h4 className="font-label-mono text-[10px] text-primary-container uppercase tracking-widest">STATIONED_BUILD_ARTIFACTS</h4>
+                    <div className="space-y-2">
+                      {existingBuilds.map((build) => (
+                        <div key={build.id} className="flex items-center justify-between border border-outline-variant bg-surface-container px-3 py-2">
+                          <div className="font-label-mono text-[10px] text-on-surface-variant uppercase">
+                            <span className="text-primary-container">{build.version}</span> · {build.platform} · {build.status}
+                          </div>
+                          <button
+                            onClick={async () => {
+                              if (!window.confirm('DELETE_BUILD_ARTIFACT? THIS CANNOT BE UNDONE.')) return;
+                              try {
+                                await devApi.deleteBuild(build.id);
+                                addLog(`SUCCESS: BUILD_DELETED (${build.id})`);
+                                fetchGameData();
+                              } catch (err) {
+                                addLog(`ERROR: BUILD_DELETE_FAILED - ${err.message}`);
+                              }
+                            }}
+                            className="text-[10px] font-label-mono text-error border border-error/60 px-2 py-1 hover:bg-error hover:text-on-error"
+                          >
+                            DELETE_BUILD
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
         </div>
 
         {/*  Terminal Log Area  */}
