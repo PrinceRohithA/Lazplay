@@ -38,7 +38,9 @@ const r2 = new S3Client({
   credentials: config.r2AccessKeyId && config.r2SecretAccessKey
     ? { accessKeyId: config.r2AccessKeyId, secretAccessKey: config.r2SecretAccessKey }
     : undefined,
-  forcePathStyle: true
+  forcePathStyle: true,
+  requestChecksumCalculation: 'NEVER',
+  responseChecksumValidation: 'NEVER'
 });
 
 let _rzp = null;
@@ -1809,8 +1811,22 @@ router.add('DELETE', '/developer/builds/:buildId', async (req) => {
   const game = await findGame(build.gameId);
   await assertDeveloperOwnsGame(user, game);
   if (build.status === 'DEPLOYED') throw new HttpError(409, 'BUILD_DEPLOYED', 'Cannot delete a deployed build');
+  const deploymentIds = (await prisma.deployment.findMany({
+    where: { buildId: build.id },
+    select: { id: true }
+  })).map((deployment) => deployment.id);
+
+  if (deploymentIds.length > 0) {
+    await prisma.deploymentLog.deleteMany({ where: { deploymentId: { in: deploymentIds } } });
+    await prisma.deployment.deleteMany({ where: { id: { in: deploymentIds } } });
+  }
+
+  await deleteStorageObject(build.artifactObjectKey);
+
+  if (game.latestBuildId === build.id) {
+    await prisma.game.update({ where: { id: game.id }, data: { latestBuildId: null } });
+  }
   await prisma.gameBuild.delete({ where: { id: build.id } });
-  if (game.latestBuildId === build.id) await prisma.game.update({ where: { id: game.id }, data: { latestBuildId: null } });
   return ok({ buildId: build.id, deleted: true });
 });
 
