@@ -455,18 +455,28 @@ const publicObjectUrl = (objectKey, bucket) => {
   return `${base.replace(/\/+$/g, '')}/${objectKey}`;
 };
 
-async function signedStorageUrl(objectKey, method = 'GET', ttlSeconds = 900, bucket = getPrivateGameBucket()) {
+async function signedStorageUrl(objectKey, method = 'GET', ttlSeconds = 900, bucket = getPrivateGameBucket(), options = {}) {
   assertR2Config(bucket);
   const expiresAt = addSeconds(ttlSeconds);
   let command;
 
-  if (method === 'GET') command = new GetObjectCommand({ Bucket: bucket, Key: objectKey });
-  if (method === 'PUT') command = new PutObjectCommand({ Bucket: bucket, Key: objectKey });
-  if (method === 'DELETE') command = new DeleteObjectCommand({ Bucket: bucket, Key: objectKey });
+  const commandParams = { Bucket: bucket, Key: objectKey };
+  if (options.contentType) {
+    commandParams.ContentType = options.contentType;
+  }
+
+  if (method === 'GET') command = new GetObjectCommand(commandParams);
+  if (method === 'PUT') command = new PutObjectCommand(commandParams);
+  if (method === 'DELETE') command = new DeleteObjectCommand(commandParams);
 
   if (!command) throw new HttpError(400, 'INVALID_METHOD', 'Unsupported storage method');
 
-  const url = await getSignedUrl(r2, command, { expiresIn: ttlSeconds });
+  // If we sign with Content-Type, the client MUST send that exact Content-Type header.
+  // We use signableHeaders to ensure it's included in the signature if present.
+  const url = await getSignedUrl(r2, command, { 
+    expiresIn: ttlSeconds,
+    signableHeaders: options.contentType ? new Set(['content-type']) : undefined
+  });
   return { url, expiresAt };
 }
 
@@ -1358,7 +1368,7 @@ function registerRoutes(router) {
     requireFields(req.body, ['purpose', 'fileName', 'contentType', 'sizeBytes']);
     const objectKey = `${req.body.purpose.toLowerCase()}/${user.id}/${Date.now()}-${slugify(req.body.fileName) || req.body.fileName}`;
     const bucket = resolveBucketForPurpose(req.body.purpose);
-    const signed = await signedStorageUrl(objectKey, 'PUT', 900, bucket);
+    const signed = await signedStorageUrl(objectKey, 'PUT', 900, bucket, { contentType: req.body.contentType });
     const publicUrl = publicObjectUrl(objectKey, bucket);
 
     await prisma.storageObject.create({
@@ -1885,7 +1895,7 @@ router.add('GET', '/developer/builds', async (req) => {
 
     const objectKey = `games/${build.gameId}/builds/${build.id}/${req.body.fileName}`;
     console.log('[build-upload-url]', { buildId: build.id, gameId: build.gameId, objectKey, sizeBytes: req.body.sizeBytes });
-    const upload = await signedStorageUrl(objectKey, 'PUT', 3600, getPrivateGameBucket());
+    const upload = await signedStorageUrl(objectKey, 'PUT', 3600, getPrivateGameBucket(), { contentType: req.body.contentType });
     return ok({ uploadUrl: upload.url, objectKey, expiresAt: upload.expiresAt });
   });
 
@@ -2004,39 +2014,7 @@ router.add('GET', '/developer/builds/:buildId', async (req) => {
   return ok(build);
 });
 
-router.add('POST', '/developer/builds/:buildId/upload-url', async (req) => {
-  const user = await requireAuth(req, null, ['DEVELOPER']);
-  const build = await prisma.gameBuild.findUnique({ where: { id: req.params.buildId } });
-  if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
-  const game = await findGame(build.gameId);
-  await assertDeveloperOwnsGame(user, game);
-  requireFields(req.body, ['fileName', 'contentType', 'sizeBytes']);
-  const objectKey = `builds/${game.id}/${build.id}/${req.body.fileName}`;
-  if (req.body.multipart) {
-    throw new HttpError(501, 'MULTIPART_NOT_SUPPORTED', 'Multipart uploads are not enabled for R2');
-  }
-  const signed = await signedStorageUrl(objectKey, 'PUT', 900, getPrivateGameBucket());
-  return ok({ objectKey, uploadType: 'SINGLE', uploadUrl: signed.url, expiresAt: signed.expiresAt }, 201);
-});
-
-router.add('POST', '/developer/builds/:buildId/uploads/complete', async (req) => {
-  const user = await requireAuth(req, null, ['DEVELOPER']);
-  const build = await prisma.gameBuild.findUnique({ where: { id: req.params.buildId } });
-  if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
-  const game = await findGame(build.gameId);
-  await assertDeveloperOwnsGame(user, game);
-  requireFields(req.body, ['objectKey', 'sizeBytes']);
-  const updated = await prisma.gameBuild.update({
-    where: { id: build.id },
-    data: {
-      artifactObjectKey: req.body.objectKey,
-      sizeBytes: Number(req.body.sizeBytes),
-      checksumSha256: req.body.checksumSha256 || null,
-      status: 'PROCESSING'
-    }
-  });
-  return ok({ buildId: updated.id, status: updated.status, jobId: createId('job_extract') });
-});
+// Note: Redundant build upload routes removed (Consolidated with lines 1889-1916)
 
 router.add('POST', '/developer/builds/:buildId/scan', async (req) => {
   const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
