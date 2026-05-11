@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import Razorpay from 'razorpay';
 import AdmZip from 'adm-zip';
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, CopyObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { prisma } from './prisma.js';
 
@@ -29,6 +29,9 @@ const config = {
   r2PublicUrl: process.env.R2_PUBLIC_URL,
   r2MediaPublicUrl: process.env.R2_MEDIA_PUBLIC_URL || process.env.R2_PUBLIC_URL,
   r2GamePublicUrl: process.env.R2_GAME_PUBLIC_URL,
+  r2PublicGameBucket: process.env.R2_PUBLIC_GAME_BUCKET || process.env.R2_GAME_BUCKET || process.env.R2_BUCKET,
+  r2PrivateGameBucket: process.env.R2_PRIVATE_GAME_BUCKET || process.env.R2_GAME_BUCKET || process.env.R2_BUCKET,
+  r2PublicGamePublicUrl: process.env.R2_PUBLIC_GAME_PUBLIC_URL || process.env.R2_GAME_PUBLIC_URL || process.env.R2_PUBLIC_URL,
   maxGameMediaScreenshots: Number(process.env.MAX_GAME_MEDIA_SCREENSHOTS || 10),
   maxGameMediaVideos: Number(process.env.MAX_GAME_MEDIA_VIDEOS || 1),
   maxGameMediaHeroBanners: Number(process.env.MAX_GAME_MEDIA_HERO_BANNERS || 1),
@@ -410,7 +413,12 @@ async function publicGame(game, user = null) {
 }
 
 const getMediaBucket = () => config.r2MediaBucket || config.r2Bucket;
-const getGameBucket = () => config.r2GameBucket || config.r2Bucket;
+const getPublicGameBucket = () => config.r2PublicGameBucket || config.r2GameBucket || config.r2Bucket;
+const getPrivateGameBucket = () => config.r2PrivateGameBucket || config.r2GameBucket || config.r2Bucket;
+const getGameBucket = () => getPrivateGameBucket();
+const getRuntimeBucketForPriceType = (priceType) =>
+  String(priceType || '').toUpperCase() === 'FREE' ? getPublicGameBucket() : getPrivateGameBucket();
+const getRuntimeBucketForGame = (game) => getRuntimeBucketForPriceType(game?.priceType);
 
 const assertR2Config = (bucket) => {
   if (!config.r2Endpoint || !bucket || !config.r2AccessKeyId || !config.r2SecretAccessKey) {
@@ -422,29 +430,32 @@ const resolveBucketForPurpose = (purpose) => {
   const value = String(purpose || '').toUpperCase();
   const mediaPurposes = new Set(['GAME_MEDIA', 'USER_MEDIA', 'AVATAR', 'PROFILE_MEDIA', 'MEDIA']);
   if (mediaPurposes.has(value)) return getMediaBucket();
-  return getGameBucket();
+  return getPrivateGameBucket();
 };
 
 const resolveBucketForKey = (objectKey) => {
   const value = String(objectKey || '').toLowerCase();
   const mediaPrefixes = ['game_media/', 'user_media/', 'avatar/', 'avatars/', 'profile_media/', 'media/'];
   if (mediaPrefixes.some((prefix) => value.startsWith(prefix))) return getMediaBucket();
-  return getGameBucket();
+  return getPrivateGameBucket();
 };
 
 const publicObjectUrl = (objectKey, bucket) => {
   const mediaBucket = getMediaBucket();
-  const gameBucket = getGameBucket();
+  const publicGameBucket = getPublicGameBucket();
+  const privateGameBucket = getPrivateGameBucket();
   const base = bucket === mediaBucket
     ? (config.r2MediaPublicUrl || config.r2PublicUrl)
-    : bucket === gameBucket
-      ? (config.r2GamePublicUrl || config.r2PublicUrl)
-      : config.r2PublicUrl;
+    : bucket === publicGameBucket
+      ? (config.r2PublicGamePublicUrl || config.r2GamePublicUrl || config.r2PublicUrl)
+      : bucket === privateGameBucket
+        ? null
+        : config.r2PublicUrl;
   if (!base) return null;
   return `${base.replace(/\/+$/g, '')}/${objectKey}`;
 };
 
-async function signedStorageUrl(objectKey, method = 'GET', ttlSeconds = 900, bucket = getGameBucket()) {
+async function signedStorageUrl(objectKey, method = 'GET', ttlSeconds = 900, bucket = getPrivateGameBucket()) {
   assertR2Config(bucket);
   const expiresAt = addSeconds(ttlSeconds);
   let command;
@@ -457,6 +468,41 @@ async function signedStorageUrl(objectKey, method = 'GET', ttlSeconds = 900, buc
 
   const url = await getSignedUrl(r2, command, { expiresIn: ttlSeconds });
   return { url, expiresAt };
+}
+
+const runtimePrefixForGame = (gameId) => `runtime/${gameId}/`;
+
+const buildCopySource = (bucket, key) =>
+  `${bucket}/${encodeURIComponent(key).replaceAll('%2F', '/')}`;
+
+async function moveRuntimeObjects(gameId, fromBucket, toBucket) {
+  if (!gameId || !fromBucket || !toBucket || fromBucket === toBucket) return;
+  assertR2Config(fromBucket);
+  assertR2Config(toBucket);
+
+  const prefix = runtimePrefixForGame(gameId);
+  let continuationToken = undefined;
+
+  do {
+    const response = await r2.send(new ListObjectsV2Command({
+      Bucket: fromBucket,
+      Prefix: prefix,
+      ContinuationToken: continuationToken
+    }));
+
+    const contents = response.Contents || [];
+    for (const item of contents) {
+      if (!item.Key) continue;
+      await r2.send(new CopyObjectCommand({
+        Bucket: toBucket,
+        Key: item.Key,
+        CopySource: buildCopySource(fromBucket, item.Key)
+      }));
+      await r2.send(new DeleteObjectCommand({ Bucket: fromBucket, Key: item.Key }));
+    }
+
+    continuationToken = response.IsTruncated ? response.NextContinuationToken : undefined;
+  } while (continuationToken);
 }
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = 45000) {
@@ -507,19 +553,27 @@ const extractObjectKeyFromUrl = (url, bucketHint = null) => {
     }
 
     const mediaOrigin = config.r2MediaPublicUrl ? new URL(config.r2MediaPublicUrl).origin : null;
-    const gameOrigin = config.r2GamePublicUrl ? new URL(config.r2GamePublicUrl).origin : null;
+    const publicGameOrigin = config.r2PublicGamePublicUrl
+      ? new URL(config.r2PublicGamePublicUrl).origin
+      : config.r2GamePublicUrl
+        ? new URL(config.r2GamePublicUrl).origin
+        : null;
     const legacyOrigin = config.r2PublicUrl ? new URL(config.r2PublicUrl).origin : null;
     if (mediaOrigin && parsed.origin === mediaOrigin) return pathname || null;
-    if (gameOrigin && parsed.origin === gameOrigin) return pathname || null;
+    if (publicGameOrigin && parsed.origin === publicGameOrigin) return pathname || null;
     if (legacyOrigin && parsed.origin === legacyOrigin) return pathname || null;
 
     const mediaBucket = getMediaBucket();
-    const gameBucket = getGameBucket();
+    const publicGameBucket = getPublicGameBucket();
+    const privateGameBucket = getPrivateGameBucket();
     if (mediaBucket && pathname.startsWith(`${mediaBucket}/`)) {
       return pathname.slice(mediaBucket.length + 1);
     }
-    if (gameBucket && pathname.startsWith(`${gameBucket}/`)) {
-      return pathname.slice(gameBucket.length + 1);
+    if (publicGameBucket && pathname.startsWith(`${publicGameBucket}/`)) {
+      return pathname.slice(publicGameBucket.length + 1);
+    }
+    if (privateGameBucket && pathname.startsWith(`${privateGameBucket}/`)) {
+      return pathname.slice(privateGameBucket.length + 1);
     }
 
     return pathname || null;
@@ -533,12 +587,12 @@ const isWebRuntime = (runtime) => {
   return ['BROWSER', 'WEB', 'WEBGL', 'HTML5'].includes(value);
 };
 
-async function uploadRuntimeObject(objectKey, data, contentType) {
-  const bucket = getGameBucket();
-  assertR2Config(bucket);
+async function uploadRuntimeObject(objectKey, data, contentType, bucket = getPrivateGameBucket()) {
+  const targetBucket = bucket || getPrivateGameBucket();
+  assertR2Config(targetBucket);
   try {
     await r2.send(new PutObjectCommand({
-      Bucket: bucket,
+      Bucket: targetBucket,
       Key: objectKey,
       Body: data,
       ContentType: contentType || 'application/octet-stream'
@@ -552,8 +606,9 @@ async function uploadRuntimeObject(objectKey, data, contentType) {
 async function scanAndPrepareBuild(build, game) {
   const objectKey = build.artifactObjectKey;
   if (!objectKey) throw new HttpError(409, 'BUILD_ARTIFACT_MISSING', 'Build artifact is missing');
-  const bucket = getGameBucket();
+  const bucket = getPrivateGameBucket();
   assertR2Config(bucket);
+  const runtimeBucket = getRuntimeBucketForGame(game);
 
   let archiveBuffer;
   try {
@@ -596,7 +651,7 @@ async function scanAndPrepareBuild(build, game) {
 
     for (const { entry, normalized } of normalizedEntries) {
       const runtimeKey = `runtime/${game.id}/${build.id}/${normalized}`;
-      await uploadRuntimeObject(runtimeKey, entry.getData(), contentTypeForPath(normalized));
+      await uploadRuntimeObject(runtimeKey, entry.getData(), contentTypeForPath(normalized), runtimeBucket);
     }
 
     return prisma.gameBuild.update({
@@ -946,17 +1001,33 @@ function registerRoutes(router) {
     const entryDir = entrypoint.includes('/') ? entrypoint.slice(0, entrypoint.lastIndexOf('/') + 1) : '';
     const runtimeKey = `runtime/${game.id}/${build?.id || 'latest'}/${entrypoint}`;
     const manifestKey = `runtime/${game.id}/${build?.id || 'latest'}/${entryDir}manifest.json`;
-    const gameBucket = getGameBucket();
-    const runtimeSigned = await signedStorageUrl(runtimeKey, 'GET', 900, gameBucket);
-    const manifestSigned = await signedStorageUrl(manifestKey, 'GET', 900, gameBucket);
+    const runtimeBucket = getRuntimeBucketForGame(game);
+
+    let entrypointUrl;
+    let assetManifestUrl;
+    let expiresAt = null;
+
+    if (String(game.priceType || '').toUpperCase() === 'FREE') {
+      entrypointUrl = publicObjectUrl(runtimeKey, runtimeBucket);
+      assetManifestUrl = publicObjectUrl(manifestKey, runtimeBucket);
+      if (!entrypointUrl || !assetManifestUrl) {
+        throw new HttpError(500, 'PUBLIC_GAME_URL_MISSING', 'Public game URL configuration is missing');
+      }
+    } else {
+      const runtimeSigned = await signedStorageUrl(runtimeKey, 'GET', 900, runtimeBucket);
+      const manifestSigned = await signedStorageUrl(manifestKey, 'GET', 900, runtimeBucket);
+      entrypointUrl = runtimeSigned.url;
+      assetManifestUrl = manifestSigned.url;
+      expiresAt = addSeconds(config.runtimeTokenTtlSeconds);
+    }
     return ok({
       gameId: game.id,
       buildId: build?.id || null,
       version: build?.version || null,
       runtime: build?.runtime || 'BROWSER',
-      entrypointUrl: runtimeSigned.url,
-      assetManifestUrl: manifestSigned.url,
-      expiresAt: addSeconds(config.runtimeTokenTtlSeconds)
+      entrypointUrl,
+      assetManifestUrl,
+      expiresAt
     });
   });
 
@@ -1462,20 +1533,74 @@ function registerRoutes(router) {
     if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
     await assertDeveloperOwnsGame(user, game);
 
+    const updates = {};
+    const changes = {};
+    const setIfChanged = (field, value) => {
+      if (value === undefined) return;
+      if (JSON.stringify(game[field]) !== JSON.stringify(value)) {
+        updates[field] = value;
+        changes[field] = { from: game[field], to: value };
+      }
+    };
+
+    const nextPriceType = req.body.priceType !== undefined
+      ? String(req.body.priceType).toUpperCase()
+      : game.priceType;
+    const nextPrice = req.body.price !== undefined
+      ? Number(req.body.price)
+      : game.price;
+
+    const priceTypeChanged = req.body.priceType !== undefined && nextPriceType !== game.priceType;
+    const priceChanged = req.body.price !== undefined && nextPrice !== game.price;
+    const pricingChanged = priceTypeChanged || priceChanged;
+
+    if (pricingChanged && game.pricingUpdatedAt) {
+      const nextAllowedAt = new Date(game.pricingUpdatedAt.getTime() + 7 * 24 * 60 * 60 * 1000);
+      if (Date.now() < nextAllowedAt.getTime()) {
+        throw new HttpError(409, 'PRICING_CHANGE_TOO_SOON', 'Pricing can only be changed once per week', {
+          nextAllowedAt: nextAllowedAt.toISOString()
+        });
+      }
+    }
+
+    if (priceTypeChanged) {
+      const fromBucket = getRuntimeBucketForPriceType(game.priceType);
+      const toBucket = getRuntimeBucketForPriceType(nextPriceType);
+      try {
+        await moveRuntimeObjects(game.id, fromBucket, toBucket);
+      } catch (error) {
+        console.error('[runtime-bucket-move-failed]', {
+          gameId: game.id,
+          fromBucket,
+          toBucket,
+          message: error?.message
+        });
+        throw new HttpError(502, 'RUNTIME_BUCKET_MOVE_FAILED', 'Failed to move runtime assets for pricing change');
+      }
+    }
+
+    setIfChanged('title', req.body.title);
+    setIfChanged('shortDescription', req.body.shortDescription);
+    setIfChanged('description', req.body.description);
+    setIfChanged('tagline', req.body.tagline);
+    if (req.body.price !== undefined) setIfChanged('price', nextPrice);
+    if (req.body.priceType !== undefined) setIfChanged('priceType', nextPriceType);
+    setIfChanged('genres', req.body.genres);
+    setIfChanged('tags', req.body.tags);
+    setIfChanged('platforms', req.body.platforms);
+
+    if (pricingChanged) updates.pricingUpdatedAt = new Date();
+
+    if (Object.keys(updates).length === 0) return ok(game);
+
     const updated = await prisma.game.update({
       where: { id: game.id },
-      data: {
-        title: req.body.title,
-        shortDescription: req.body.shortDescription,
-        description: req.body.description,
-        tagline: req.body.tagline,
-        price: req.body.price !== undefined ? Number(req.body.price) : undefined,
-        priceType: req.body.priceType,
-        genres: req.body.genres,
-        tags: req.body.tags,
-        platforms: req.body.platforms
-      }
+      data: updates
     });
+
+    if (Object.keys(changes).length > 0) {
+      await addAuditLog(user.id, 'GAME_METADATA_UPDATED', 'GAME', game.id, { changes });
+    }
 
     return ok(updated);
   });
@@ -1496,7 +1621,7 @@ router.add('DELETE', '/developer/games/:gameId', async (req) => {
 
   // Cleanup build artifacts from storage
   for (const b of game.builds) {
-    await deleteStorageObject(b.artifactObjectKey, getGameBucket());
+    await deleteStorageObject(b.artifactObjectKey, getPrivateGameBucket());
   }
 
   const deployments = await prisma.deployment.findMany({
@@ -1760,7 +1885,7 @@ router.add('GET', '/developer/builds', async (req) => {
 
     const objectKey = `games/${build.gameId}/builds/${build.id}/${req.body.fileName}`;
     console.log('[build-upload-url]', { buildId: build.id, gameId: build.gameId, objectKey, sizeBytes: req.body.sizeBytes });
-    const upload = await signedStorageUrl(objectKey, 'PUT', 3600, getGameBucket());
+    const upload = await signedStorageUrl(objectKey, 'PUT', 3600, getPrivateGameBucket());
     return ok({ uploadUrl: upload.url, objectKey, expiresAt: upload.expiresAt });
   });
 
@@ -1890,7 +2015,7 @@ router.add('POST', '/developer/builds/:buildId/upload-url', async (req) => {
   if (req.body.multipart) {
     throw new HttpError(501, 'MULTIPART_NOT_SUPPORTED', 'Multipart uploads are not enabled for R2');
   }
-  const signed = await signedStorageUrl(objectKey, 'PUT', 900, getGameBucket());
+  const signed = await signedStorageUrl(objectKey, 'PUT', 900, getPrivateGameBucket());
   return ok({ objectKey, uploadType: 'SINGLE', uploadUrl: signed.url, expiresAt: signed.expiresAt }, 201);
 });
 
@@ -1966,7 +2091,7 @@ router.add('DELETE', '/developer/builds/:buildId', async (req) => {
     await prisma.deployment.deleteMany({ where: { id: { in: deploymentIds } } });
   }
 
-  await deleteStorageObject(build.artifactObjectKey, getGameBucket());
+  await deleteStorageObject(build.artifactObjectKey, getPrivateGameBucket());
 
   if (game.latestBuildId === build.id) {
     await prisma.game.update({ where: { id: game.id }, data: { latestBuildId: null, version: null } });

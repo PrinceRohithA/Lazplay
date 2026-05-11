@@ -73,6 +73,7 @@ model Game {
   price              Int      @default(0)
   currency           String   @default("INR")
   priceType          String   @default("FREE")
+  pricingUpdatedAt   DateTime?
   releaseDate        String?
   publisher          String?
   genres             String[]
