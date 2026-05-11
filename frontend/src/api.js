@@ -170,6 +170,7 @@ export const developer = {
   completeBuildUpload: (buildId, body) => post(`/developer/builds/${buildId}/uploads/complete`, body),
   scanBuild: (buildId) => post(`/developer/builds/${buildId}/scan`),
   deployBuild: (buildId, body) => post(`/developer/builds/${buildId}/deploy`, body),
+  makeLatestBuild: (buildId) => post(`/developer/builds/${buildId}/make-latest`),
 
   // Deployments
   listDeployments: (params) => get('/developer/deployments', params),

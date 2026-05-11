@@ -21,11 +21,18 @@ const config = {
   runtimeTokenTtlSeconds: Number(process.env.RUNTIME_TOKEN_TTL_SECONDS || 900),
   r2Endpoint: process.env.R2_ENDPOINT,
   r2Bucket: process.env.R2_BUCKET,
+  r2MediaBucket: process.env.R2_MEDIA_BUCKET || process.env.R2_BUCKET,
+  r2GameBucket: process.env.R2_GAME_BUCKET || process.env.R2_BUCKET,
   r2AccessKeyId: process.env.R2_ACCESS_KEY_ID,
   r2SecretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
   r2Region: process.env.R2_REGION || 'auto',
   r2PublicUrl: process.env.R2_PUBLIC_URL,
-  r2UploadUrl: process.env.R2_UPLOAD_URL,
+  r2MediaPublicUrl: process.env.R2_MEDIA_PUBLIC_URL || process.env.R2_PUBLIC_URL,
+  r2GamePublicUrl: process.env.R2_GAME_PUBLIC_URL,
+  maxGameMediaScreenshots: Number(process.env.MAX_GAME_MEDIA_SCREENSHOTS || 10),
+  maxGameMediaVideos: Number(process.env.MAX_GAME_MEDIA_VIDEOS || 1),
+  maxGameMediaHeroBanners: Number(process.env.MAX_GAME_MEDIA_HERO_BANNERS || 1),
+  maxGameMediaItems: Number(process.env.MAX_GAME_MEDIA_ITEMS || 0),
   razorpayKeyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_lazplay',
   razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET || 'lazplay-razorpay-dev-secret',
   razorpayWebhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || 'lazplay-webhook-dev-secret',
@@ -351,6 +358,14 @@ async function ensureLibraryItem(userId, gameId, ownershipType = 'PURCHASED') {
   });
 }
 
+async function setLatestBuild(gameId, build) {
+  if (!gameId || !build) return null;
+  return prisma.game.update({
+    where: { id: gameId },
+    data: { latestBuildId: build.id, version: build.version }
+  });
+}
+
 async function grantEntitlement(userId, gameId, source) {
   const existing = await prisma.entitlement.findUnique({ where: { userId_gameId: { userId, gameId } } });
   const entitlement = existing
@@ -387,32 +402,56 @@ async function publicGame(game, user = null) {
     publisher: game.publisher, genres: game.genres, tags: game.tags, platforms: game.platforms,
     coverUrl: game.coverUrl, heroImageUrl: game.heroImageUrl, trailerUrl: game.trailerUrl,
     screenshots: screenshots.map((m) => m.url),
+    version: game.version || null,
     systemRequirements: game.systemRequirements,
     isOwned, isWishlisted, rating, reviewCount: reviews.length,
     status: game.status, publishedAt: game.publishedAt, createdAt: game.createdAt, updatedAt: game.updatedAt,
   };
 }
 
-const assertR2Config = () => {
-  if (!config.r2Endpoint || !config.r2Bucket || !config.r2AccessKeyId || !config.r2SecretAccessKey) {
+const getMediaBucket = () => config.r2MediaBucket || config.r2Bucket;
+const getGameBucket = () => config.r2GameBucket || config.r2Bucket;
+
+const assertR2Config = (bucket) => {
+  if (!config.r2Endpoint || !bucket || !config.r2AccessKeyId || !config.r2SecretAccessKey) {
     throw new HttpError(500, 'R2_CONFIG_MISSING', 'R2 configuration is missing');
   }
 };
 
-const publicObjectUrl = (objectKey) => {
-  if (!config.r2PublicUrl) return null;
-  const base = config.r2PublicUrl.replace(/\/+$/g, '');
-  return `${base}/${objectKey}`;
+const resolveBucketForPurpose = (purpose) => {
+  const value = String(purpose || '').toUpperCase();
+  const mediaPurposes = new Set(['GAME_MEDIA', 'USER_MEDIA', 'AVATAR', 'PROFILE_MEDIA', 'MEDIA']);
+  if (mediaPurposes.has(value)) return getMediaBucket();
+  return getGameBucket();
 };
 
-async function signedStorageUrl(objectKey, method = 'GET', ttlSeconds = 900) {
-  assertR2Config();
+const resolveBucketForKey = (objectKey) => {
+  const value = String(objectKey || '').toLowerCase();
+  const mediaPrefixes = ['game_media/', 'user_media/', 'avatar/', 'avatars/', 'profile_media/', 'media/'];
+  if (mediaPrefixes.some((prefix) => value.startsWith(prefix))) return getMediaBucket();
+  return getGameBucket();
+};
+
+const publicObjectUrl = (objectKey, bucket) => {
+  const mediaBucket = getMediaBucket();
+  const gameBucket = getGameBucket();
+  const base = bucket === mediaBucket
+    ? (config.r2MediaPublicUrl || config.r2PublicUrl)
+    : bucket === gameBucket
+      ? (config.r2GamePublicUrl || config.r2PublicUrl)
+      : config.r2PublicUrl;
+  if (!base) return null;
+  return `${base.replace(/\/+$/g, '')}/${objectKey}`;
+};
+
+async function signedStorageUrl(objectKey, method = 'GET', ttlSeconds = 900, bucket = getGameBucket()) {
+  assertR2Config(bucket);
   const expiresAt = addSeconds(ttlSeconds);
   let command;
 
-  if (method === 'GET') command = new GetObjectCommand({ Bucket: config.r2Bucket, Key: objectKey });
-  if (method === 'PUT') command = new PutObjectCommand({ Bucket: config.r2Bucket, Key: objectKey });
-  if (method === 'DELETE') command = new DeleteObjectCommand({ Bucket: config.r2Bucket, Key: objectKey });
+  if (method === 'GET') command = new GetObjectCommand({ Bucket: bucket, Key: objectKey });
+  if (method === 'PUT') command = new PutObjectCommand({ Bucket: bucket, Key: objectKey });
+  if (method === 'DELETE') command = new DeleteObjectCommand({ Bucket: bucket, Key: objectKey });
 
   if (!command) throw new HttpError(400, 'INVALID_METHOD', 'Unsupported storage method');
 
@@ -458,17 +497,31 @@ const contentTypeForPath = (entryName) => {
   }
 };
 
-const extractObjectKeyFromUrl = (url) => {
+const extractObjectKeyFromUrl = (url, bucketHint = null) => {
   try {
     const parsed = new URL(url);
     const pathname = decodeURIComponent(parsed.pathname).replace(/^\/+/, '');
-    if (config.r2PublicUrl) {
-      const publicOrigin = new URL(config.r2PublicUrl).origin;
-      if (parsed.origin === publicOrigin) return pathname;
+    if (bucketHint) {
+      if (pathname.startsWith(`${bucketHint}/`)) return pathname.slice(bucketHint.length + 1);
+      return pathname || null;
     }
-    if (config.r2Bucket && pathname.startsWith(`${config.r2Bucket}/`)) {
-      return pathname.slice(config.r2Bucket.length + 1);
+
+    const mediaOrigin = config.r2MediaPublicUrl ? new URL(config.r2MediaPublicUrl).origin : null;
+    const gameOrigin = config.r2GamePublicUrl ? new URL(config.r2GamePublicUrl).origin : null;
+    const legacyOrigin = config.r2PublicUrl ? new URL(config.r2PublicUrl).origin : null;
+    if (mediaOrigin && parsed.origin === mediaOrigin) return pathname || null;
+    if (gameOrigin && parsed.origin === gameOrigin) return pathname || null;
+    if (legacyOrigin && parsed.origin === legacyOrigin) return pathname || null;
+
+    const mediaBucket = getMediaBucket();
+    const gameBucket = getGameBucket();
+    if (mediaBucket && pathname.startsWith(`${mediaBucket}/`)) {
+      return pathname.slice(mediaBucket.length + 1);
     }
+    if (gameBucket && pathname.startsWith(`${gameBucket}/`)) {
+      return pathname.slice(gameBucket.length + 1);
+    }
+
     return pathname || null;
   } catch {
     return null;
@@ -481,10 +534,11 @@ const isWebRuntime = (runtime) => {
 };
 
 async function uploadRuntimeObject(objectKey, data, contentType) {
-  assertR2Config();
+  const bucket = getGameBucket();
+  assertR2Config(bucket);
   try {
     await r2.send(new PutObjectCommand({
-      Bucket: config.r2Bucket,
+      Bucket: bucket,
       Key: objectKey,
       Body: data,
       ContentType: contentType || 'application/octet-stream'
@@ -498,10 +552,12 @@ async function uploadRuntimeObject(objectKey, data, contentType) {
 async function scanAndPrepareBuild(build, game) {
   const objectKey = build.artifactObjectKey;
   if (!objectKey) throw new HttpError(409, 'BUILD_ARTIFACT_MISSING', 'Build artifact is missing');
+  const bucket = getGameBucket();
+  assertR2Config(bucket);
 
   let archiveBuffer;
   try {
-    const response = await r2.send(new GetObjectCommand({ Bucket: config.r2Bucket, Key: objectKey }));
+    const response = await r2.send(new GetObjectCommand({ Bucket: bucket, Key: objectKey }));
     const bodyStream = response.Body;
     const chunks = [];
     for await (const chunk of bodyStream) chunks.push(Buffer.from(chunk));
@@ -555,17 +611,27 @@ async function scanAndPrepareBuild(build, game) {
   });
 }
 
-async function deleteStorageObject(objectKey) {
+async function deleteStorageObject(objectKey, bucket = resolveBucketForKey(objectKey)) {
   if (!objectKey) return;
   try {
-    await r2.send(new DeleteObjectCommand({ Bucket: config.r2Bucket, Key: objectKey }));
+    const resolvedBucket = bucket || resolveBucketForKey(objectKey);
+    if (!resolvedBucket) return;
+    await r2.send(new DeleteObjectCommand({ Bucket: resolvedBucket, Key: objectKey }));
   } catch {}
 }
 
-async function deleteStorageObjectFromUrl(url) {
-  const objectKey = extractObjectKeyFromUrl(url);
+async function deleteStorageRecord(objectKey) {
   if (!objectKey) return;
-  await deleteStorageObject(objectKey);
+  try {
+    await prisma.storageObject.deleteMany({ where: { objectKey } });
+  } catch {}
+}
+
+async function deleteStorageObjectFromUrl(url, bucketHint = null) {
+  const objectKey = extractObjectKeyFromUrl(url, bucketHint);
+  if (!objectKey) return;
+  await deleteStorageObject(objectKey, bucketHint || resolveBucketForKey(objectKey));
+  await deleteStorageRecord(objectKey);
 }
 
 function razorpaySignature(orderId, paymentId) {
@@ -706,7 +772,7 @@ function registerRoutes(router) {
     if (req.body.displayName !== undefined) data.displayName = req.body.displayName;
     if (req.body.bio !== undefined) data.bio = req.body.bio;
     if (req.body.avatarObjectKey) {
-      data.avatarUrl = (await signedStorageUrl(req.body.avatarObjectKey)).url;
+      data.avatarUrl = (await signedStorageUrl(req.body.avatarObjectKey, 'GET', 900, getMediaBucket())).url;
     }
     const updated = await prisma.user.update({
       where: { id: user.id },
@@ -880,8 +946,9 @@ function registerRoutes(router) {
     const entryDir = entrypoint.includes('/') ? entrypoint.slice(0, entrypoint.lastIndexOf('/') + 1) : '';
     const runtimeKey = `runtime/${game.id}/${build?.id || 'latest'}/${entrypoint}`;
     const manifestKey = `runtime/${game.id}/${build?.id || 'latest'}/${entryDir}manifest.json`;
-    const runtimeSigned = await signedStorageUrl(runtimeKey);
-    const manifestSigned = await signedStorageUrl(manifestKey);
+    const gameBucket = getGameBucket();
+    const runtimeSigned = await signedStorageUrl(runtimeKey, 'GET', 900, gameBucket);
+    const manifestSigned = await signedStorageUrl(manifestKey, 'GET', 900, gameBucket);
     return ok({
       gameId: game.id,
       buildId: build?.id || null,
@@ -1188,7 +1255,8 @@ function registerRoutes(router) {
     if (!invoice || (invoice.userId !== user.id && !user.roles.includes('ADMIN'))) {
       throw new HttpError(404, 'INVOICE_NOT_FOUND', 'Invoice not found');
     }
-    const invoiceSigned = await signedStorageUrl(invoice.objectKey);
+    const invoiceBucket = resolveBucketForKey(invoice.objectKey);
+    const invoiceSigned = await signedStorageUrl(invoice.objectKey, 'GET', 900, invoiceBucket);
     return ok({
       downloadUrl: invoiceSigned.url
     });
@@ -1218,8 +1286,9 @@ function registerRoutes(router) {
     const user = await requireAuth(req);
     requireFields(req.body, ['purpose', 'fileName', 'contentType', 'sizeBytes']);
     const objectKey = `${req.body.purpose.toLowerCase()}/${user.id}/${Date.now()}-${slugify(req.body.fileName) || req.body.fileName}`;
-    const signed = await signedStorageUrl(objectKey, 'PUT', 900);
-    const publicUrl = publicObjectUrl(objectKey);
+    const bucket = resolveBucketForPurpose(req.body.purpose);
+    const signed = await signedStorageUrl(objectKey, 'PUT', 900, bucket);
+    const publicUrl = publicObjectUrl(objectKey, bucket);
 
     await prisma.storageObject.create({
       data: {
@@ -1264,7 +1333,8 @@ function registerRoutes(router) {
     await requireAuth(req);
     const objectKey = req.query.get('objectKey');
     if (!objectKey) throw new HttpError(400, 'VALIDATION_ERROR', 'objectKey is required');
-    const signed = await signedStorageUrl(objectKey, 'GET');
+    const bucket = resolveBucketForKey(objectKey);
+    const signed = await signedStorageUrl(objectKey, 'GET', 900, bucket);
     return ok({ downloadUrl: signed.url, expiresAt: signed.expiresAt });
   });
 
@@ -1421,12 +1491,12 @@ router.add('DELETE', '/developer/games/:gameId', async (req) => {
 
   // Cleanup all media from storage
   for (const m of game.media) {
-    await deleteStorageObjectFromUrl(m.url);
+    await deleteStorageObjectFromUrl(m.url, getMediaBucket());
   }
 
   // Cleanup build artifacts from storage
   for (const b of game.builds) {
-    await deleteStorageObject(b.artifactObjectKey);
+    await deleteStorageObject(b.artifactObjectKey, getGameBucket());
   }
 
   const deployments = await prisma.deployment.findMany({
@@ -1528,14 +1598,87 @@ router.add('DELETE', '/developer/games/:gameId', async (req) => {
     const game = await findGame(req.params.gameId);
     if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
     await assertDeveloperOwnsGame(user, game);
-    requireFields(req.body, ['type', 'url']);
+    requireFields(req.body, ['type']);
+    if (!req.body.url && !req.body.objectKey) {
+      throw new HttpError(400, 'VALIDATION_ERROR', 'url or objectKey is required');
+    }
+
+    const mediaType = String(req.body.type || '').toUpperCase();
+    const mediaAlt = String(req.body.alt || '').toUpperCase();
+    const mediaBucket = getMediaBucket();
+    const objectKey = req.body.objectKey || extractObjectKeyFromUrl(req.body.url, mediaBucket);
+    const mediaUrl = objectKey ? publicObjectUrl(objectKey, mediaBucket) : req.body.url;
+
+    if (!mediaUrl) throw new HttpError(400, 'VALIDATION_ERROR', 'Media URL is required');
+
+    if (objectKey) {
+      const resolvedBucket = resolveBucketForKey(objectKey);
+      if (resolvedBucket && resolvedBucket !== mediaBucket) {
+        throw new HttpError(400, 'INVALID_MEDIA_BUCKET', 'Media must be stored in the media bucket');
+      }
+    } else {
+      const allowedOrigins = [config.r2MediaPublicUrl, config.r2PublicUrl]
+        .filter(Boolean)
+        .map((value) => new URL(value).origin);
+      if (allowedOrigins.length > 0) {
+        let origin;
+        try {
+          origin = new URL(mediaUrl).origin;
+        } catch {
+          throw new HttpError(400, 'INVALID_MEDIA_URL', 'Media URL is invalid');
+        }
+        if (!allowedOrigins.includes(origin)) {
+          throw new HttpError(400, 'INVALID_MEDIA_URL', 'Media URL must use the public media domain');
+        }
+      }
+    }
+
+    const [totalCount, heroCount, screenshotCount, videoCount] = await Promise.all([
+      prisma.gameMedia.count({ where: { gameId: game.id } }),
+      prisma.gameMedia.count({ where: { gameId: game.id, alt: 'HERO_BANNER' } }),
+      prisma.gameMedia.count({ where: { gameId: game.id, alt: 'SCREENSHOT' } }),
+      prisma.gameMedia.count({
+        where: {
+          gameId: game.id,
+          OR: [{ type: 'VIDEO' }, { alt: 'VIDEO_TRAILER' }]
+        }
+      })
+    ]);
+
+    const cleanupUpload = async () => {
+      if (!objectKey) return;
+      const inUse = await prisma.gameMedia.findFirst({ where: { url: mediaUrl } });
+      if (inUse) return;
+      await deleteStorageObject(objectKey, mediaBucket);
+      await deleteStorageRecord(objectKey);
+    };
+
+    if (config.maxGameMediaItems > 0 && totalCount >= config.maxGameMediaItems) {
+      await cleanupUpload();
+      throw new HttpError(409, 'MEDIA_LIMIT_REACHED', 'Media limit reached. Delete existing media before uploading more.');
+    }
+
+    if (mediaAlt === 'HERO_BANNER' && config.maxGameMediaHeroBanners > 0 && heroCount >= config.maxGameMediaHeroBanners) {
+      await cleanupUpload();
+      throw new HttpError(409, 'MEDIA_LIMIT_REACHED', 'Hero banner limit reached. Delete the existing banner before uploading.');
+    }
+
+    if (mediaAlt === 'SCREENSHOT' && config.maxGameMediaScreenshots > 0 && screenshotCount >= config.maxGameMediaScreenshots) {
+      await cleanupUpload();
+      throw new HttpError(409, 'MEDIA_LIMIT_REACHED', 'Screenshot limit reached. Delete screenshots before uploading more.');
+    }
+
+    if ((mediaType === 'VIDEO' || mediaAlt === 'VIDEO_TRAILER') && config.maxGameMediaVideos > 0 && videoCount >= config.maxGameMediaVideos) {
+      await cleanupUpload();
+      throw new HttpError(409, 'MEDIA_LIMIT_REACHED', 'Video limit reached. Delete the existing trailer before uploading.');
+    }
 
     const media = await prisma.gameMedia.create({
       data: {
         id: createId('media'),
         gameId: game.id,
         type: req.body.type,
-        url: req.body.url,
+        url: mediaUrl,
         alt: req.body.alt
       }
     });
@@ -1549,29 +1692,12 @@ router.add('DELETE', '/developer/games/:gameId', async (req) => {
     if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
     await assertDeveloperOwnsGame(user, game);
 
-    const media = await prisma.gameMedia.findUnique({
+    const media = await prisma.gameMedia.findFirst({
       where: { id: req.params.mediaId, gameId: game.id }
     });
 
     if (media) {
-      // Delete from storage if it's an object key (assuming the URL stores it or we can derive it)
-      // For now, let's try to extract the object key from the URL if it matches our pattern
-      try {
-        const url = new URL(media.url);
-        const objectKey = decodeURIComponent(url.pathname.replace(`/${config.minioBucket}/`, ''));
-        if (objectKey) {
-          const method = 'DELETE';
-          const expires = Math.floor((Date.now() + 300000) / 1000);
-          const signature = signHmac(`${method}:${config.minioBucket}:${objectKey}:${expires}`, config.minioSecretKey || config.authSecret);
-          const normalizedBase = config.minioPublicUrl.replace(/\/+$/g, '');
-          const deleteUrl = `${normalizedBase}/${config.minioBucket}/${encodeURIComponent(objectKey).replaceAll('%2F', '/')}?expires=${expires}&signature=${signature}`;
-          
-          await fetch(deleteUrl, { method: 'DELETE' }).catch(err => console.error('Storage deletion failed:', err));
-        }
-      } catch (e) {
-        console.error('Could not delete from storage:', e);
-      }
-
+      await deleteStorageObjectFromUrl(media.url, getMediaBucket());
       await prisma.gameMedia.delete({
         where: { id: media.id }
       });
@@ -1634,7 +1760,7 @@ router.add('GET', '/developer/builds', async (req) => {
 
     const objectKey = `games/${build.gameId}/builds/${build.id}/${req.body.fileName}`;
     console.log('[build-upload-url]', { buildId: build.id, gameId: build.gameId, objectKey, sizeBytes: req.body.sizeBytes });
-    const upload = await signedStorageUrl(objectKey, 'PUT', 3600);
+    const upload = await signedStorageUrl(objectKey, 'PUT', 3600, getGameBucket());
     return ok({ uploadUrl: upload.url, objectKey, expiresAt: upload.expiresAt });
   });
 
@@ -1671,6 +1797,24 @@ router.add('GET', '/developer/builds', async (req) => {
     return ok(updated);
   });
 
+  router.add('POST', '/developer/builds/:buildId/make-latest', async (req) => {
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+    const build = await prisma.gameBuild.findUnique({ where: { id: req.params.buildId }, include: { game: true } });
+    if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
+    await assertDeveloperOwnsGame(user, build.game);
+
+    if (build.status === 'WAITING_FOR_UPLOAD') {
+      throw new HttpError(409, 'BUILD_NOT_UPLOADED', 'Build upload must be completed before making it public');
+    }
+
+    if (build.scanStatus && build.scanStatus !== 'PASSED') {
+      throw new HttpError(409, 'BUILD_NOT_SCANNED', 'Build must pass scan before making it public');
+    }
+
+    const updated = await setLatestBuild(build.gameId, build);
+    return ok({ gameId: updated.id, latestBuildId: updated.latestBuildId, version: updated.version });
+  });
+
   router.add('POST', '/developer/builds/:buildId/deploy', async (req) => {
     const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
     const build = await prisma.gameBuild.findUnique({ where: { id: req.params.buildId }, include: { game: true } });
@@ -1691,10 +1835,7 @@ router.add('GET', '/developer/builds', async (req) => {
     });
 
     if (req.body.makeLatest) {
-        await prisma.game.update({
-            where: { id: build.gameId },
-            data: { latestBuildId: build.id }
-        });
+      await setLatestBuild(build.gameId, build);
     }
 
     return ok(deployment, 201);
@@ -1722,6 +1863,10 @@ router.add('POST', '/developer/games/:gameId/deploy', async (req) => {
     }
   });
 
+  if (req.body.makeLatest) {
+    await setLatestBuild(game.id, build);
+  }
+
   return ok(deployment, 201);
 });
 
@@ -1745,7 +1890,7 @@ router.add('POST', '/developer/builds/:buildId/upload-url', async (req) => {
   if (req.body.multipart) {
     throw new HttpError(501, 'MULTIPART_NOT_SUPPORTED', 'Multipart uploads are not enabled for R2');
   }
-  const signed = await signedStorageUrl(objectKey, 'PUT', 900);
+  const signed = await signedStorageUrl(objectKey, 'PUT', 900, getGameBucket());
   return ok({ objectKey, uploadType: 'SINGLE', uploadUrl: signed.url, expiresAt: signed.expiresAt }, 201);
 });
 
@@ -1800,7 +1945,7 @@ router.add('POST', '/developer/builds/:buildId/deploy', async (req) => {
       logs: { create: { id: createId('log'), level: 'INFO', message: 'Deployment queued' } }
     }
   });
-  if (req.body.makeLatest) await prisma.game.update({ where: { id: game.id }, data: { latestBuildId: build.id } });
+  if (req.body.makeLatest) await setLatestBuild(game.id, build);
   return ok(deployment, 201);
 });
 
@@ -1821,10 +1966,10 @@ router.add('DELETE', '/developer/builds/:buildId', async (req) => {
     await prisma.deployment.deleteMany({ where: { id: { in: deploymentIds } } });
   }
 
-  await deleteStorageObject(build.artifactObjectKey);
+  await deleteStorageObject(build.artifactObjectKey, getGameBucket());
 
   if (game.latestBuildId === build.id) {
-    await prisma.game.update({ where: { id: game.id }, data: { latestBuildId: null } });
+    await prisma.game.update({ where: { id: game.id }, data: { latestBuildId: null, version: null } });
   }
   await prisma.gameBuild.delete({ where: { id: build.id } });
   return ok({ buildId: build.id, deleted: true });
