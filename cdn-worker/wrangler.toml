@@ -1,0 +1,17 @@
+name = "lazplay-cdn"
+main = "src/index.ts"
+compatibility_date = "2024-04-03"
+
+# R2 Bucket Binding
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "lazplay-games-private"
+preview_bucket_name = "lazplay-games-private-preview"
+
+[vars]
+# The environment variable for the base URL will be added here or via secrets
+BASE_URL = "https://download.lazplay.tech"
+
+# Cache TTL configuration
+CACHE_CONTROL_IMMUTABLE = "public, max-age=31536000, immutable"
+CACHE_CONTROL_DEFAULT = "public, max-age=3600"
