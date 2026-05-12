@@ -616,73 +616,86 @@ async function uploadRuntimeObject(objectKey, data, contentType, bucket = getPri
 async function scanAndPrepareBuild(build, game) {
   const objectKey = build.artifactObjectKey;
   if (!objectKey) throw new HttpError(409, 'BUILD_ARTIFACT_MISSING', 'Build artifact is missing');
+
+  const isWeb = isWebRuntime(build.runtime || build.platform);
+
+  // Optimization: If it's not a web game, or it's a paid web game,
+  // we don't need to extract anything. Skip downloading the archive.
+  if (!isWeb || game.priceType !== 'FREE') {
+    const scanMessage = isWeb && game.priceType !== 'FREE'
+      ? 'Web runtime skipped for paid game. File will only be available for download.'
+      : null;
+
+    console.log('[build-scan-skipped] Extraction not required', {
+      buildId: build.id,
+      gameId: game.id,
+      isWeb,
+      priceType: game.priceType
+    });
+
+    return prisma.gameBuild.update({
+      where: { id: build.id },
+      data: {
+        status: 'SCANNED',
+        scanStatus: 'PASSED',
+        scanMessage
+      }
+    });
+  }
+
   const bucket = getPrivateGameBucket();
   assertR2Config(bucket);
   const runtimeBucket = getRuntimeBucketForGame(game);
 
+  // Only download if we are actually going to extract it (Free + Web)
   let archiveBuffer;
   try {
     const response = await r2.send(new GetObjectCommand({ Bucket: bucket, Key: objectKey }));
     const bodyStream = response.Body;
     const chunks = [];
-    for await (const chunk of bodyStream) chunks.push(Buffer.from(chunk));
+    for await (const chunk of bodyStream) {
+      chunks.push(Buffer.from(chunk));
+    }
     archiveBuffer = Buffer.concat(chunks);
   } catch (error) {
     console.error('[build-download-failed]', { buildId: build.id, objectKey, message: error?.message });
     throw new HttpError(502, 'BUILD_DOWNLOAD_FAILED', 'Failed to download build artifact');
   }
 
-  if (isWebRuntime(build.runtime || build.platform)) {
-    // WEB GAMES CANNOT BE SOLD: Only create runtime for free games.
-    // If a game is paid, it can only be downloaded and played locally.
-    if (game.priceType !== 'FREE') {
-      console.log('[build-runtime-skipped] Paid games do not support web runtime extraction', { buildId: build.id, gameId: game.id });
-      return prisma.gameBuild.update({
-        where: { id: build.id },
-        data: { status: 'SCANNED', scanStatus: 'PASSED', scanMessage: 'Web runtime skipped for paid game. File will only be available for download.' }
-      });
-    }
+  let zip;
+  try {
+    zip = new AdmZip(archiveBuffer);
+  } catch {
+    throw new HttpError(400, 'BUILD_ARCHIVE_INVALID', 'Build archive is invalid or not a zip file');
+  }
 
-    let zip;
-    try {
-      zip = new AdmZip(archiveBuffer);
-    } catch {
-      throw new HttpError(400, 'BUILD_ARCHIVE_INVALID', 'Build archive is invalid or not a zip file');
-    }
+  const entries = zip.getEntries().filter((entry) => !entry.isDirectory);
+  const normalizedEntries = [];
+  let entrypoint = null;
 
-    const entries = zip.getEntries().filter((entry) => !entry.isDirectory);
-    const normalizedEntries = [];
-    let entrypoint = null;
+  for (const entry of entries) {
+    const normalized = normalizeArchivePath(entry.entryName);
+    if (!normalized) continue;
+    normalizedEntries.push({ entry, normalized });
+    if (normalized.toLowerCase() === 'index.html') entrypoint = normalized;
+    if (!entrypoint && normalized.toLowerCase().endsWith('/index.html')) entrypoint = normalized;
+  }
 
-    for (const entry of entries) {
-      const normalized = normalizeArchivePath(entry.entryName);
-      if (!normalized) continue;
-      normalizedEntries.push({ entry, normalized });
-      if (normalized.toLowerCase() === 'index.html') entrypoint = normalized;
-      if (!entrypoint && normalized.toLowerCase().endsWith('/index.html')) entrypoint = normalized;
-    }
+  if (!entrypoint) {
+    console.error('[build-entrypoint-missing]', { buildId: build.id, objectKey });
+    throw new HttpError(400, 'BUILD_ENTRYPOINT_MISSING', 'index.html was not found in the build archive');
+  }
 
-    if (!entrypoint) {
-      console.error('[build-entrypoint-missing]', { buildId: build.id, objectKey });
-      throw new HttpError(400, 'BUILD_ENTRYPOINT_MISSING', 'index.html was not found in the build archive');
-    }
+  console.log('[build-zip-entries]', { buildId: build.id, entries: normalizedEntries.length, entrypoint });
 
-    console.log('[build-zip-entries]', { buildId: build.id, entries: normalizedEntries.length, entrypoint });
-
-    for (const { entry, normalized } of normalizedEntries) {
-      const runtimeKey = `runtime/${game.id}/${build.id}/${normalized}`;
-      await uploadRuntimeObject(runtimeKey, entry.getData(), contentTypeForPath(normalized), runtimeBucket);
-    }
-
-    return prisma.gameBuild.update({
-      where: { id: build.id },
-      data: { status: 'SCANNED', scanStatus: 'PASSED', entrypoint }
-    });
+  for (const { entry, normalized } of normalizedEntries) {
+    const runtimeKey = `runtime/${game.id}/${build.id}/${normalized}`;
+    await uploadRuntimeObject(runtimeKey, entry.getData(), contentTypeForPath(normalized), runtimeBucket);
   }
 
   return prisma.gameBuild.update({
     where: { id: build.id },
-    data: { status: 'SCANNED', scanStatus: 'PASSED' }
+    data: { status: 'SCANNED', scanStatus: 'PASSED', entrypoint }
   });
 }
 
