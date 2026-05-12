@@ -218,9 +218,9 @@ function sendJson(res, status, body) {
     return;
   }
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
-  res.end(JSON.stringify(body, (key, value) => 
+  res.end(JSON.stringify(body, (key, value) =>
     typeof value === 'bigint' ? value.toString() : value
-  , 2));
+    , 2));
 }
 
 function createRouter() {
@@ -473,7 +473,7 @@ async function signedStorageUrl(objectKey, method = 'GET', ttlSeconds = 900, buc
 
   // If we sign with Content-Type, the client MUST send that exact Content-Type header.
   // We use signableHeaders to ensure it's included in the signature if present.
-  const url = await getSignedUrl(r2, command, { 
+  const url = await getSignedUrl(r2, command, {
     expiresIn: ttlSeconds,
     signableHeaders: options.contentType ? new Set(['content-type']) : undefined
   });
@@ -705,14 +705,14 @@ async function deleteStorageObject(objectKey, bucket = resolveBucketForKey(objec
     const resolvedBucket = bucket || resolveBucketForKey(objectKey);
     if (!resolvedBucket) return;
     await r2.send(new DeleteObjectCommand({ Bucket: resolvedBucket, Key: objectKey }));
-  } catch {}
+  } catch { }
 }
 
 async function deleteStorageRecord(objectKey) {
   if (!objectKey) return;
   try {
     await prisma.storageObject.deleteMany({ where: { objectKey } });
-  } catch {}
+  } catch { }
 }
 
 async function deleteStorageObjectFromUrl(url, bucketHint = null) {
@@ -1554,11 +1554,11 @@ function registerRoutes(router) {
     const game = await findGame(req.params.gameId);
     if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
     await assertDeveloperOwnsGame(user, game);
-    
+
     // Fetch media and builds separately to avoid complex join hangs
     const [media, builds] = await Promise.all([
-        prisma.gameMedia.findMany({ where: { gameId: game.id } }),
-        prisma.gameBuild.findMany({ where: { gameId: game.id }, orderBy: { createdAt: 'desc' }, take: 5 })
+      prisma.gameMedia.findMany({ where: { gameId: game.id } }),
+      prisma.gameBuild.findMany({ where: { gameId: game.id }, orderBy: { createdAt: 'desc' }, take: 5 })
     ]);
 
     return ok({ ...game, media, builds });
@@ -1668,50 +1668,50 @@ function registerRoutes(router) {
   });
 
 
-router.add('DELETE', '/developer/games/:gameId', async (req) => {
-  const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
-  const game = await prisma.game.findUnique({
-    where: { id: req.params.gameId },
-    include: { media: true, builds: true }
-  });
-  if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
-  await assertDeveloperOwnsGame(user, game);
-
-  // Cleanup all media from storage
-  for (const m of game.media) {
-    await deleteStorageObjectFromUrl(m.url, getMediaBucket());
-  }
-
-  // Cleanup build artifacts from storage
-  for (const b of game.builds) {
-    await deleteStorageObject(b.artifactObjectKey, getPrivateGameBucket());
-  }
-
-  const deployments = await prisma.deployment.findMany({
-    where: { gameId: game.id },
-    select: { id: true }
-  });
-  const deploymentIds = deployments.map((deployment) => deployment.id);
-
-  if (deploymentIds.length > 0) {
-    await prisma.deploymentLog.deleteMany({
-      where: { deploymentId: { in: deploymentIds } }
+  router.add('DELETE', '/developer/games/:gameId', async (req) => {
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+    const game = await prisma.game.findUnique({
+      where: { id: req.params.gameId },
+      include: { media: true, builds: true }
     });
-  }
+    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
+    await assertDeveloperOwnsGame(user, game);
 
-  await prisma.deployment.deleteMany({ where: { gameId: game.id } });
-  await prisma.instancePlayer.deleteMany({ where: { instance: { gameId: game.id } } });
-  await prisma.gameInstance.deleteMany({ where: { gameId: game.id } });
-  await prisma.libraryItem.deleteMany({ where: { gameId: game.id } });
-  await prisma.wishlistItem.deleteMany({ where: { gameId: game.id } });
-  await prisma.entitlement.deleteMany({ where: { gameId: game.id } });
-  await prisma.gameReview.deleteMany({ where: { gameId: game.id } });
-  await prisma.gameMedia.deleteMany({ where: { gameId: game.id } });
-  await prisma.gameBuild.deleteMany({ where: { gameId: game.id } });
+    // Cleanup all media from storage
+    for (const m of game.media) {
+      await deleteStorageObjectFromUrl(m.url, getMediaBucket());
+    }
 
-  await prisma.game.delete({ where: { id: game.id } });
-  return ok({ deleted: true });
-});
+    // Cleanup build artifacts from storage
+    for (const b of game.builds) {
+      await deleteStorageObject(b.artifactObjectKey, getPrivateGameBucket());
+    }
+
+    const deployments = await prisma.deployment.findMany({
+      where: { gameId: game.id },
+      select: { id: true }
+    });
+    const deploymentIds = deployments.map((deployment) => deployment.id);
+
+    if (deploymentIds.length > 0) {
+      await prisma.deploymentLog.deleteMany({
+        where: { deploymentId: { in: deploymentIds } }
+      });
+    }
+
+    await prisma.deployment.deleteMany({ where: { gameId: game.id } });
+    await prisma.instancePlayer.deleteMany({ where: { instance: { gameId: game.id } } });
+    await prisma.gameInstance.deleteMany({ where: { gameId: game.id } });
+    await prisma.libraryItem.deleteMany({ where: { gameId: game.id } });
+    await prisma.wishlistItem.deleteMany({ where: { gameId: game.id } });
+    await prisma.entitlement.deleteMany({ where: { gameId: game.id } });
+    await prisma.gameReview.deleteMany({ where: { gameId: game.id } });
+    await prisma.gameMedia.deleteMany({ where: { gameId: game.id } });
+    await prisma.gameBuild.deleteMany({ where: { gameId: game.id } });
+
+    await prisma.game.delete({ where: { id: game.id } });
+    return ok({ deleted: true });
+  });
 
   router.add('POST', '/developer/games/:gameId/submit', async (req) => {
     const user = await requireAuth(req, null, ['DEVELOPER']);
@@ -1926,19 +1926,19 @@ router.add('DELETE', '/developer/games/:gameId', async (req) => {
     return ok(build, 201);
   });
 
-router.add('GET', '/developer/builds', async (req) => {
-  const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
-  const profile = await developerForUser(user);
-  if (!profile && !user.roles.includes('ADMIN')) throw new HttpError(403, 'FORBIDDEN', 'Developer profile not found');
+  router.add('GET', '/developer/builds', async (req) => {
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+    const profile = await developerForUser(user);
+    if (!profile && !user.roles.includes('ADMIN')) throw new HttpError(403, 'FORBIDDEN', 'Developer profile not found');
 
-  const where = user.roles.includes('ADMIN') ? {} : { game: { developerId: profile.id } };
-  const builds = await prisma.gameBuild.findMany({
-    where,
-    include: { game: true },
-    orderBy: { createdAt: 'desc' }
+    const where = user.roles.includes('ADMIN') ? {} : { game: { developerId: profile.id } };
+    const builds = await prisma.gameBuild.findMany({
+      where,
+      include: { game: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    return ok(builds);
   });
-  return ok(builds);
-});
   router.add('POST', '/developer/builds/:buildId/upload-url', async (req) => {
     const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
     const build = await prisma.gameBuild.findUnique({ where: { id: req.params.buildId }, include: { game: true } });
@@ -2030,141 +2030,103 @@ router.add('GET', '/developer/builds', async (req) => {
   });
 
 
-router.add('POST', '/developer/games/:gameId/deploy', async (req) => {
-  const user = await requireAuth(req, null, ['DEVELOPER']);
-  requireFields(req.body, ['buildId']);
-  const build = await prisma.gameBuild.findUnique({ where: { id: req.body.buildId } });
-  if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build not found');
-  const game = await findGame(build.gameId);
-  await assertDeveloperOwnsGame(user, game);
+  router.add('POST', '/developer/games/:gameId/deploy', async (req) => {
+    const user = await requireAuth(req, null, ['DEVELOPER']);
+    requireFields(req.body, ['buildId']);
+    const build = await prisma.gameBuild.findUnique({ where: { id: req.body.buildId } });
+    if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build not found');
+    const game = await findGame(build.gameId);
+    await assertDeveloperOwnsGame(user, game);
 
-  const deployment = await prisma.deployment.create({
-    data: {
-      id: createId('dep'),
-      gameId: game.id,
-      buildId: build.id,
-      status: 'QUEUED',
-      progress: 0,
-      logs: {
-        create: { id: createId('deplog'), level: 'INFO', message: 'Deployment queued by developer' }
+    const deployment = await prisma.deployment.create({
+      data: {
+        id: createId('dep'),
+        gameId: game.id,
+        buildId: build.id,
+        status: 'QUEUED',
+        progress: 0,
+        logs: {
+          create: { id: createId('deplog'), level: 'INFO', message: 'Deployment queued by developer' }
+        }
       }
+    });
+
+    if (req.body.makeLatest) {
+      await setLatestBuild(game.id, build);
     }
+
+    return ok(deployment, 201);
   });
 
-  if (req.body.makeLatest) {
-    await setLatestBuild(game.id, build);
-  }
-
-  return ok(deployment, 201);
-});
-
-router.add('GET', '/developer/builds/:buildId', async (req) => {
-  const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
-  const build = await prisma.gameBuild.findUnique({ where: { id: req.params.buildId } });
-  if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
-  const game = await findGame(build.gameId);
-  await assertDeveloperOwnsGame(user, game);
-  return ok(build);
-});
-
-// Note: Redundant build upload routes removed (Consolidated with lines 1889-1916)
-
-router.add('POST', '/developer/builds/:buildId/scan', async (req) => {
-  const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
-  const build = await prisma.gameBuild.findUnique({ where: { id: req.params.buildId } });
-  if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
-  const game = await findGame(build.gameId);
-  await assertDeveloperOwnsGame(user, game);
-  await prisma.gameBuild.update({
-    where: { id: build.id },
-    data: { scanStatus: 'PASSED', status: 'SCANNED' }
+  router.add('GET', '/developer/builds/:buildId', async (req) => {
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+    const build = await prisma.gameBuild.findUnique({ where: { id: req.params.buildId } });
+    if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
+    const game = await findGame(build.gameId);
+    await assertDeveloperOwnsGame(user, game);
+    return ok(build);
   });
-  return ok({ buildId: build.id, scanStatus: 'QUEUED', jobId: createId('job_scan') });
-});
 
-router.add('POST', '/developer/builds/:buildId/deploy', async (req) => {
-  const user = await requireAuth(req, null, ['DEVELOPER']);
-  const build = await prisma.gameBuild.findUnique({ where: { id: req.params.buildId } });
-  if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
-  const game = await findGame(build.gameId);
-  await assertDeveloperOwnsGame(user, game);
-  if (build.scanStatus !== 'PASSED') throw new HttpError(409, 'BUILD_NOT_SCANNED', 'Build must pass scan before deployment');
-  const deployment = await prisma.deployment.create({
-    data: {
-      id: createId('dep'),
-      gameId: game.id,
-      buildId: build.id,
-      status: 'QUEUED',
-      environment: req.body.environment || 'PRODUCTION',
-      progress: 0,
-      releaseNotes: req.body.releaseNotes || '',
-      logs: { create: { id: createId('log'), level: 'INFO', message: 'Deployment queued' } }
+  router.add('DELETE', '/developer/builds/:buildId', async (req) => {
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+    const build = await prisma.gameBuild.findUnique({ where: { id: req.params.buildId } });
+    if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
+    const game = await findGame(build.gameId);
+    await assertDeveloperOwnsGame(user, game);
+    if (build.status === 'DEPLOYED') throw new HttpError(409, 'BUILD_DEPLOYED', 'Cannot delete a deployed build');
+    const deploymentIds = (await prisma.deployment.findMany({
+      where: { buildId: build.id },
+      select: { id: true }
+    })).map((deployment) => deployment.id);
+
+    if (deploymentIds.length > 0) {
+      await prisma.deploymentLog.deleteMany({ where: { deploymentId: { in: deploymentIds } } });
+      await prisma.deployment.deleteMany({ where: { id: { in: deploymentIds } } });
     }
+
+    await deleteStorageObject(build.artifactObjectKey, getPrivateGameBucket());
+
+    if (game.latestBuildId === build.id) {
+      await prisma.game.update({ where: { id: game.id }, data: { latestBuildId: null, version: null } });
+    }
+    await prisma.gameBuild.delete({ where: { id: build.id } });
+    return ok({ buildId: build.id, deleted: true });
   });
-  if (req.body.makeLatest) await setLatestBuild(game.id, build);
-  return ok(deployment, 201);
-});
 
-router.add('DELETE', '/developer/builds/:buildId', async (req) => {
-  const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
-  const build = await prisma.gameBuild.findUnique({ where: { id: req.params.buildId } });
-  if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
-  const game = await findGame(build.gameId);
-  await assertDeveloperOwnsGame(user, game);
-  if (build.status === 'DEPLOYED') throw new HttpError(409, 'BUILD_DEPLOYED', 'Cannot delete a deployed build');
-  const deploymentIds = (await prisma.deployment.findMany({
-    where: { buildId: build.id },
-    select: { id: true }
-  })).map((deployment) => deployment.id);
-
-  if (deploymentIds.length > 0) {
-    await prisma.deploymentLog.deleteMany({ where: { deploymentId: { in: deploymentIds } } });
-    await prisma.deployment.deleteMany({ where: { id: { in: deploymentIds } } });
-  }
-
-  await deleteStorageObject(build.artifactObjectKey, getPrivateGameBucket());
-
-  if (game.latestBuildId === build.id) {
-    await prisma.game.update({ where: { id: game.id }, data: { latestBuildId: null, version: null } });
-  }
-  await prisma.gameBuild.delete({ where: { id: build.id } });
-  return ok({ buildId: build.id, deleted: true });
-});
-
-router.add('GET', '/developer/deployments/:deploymentId/logs', async (req) => {
-  const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
-  const logs = await prisma.deploymentLog.findMany({
-    where: { deploymentId: req.params.deploymentId },
-    orderBy: { createdAt: 'asc' }
+  router.add('GET', '/developer/deployments/:deploymentId/logs', async (req) => {
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+    const logs = await prisma.deploymentLog.findMany({
+      where: { deploymentId: req.params.deploymentId },
+      orderBy: { createdAt: 'asc' }
+    });
+    return ok(logs, 200, { nextCursor: logs.at(-1)?.id || null });
   });
-  return ok(logs, 200, { nextCursor: logs.at(-1)?.id || null });
-});
 
-router.add('GET', '/developer/deployments/:deploymentId', async (req) => {
-  const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
-  const deployment = await prisma.deployment.findUnique({
-    where: { id: req.params.deploymentId },
-    include: { logs: { orderBy: { createdAt: 'asc' } } }
+  router.add('GET', '/developer/deployments/:deploymentId', async (req) => {
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+    const deployment = await prisma.deployment.findUnique({
+      where: { id: req.params.deploymentId },
+      include: { logs: { orderBy: { createdAt: 'asc' } } }
+    });
+    if (!deployment) throw new HttpError(404, 'DEPLOYMENT_NOT_FOUND', 'Deployment not found');
+    const game = await findGame(deployment.gameId);
+    await assertDeveloperOwnsGame(user, game);
+    return ok(deployment);
   });
-  if (!deployment) throw new HttpError(404, 'DEPLOYMENT_NOT_FOUND', 'Deployment not found');
-  const game = await findGame(deployment.gameId);
-  await assertDeveloperOwnsGame(user, game);
-  return ok(deployment);
-});
 
-router.add('GET', '/developer/deployments', async (req) => {
-  const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
-  const profile = await developerForUser(user);
-  if (!profile && !user.roles.includes('ADMIN')) throw new HttpError(403, 'FORBIDDEN', 'Developer profile not found');
+  router.add('GET', '/developer/deployments', async (req) => {
+    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+    const profile = await developerForUser(user);
+    if (!profile && !user.roles.includes('ADMIN')) throw new HttpError(403, 'FORBIDDEN', 'Developer profile not found');
 
-  const where = user.roles.includes('ADMIN') ? {} : { game: { developerId: profile.id } };
-  const deployments = await prisma.deployment.findMany({
-    where,
-    include: { game: true, build: true },
-    orderBy: { createdAt: 'desc' }
+    const where = user.roles.includes('ADMIN') ? {} : { game: { developerId: profile.id } };
+    const deployments = await prisma.deployment.findMany({
+      where,
+      include: { game: true, build: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    return ok(deployments);
   });
-  return ok(deployments);
-});
 
   router.add('GET', '/developer/dashboard', async (req) => {
     const user = await requireAuth(req, null, ['DEVELOPER']);
@@ -2275,21 +2237,21 @@ router.add('GET', '/developer/deployments', async (req) => {
     return ok(instance);
   });
 
-const instanceAction = (status) => async (req) => {
-  const user = await requireAuth(req);
-  const instance = await prisma.gameInstance.findUnique({ where: { id: req.params.instanceId } });
-  if (!instance) throw new HttpError(404, 'INSTANCE_NOT_FOUND', 'Instance not found');
-  if (instance.hostUserId !== user.id && !user.roles.includes('ADMIN')) {
-    throw new HttpError(403, 'FORBIDDEN', 'Only the host or admin can manage it');
-  }
+  const instanceAction = (status) => async (req) => {
+    const user = await requireAuth(req);
+    const instance = await prisma.gameInstance.findUnique({ where: { id: req.params.instanceId } });
+    if (!instance) throw new HttpError(404, 'INSTANCE_NOT_FOUND', 'Instance not found');
+    if (instance.hostUserId !== user.id && !user.roles.includes('ADMIN')) {
+      throw new HttpError(403, 'FORBIDDEN', 'Only the host or admin can manage it');
+    }
 
-  const updated = await prisma.gameInstance.update({
-    where: { id: instance.id },
-    data: { status }
-  });
+    const updated = await prisma.gameInstance.update({
+      where: { id: instance.id },
+      data: { status }
+    });
 
-  return ok(updated);
-};
+    return ok(updated);
+  };
 
   router.add('POST', '/instances/:instanceId/start', instanceAction('STARTING'));
   router.add('POST', '/instances/:instanceId/stop', instanceAction('STOPPING'));
