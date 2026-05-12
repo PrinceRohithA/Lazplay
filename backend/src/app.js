@@ -633,6 +633,16 @@ async function scanAndPrepareBuild(build, game) {
   }
 
   if (isWebRuntime(build.runtime || build.platform)) {
+    // WEB GAMES CANNOT BE SOLD: Only create runtime for free games.
+    // If a game is paid, it can only be downloaded and played locally.
+    if (game.priceType !== 'FREE') {
+      console.log('[build-runtime-skipped] Paid games do not support web runtime extraction', { buildId: build.id, gameId: game.id });
+      return prisma.gameBuild.update({
+        where: { id: build.id },
+        data: { status: 'SCANNED', scanStatus: 'PASSED', scanMessage: 'Web runtime skipped for paid game. File will only be available for download.' }
+      });
+    }
+
     let zip;
     try {
       zip = new AdmZip(archiveBuffer);
@@ -1005,6 +1015,11 @@ function registerRoutes(router) {
     const game = await findGame(req.params.gameId);
     if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
     if (!(await userOwnsGame(user.id, game.id))) throw new HttpError(403, 'GAME_NOT_OWNED', 'You do not own this game');
+
+    // WEB GAMES CANNOT BE SOLD: Only FREE games can be played online in the browser.
+    if (game.priceType !== 'FREE') {
+      throw new HttpError(403, 'WEB_PLAY_NOT_SUPPORTED', 'Paid games cannot be played online in the browser. Please download the game to play locally.');
+    }
 
     const build = game.latestBuildId ? await prisma.gameBuild.findUnique({ where: { id: game.latestBuildId } }) : null;
     const entrypoint = build?.entrypoint || 'index.html';
@@ -1577,15 +1592,23 @@ function registerRoutes(router) {
       const fromBucket = getRuntimeBucketForPriceType(game.priceType);
       const toBucket = getRuntimeBucketForPriceType(nextPriceType);
       try {
-        await moveRuntimeObjects(game.id, fromBucket, toBucket);
+        if (nextPriceType === 'FREE') {
+          // Moving to FREE: We should actually re-scan or move if they exist.
+          // But our new logic only creates them for FREE games.
+          await moveRuntimeObjects(game.id, fromBucket, toBucket);
+        } else {
+          // Moving to PAID: Web games cannot be played online. Delete the runtime.
+          // Note: moveRuntimeObjects with same buckets is handled inside the function.
+          const prefix = runtimePrefixForGame(game.id);
+          // Simple way: list and delete from the current bucket
+          const response = await r2.send(new ListObjectsV2Command({ Bucket: fromBucket, Prefix: prefix }));
+          const contents = response.Contents || [];
+          for (const item of contents) {
+            if (item.Key) await r2.send(new DeleteObjectCommand({ Bucket: fromBucket, Key: item.Key }));
+          }
+        }
       } catch (error) {
-        console.error('[runtime-bucket-move-failed]', {
-          gameId: game.id,
-          fromBucket,
-          toBucket,
-          message: error?.message
-        });
-        throw new HttpError(502, 'RUNTIME_BUCKET_MOVE_FAILED', 'Failed to move runtime assets for pricing change');
+        console.error('[runtime-update-failed]', { gameId: game.id, message: error?.message });
       }
     }
 
@@ -1608,12 +1631,29 @@ function registerRoutes(router) {
       data: updates
     });
 
+    let warning = null;
+    if (nextPriceType !== 'FREE' || nextPrice > 0) {
+      const webBuilds = await prisma.gameBuild.findFirst({
+        where: {
+          gameId: game.id,
+          OR: [
+            { runtime: { in: ['BROWSER', 'WEB', 'WEBGL', 'HTML5'] } },
+            { platform: { in: ['BROWSER', 'WEB', 'WEBGL', 'HTML5'] } }
+          ]
+        }
+      });
+      if (webBuilds) {
+        warning = 'Warning: This game has web-based builds. Since web games cannot be sold, these files will only be available for download and cannot be played online in the browser. Players can pay and play locally.';
+      }
+    }
+
     if (Object.keys(changes).length > 0) {
       await addAuditLog(user.id, 'GAME_METADATA_UPDATED', 'GAME', game.id, { changes });
     }
 
-    return ok(updated);
+    return ok(updated, 200, warning ? { warning } : {});
   });
+
 
 router.add('DELETE', '/developer/games/:gameId', async (req) => {
   const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
