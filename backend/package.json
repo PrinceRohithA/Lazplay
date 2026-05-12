@@ -7,7 +7,7 @@
   "scripts": {
     "start": "npm run db:init:psql && node --env-file=.env src/server.js",
     "dev": "npm run db:init:psql && node --watch --env-file=.env src/server.js",
-    "check": "node --check --env-file=.env src/app.js && node --check --env-file=.env src/server.js",
+    "check": "node --check --env-file=.env src/app.js && node --check --env-file=.env src/server.js && node --check src/validation.js",
     "db:init:psql": "node scripts/init-db-with-psql.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",

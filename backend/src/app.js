@@ -5,6 +5,7 @@ import AdmZip from 'adm-zip';
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, CopyObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { prisma } from './prisma.js';
+import { ValidationError, validateBody, validateQueryInt, validationFailure, validators } from './validation.js';
 
 
 const config = {
@@ -36,6 +37,8 @@ const config = {
   maxGameMediaVideos: Number(process.env.MAX_GAME_MEDIA_VIDEOS || 1),
   maxGameMediaHeroBanners: Number(process.env.MAX_GAME_MEDIA_HERO_BANNERS || 1),
   maxGameMediaItems: Number(process.env.MAX_GAME_MEDIA_ITEMS || 0),
+  maxJsonBodyBytes: Number(process.env.MAX_JSON_BODY_BYTES || 1024 * 1024),
+  logRequests: (process.env.LOG_REQUESTS || 'true') !== 'false',
   razorpayKeyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_lazplay',
   razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET || 'lazplay-razorpay-dev-secret',
   razorpayWebhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || 'lazplay-webhook-dev-secret',
@@ -103,21 +106,9 @@ const toArray = (value) => {
   return [];
 };
 
-const requireFields = (body, fields) => {
-  const missing = fields.filter((field) => body[field] === undefined || body[field] === null || body[field] === '');
-  if (missing.length > 0) {
-    throw new HttpError(
-      400,
-      'VALIDATION_ERROR',
-      'Missing required fields',
-      missing.map((field) => ({ field, message: `${field} is required` }))
-    );
-  }
-};
-
 const parsePagination = (query) => ({
-  page: Math.max(1, Number(query.get('page') || 1)),
-  limit: Math.min(100, Math.max(1, Number(query.get('limit') || 20)))
+  page: validateQueryInt(query, 'page', { required: false, defaultValue: 1, min: 1 }),
+  limit: validateQueryInt(query, 'limit', { required: false, defaultValue: 20, min: 1, max: 100 })
 });
 
 const paginate = (items, query) => {
@@ -199,16 +190,96 @@ const money = (amount) => Number(amount || 0);
 // Data persistence is handled by Prisma + PostgreSQL.
 
 async function readJsonBody(req) {
+  req.rawBody = '';
   if (req.method === 'GET' || req.method === 'HEAD') return {};
+
+  const contentType = String(req.headers['content-type'] || '');
+  if (contentType && !contentType.toLowerCase().includes('application/json')) {
+    throw new HttpError(415, 'UNSUPPORTED_MEDIA_TYPE', 'Request body must use application/json');
+  }
+
   const chunks = [];
-  for await (const chunk of req) chunks.push(chunk);
+  let totalBytes = 0;
+  for await (const chunk of req) {
+    totalBytes += chunk.length;
+    if (totalBytes > config.maxJsonBodyBytes) {
+      throw new HttpError(413, 'BODY_TOO_LARGE', `Request body must be smaller than ${config.maxJsonBodyBytes} bytes`);
+    }
+    chunks.push(chunk);
+  }
   const raw = Buffer.concat(chunks).toString('utf8').trim();
+  req.rawBody = raw;
   if (!raw) return {};
   try {
-    return JSON.parse(raw);
-  } catch {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new HttpError(400, 'INVALID_JSON_BODY', 'Request body must be a JSON object');
+    }
+    return parsed;
+  } catch (error) {
+    if (error instanceof HttpError) throw error;
     throw new HttpError(400, 'INVALID_JSON', 'Request body must be valid JSON');
   }
+}
+
+function toHttpError(error) {
+  if (error instanceof HttpError) return error;
+  if (error instanceof ValidationError) {
+    return new HttpError(400, 'VALIDATION_ERROR', error.message, error.details);
+  }
+
+  if (error?.code === 'P2002') {
+    return new HttpError(409, 'UNIQUE_CONSTRAINT', 'A record with this value already exists', {
+      target: error.meta?.target
+    });
+  }
+  if (error?.code === 'P2003') {
+    return new HttpError(409, 'RELATION_CONSTRAINT', 'Related record constraint failed', {
+      field: error.meta?.field_name
+    });
+  }
+  if (error?.code === 'P2025') {
+    return new HttpError(404, 'RECORD_NOT_FOUND', 'Record was not found');
+  }
+  if (error?.code === 'P2000') {
+    return new HttpError(400, 'VALUE_TOO_LONG', 'One of the submitted values is too long', {
+      column: error.meta?.column_name
+    });
+  }
+
+  return new HttpError(500, 'INTERNAL_SERVER_ERROR', 'Unexpected server error');
+}
+
+function logRequest(event, details) {
+  if (!config.logRequests && event === 'request-complete') return;
+  const level = event === 'request-error' ? 'error' : 'info';
+  console[level](`[${event}]`, details);
+}
+
+function logRouteRegistration(routes) {
+  if (!config.logRequests) return;
+  console.info('[routes-registered]', { count: routes.length });
+}
+
+function safeRequestDebug(req, matched, routePath, status, startedAt) {
+  return {
+    requestId: req.requestId,
+    method: req.method,
+    path: routePath || req.url,
+    route: matched?.route?.pattern || null,
+    status,
+    durationMs: Date.now() - startedAt
+  };
+}
+
+function routeDebugDetails(req, matched, routePath, status, code, message, startedAt, error) {
+  return {
+    ...safeRequestDebug(req, matched, routePath, status, startedAt),
+    code,
+    message,
+    params: req.params || {},
+    stack: error?.stack
+  };
 }
 
 function sendJson(res, status, body) {
@@ -225,8 +296,14 @@ function sendJson(res, status, body) {
 
 function createRouter() {
   const routes = [];
+  const routeKeys = new Set();
 
   const add = (method, pattern, handler) => {
+    const key = `${method} ${pattern}`;
+    if (routeKeys.has(key)) {
+      console.warn('[route-duplicate]', { method, pattern });
+    }
+    routeKeys.add(key);
     routes.push({
       method,
       pattern,
@@ -259,7 +336,7 @@ function createRouter() {
     return null;
   };
 
-  return { add, match };
+  return { add, match, routes: () => [...routes] };
 }
 
 function splitPath(value) {
@@ -730,7 +807,7 @@ function assertRazorpayWebhook(req) {
   const signature = req.headers['x-razorpay-signature'];
   if (!signature && config.allowMockPayments) return;
   if (!signature) throw new HttpError(401, 'WEBHOOK_SIGNATURE_REQUIRED', 'Razorpay webhook signature is required');
-  const rawBody = JSON.stringify(req.body || {});
+  const rawBody = req.rawBody || JSON.stringify(req.body || {});
   const expected = crypto.createHmac('sha256', config.razorpayWebhookSecret).update(rawBody).digest('hex');
   if (!safeCompare(signature, expected)) {
     throw new HttpError(401, 'INVALID_WEBHOOK_SIGNATURE', 'Razorpay webhook signature is invalid');
@@ -761,12 +838,15 @@ function registerRoutes(router) {
   );
 
   router.add('POST', '/auth/register', async (req) => {
-    requireFields(req.body, ['username', 'email', 'password', 'displayName']);
-    const email = String(req.body.email).toLowerCase();
-    const username = String(req.body.username).toLowerCase();
+    const body = validateBody(req.body, {
+      username: validators.string({ min: 3, max: 32, lower: true, pattern: /^[a-z0-9_.-]+$/ }),
+      email: validators.email(),
+      password: validators.password(),
+      displayName: validators.string({ min: 2, max: 80 })
+    });
 
     const existing = await prisma.user.findFirst({
-      where: { OR: [{ email }, { username }] }
+      where: { OR: [{ email: body.email }, { username: body.username }] }
     });
     if (existing) {
       throw new HttpError(400, 'USER_EXISTS', 'Email or username already registered');
@@ -775,10 +855,10 @@ function registerRoutes(router) {
     const user = await prisma.user.create({
       data: {
         id: createId('usr'),
-        username,
-        email,
-        passwordHash: hashPassword(req.body.password),
-        displayName: req.body.displayName,
+        username: body.username,
+        email: body.email,
+        passwordHash: hashPassword(body.password),
+        displayName: body.displayName,
         roles: ['PLAYER'],
         status: 'ACTIVE'
       }
@@ -789,12 +869,14 @@ function registerRoutes(router) {
   });
 
   router.add('POST', '/auth/login', async (req) => {
-    requireFields(req.body, ['identifier', 'password']);
-    const identifier = String(req.body.identifier).toLowerCase();
-    const user = await prisma.user.findFirst({
-      where: { OR: [{ email: identifier }, { username: identifier }] }
+    const body = validateBody(req.body, {
+      identifier: validators.string({ min: 3, max: 254, lower: true }),
+      password: validators.password({ min: 1 })
     });
-    if (!user || !verifyPassword(req.body.password, user.passwordHash)) {
+    const user = await prisma.user.findFirst({
+      where: { OR: [{ email: body.identifier }, { username: body.identifier }] }
+    });
+    if (!user || !verifyPassword(body.password, user.passwordHash)) {
       throw new HttpError(401, 'INVALID_CREDENTIALS', 'Invalid username/email or password');
     }
     if (user.status !== 'ACTIVE') throw new HttpError(403, 'USER_INACTIVE', 'User is not active');
@@ -803,8 +885,10 @@ function registerRoutes(router) {
   });
 
   router.add('POST', '/auth/refresh', async (req) => {
-    requireFields(req.body, ['refreshToken']);
-    const payload = verifyToken(req.body.refreshToken);
+    const body = validateBody(req.body, {
+      refreshToken: validators.token()
+    });
+    const payload = verifyToken(body.refreshToken);
     if (payload.type !== 'refresh') throw new HttpError(401, 'INVALID_TOKEN', 'Refresh token is required');
 
     const session = await prisma.refreshSession.findFirst({
@@ -825,10 +909,12 @@ function registerRoutes(router) {
 
   router.add('POST', '/auth/logout', async (req) => {
     const user = await requireAuth(req);
-    const refreshToken = req.body.refreshToken;
-    if (refreshToken) {
+    const body = validateBody(req.body, {
+      refreshToken: validators.token({ required: false })
+    });
+    if (body.refreshToken) {
       try {
-        const payload = verifyToken(refreshToken);
+        const payload = verifyToken(body.refreshToken);
         await prisma.refreshSession.updateMany({
           where: { id: payload.sid, userId: user.id },
           data: { revokedAt: new Date() }
@@ -845,7 +931,10 @@ function registerRoutes(router) {
   );
 
   router.add('POST', '/auth/reset-password', async (req) => {
-    requireFields(req.body, ['token', 'newPassword']);
+    validateBody(req.body, {
+      token: validators.token(),
+      newPassword: validators.password()
+    });
     return ok({ passwordUpdated: true });
   });
 
@@ -856,11 +945,16 @@ function registerRoutes(router) {
 
   router.add('PATCH', '/users/me', async (req) => {
     const user = await requireAuth(req);
+    const body = validateBody(req.body, {
+      displayName: validators.string({ required: false, min: 2, max: 80 }),
+      bio: validators.string({ required: false, min: 0, max: 1000, allowBlank: true }),
+      avatarObjectKey: validators.objectKey({ required: false })
+    }, { atLeastOne: ['displayName', 'bio', 'avatarObjectKey'] });
     const data = {};
-    if (req.body.displayName !== undefined) data.displayName = req.body.displayName;
-    if (req.body.bio !== undefined) data.bio = req.body.bio;
-    if (req.body.avatarObjectKey) {
-      data.avatarUrl = (await signedStorageUrl(req.body.avatarObjectKey, 'GET', 900, getMediaBucket())).url;
+    if (body.displayName !== undefined) data.displayName = body.displayName;
+    if (body.bio !== undefined) data.bio = body.bio;
+    if (body.avatarObjectKey) {
+      data.avatarUrl = (await signedStorageUrl(body.avatarObjectKey, 'GET', 900, getMediaBucket())).url;
     }
     const updated = await prisma.user.update({
       where: { id: user.id },
@@ -871,20 +965,23 @@ function registerRoutes(router) {
 
   router.add('PATCH', '/users/me/password', async (req) => {
     const user = await requireAuth(req);
-    requireFields(req.body, ['currentPassword', 'newPassword']);
-    if (!verifyPassword(req.body.currentPassword, user.passwordHash)) {
+    const body = validateBody(req.body, {
+      currentPassword: validators.password({ min: 1 }),
+      newPassword: validators.password()
+    });
+    if (!verifyPassword(body.currentPassword, user.passwordHash)) {
       throw new HttpError(400, 'INVALID_CURRENT_PASSWORD', 'Current password is incorrect');
     }
     await prisma.user.update({
       where: { id: user.id },
-      data: { passwordHash: hashPassword(req.body.newPassword) }
+      data: { passwordHash: hashPassword(body.newPassword) }
     });
     return ok({ passwordChanged: true });
   });
 
   router.add('GET', '/games/featured', async (req) => {
     const user = await getOptionalUser(req);
-    const limit = Math.min(20, Math.max(1, Number(req.query.get('limit') || 6)));
+    const limit = validateQueryInt(req.query, 'limit', { required: false, defaultValue: 6, min: 1, max: 20 });
     const games = await prisma.game.findMany({
       where: { status: 'PUBLISHED', featured: true },
       take: limit,
@@ -987,18 +1084,20 @@ function registerRoutes(router) {
     const game = await findGame(req.params.gameId);
     if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
     if (!(await userOwnsGame(user.id, game.id))) throw new HttpError(403, 'GAME_NOT_OWNED', 'You must own the game to review it');
-    requireFields(req.body, ['rating', 'body']);
-    const rating = Math.max(1, Math.min(5, Number(req.body.rating)));
+    const body = validateBody(req.body, {
+      rating: validators.int({ min: 1, max: 5 }),
+      body: validators.string({ min: 1, max: 4000 })
+    });
 
     const review = await prisma.gameReview.upsert({
       where: { gameId_userId: { gameId: game.id, userId: user.id } },
-      update: { rating, body: req.body.body },
+      update: { rating: body.rating, body: body.body },
       create: {
         id: createId('rev'),
         gameId: game.id,
         userId: user.id,
-        rating,
-        body: req.body.body
+        rating: body.rating,
+        body: body.body
       }
     });
 
@@ -1092,7 +1191,7 @@ function registerRoutes(router) {
 
   router.add('GET', '/search', async (req) => {
     const q = req.query.get('q') || '';
-    const limit = Math.min(20, Math.max(1, Number(req.query.get('limit') || 10)));
+    const limit = validateQueryInt(req.query, 'limit', { required: false, defaultValue: 10, min: 1, max: 20 });
     const [games, developers] = await Promise.all([
       prisma.game.findMany({ where: { title: { contains: q, mode: 'insensitive' } }, take: limit }),
       prisma.developerProfile.findMany({ where: { displayName: { contains: q, mode: 'insensitive' } }, take: limit })
@@ -1149,13 +1248,15 @@ function registerRoutes(router) {
 
   router.add('POST', '/wishlist', async (req) => {
     const user = await requireAuth(req);
-    requireFields(req.body, ['gameId']);
+    const body = validateBody(req.body, {
+      gameId: validators.id()
+    });
     const existing = await prisma.wishlistItem.findUnique({
-      where: { userId_gameId: { userId: user.id, gameId: req.body.gameId } }
+      where: { userId_gameId: { userId: user.id, gameId: body.gameId } }
     });
     if (existing) return ok(existing);
     const item = await prisma.wishlistItem.create({
-      data: { id: createId('wish'), userId: user.id, gameId: req.body.gameId }
+      data: { id: createId('wish'), userId: user.id, gameId: body.gameId }
     });
     return ok(item, 201);
   });
@@ -1168,20 +1269,12 @@ function registerRoutes(router) {
     return ok({ deleted: true });
   });
 
-  router.add('GET', '/library', async (req) => {
-    const user = await requireAuth(req);
-    const items = await prisma.libraryItem.findMany({
-      where: { userId: user.id },
-      include: { game: true },
-      orderBy: { lastPlayedAt: 'desc' }
-    });
-    return ok(items);
-  });
-
   router.add('POST', '/library', async (req) => {
     const user = await requireAuth(req);
-    requireFields(req.body, ['gameId']);
-    const item = await ensureLibraryItem(user.id, req.body.gameId, 'FREE');
+    const body = validateBody(req.body, {
+      gameId: validators.id()
+    });
+    const item = await ensureLibraryItem(user.id, body.gameId, 'FREE');
     return ok(item, 201);
   });
 
@@ -1204,8 +1297,11 @@ function registerRoutes(router) {
 
   router.add('POST', '/payments/razorpay/orders', async (req) => {
     const user = await requireAuth(req, null, ['PLAYER']);
-    requireFields(req.body, ['gameId']);
-    const game = await prisma.game.findUnique({ where: { id: req.body.gameId } });
+    const body = validateBody(req.body, {
+      gameId: validators.id(),
+      couponCode: validators.string({ required: false, min: 1, max: 40, upper: true })
+    });
+    const game = await prisma.game.findUnique({ where: { id: body.gameId } });
     if (!game || game.status !== 'PUBLISHED') throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
     if (await userOwnsGame(user.id, game.id)) throw new HttpError(409, 'ALREADY_OWNED', 'You already own this game');
 
@@ -1215,7 +1311,7 @@ function registerRoutes(router) {
       return ok({ free: true, entitlement, libraryItemCreated: true }, 201);
     }
 
-    const discount = req.body.couponCode === 'LAZ10' ? Math.floor(game.price * 0.1) : 0;
+    const discount = body.couponCode === 'LAZ10' ? Math.floor(game.price * 0.1) : 0;
     const amount = game.price - discount;
     const internalOrderId = createId('ord');
 
@@ -1255,18 +1351,23 @@ function registerRoutes(router) {
 
   router.add('POST', '/payments/razorpay/verify', async (req) => {
     const user = await requireAuth(req, null, ['PLAYER']);
-    requireFields(req.body, ['internalOrderId', 'razorpayOrderId', 'razorpayPaymentId', 'razorpaySignature']);
-
-    const order = await prisma.order.findUnique({
-      where: { id: req.body.internalOrderId },
+    const body = validateBody(req.body, {
+      internalOrderId: validators.id(),
+      razorpayOrderId: validators.string({ min: 3, max: 128 }),
+      razorpayPaymentId: validators.string({ min: 3, max: 128 }),
+      razorpaySignature: validators.string({ min: 10, max: 256 })
     });
 
-    if (!order || order.razorpayOrderId !== req.body.razorpayOrderId || order.userId !== user.id) {
+    const order = await prisma.order.findUnique({
+      where: { id: body.internalOrderId },
+    });
+
+    if (!order || order.razorpayOrderId !== body.razorpayOrderId || order.userId !== user.id) {
       throw new HttpError(404, 'ORDER_NOT_FOUND', 'Order was not found');
     }
 
-    const expected = razorpaySignature(req.body.razorpayOrderId, req.body.razorpayPaymentId);
-    if (req.body.razorpaySignature !== expected && !(config.allowMockPayments && req.body.razorpaySignature === 'mock_signature')) {
+    const expected = razorpaySignature(body.razorpayOrderId, body.razorpayPaymentId);
+    if (body.razorpaySignature !== expected && !(config.allowMockPayments && body.razorpaySignature === 'mock_signature')) {
       throw new HttpError(400, 'INVALID_PAYMENT_SIGNATURE', 'Razorpay payment signature is invalid');
     }
 
@@ -1279,7 +1380,7 @@ function registerRoutes(router) {
         data: {
           id: createId('pay'),
           orderId: order.id,
-          razorpayPaymentId: req.body.razorpayPaymentId,
+          razorpayPaymentId: body.razorpayPaymentId,
           amount: order.amount,
           currency: order.currency,
           status: 'CAPTURED',
@@ -1373,8 +1474,11 @@ function registerRoutes(router) {
 
   router.add('POST', '/refunds', async (req) => {
     const user = await requireAuth(req);
-    requireFields(req.body, ['orderId', 'reason']);
-    const order = await prisma.order.findUnique({ where: { id: req.body.orderId } });
+    const body = validateBody(req.body, {
+      orderId: validators.id(),
+      reason: validators.string({ min: 3, max: 1000 })
+    });
+    const order = await prisma.order.findUnique({ where: { id: body.orderId } });
     if (!order || (order.userId !== user.id && !user.roles.includes('ADMIN'))) {
       throw new HttpError(404, 'ORDER_NOT_FOUND', 'Order not found');
     }
@@ -1383,7 +1487,7 @@ function registerRoutes(router) {
       data: {
         id: createId('refund'),
         orderId: order.id,
-        reason: req.body.reason,
+        reason: body.reason,
         status: user.roles.includes('ADMIN') ? 'APPROVED' : 'REQUESTED'
       }
     });
@@ -1393,10 +1497,15 @@ function registerRoutes(router) {
 
   router.add('POST', '/storage/presign-upload', async (req) => {
     const user = await requireAuth(req);
-    requireFields(req.body, ['purpose', 'fileName', 'contentType', 'sizeBytes']);
-    const objectKey = `${req.body.purpose.toLowerCase()}/${user.id}/${Date.now()}-${slugify(req.body.fileName) || req.body.fileName}`;
-    const bucket = resolveBucketForPurpose(req.body.purpose);
-    const signed = await signedStorageUrl(objectKey, 'PUT', 900, bucket, { contentType: req.body.contentType });
+    const body = validateBody(req.body, {
+      purpose: validators.enum(['GAME_MEDIA', 'USER_MEDIA', 'AVATAR', 'PROFILE_MEDIA', 'MEDIA', 'GAME_BUILD', 'BUILD', 'GAME_ARTIFACT', 'ARTIFACT']),
+      fileName: validators.fileName(),
+      contentType: validators.string({ min: 3, max: 160, pattern: /^[a-z0-9.+-]+\/[a-z0-9.+-]+$/i }),
+      sizeBytes: validators.bigint({ min: 1n })
+    });
+    const objectKey = `${body.purpose.toLowerCase()}/${user.id}/${Date.now()}-${slugify(body.fileName) || body.fileName}`;
+    const bucket = resolveBucketForPurpose(body.purpose);
+    const signed = await signedStorageUrl(objectKey, 'PUT', 900, bucket, { contentType: body.contentType });
     const publicUrl = publicObjectUrl(objectKey, bucket);
 
     await prisma.storageObject.create({
@@ -1404,10 +1513,10 @@ function registerRoutes(router) {
         id: createId('obj'),
         ownerId: user.id,
         objectKey,
-        purpose: req.body.purpose,
-        fileName: req.body.fileName,
-        contentType: req.body.contentType,
-        sizeBytes: BigInt(req.body.sizeBytes),
+        purpose: body.purpose,
+        fileName: body.fileName,
+        contentType: body.contentType,
+        sizeBytes: body.sizeBytes,
         status: 'PRESIGNED'
       }
     });
@@ -1421,9 +1530,13 @@ function registerRoutes(router) {
 
   router.add('POST', '/storage/complete-multipart', async (req) => {
     const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
-    requireFields(req.body, ['objectKey', 'uploadId', 'parts']);
+    const body = validateBody(req.body, {
+      objectKey: validators.objectKey(),
+      uploadId: validators.string({ min: 1, max: 256 }),
+      parts: validators.array({ minItems: 1, maxItems: 1000 })
+    });
     const object = await prisma.storageObject.findUnique({
-      where: { objectKey: req.body.objectKey }
+      where: { objectKey: body.objectKey }
     });
 
     if (!object || (object.ownerId !== user.id && !user.roles.includes('ADMIN'))) {
@@ -1440,8 +1553,10 @@ function registerRoutes(router) {
 
   router.add('GET', '/storage/presign-download', async (req) => {
     await requireAuth(req);
-    const objectKey = req.query.get('objectKey');
-    if (!objectKey) throw new HttpError(400, 'VALIDATION_ERROR', 'objectKey is required');
+    const objectKey = validateBody(
+      { objectKey: req.query.get('objectKey') },
+      { objectKey: validators.objectKey() }
+    ).objectKey;
     const bucket = resolveBucketForKey(objectKey);
     const signed = await signedStorageUrl(objectKey, 'GET', 900, bucket);
     return ok({ downloadUrl: signed.url, expiresAt: signed.expiresAt });
@@ -1452,19 +1567,24 @@ function registerRoutes(router) {
     if (secret !== config.authSecret && !config.allowMockPayments) {
       throw new HttpError(401, 'UNAUTHORIZED', 'Invalid internal secret');
     }
-    requireFields(req.body, ['bucket', 'objectKey', 'sizeBytes']);
+    const body = validateBody(req.body, {
+      bucket: validators.string({ min: 1, max: 160 }),
+      objectKey: validators.objectKey(),
+      sizeBytes: validators.bigint({ min: 0n }),
+      etag: validators.string({ required: false, min: 1, max: 256 })
+    });
 
     await prisma.storageObject.upsert({
-      where: { objectKey: req.body.objectKey },
-      update: { status: 'UPLOADED', sizeBytes: BigInt(req.body.sizeBytes), etag: req.body.etag },
+      where: { objectKey: body.objectKey },
+      update: { status: 'UPLOADED', sizeBytes: body.sizeBytes, etag: body.etag },
       create: {
         id: createId('obj'),
         ownerId: 'system',
-        objectKey: req.body.objectKey,
+        objectKey: body.objectKey,
         purpose: 'UNKNOWN',
-        fileName: path.basename(req.body.objectKey),
+        fileName: path.basename(body.objectKey),
         contentType: 'application/octet-stream',
-        sizeBytes: BigInt(req.body.sizeBytes),
+        sizeBytes: body.sizeBytes,
         status: 'UPLOADED'
       }
     });
@@ -1474,7 +1594,11 @@ function registerRoutes(router) {
 
   router.add('POST', '/developer/register', async (req) => {
     const user = await requireAuth(req);
-    requireFields(req.body, ['displayName']);
+    const body = validateBody(req.body, {
+      displayName: validators.string({ min: 2, max: 80 }),
+      website: validators.url({ required: false }),
+      supportEmail: validators.email({ required: false })
+    });
     const existing = await developerForUser(user);
     if (existing) throw new HttpError(409, 'DEVELOPER_EXISTS', 'Developer profile already exists');
 
@@ -1482,9 +1606,9 @@ function registerRoutes(router) {
       data: {
         id: createId('dev'),
         userId: user.id,
-        displayName: req.body.displayName,
-        website: req.body.website,
-        supportEmail: req.body.supportEmail || user.email
+        displayName: body.displayName,
+        website: body.website,
+        supportEmail: body.supportEmail || user.email
       }
     });
 
@@ -1507,12 +1631,18 @@ function registerRoutes(router) {
     const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
     const profile = await developerForUser(user);
     if (!profile) throw new HttpError(404, 'PROFILE_NOT_FOUND', 'Developer profile not found');
+    const body = validateBody(req.body, {
+      displayName: validators.string({ required: false, min: 2, max: 80 }),
+      bio: validators.string({ required: false, min: 0, max: 1000, allowBlank: true }),
+      website: validators.url({ required: false }),
+      supportEmail: validators.email({ required: false })
+    }, { atLeastOne: ['displayName', 'bio', 'website', 'supportEmail'] });
 
     const data = {};
-    if (req.body.displayName !== undefined) data.displayName = req.body.displayName;
-    if (req.body.bio !== undefined) data.bio = req.body.bio;
-    if (req.body.website !== undefined) data.website = req.body.website;
-    if (req.body.supportEmail !== undefined) data.supportEmail = req.body.supportEmail;
+    if (body.displayName !== undefined) data.displayName = body.displayName;
+    if (body.bio !== undefined) data.bio = body.bio;
+    if (body.website !== undefined) data.website = body.website;
+    if (body.supportEmail !== undefined) data.supportEmail = body.supportEmail;
 
     const updated = await prisma.developerProfile.update({
       where: { id: profile.id },
@@ -1533,14 +1663,16 @@ function registerRoutes(router) {
     const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
     const profile = await developerForUser(user);
     if (!profile) throw new HttpError(404, 'PROFILE_NOT_FOUND', 'Developer profile not found');
-    requireFields(req.body, ['title']);
+    const body = validateBody(req.body, {
+      title: validators.string({ min: 2, max: 120 })
+    });
 
     const game = await prisma.game.create({
       data: {
         id: createId('game'),
         developerId: profile.id,
-        title: req.body.title,
-        slug: slugify(req.body.title) + '-' + createId('').slice(-4),
+        title: body.title,
+        slug: slugify(body.title) + '-' + createId('').slice(-4),
         status: 'DRAFT',
         price: 0,
         currency: 'INR',
@@ -1570,6 +1702,19 @@ function registerRoutes(router) {
     const game = await findGame(req.params.gameId);
     if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
     await assertDeveloperOwnsGame(user, game);
+    const body = validateBody(req.body, {
+      title: validators.string({ required: false, min: 2, max: 120 }),
+      shortDescription: validators.string({ required: false, min: 0, max: 240, allowBlank: true }),
+      description: validators.string({ required: false, min: 0, max: 10000, allowBlank: true }),
+      tagline: validators.string({ required: false, min: 0, max: 120, allowBlank: true }),
+      price: validators.int({ required: false, min: 0, max: 10000000 }),
+      priceType: validators.enum(['FREE', 'PAID'], { required: false }),
+      genres: validators.stringArray({ required: false, maxItems: 10, maxLength: 60 }),
+      tags: validators.stringArray({ required: false, maxItems: 20, maxLength: 60 }),
+      platforms: validators.stringArray({ required: false, maxItems: 12, maxLength: 60, upper: true })
+    }, {
+      atLeastOne: ['title', 'shortDescription', 'description', 'tagline', 'price', 'priceType', 'genres', 'tags', 'platforms']
+    });
 
     const updates = {};
     const changes = {};
@@ -1581,15 +1726,15 @@ function registerRoutes(router) {
       }
     };
 
-    const nextPriceType = req.body.priceType !== undefined
-      ? String(req.body.priceType).toUpperCase()
+    const nextPriceType = body.priceType !== undefined
+      ? body.priceType
       : game.priceType;
-    const nextPrice = req.body.price !== undefined
-      ? Number(req.body.price)
+    const nextPrice = body.price !== undefined
+      ? body.price
       : game.price;
 
-    const priceTypeChanged = req.body.priceType !== undefined && nextPriceType !== game.priceType;
-    const priceChanged = req.body.price !== undefined && nextPrice !== game.price;
+    const priceTypeChanged = body.priceType !== undefined && nextPriceType !== game.priceType;
+    const priceChanged = body.price !== undefined && nextPrice !== game.price;
     const pricingChanged = priceTypeChanged || priceChanged;
 
     if (pricingChanged && game.pricingUpdatedAt) {
@@ -1625,15 +1770,15 @@ function registerRoutes(router) {
       }
     }
 
-    setIfChanged('title', req.body.title);
-    setIfChanged('shortDescription', req.body.shortDescription);
-    setIfChanged('description', req.body.description);
-    setIfChanged('tagline', req.body.tagline);
-    if (req.body.price !== undefined) setIfChanged('price', nextPrice);
-    if (req.body.priceType !== undefined) setIfChanged('priceType', nextPriceType);
-    setIfChanged('genres', req.body.genres);
-    setIfChanged('tags', req.body.tags);
-    setIfChanged('platforms', req.body.platforms);
+    setIfChanged('title', body.title);
+    setIfChanged('shortDescription', body.shortDescription);
+    setIfChanged('description', body.description);
+    setIfChanged('tagline', body.tagline);
+    if (body.price !== undefined) setIfChanged('price', nextPrice);
+    if (body.priceType !== undefined) setIfChanged('priceType', nextPriceType);
+    setIfChanged('genres', body.genres);
+    setIfChanged('tags', body.tags);
+    setIfChanged('platforms', body.platforms);
 
     if (pricingChanged) updates.pricingUpdatedAt = new Date();
 
@@ -1771,11 +1916,13 @@ function registerRoutes(router) {
     const game = await findGame(req.params.gameId);
     if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
     await assertDeveloperOwnsGame(user, game);
-    requireFields(req.body, ['visibility']);
+    const body = validateBody(req.body, {
+      visibility: validators.enum(['PUBLIC', 'PRIVATE'])
+    });
 
     const updated = await prisma.game.update({
       where: { id: game.id },
-      data: { status: req.body.visibility === 'PUBLIC' ? 'PUBLISHED' : 'DRAFT' }
+      data: { status: body.visibility === 'PUBLIC' ? 'PUBLISHED' : 'DRAFT' }
     });
 
     return ok(updated);
@@ -1786,16 +1933,21 @@ function registerRoutes(router) {
     const game = await findGame(req.params.gameId);
     if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
     await assertDeveloperOwnsGame(user, game);
-    requireFields(req.body, ['type']);
-    if (!req.body.url && !req.body.objectKey) {
-      throw new HttpError(400, 'VALIDATION_ERROR', 'url or objectKey is required');
+    const body = validateBody(req.body, {
+      type: validators.enum(['IMAGE', 'VIDEO']),
+      alt: validators.enum(['SCREENSHOT', 'HERO_BANNER', 'VIDEO_TRAILER'], { required: false }),
+      url: validators.url({ required: false }),
+      objectKey: validators.objectKey({ required: false })
+    });
+    if (!body.url && !body.objectKey) {
+      validationFailure([{ field: 'url|objectKey', message: 'url or objectKey is required' }]);
     }
 
-    const mediaType = String(req.body.type || '').toUpperCase();
-    const mediaAlt = String(req.body.alt || '').toUpperCase();
+    const mediaType = body.type;
+    const mediaAlt = body.alt || '';
     const mediaBucket = getMediaBucket();
-    const objectKey = req.body.objectKey || extractObjectKeyFromUrl(req.body.url, mediaBucket);
-    const mediaUrl = objectKey ? publicObjectUrl(objectKey, mediaBucket) : req.body.url;
+    const objectKey = body.objectKey || extractObjectKeyFromUrl(body.url, mediaBucket);
+    const mediaUrl = objectKey ? publicObjectUrl(objectKey, mediaBucket) : body.url;
 
     if (!mediaUrl) throw new HttpError(400, 'VALIDATION_ERROR', 'Media URL is required');
 
@@ -1865,9 +2017,9 @@ function registerRoutes(router) {
       data: {
         id: createId('media'),
         gameId: game.id,
-        type: req.body.type,
+        type: body.type,
         url: mediaUrl,
-        alt: req.body.alt
+        alt: body.alt
       }
     });
 
@@ -1909,17 +2061,23 @@ function registerRoutes(router) {
     const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
     const game = await findGame(req.params.gameId);
     await assertDeveloperOwnsGame(user, game);
-    requireFields(req.body, ['version', 'platform']);
+    const body = validateBody(req.body, {
+      version: validators.string({ min: 1, max: 80 }),
+      platform: validators.string({ min: 2, max: 80, upper: true }),
+      runtime: validators.string({ required: false, min: 2, max: 80, upper: true }),
+      entrypoint: validators.string({ required: false, min: 1, max: 255 }),
+      changelog: validators.string({ required: false, min: 0, max: 4000, allowBlank: true })
+    });
 
     const build = await prisma.gameBuild.create({
       data: {
         id: createId('build'),
         gameId: game.id,
-        version: req.body.version,
-        platform: req.body.platform,
-        runtime: req.body.runtime,
-        entrypoint: req.body.entrypoint,
-        changelog: req.body.changelog,
+        version: body.version,
+        platform: body.platform,
+        runtime: body.runtime,
+        entrypoint: body.entrypoint,
+        changelog: body.changelog,
         status: 'WAITING_FOR_UPLOAD'
       }
     });
@@ -1944,11 +2102,15 @@ function registerRoutes(router) {
     const build = await prisma.gameBuild.findUnique({ where: { id: req.params.buildId }, include: { game: true } });
     if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
     await assertDeveloperOwnsGame(user, build.game);
-    requireFields(req.body, ['fileName', 'contentType', 'sizeBytes']);
+    const body = validateBody(req.body, {
+      fileName: validators.fileName(),
+      contentType: validators.string({ min: 3, max: 160, pattern: /^[a-z0-9.+-]+\/[a-z0-9.+-]+$/i }),
+      sizeBytes: validators.bigint({ min: 1n })
+    });
 
-    const objectKey = `games/${build.gameId}/builds/${build.id}/${req.body.fileName}`;
-    console.log('[build-upload-url]', { buildId: build.id, gameId: build.gameId, objectKey, sizeBytes: req.body.sizeBytes });
-    const upload = await signedStorageUrl(objectKey, 'PUT', 3600, getPrivateGameBucket(), { contentType: req.body.contentType });
+    const objectKey = `games/${build.gameId}/builds/${build.id}/${body.fileName}`;
+    console.log('[build-upload-url]', { buildId: build.id, gameId: build.gameId, objectKey, sizeBytes: body.sizeBytes.toString() });
+    const upload = await signedStorageUrl(objectKey, 'PUT', 3600, getPrivateGameBucket(), { contentType: body.contentType });
     return ok({ uploadUrl: upload.url, objectKey, expiresAt: upload.expiresAt });
   });
 
@@ -1957,15 +2119,18 @@ function registerRoutes(router) {
     const build = await prisma.gameBuild.findUnique({ where: { id: req.params.buildId }, include: { game: true } });
     if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
     await assertDeveloperOwnsGame(user, build.game);
-    requireFields(req.body, ['objectKey']);
+    const body = validateBody(req.body, {
+      objectKey: validators.objectKey(),
+      sizeBytes: validators.bigint({ required: false, min: 1n })
+    });
 
-    console.log('[build-upload-complete]', { buildId: build.id, gameId: build.gameId, objectKey: req.body.objectKey, sizeBytes: req.body.sizeBytes });
+    console.log('[build-upload-complete]', { buildId: build.id, gameId: build.gameId, objectKey: body.objectKey, sizeBytes: body.sizeBytes?.toString() });
     const updated = await prisma.gameBuild.update({
       where: { id: build.id },
       data: {
         status: 'PROCESSING',
-        artifactObjectKey: req.body.objectKey,
-        sizeBytes: req.body.sizeBytes ? BigInt(req.body.sizeBytes) : undefined,
+        artifactObjectKey: body.objectKey,
+        sizeBytes: body.sizeBytes,
         uploadedAt: new Date()
       }
     });
@@ -2008,6 +2173,9 @@ function registerRoutes(router) {
     const build = await prisma.gameBuild.findUnique({ where: { id: req.params.buildId }, include: { game: true } });
     if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build was not found');
     await assertDeveloperOwnsGame(user, build.game);
+    const body = validateBody(req.body, {
+      makeLatest: validators.boolean({ required: false, defaultValue: false })
+    });
 
     const deployment = await prisma.deployment.create({
       data: {
@@ -2022,7 +2190,7 @@ function registerRoutes(router) {
       }
     });
 
-    if (req.body.makeLatest) {
+    if (body.makeLatest) {
       await setLatestBuild(build.gameId, build);
     }
 
@@ -2032,8 +2200,11 @@ function registerRoutes(router) {
 
   router.add('POST', '/developer/games/:gameId/deploy', async (req) => {
     const user = await requireAuth(req, null, ['DEVELOPER']);
-    requireFields(req.body, ['buildId']);
-    const build = await prisma.gameBuild.findUnique({ where: { id: req.body.buildId } });
+    const body = validateBody(req.body, {
+      buildId: validators.id(),
+      makeLatest: validators.boolean({ required: false, defaultValue: false })
+    });
+    const build = await prisma.gameBuild.findUnique({ where: { id: body.buildId } });
     if (!build) throw new HttpError(404, 'BUILD_NOT_FOUND', 'Build not found');
     const game = await findGame(build.gameId);
     await assertDeveloperOwnsGame(user, game);
@@ -2051,7 +2222,7 @@ function registerRoutes(router) {
       }
     });
 
-    if (req.body.makeLatest) {
+    if (body.makeLatest) {
       await setLatestBuild(game.id, build);
     }
 
@@ -2184,8 +2355,14 @@ function registerRoutes(router) {
 
   router.add('POST', '/instances', async (req) => {
     const user = await requireAuth(req, null, ['PLAYER']);
-    requireFields(req.body, ['gameId']);
-    const game = await findGame(req.body.gameId);
+    const body = validateBody(req.body, {
+      gameId: validators.id(),
+      name: validators.string({ required: false, min: 2, max: 80 }),
+      visibility: validators.enum(['PRIVATE', 'PUBLIC'], { required: false, defaultValue: 'PRIVATE' }),
+      region: validators.string({ required: false, min: 2, max: 40, defaultValue: 'ap-south-1' }),
+      maxPlayers: validators.int({ required: false, min: 1, max: 64, defaultValue: 8 })
+    });
+    const game = await findGame(body.gameId);
     if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
     if (!(await userOwnsGame(user.id, game.id))) throw new HttpError(403, 'GAME_NOT_OWNED', 'You must own the game to host it');
 
@@ -2195,11 +2372,11 @@ function registerRoutes(router) {
         id: instanceId,
         gameId: game.id,
         hostUserId: user.id,
-        name: req.body.name || `${user.displayName}'s Lobby`,
-        visibility: req.body.visibility || 'PRIVATE',
-        region: req.body.region || 'ap-south-1',
+        name: body.name || `${user.displayName}'s Lobby`,
+        visibility: body.visibility,
+        region: body.region,
         joinCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
-        maxPlayers: Number(req.body.maxPlayers || 8),
+        maxPlayers: body.maxPlayers,
         status: 'READY',
         players: {
           create: { id: createId('instp'), userId: user.id, role: 'HOST' }
@@ -2261,9 +2438,12 @@ function registerRoutes(router) {
     const user = await requireAuth(req);
     const instance = await prisma.gameInstance.findUnique({ where: { id: req.params.instanceId } });
     if (!instance) throw new HttpError(404, 'INSTANCE_NOT_FOUND', 'Instance not found');
-    requireFields(req.body, ['level', 'message']);
+    const body = validateBody(req.body, {
+      level: validators.enum(['DEBUG', 'INFO', 'WARN', 'ERROR']),
+      message: validators.string({ min: 1, max: 4000 })
+    });
 
-    console.log(`[Instance ${instance.id}] [${req.body.level}] ${req.body.message}`);
+    console.log(`[Instance ${instance.id}] [${body.level}] ${body.message}`);
     return ok({ logged: true });
   });
 
@@ -2417,14 +2597,20 @@ function registerRoutes(router) {
     const admin = await requireAuth(req, null, ['ADMIN']);
     const user = await prisma.user.findUnique({ where: { id: req.params.userId } });
     if (!user) throw new HttpError(404, 'USER_NOT_FOUND', 'User not found');
-    requireFields(req.body, ['roles']);
+    const body = validateBody(req.body, {
+      roles: validators.stringArray({ required: true, minItems: 1, maxItems: 3, upper: true })
+    });
+    const invalidRoles = body.roles.filter((role) => !['PLAYER', 'DEVELOPER', 'ADMIN'].includes(role));
+    if (invalidRoles.length > 0) {
+      validationFailure([{ field: 'roles', message: `Invalid roles: ${invalidRoles.join(', ')}` }]);
+    }
 
     const updated = await prisma.user.update({
       where: { id: user.id },
-      data: { roles: req.body.roles }
+      data: { roles: body.roles }
     });
 
-    await addAuditLog(admin.id, 'USER_ROLE_UPDATED', 'USER', user.id, { roles: req.body.roles });
+    await addAuditLog(admin.id, 'USER_ROLE_UPDATED', 'USER', user.id, { roles: body.roles });
     return ok(sanitizeUser(updated));
   });
 
@@ -2432,14 +2618,16 @@ function registerRoutes(router) {
     const admin = await requireAuth(req, null, ['ADMIN']);
     const user = await prisma.user.findUnique({ where: { id: req.params.userId } });
     if (!user) throw new HttpError(404, 'USER_NOT_FOUND', 'User not found');
-    requireFields(req.body, ['status']);
+    const body = validateBody(req.body, {
+      status: validators.enum(['ACTIVE', 'BANNED', 'SUSPENDED', 'INACTIVE'])
+    });
 
     const updated = await prisma.user.update({
       where: { id: user.id },
-      data: { status: req.body.status }
+      data: { status: body.status }
     });
 
-    await addAuditLog(admin.id, 'USER_STATUS_UPDATED', 'USER', user.id, { status: req.body.status });
+    await addAuditLog(admin.id, 'USER_STATUS_UPDATED', 'USER', user.id, { status: body.status });
     return ok(sanitizeUser(updated));
   });
 
@@ -2447,13 +2635,16 @@ function registerRoutes(router) {
     const admin = await requireAuth(req, null, ['ADMIN']);
     const user = await prisma.user.findUnique({ where: { id: req.params.userId } });
     if (!user) throw new HttpError(404, 'USER_NOT_FOUND', 'User not found');
+    const body = validateBody(req.body, {
+      reason: validators.string({ required: false, min: 3, max: 1000 })
+    });
 
     const updated = await prisma.user.update({
       where: { id: user.id },
       data: { status: 'BANNED' }
     });
 
-    await addAuditLog(admin.id, 'USER_BANNED', 'USER', user.id, { reason: req.body.reason });
+    await addAuditLog(admin.id, 'USER_BANNED', 'USER', user.id, { reason: body.reason });
     return ok(sanitizeUser(updated));
   });
 
@@ -2520,18 +2711,21 @@ function registerRoutes(router) {
     const admin = await requireAuth(req, null, ['ADMIN']);
     const game = await findGame(req.params.gameId);
     if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
-    requireFields(req.body, ['status']);
+    const body = validateBody(req.body, {
+      status: validators.enum(['DRAFT', 'PENDING_REVIEW', 'PUBLISHED', 'REJECTED']),
+      reason: validators.string({ required: false, min: 1, max: 1000 })
+    });
 
     const updated = await prisma.game.update({
       where: { id: game.id },
       data: {
-        status: req.body.status,
-        statusReason: req.body.reason,
-        publishedAt: req.body.status === 'PUBLISHED' ? new Date() : undefined
+        status: body.status,
+        statusReason: body.reason,
+        publishedAt: body.status === 'PUBLISHED' ? new Date() : undefined
       }
     });
 
-    await addAuditLog(admin.id, 'GAME_STATUS_UPDATED', 'GAME', game.id, { status: req.body.status });
+    await addAuditLog(admin.id, 'GAME_STATUS_UPDATED', 'GAME', game.id, { status: body.status });
     return ok(updated);
   });
 
@@ -2598,15 +2792,18 @@ function registerRoutes(router) {
 
   router.add('POST', '/admin/nodes', async (req) => {
     const admin = await requireAuth(req, null, ['ADMIN']);
-    requireFields(req.body, ['id', 'region']);
+    const body = validateBody(req.body, {
+      id: validators.id(),
+      region: validators.string({ min: 2, max: 40 })
+    });
 
-    const existing = await prisma.serverNode.findUnique({ where: { id: req.body.id } });
+    const existing = await prisma.serverNode.findUnique({ where: { id: body.id } });
     if (existing) throw new HttpError(409, 'NODE_EXISTS', 'Node ID already exists');
 
     const node = await prisma.serverNode.create({
       data: {
-        id: req.body.id,
-        region: req.body.region,
+        id: body.id,
+        region: body.region,
         status: 'HEALTHY'
       }
     });
@@ -2619,10 +2816,13 @@ function registerRoutes(router) {
     const admin = await requireAuth(req, null, ['ADMIN']);
     const node = await prisma.serverNode.findUnique({ where: { id: req.params.nodeId } });
     if (!node) throw new HttpError(404, 'NODE_NOT_FOUND', 'Node not found');
+    const body = validateBody(req.body, {
+      status: validators.enum(['HEALTHY', 'DEGRADED', 'UNHEALTHY', 'OFFLINE'])
+    });
 
     const updated = await prisma.serverNode.update({
       where: { id: node.id },
-      data: { status: req.body.status }
+      data: { status: body.status }
     });
 
     await addAuditLog(admin.id, 'SERVER_NODE_UPDATED', 'SERVER', node.id, { status: updated.status });
@@ -2703,7 +2903,10 @@ function registerRoutes(router) {
 
   router.add('PATCH', '/admin/refunds/:refundId', async (req) => {
     const admin = await requireAuth(req, null, ['ADMIN']);
-    requireFields(req.body, ['status']);
+    const body = validateBody(req.body, {
+      status: validators.enum(['REQUESTED', 'APPROVED', 'REJECTED']),
+      note: validators.string({ required: false, min: 1, max: 1000 })
+    });
 
     const refund = await prisma.refund.findUnique({
       where: { id: req.params.refundId },
@@ -2714,14 +2917,14 @@ function registerRoutes(router) {
     const updated = await prisma.refund.update({
       where: { id: refund.id },
       data: {
-        status: req.body.status,
+        status: body.status,
         resolvedAt: new Date(),
         resolvedBy: admin.id,
-        resolvedNote: req.body.note
+        resolvedNote: body.note
       }
     });
 
-    if (req.body.status === 'APPROVED') {
+    if (body.status === 'APPROVED') {
       await prisma.$transaction([
         prisma.order.update({ where: { id: refund.orderId }, data: { status: 'REFUNDED' } }),
         prisma.entitlement.deleteMany({ where: { userId: refund.order.userId, gameId: refund.order.gameId } }),
@@ -2730,7 +2933,7 @@ function registerRoutes(router) {
       await addNotification(refund.order.userId, 'REFUND_APPROVED', 'Refund Approved', 'Your refund has been processed and access revoked.');
     }
 
-    await addAuditLog(admin.id, 'REFUND_STATUS_UPDATED', 'REFUND', refund.id, { status: req.body.status });
+    await addAuditLog(admin.id, 'REFUND_STATUS_UPDATED', 'REFUND', refund.id, { status: body.status });
     return ok(updated);
   });
 
@@ -2808,9 +3011,14 @@ export async function createApp() {
   await prisma.$connect();
   const router = createRouter();
   registerRoutes(router);
+  logRouteRegistration(router.routes());
 
   return async function app(req, res) {
     const requestId = createId('req');
+    const startedAt = Date.now();
+    let matched = null;
+    let routePath = null;
+    req.requestId = requestId;
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Razorpay-Signature, X-Lazplay-Internal-Secret');
@@ -2826,8 +3034,8 @@ export async function createApp() {
       if (!url.pathname.startsWith(config.apiPrefix)) {
         throw new HttpError(404, 'NOT_FOUND', `Route must start with ${config.apiPrefix}`);
       }
-      const routePath = url.pathname.slice(config.apiPrefix.length) || '/';
-      const matched = router.match(req.method, routePath);
+      routePath = url.pathname.slice(config.apiPrefix.length) || '/';
+      matched = router.match(req.method, routePath);
       if (!matched) {
         throw new HttpError(404, 'ROUTE_NOT_FOUND', `No route for ${req.method} ${url.pathname}`);
       }
@@ -2835,26 +3043,22 @@ export async function createApp() {
       req.params = matched.params;
       req.body = await readJsonBody(req);
       const response = await matched.route.handler(req);
+      res.setHeader('X-Response-Time', `${Date.now() - startedAt}ms`);
       sendJson(res, response.status, response.body);
+      logRequest('request-complete', safeRequestDebug(req, matched, routePath, response.status, startedAt));
     } catch (error) {
-      const status = error instanceof HttpError ? error.status : 500;
-      const code = error instanceof HttpError ? error.code : 'INTERNAL_SERVER_ERROR';
-      const message = error instanceof HttpError ? error.message : 'Unexpected server error';
-      console.error('[request-error]', {
-        requestId,
-        method: req.method,
-        url: req.url,
-        status,
-        code,
-        message,
-        stack: error?.stack
-      });
+      const httpError = toHttpError(error);
+      const status = httpError.status;
+      const code = httpError.code;
+      const message = httpError.message;
+      res.setHeader('X-Response-Time', `${Date.now() - startedAt}ms`);
+      logRequest('request-error', routeDebugDetails(req, matched, routePath, status, code, message, startedAt, error));
       sendJson(res, status, {
         success: false,
         error: {
           code,
           message,
-          details: error.details
+          details: httpError.details
         },
         requestId
       });
