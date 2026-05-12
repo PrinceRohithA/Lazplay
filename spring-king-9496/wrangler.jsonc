@@ -1,0 +1,26 @@
+{
+  "name": "lazplay-cdn",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-04-03",
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "lazplay-games-private",
+      "preview_bucket_name": "lazplay-games-private-preview"
+    }
+  ],
+  "vars": {
+    "BASE_URL": "https://download.lazplay.tech",
+    "CACHE_CONTROL_IMMUTABLE": "public, max-age=31536000, immutable"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "persist": true,
+      "invocation_logs": true
+    }
+  }
+}
