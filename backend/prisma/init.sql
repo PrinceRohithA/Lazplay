@@ -54,12 +54,12 @@ CREATE TABLE "Game" (
     "developerId" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "title" TEXT NOT NULL,
-    "shortDescription" TEXT,
     "description" TEXT,
     "tagline" TEXT,
     "price" INTEGER NOT NULL DEFAULT 0,
     "currency" TEXT NOT NULL DEFAULT 'INR',
     "priceType" TEXT NOT NULL DEFAULT 'FREE',
+    "pricingUpdatedAt" TIMESTAMP(3),
     "releaseDate" TEXT,
     "publisher" TEXT,
     "genres" TEXT[],
@@ -322,6 +322,24 @@ CREATE TABLE "ServerNode" (
     CONSTRAINT "ServerNode_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "StorageObject" (
+    "id" TEXT NOT NULL,
+    "ownerId" TEXT NOT NULL,
+    "objectKey" TEXT NOT NULL,
+    "uploadId" TEXT,
+    "purpose" TEXT NOT NULL,
+    "fileName" TEXT NOT NULL,
+    "contentType" TEXT NOT NULL,
+    "sizeBytes" BIGINT,
+    "status" TEXT NOT NULL DEFAULT 'PENDING',
+    "etag" TEXT,
+    "completedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "StorageObject_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
 
@@ -351,6 +369,9 @@ CREATE UNIQUE INDEX "Entitlement_userId_gameId_key" ON "Entitlement"("userId", "
 
 -- CreateIndex
 CREATE UNIQUE INDEX "GameInstance_joinCode_key" ON "GameInstance"("joinCode");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "StorageObject_objectKey_key" ON "StorageObject"("objectKey");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "InstancePlayer_instanceId_userId_key" ON "InstancePlayer"("instanceId", "userId");
