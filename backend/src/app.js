@@ -71,6 +71,7 @@ const r2 = new S3Client({
 let _rzp = null;
 const getRazorpay = () => {
   if (!_rzp) {
+    console.info(`[razorpay-init] Initializing with Key ID: ${config.razorpayKeyId.slice(0, 8)}...`);
     _rzp = new Razorpay({
       key_id: config.razorpayKeyId,
       key_secret: config.razorpayKeySecret,

@@ -15,6 +15,7 @@ export default function GameDetailsSteamStyleLayout() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
+  const [playingTrailer, setPlayingTrailer] = useState(false);
 
   useEffect(() => {
     if (!gameId) { setLoading(false); return; }
@@ -68,6 +69,11 @@ export default function GameDetailsSteamStyleLayout() {
   };
 
   const screenshots = media.filter((m) => m.type === 'IMAGE' && (m.alt === 'SCREENSHOT' || !m.alt));
+  const videos = media.filter((m) => m.type === 'VIDEO');
+
+  const sysReqs = game?.systemRequirements || {};
+  const minSpecs = sysReqs.minimum || {};
+  const recSpecs = sysReqs.recommended || {};
 
   return (
     <div className="flex flex-col min-w-0 p-gutter md:p-margin gap-6">
@@ -81,12 +87,21 @@ export default function GameDetailsSteamStyleLayout() {
         <section className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-gutter bg-surface-container-low pixel-border p-2">
         {/*  Left: Main Media  */}
         <div className="relative aspect-video xl:h-[450px] overflow-hidden bg-black pixel-border">
-          <img alt={game.title} className="w-full h-full object-cover opacity-80" src={game.heroBannerUrl || game.heroImageUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuC9KrQ5YpZIImJ1Kd2RBfr-IeRwo5ttSkse1x9Q71QkonTieCCBK-ZICf1E_3LD5-X4q63if0DYzWnYTFcwoRStnzJtmrdqfhsIouTLhtzkMmCzw0y_69VlGf5INbG4nK77O9oKMw9FDOaqKgWuh-yDPS9BKfJsFzcuP9Ueuv1CFIMfot1RHyyIqegrc4toawTb6VxlS0VnqAc-XiUBOixMQ6hvHARoZbpH1Dlt9IHWrRbvaJaqI_mte6dOhR4-5vmnF9sG75TI6lXu"}/>
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="bg-surface/80 p-4 pixel-border">
-              <span className="material-symbols-outlined text-primary-container text-6xl">play_circle</span>
-            </div>
-          </div>
+          {playingTrailer && videos.length > 0 ? (
+            <video src={videos[0].url} controls autoPlay className="w-full h-full object-cover" />
+          ) : (
+            <>
+              <img alt={game.title} className="w-full h-full object-cover opacity-80" src={game.heroBannerUrl || game.heroImageUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuC9KrQ5YpZIImJ1Kd2RBfr-IeRwo5ttSkse1x9Q71QkonTieCCBK-ZICf1E_3LD5-X4q63if0DYzWnYTFcwoRStnzJtmrdqfhsIouTLhtzkMmCzw0y_69VlGf5INbG4nK77O9oKMw9FDOaqKgWuh-yDPS9BKfJsFzcuP9Ueuv1CFIMfot1RHyyIqegrc4toawTb6VxlS0VnqAc-XiUBOixMQ6hvHARoZbpH1Dlt9IHWrRbvaJaqI_mte6dOhR4-5vmnF9sG75TI6lXu"}/>
+              <div 
+                className={`absolute inset-0 flex items-center justify-center ${videos.length > 0 ? 'cursor-pointer hover:bg-black/20 pointer-events-auto' : 'pointer-events-none'} transition-colors`}
+                onClick={() => { if (videos.length > 0) setPlayingTrailer(true); }}
+              >
+                <div className={`bg-surface/80 p-4 pixel-border ${videos.length > 0 ? 'hover:bg-surface pointer-events-none' : ''} transition-colors`}>
+                  <span className="material-symbols-outlined text-primary-container text-6xl">play_circle</span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
         {/*  Right: Game Info Box  */}
         <div className="flex flex-col gap-4 p-4 font-label-mono text-label-mono">
@@ -152,18 +167,32 @@ export default function GameDetailsSteamStyleLayout() {
             </div>
           </section>
 
-          {screenshots.length > 0 && (
+          {(screenshots.length > 0 || videos.length > 1) && (
             <section id="screenshots" className="bg-surface-container pixel-border p-gutter">
               <div className="bg-surface-variant text-on-surface border-b-2 border-outline-variant -mx-gutter -mt-gutter mb-gutter px-gutter py-2 font-label-mono text-label-mono uppercase">
                 &gt;_ MEDIA_ARCHIVE
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                {screenshots.map(s => (
-                  <div key={s.id} className="pixel-border overflow-hidden bg-black aspect-video">
-                    <img src={s.url} alt="Screenshot" className="w-full h-full object-cover hover:scale-105 transition-transform" />
-                  </div>
-                ))}
-              </div>
+
+              {videos.length > 1 && (
+                <div className="mb-4 space-y-4">
+                  {videos.slice(1).map(v => (
+                    <video key={v.id} controls className="w-full aspect-video pixel-border bg-black">
+                      <source src={v.url} />
+                      Your browser does not support the video tag.
+                    </video>
+                  ))}
+                </div>
+              )}
+
+              {screenshots.length > 0 && (
+                <div className="grid grid-cols-2 gap-4">
+                  {screenshots.map(s => (
+                    <div key={s.id} className="pixel-border overflow-hidden bg-black aspect-video">
+                      <img src={s.url} alt="Screenshot" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
           )}
           <section className="bg-surface-container pixel-border p-gutter font-label-mono">
@@ -172,17 +201,21 @@ export default function GameDetailsSteamStyleLayout() {
               <div>
                 <div className="text-primary-container mb-2">MINIMUM_SPECS:</div>
                 <ul className="space-y-1 text-on-surface-variant">
-                  <li>OS: SYSTEM_OS V_1.0.4</li>
-                  <li>PROC: 8-BIT ZILOG Z80</li>
-                  <li>MEMORY: 64 KB RAM</li>
+                  <li>OS: {minSpecs.os || 'SYSTEM_OS V_1.0.4'}</li>
+                  <li>PROC: {minSpecs.processor || '8-BIT ZILOG Z80'}</li>
+                  <li>MEMORY: {minSpecs.memory || '64 KB RAM'}</li>
+                  {minSpecs.graphics && <li>GRAPHICS: {minSpecs.graphics}</li>}
+                  {minSpecs.storage && <li>STORAGE: {minSpecs.storage}</li>}
                 </ul>
               </div>
               <div>
                 <div className="text-secondary-container mb-2">RECOMMENDED_SPECS:</div>
                 <ul className="space-y-1 text-on-surface-variant">
-                  <li>OS: SYSTEM_OS V_1.0.4+</li>
-                  <li>PROC: 16-BIT MOTOROLA 68000</li>
-                  <li>MEMORY: 128 KB RAM</li>
+                  <li>OS: {recSpecs.os || 'SYSTEM_OS V_1.0.4+'}</li>
+                  <li>PROC: {recSpecs.processor || '16-BIT MOTOROLA 68000'}</li>
+                  <li>MEMORY: {recSpecs.memory || '128 KB RAM'}</li>
+                  {recSpecs.graphics && <li>GRAPHICS: {recSpecs.graphics}</li>}
+                  {recSpecs.storage && <li>STORAGE: {recSpecs.storage}</li>}
                 </ul>
               </div>
             </div>
@@ -271,8 +304,13 @@ export default function GameDetailsSteamStyleLayout() {
             <div className="border-t border-outline-variant pt-4">
               <div className="text-[11px] text-on-surface-variant mb-2 uppercase">Tags</div>
               <div className="flex flex-wrap gap-2">
-                <span className="bg-surface px-2 py-1 text-[10px] text-tertiary-container pixel-border uppercase">Platformer</span>
-                <span className="bg-surface px-2 py-1 text-[10px] text-tertiary-container pixel-border uppercase">Cyberpunk</span>
+                {game.tags && game.tags.length > 0 ? (
+                  game.tags.map(tag => (
+                    <span key={tag} className="bg-surface px-2 py-1 text-[10px] text-tertiary-container pixel-border uppercase">{tag}</span>
+                  ))
+                ) : (
+                  <span className="text-[10px] text-on-surface-variant font-label-mono uppercase">NO_TAGS_FOUND</span>
+                )}
               </div>
             </div>
           </div>
