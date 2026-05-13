@@ -134,6 +134,7 @@ model GameBuild {
   sizeBytes        BigInt?
   checksumSha256   String?
   scanStatus       String?
+  scanMessage      String?
   uploadedAt       DateTime?
   createdAt        DateTime @default(now())
 

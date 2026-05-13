@@ -116,6 +116,7 @@ CREATE TABLE "GameBuild" (
     "sizeBytes" BIGINT,
     "checksumSha256" TEXT,
     "scanStatus" TEXT,
+    "scanMessage" TEXT,
     "uploadedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 

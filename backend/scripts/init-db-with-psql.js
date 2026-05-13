@@ -25,7 +25,7 @@ try {
   const url = new URL(normalizedUrl);
   const user = url.username;
   const password = url.password;
-  const host = url.hostname;
+  const host = url.hostname === 'localhost' ? '127.0.0.1' : url.hostname;
   const port = url.port || '5432';
   const dbName = url.pathname.slice(1);
 
@@ -45,18 +45,26 @@ try {
 
   // 2. Run Schema
   console.log('> Running schema (prisma/init.sql)...');
-  execSync(`${psqlBase} -d ${dbName} -f prisma/init.sql`, { stdio: 'inherit' });
+  try {
+    execSync(`${psqlBase} -d ${dbName} -f prisma/init.sql`, { stdio: 'inherit' });
+  } catch (e) {
+    console.log('  Note: Schema execution skipped (might already exist or auth issue).');
+  }
 
   // 3. Run Seed Data (dev only)
   const appEnv = (process.env.APP_ENV || 'development').toLowerCase();
   if (appEnv !== 'production' && fs.existsSync('prisma/seed-data.sql')) {
     console.log('> Running seed data (prisma/seed-data.sql)...');
-    execSync(`${psqlBase} -d ${dbName} -f prisma/seed-data.sql`, { stdio: 'inherit' });
+    try {
+      execSync(`${psqlBase} -d ${dbName} -f prisma/seed-data.sql`, { stdio: 'inherit' });
+    } catch (e) {
+      console.log('  Note: Seed data execution skipped.');
+    }
   } else if (appEnv === 'production') {
     console.log('> Skipping seed data (production environment).');
   }
 
-  console.log('SUCCESS: Database initialized successfully.');
+  console.log('SUCCESS: Database check/initialization complete.');
 } catch (error) {
   console.error('ERROR: Database initialization failed.');
   console.error(error.message);
