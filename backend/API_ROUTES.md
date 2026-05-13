@@ -433,7 +433,6 @@ Response:
       "id": "game_01JZ100",
       "slug": "neon-void-overdrive",
       "title": "Neon Void: Overdrive",
-      "shortDescription": "Fast arcade combat in a decaying digital landscape.",
       "price": 2499,
       "currency": "INR",
       "priceType": "PAID",
@@ -509,7 +508,6 @@ Response:
     "slug": "cyber-quest",
     "title": "Cyber Quest",
     "description": "A high-octane run-and-gun adventure through neon sectors.",
-    "shortDescription": "Run-and-gun arcade adventure.",
     "price": 49900,
     "currency": "INR",
     "priceType": "PAID",
@@ -1424,7 +1422,6 @@ Request body:
   "title": "Cyber Quest",
   "slug": "cyber-quest",
   "version": "v1.0.4",
-  "shortDescription": "Run-and-gun arcade adventure.",
   "description": "A high-octane cyberpunk platformer.",
   "price": 49900,
   "currency": "INR",
@@ -1474,7 +1471,6 @@ Request body:
 
 ```json
 {
-  "shortDescription": "Updated short description.",
   "price": 39900,
   "coverObjectKey": "games/game_01JZ100/media/cover.png",
   "heroBannerObjectKey": "games/game_01JZ100/media/hero.png",
@@ -1489,7 +1485,6 @@ Response:
   "success": true,
   "data": {
     "id": "game_01JZ100",
-    "shortDescription": "Updated short description.",
     "price": 39900,
     "status": "DRAFT"
   }

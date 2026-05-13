@@ -13,7 +13,8 @@ export function registerDeveloperRoutes(router, ctx) {
     getRuntimeBucketForGame, assertR2Config, resolveBucketForPurpose, resolveBucketForKey, publicObjectUrl,
     signedStorageUrl, runtimePrefixForGame, buildCopySource, moveRuntimeObjects, fetchWithTimeout,
     normalizeArchivePath, contentTypeForPath, extractObjectKeyFromUrl, isWebRuntime, uploadRuntimeObject,
-    scanAndPrepareBuild, deleteRuntimeObjects, deleteStorageObject, deleteStorageRecord, deleteStorageObjectFromUrl, razorpaySignature
+    scanAndPrepareBuild, deleteRuntimeObjects, deleteStorageObject, deleteStorageRecord, deleteStorageObjectFromUrl, razorpaySignature,
+    validationFailure
   } = ctx;
 
 router.add('POST', '/developer/register', async (req) => {

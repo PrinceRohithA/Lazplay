@@ -70,7 +70,7 @@ router.add('GET', '/instances/:instanceId', async (req) => {
     const user = await requireAuth(req);
     const instance = await prisma.gameInstance.findUnique({
       where: { id: req.params.instanceId },
-      include: { hostUser: true, game: true, players: { include: { user: true } } }
+      include: { host: true, game: true, players: { include: { user: true } } }
     });
     if (!instance) throw new HttpError(404, 'INSTANCE_NOT_FOUND', 'Instance not found');
 

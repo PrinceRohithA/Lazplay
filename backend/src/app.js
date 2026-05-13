@@ -259,7 +259,8 @@ function toHttpError(error) {
     });
   }
 
-  return new HttpError(500, 'INTERNAL_SERVER_ERROR', 'Unexpected server error');
+  const message = config.appEnv === 'production' ? 'Unexpected server error' : `Unexpected server error: ${error?.message || 'Unknown error'}`;
+  return new HttpError(500, 'INTERNAL_SERVER_ERROR', message, config.appEnv === 'production' ? undefined : { stack: error?.stack });
 }
 
 function logRequest(event, details) {
@@ -863,7 +864,8 @@ function registerRoutes(router) {
     getRuntimeBucketForGame, assertR2Config, resolveBucketForPurpose, resolveBucketForKey, publicObjectUrl,
     signedStorageUrl, runtimePrefixForGame, buildCopySource, moveRuntimeObjects, fetchWithTimeout,
     normalizeArchivePath, contentTypeForPath, extractObjectKeyFromUrl, isWebRuntime, uploadRuntimeObject,
-    scanAndPrepareBuild, deleteRuntimeObjects, deleteStorageObject, deleteStorageRecord, deleteStorageObjectFromUrl, razorpaySignature
+    scanAndPrepareBuild, deleteRuntimeObjects, deleteStorageObject, deleteStorageRecord, deleteStorageObjectFromUrl, razorpaySignature,
+    validationFailure, assertRazorpayWebhook
   };
 
   registerAuthRoutes(router, ctx);
