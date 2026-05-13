@@ -58,7 +58,7 @@ export default function GameLibraryCyberEdition() {
           {filtered.slice(0,1).map(item => (
             <div key={item.gameId} className="md:col-span-2 md:row-span-2 bg-surface-container-low pixel-border flex flex-col group cursor-pointer border-l-4 border-l-primary-container overflow-hidden">
               <div className="relative h-64 md:h-full min-h-[400px] overflow-hidden">
-                <img className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={item.title} src={item.coverUrl || PLACEHOLDER} />
+                <img className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={item.title} src={item.heroBannerUrl || item.coverUrl || PLACEHOLDER} />
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent"></div>
                 <div className="absolute top-4 left-4"><span className="bg-primary-container text-on-primary-container font-label-mono px-3 py-1 uppercase text-xs">{item.updateAvailable ? 'UPDATE_AVAILABLE' : 'READY'}</span></div>
                 <div className="absolute bottom-6 left-6 right-6 flex justify-between items-end">
@@ -79,7 +79,7 @@ export default function GameLibraryCyberEdition() {
           {filtered.slice(1).map(item => (
             <div key={item.gameId} className="bg-surface-container-low pixel-border group cursor-pointer overflow-hidden flex flex-col">
               <div className="relative h-40 overflow-hidden">
-                <img className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt={item.title} src={item.coverUrl || PLACEHOLDER} />
+                <img className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt={item.title} src={item.heroBannerUrl || item.coverUrl || PLACEHOLDER} />
                 <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent"></div>
                 {item.updateAvailable && <div className="absolute top-2 right-2 bg-secondary-container text-on-secondary-container font-label-mono text-[10px] px-2 py-0.5">UPDATE</div>}
               </div>

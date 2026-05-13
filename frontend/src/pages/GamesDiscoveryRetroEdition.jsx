@@ -122,7 +122,7 @@ export default function GamesDiscoveryRetroEdition() {
                     <img
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       alt={game.title}
-                      src={game.coverUrl || game.heroImageUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCekcLG1R4SPSVFiOQxJ1zoNzQ9hrbKDAiiYqBAeLqrLKCe_hFKR7NQ6QI_WlQHU8mWEsb-PN9p4qJydIeJrkybfFyNewcxuYsq9lrkU4QHMrVXWy7tqEYSjlwaXcvaqjHceNI8yTD15ng1V985MpmirSstKeXb1qNcl-auZLfMscpTK0UIE5icpoufxSRg1IjEHpHvNFFlS_nSBeGkIcSpscgQMmO7KTndk9Hj-yiqimxsjd1VLpKfCRSPY_VMPqKfQq8LxefHchno'}
+                      src={game.heroBannerUrl || game.coverUrl || game.heroImageUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCekcLG1R4SPSVFiOQxJ1zoNzQ9hrbKDAiiYqBAeLqrLKCe_hFKR7NQ6QI_WlQHU8mWEsb-PN9p4qJydIeJrkybfFyNewcxuYsq9lrkU4QHMrVXWy7tqEYSjlwaXcvaqjHceNI8yTD15ng1V985MpmirSstKeXb1qNcl-auZLfMscpTK0UIE5icpoufxSRg1IjEHpHvNFFlS_nSBeGkIcSpscgQMmO7KTndk9Hj-yiqimxsjd1VLpKfCRSPY_VMPqKfQq8LxefHchno'}
                     />
                     <div className="absolute top-2 right-2 bg-background/80 border border-primary-container px-2 py-1">
                       <span className="text-primary-container font-label-mono text-[10px]">{game.rating ? `${game.rating.toFixed(1)}_RTG` : 'NEW'}</span>

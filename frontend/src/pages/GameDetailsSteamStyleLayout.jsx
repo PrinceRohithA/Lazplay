@@ -43,7 +43,7 @@ export default function GameDetailsSteamStyleLayout() {
         <section className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-gutter bg-surface-container-low pixel-border p-2">
         {/*  Left: Main Media  */}
         <div className="relative aspect-video xl:h-[450px] overflow-hidden bg-black pixel-border">
-          <img alt={game.title} className="w-full h-full object-cover opacity-80" src={game.bannerUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuC9KrQ5YpZIImJ1Kd2RBfr-IeRwo5ttSkse1x9Q71QkonTieCCBK-ZICf1E_3LD5-X4q63if0DYzWnYTFcwoRStnzJtmrdqfhsIouTLhtzkMmCzw0y_69VlGf5INbG4nK77O9oKMw9FDOaqKgWuh-yDPS9BKfJsFzcuP9Ueuv1CFIMfot1RHyyIqegrc4toawTb6VxlS0VnqAc-XiUBOixMQ6hvHARoZbpH1Dlt9IHWrRbvaJaqI_mte6dOhR4-5vmnF9sG75TI6lXu"}/>
+          <img alt={game.title} className="w-full h-full object-cover opacity-80" src={game.heroBannerUrl || game.heroImageUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuC9KrQ5YpZIImJ1Kd2RBfr-IeRwo5ttSkse1x9Q71QkonTieCCBK-ZICf1E_3LD5-X4q63if0DYzWnYTFcwoRStnzJtmrdqfhsIouTLhtzkMmCzw0y_69VlGf5INbG4nK77O9oKMw9FDOaqKgWuh-yDPS9BKfJsFzcuP9Ueuv1CFIMfot1RHyyIqegrc4toawTb6VxlS0VnqAc-XiUBOixMQ6hvHARoZbpH1Dlt9IHWrRbvaJaqI_mte6dOhR4-5vmnF9sG75TI6lXu"}/>
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="bg-surface/80 p-4 pixel-border">
               <span className="material-symbols-outlined text-primary-container text-6xl">play_circle</span>
