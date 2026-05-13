@@ -8,6 +8,10 @@ export default function GameDetailsSteamStyleLayout() {
   const gameId = params.get('id');
   const [game, setGame] = useState(null);
   const [media, setMedia] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewBody, setReviewBody] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
@@ -15,9 +19,20 @@ export default function GameDetailsSteamStyleLayout() {
   useEffect(() => {
     if (!gameId) { setLoading(false); return; }
     Promise.all([
-      gamesApi.get(gameId).then(r => r.data).catch(() => null),
+      gamesApi.get(gameId).then(r => r.data),
       gamesApi.media(gameId).then(r => r.data).catch(() => []),
-    ]).then(([g, m]) => { setGame(g); setMedia(m); setLoading(false); });
+      gamesApi.reviews(gameId, { page: 1, limit: 10 }).then(r => r.data).catch(() => [])
+    ])
+      .then(([g, m, r]) => {
+        setGame(g || null);
+        setMedia(m || []);
+        setReviews(r || []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message || 'FAILED_TO_LOAD_GAME');
+        setLoading(false);
+      });
   }, [gameId]);
 
   const handlePaymentSuccess = useCallback((data) => {
@@ -30,6 +45,29 @@ export default function GameDetailsSteamStyleLayout() {
     setError(msg);
     setTimeout(() => setError(null), 5000);
   }, []);
+
+  const handleSubmitReview = async () => {
+    if (!gameId) return;
+    if (!reviewBody.trim()) {
+      setError('REVIEW_BODY_REQUIRED');
+      return;
+    }
+    setReviewSubmitting(true);
+    try {
+      await gamesApi.submitReview(gameId, { rating: reviewRating, body: reviewBody.trim() });
+      const res = await gamesApi.reviews(gameId, { page: 1, limit: 10 });
+      setReviews(res.data || []);
+      setReviewBody('');
+      setSuccessMsg('REVIEW_SUBMITTED');
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } catch (err) {
+      setError(err.message || 'REVIEW_SUBMIT_FAILED');
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
+  const screenshots = media.filter((m) => m.type === 'IMAGE' && (m.alt === 'SCREENSHOT' || !m.alt));
 
   return (
     <div className="flex flex-col min-w-0 p-gutter md:p-margin gap-6">
@@ -62,11 +100,11 @@ export default function GameDetailsSteamStyleLayout() {
               <span className="text-on-surface-variant">RECENT_REVIEWS:</span>
               <span className="text-primary-container">OVERWHELMINGLY_POSITIVE</span>
               <span className="text-on-surface-variant">RELEASE_DATE:</span>
-              <span className="text-on-surface">{new Date(game.createdAt).toLocaleDateString()}</span>
+              <span className="text-on-surface">{game.releaseDate || new Date(game.createdAt).toLocaleDateString()}</span>
               <span className="text-on-surface-variant">DEVELOPER:</span>
               <span className="text-secondary-container">{game.developer?.displayName || 'UNKNOWN_DEV'}</span>
               <span className="text-on-surface-variant">PUBLISHER:</span>
-              <span className="text-secondary-container">LAZPLAY_STUDIOS</span>
+              <span className="text-secondary-container">{game.publisher || 'LAZPLAY_STUDIOS'}</span>
             </div>
           </div>
           <div className="pt-4 border-t border-outline-variant">
@@ -76,7 +114,7 @@ export default function GameDetailsSteamStyleLayout() {
               ))}
             </div>
             <div className="mb-4 text-headline-sm font-bold text-primary-container">
-              {game.priceType === 'FREE' ? 'FREE_TO_PLAY' : `₹${game.price}`}
+              {game.priceType === 'FREE' ? 'FREE_TO_PLAY' : `₹${(game.price / 100).toFixed(2)}`}
             </div>
             {game.isOwned ? (
               <Link to={`/launch/${game.id}`} className="w-full bg-primary-container text-on-primary-container py-3 pixel-border neon-glow hover:bg-primary-fixed transition-all uppercase flex justify-center items-center gap-2 font-bold">
@@ -96,18 +134,16 @@ export default function GameDetailsSteamStyleLayout() {
 
       {/*  Horizontal Navigation Bar  */}
       <nav className="flex bg-surface-container-high pixel-border font-label-mono text-[11px] uppercase">
-        <a className="px-6 py-2 bg-primary-container text-on-primary-container font-bold" href="#">Overview</a>
-        <a className="px-6 py-2 text-on-surface-variant hover:text-primary transition-colors" href="#">Reviews</a>
-        <a className="px-6 py-2 text-on-surface-variant hover:text-primary transition-colors" href="#">Discussions</a>
-        <a className="px-6 py-2 text-on-surface-variant hover:text-primary transition-colors" href="#">Screenshots</a>
-        <a className="px-6 py-2 text-on-surface-variant hover:text-primary transition-colors" href="#">News</a>
+        <a className="px-6 py-2 bg-primary-container text-on-primary-container font-bold" href="#overview">Overview</a>
+        <a className="px-6 py-2 text-on-surface-variant hover:text-primary transition-colors" href="#screenshots">Screenshots</a>
+        <a className="px-6 py-2 text-on-surface-variant hover:text-primary transition-colors" href="#reviews">Reviews</a>
       </nav>
 
       {/*  Main Content Area: Two Column  */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
         {/*  Left Column: Detailed Content  */}
         <div className="space-y-6">
-          <section className="bg-surface-container pixel-border p-gutter">
+          <section id="overview" className="bg-surface-container pixel-border p-gutter">
             <div className="bg-surface-variant text-on-surface border-b-2 border-outline-variant -mx-gutter -mt-gutter mb-gutter px-gutter py-2 font-label-mono text-label-mono">
               &gt;_ README.TXT
             </div>
@@ -115,6 +151,21 @@ export default function GameDetailsSteamStyleLayout() {
               <div dangerouslySetInnerHTML={{ __html: game.description }} />
             </div>
           </section>
+
+          {screenshots.length > 0 && (
+            <section id="screenshots" className="bg-surface-container pixel-border p-gutter">
+              <div className="bg-surface-variant text-on-surface border-b-2 border-outline-variant -mx-gutter -mt-gutter mb-gutter px-gutter py-2 font-label-mono text-label-mono uppercase">
+                &gt;_ MEDIA_ARCHIVE
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                {screenshots.map(s => (
+                  <div key={s.id} className="pixel-border overflow-hidden bg-black aspect-video">
+                    <img src={s.url} alt="Screenshot" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
           <section className="bg-surface-container pixel-border p-gutter font-label-mono">
             <div className="text-on-surface-variant border-b border-outline-variant pb-2 mb-4 text-[12px] uppercase">System Requirements</div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-[11px]">
@@ -136,18 +187,70 @@ export default function GameDetailsSteamStyleLayout() {
               </div>
             </div>
           </section>
-          <section className="bg-surface-container-lowest pixel-border p-gutter">
+          <section id="reviews" className="bg-surface-container-lowest pixel-border p-gutter">
             <div className="bg-surface text-primary-container border-b-2 border-primary-container -mx-gutter -mt-gutter mb-gutter px-gutter py-2 font-label-mono text-label-mono uppercase">
               COMM_LINK_ESTABLISHED // USER_FEEDBACK
             </div>
+            
             <div className="mb-6 flex gap-4">
               <div className="w-10 h-10 bg-surface pixel-border flex items-center justify-center shrink-0">
                 <span className="material-symbols-outlined text-on-surface-variant">face</span>
               </div>
               <div className="flex-1 flex flex-col gap-2">
-                <textarea className="w-full bg-surface pixel-border border-outline-variant p-2 font-label-mono text-primary focus:border-primary-container focus:ring-0 resize-none h-20 placeholder-on-surface-variant" placeholder="&gt; ENTER_TRANSMISSION..."></textarea>
-                <button className="self-end bg-surface-variant text-on-surface font-label-mono text-label-mono px-4 py-2 pixel-border-hover uppercase">SEND_DATA</button>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-on-surface-variant text-[11px] font-label-mono uppercase">RATING:</span>
+                  <select 
+                    value={reviewRating} 
+                    onChange={e => setReviewRating(Number(e.target.value))}
+                    className="bg-surface border border-outline-variant text-primary-container text-[11px] p-1 pixel-border focus:outline-none font-label-mono uppercase"
+                  >
+                    <option value="5">5 - OVERWHELMINGLY_POSITIVE</option>
+                    <option value="4">4 - POSITIVE</option>
+                    <option value="3">3 - MIXED</option>
+                    <option value="2">2 - NEGATIVE</option>
+                    <option value="1">1 - OVERWHELMINGLY_NEGATIVE</option>
+                  </select>
+                </div>
+                <textarea 
+                  value={reviewBody}
+                  onChange={(e) => setReviewBody(e.target.value)}
+                  disabled={reviewSubmitting}
+                  className="w-full bg-surface pixel-border border-outline-variant p-2 font-label-mono text-primary focus:border-primary-container focus:ring-0 resize-none h-20 placeholder-on-surface-variant" 
+                  placeholder="&gt; ENTER_TRANSMISSION..."
+                />
+                <button 
+                  onClick={handleSubmitReview}
+                  disabled={reviewSubmitting}
+                  className="self-end bg-surface-variant text-on-surface font-label-mono text-label-mono px-4 py-2 pixel-border-hover uppercase disabled:opacity-50"
+                >
+                  {reviewSubmitting ? 'TRANSMITTING...' : 'SEND_DATA'}
+                </button>
               </div>
+            </div>
+
+            <div className="space-y-4">
+              {reviews.map(review => (
+                <div key={review.id} className="bg-surface pixel-border p-4">
+                  <div className="flex items-center justify-between mb-2 border-b border-outline-variant pb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-surface-variant pixel-border flex items-center justify-center">
+                         <span className="material-symbols-outlined text-[12px]">person</span>
+                      </div>
+                      <span className="text-[11px] font-label-mono text-secondary-container uppercase">{review.author?.username || 'ANONYMOUS'}</span>
+                    </div>
+                    <div className="text-[11px] font-label-mono text-primary-container flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px]">star</span>
+                      {review.rating}/5
+                    </div>
+                  </div>
+                  <div className="text-[12px] font-body-sm text-on-surface leading-relaxed">
+                    {review.body}
+                  </div>
+                </div>
+              ))}
+              {reviews.length === 0 && (
+                <div className="text-center font-label-mono text-on-surface-variant text-[11px] py-4 uppercase">NO_TRANSMISSIONS_FOUND</div>
+              )}
             </div>
           </section>
         </div>
