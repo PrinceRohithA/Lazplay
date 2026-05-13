@@ -17,6 +17,8 @@ export default function GameDetailsSteamStyleLayout() {
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
   const [playingTrailer, setPlayingTrailer] = useState(false);
+  const [playingGame, setPlayingGame] = useState(false);
+  const [launchData, setLaunchData] = useState(null);
 
   useEffect(() => {
     if (!gameId) { setLoading(false); return; }
@@ -68,6 +70,21 @@ export default function GameDetailsSteamStyleLayout() {
       setReviewSubmitting(false);
     }
   };
+  
+  const handlePlayNow = async () => {
+      if (!gameId) return;
+      setLoading(true);
+      try {
+          const res = await gamesApi.launchManifest(gameId);
+          setLaunchData(res.data);
+          setPlayingGame(true);
+          setPlayingTrailer(false);
+      } catch (err) {
+          setError(err.message || 'FAILED_TO_LOAD_LAUNCH_MANIFEST');
+      } finally {
+          setLoading(false);
+      }
+  };
 
   const screenshots = media.filter((m) => m.type === 'IMAGE' && (m.alt === 'SCREENSHOT' || !m.alt));
   const videos = media.filter((m) => m.type === 'VIDEO');
@@ -87,8 +104,24 @@ export default function GameDetailsSteamStyleLayout() {
         {/*  Hero Section (Steam Style)  */}
         <section className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-gutter bg-surface-container-low pixel-border p-2">
         {/*  Left: Main Media  */}
-        <div className="relative aspect-video xl:h-[450px] overflow-hidden bg-black pixel-border">
-          {playingTrailer && videos.length > 0 ? (
+        <div className="relative aspect-video xl:h-[450px] overflow-hidden bg-black pixel-border group">
+          {playingGame && launchData ? (
+            <div className="w-full h-full relative">
+                <iframe 
+                    src={launchData.entrypointUrl} 
+                    className="w-full h-full border-none"
+                    title={game.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                />
+                <button 
+                    onClick={() => setPlayingGame(false)}
+                    className="absolute top-4 right-4 bg-error text-on-error p-2 pixel-border hover:brightness-110 transition-all z-10 opacity-0 group-hover:opacity-100"
+                    title="EXIT_RUNTIME"
+                >
+                    <span className="material-symbols-outlined">close</span>
+                </button>
+            </div>
+          ) : playingTrailer && videos.length > 0 ? (
             <video src={videos[0].url} controls autoPlay className="w-full h-full object-cover" />
           ) : (
             <>
@@ -132,11 +165,14 @@ export default function GameDetailsSteamStyleLayout() {
             <div className="mb-4 text-headline-sm font-bold text-primary-container">
               {game.priceType === 'FREE' ? 'FREE_TO_PLAY' : `₹${(game.price / 100).toFixed(2)}`}
             </div>
-            {game.isOwned ? (
-              <Link to={`/launch/${game.id}`} className="w-full bg-primary-container text-on-primary-container py-3 pixel-border neon-glow hover:bg-primary-fixed transition-all uppercase flex justify-center items-center gap-2 font-bold">
+            {(game.isOwned || (game.priceType === 'FREE' && game.platforms?.includes('WEB'))) ? (
+              <button 
+                onClick={game.priceType === 'FREE' && game.platforms?.includes('WEB') ? handlePlayNow : undefined}
+                className="w-full bg-primary-container text-on-primary-container py-3 pixel-border neon-glow hover:bg-primary-fixed transition-all uppercase flex justify-center items-center gap-2 font-bold disabled:opacity-50"
+              >
                 <span className="material-symbols-outlined">play_circle</span>
-                PLAY NOW
-              </Link>
+                {game.priceType === 'FREE' && game.platforms?.includes('WEB') ? 'PLAY_IN_BROWSER' : 'PLAY_NOW'}
+              </button>
             ) : (
               <RazorpayCheckout 
                 game={game} 
