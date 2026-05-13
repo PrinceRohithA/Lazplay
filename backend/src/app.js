@@ -71,7 +71,8 @@ const r2 = new S3Client({
 let _rzp = null;
 const getRazorpay = () => {
   if (!_rzp) {
-    console.info(`[razorpay-init] Initializing with Key ID: ${config.razorpayKeyId.slice(0, 8)}...`);
+    const isDefault = config.razorpayKeyId === 'rzp_test_lazplay';
+    console.info(`[razorpay-init] Initializing with Key ID: ${config.razorpayKeyId.slice(0, 14)}... ${isDefault ? '(USING_DEFAULT_FALLBACK)' : '(LOADED_FROM_ENV)'}`);
     _rzp = new Razorpay({
       key_id: config.razorpayKeyId,
       key_secret: config.razorpayKeySecret,
