@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { admin as adminApi, auth as authApi } from '../api';
+import DOMPurify from 'dompurify';
 
 export default function AdminMainframe() {
   const [user, setUser] = useState(null);
@@ -115,7 +116,7 @@ export default function AdminMainframe() {
               </div>
               <div className="flex flex-col gap-1 border-l-2 border-error pl-3">
                 <span className="font-label-caps text-[10px] text-on-surface-variant">REVENUE</span>
-                <span className="font-headline-md text-error">₹{stats.totalRevenue || 0}</span>
+                <span className="font-headline-md text-error">₹{((stats.totalRevenue || 0) / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
           </div>
@@ -241,7 +242,7 @@ export default function AdminMainframe() {
                                   <img src={reviewingGame.media[0].url} className="w-full h-full object-cover" alt="Review" />
                               )}
                           </div>
-                          <div className="prose prose-invert max-w-none font-label-mono text-[12px] opacity-80" dangerouslySetInnerHTML={{ __html: reviewingGame.description }}></div>
+                          <div className="prose prose-invert max-w-none font-label-mono text-[12px] opacity-80" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(reviewingGame.description) }}></div>
                       </div>
                       <div className="col-span-12 md:col-span-4 space-y-4">
                           <div className="bg-surface-container-high p-4 border border-outline-variant">
@@ -249,7 +250,7 @@ export default function AdminMainframe() {
                               <div className="font-label-mono text-[11px] space-y-1">
                                   <p>_ID: {reviewingGame.latestBuildId || 'NONE'}</p>
                                   <p>_PLATFORMS: {reviewingGame.platforms?.join(', ')}</p>
-                                  <p>_PRICE: ₹{reviewingGame.price}</p>
+                                  <p>_PRICE: ₹{(reviewingGame.price / 100).toFixed(2)}</p>
                               </div>
                           </div>
                           <div className="bg-surface-container-high p-4 border border-outline-variant">

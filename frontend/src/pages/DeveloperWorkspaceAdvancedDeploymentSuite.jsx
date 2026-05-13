@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { developer as devApi, storage as storageApi } from '../api';
+import { developer as devApi, storage as storageApi, auth as authApi } from '../api';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
@@ -26,6 +26,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
   
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(!!gameIdParam);
+  const [user, setUser] = useState(null);
   const [logs, setLogs] = useState([
     { time: new Date().toLocaleTimeString(), msg: 'INITIALIZING_HANDSHAKE_PROTOCOL...' },
     { time: new Date().toLocaleTimeString(), msg: 'LINKING_TO_MAINFRAME_CENTRAL_CORE...' },
@@ -82,7 +83,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         genres: game.genres || ['ACTION'],
         customTags: game.tags || [],
         licensing: game.priceType || 'PAID',
-        price: game.price?.toString() || '0',
+        price: ((game.price || 0) / 100).toString(),
         status: game.status || 'DRAFT',
         minSpecs: game.systemRequirements?.minimum || { cpu: 'I5-6600K', ram: '8GB', gpu: 'GTX 1060', storage: '50GB' },
         recSpecs: game.systemRequirements?.recommended || { cpu: 'I7-9700K', ram: '16GB', gpu: 'RTX 2070', storage: '50GB' }
@@ -101,6 +102,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
   }, [gameIdParam, addLog]);
 
   useEffect(() => {
+    authApi.me().then(res => setUser(res.data)).catch(() => {});
     fetchGameData();
   }, [fetchGameData]);
 
@@ -291,7 +293,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
           title: form.title,
           tagline: form.customTags.join(', '),
           description: form.description,
-          price: form.licensing === 'FREE' ? 0 : parseFloat(form.price),
+          price: form.licensing === 'FREE' ? 0 : Math.round(parseFloat(form.price || 0) * 100),
           priceType: form.licensing === 'PAID' ? 'PAID' : 'FREE',
           genres: form.genres,
           tags: form.customTags,
@@ -309,7 +311,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
           title: form.title,
           tagline: form.customTags.join(', '),
           description: form.description,
-          price: form.licensing === 'FREE' ? 0 : parseFloat(form.price),
+          price: form.licensing === 'FREE' ? 0 : Math.round(parseFloat(form.price || 0) * 100),
           priceType: form.licensing === 'PAID' ? 'PAID' : 'FREE',
           genres: form.genres,
           tags: form.customTags,
@@ -476,10 +478,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         <div className="flex items-center gap-4">
            {gameIdParam && (
                <div className="flex gap-2">
-                   {form.status === 'DRAFT' && (
-                       <button onClick={() => handleLifecycleAction('submit')} className="px-3 py-1 border border-secondary-container text-secondary-container font-label-mono text-[10px] hover:bg-secondary-container/10">SUBMIT_REVIEW</button>
-                   )}
-                   {form.status === 'PENDING_REVIEW' && (
+                   {user?.roles?.includes('ADMIN') && form.status === 'PENDING_REVIEW' && (
                        <button onClick={() => handleLifecycleAction('publish')} className="px-3 py-1 border border-primary-container text-primary-container font-label-mono text-[10px] hover:bg-primary-container/10">PUBLISH_LIVE</button>
                    )}
                    {form.status === 'PUBLISHED' && (
@@ -836,15 +835,19 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         {/*  Action Area  */}
         <div className="col-span-12 lg:col-span-4 flex flex-col gap-gutter">
           <button 
-            onClick={handleDeploy}
+            onClick={form.status === 'DRAFT' && existingBuilds.length > 0 ? () => handleLifecycleAction('submit') : handleDeploy}
             disabled={loading}
-            className={`w-full h-full font-headline-md p-6 pixel-border-active hover:scale-[1.02] active:scale-95 transition-all flex flex-col items-center justify-center gap-4 group min-h-[150px] ${loading ? 'bg-surface-container-highest text-on-surface-variant cursor-wait' : 'bg-primary-container text-on-primary-container'}`}
+            className={`w-full h-full font-headline-md p-6 pixel-border-active hover:scale-[1.02] active:scale-95 transition-all flex flex-col items-center justify-center gap-4 group min-h-[150px] ${loading ? 'bg-surface-container-highest text-on-surface-variant cursor-wait' : (form.status === 'DRAFT' && existingBuilds.length > 0 ? 'bg-secondary-container text-on-secondary-container' : 'bg-primary-container text-on-primary-container')}`}
           >
             <span className={`material-symbols-outlined text-headline-xl group-hover:scale-110 transition-transform ${loading ? 'animate-spin' : ''}`}>
-              {loading ? 'sync' : 'rocket_launch'}
+              {loading ? 'sync' : (form.status === 'DRAFT' && existingBuilds.length > 0 ? 'assignment_turned_in' : 'rocket_launch')}
             </span>
-            <span className="uppercase tracking-tighter font-extrabold">{loading ? 'SYNCING...' : (gameIdParam ? 'UPDATE_&_DEPLOY' : 'INITIATE_DEPLOY')}</span>
-            <span className="font-label-mono text-[10px] opacity-70 uppercase">{gameIdParam ? 'FORCE_OVERWRITE_ACTIVE' : 'CONFIRM_GRID_UPLOAD'}</span>
+            <span className="uppercase tracking-tighter font-extrabold">
+                {loading ? 'SYNCING...' : (form.status === 'DRAFT' && existingBuilds.length > 0 ? 'SUBMIT_FOR_REVIEW' : (gameIdParam ? 'UPDATE_&_DEPLOY' : 'INITIATE_DEPLOY'))}
+            </span>
+            <span className="font-label-mono text-[10px] opacity-70 uppercase">
+                {form.status === 'DRAFT' && existingBuilds.length > 0 ? 'SYSTEM_READY_FOR_INSPECTION' : (gameIdParam ? 'FORCE_OVERWRITE_ACTIVE' : 'CONFIRM_GRID_UPLOAD')}
+            </span>
           </button>
           
           {gameIdParam && (

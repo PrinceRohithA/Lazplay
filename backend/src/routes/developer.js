@@ -247,7 +247,10 @@ router.add('PATCH', '/developer/games/:gameId', async (req) => {
 
     const updated = await prisma.game.update({
       where: { id: game.id },
-      data: updates
+      data: {
+        ...updates,
+        status: 'DRAFT' // Mandatory review on any change
+      }
     });
 
     let warning = null;
@@ -344,7 +347,7 @@ router.add('POST', '/developer/games/:gameId/submit', async (req) => {
   });
 
 router.add('POST', '/developer/games/:gameId/publish', async (req) => {
-    const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
+    const user = await requireAuth(req, null, ['ADMIN']);
     const game = await findGame(req.params.gameId);
     if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found');
     await assertDeveloperOwnsGame(user, game);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { games as gamesApi, payments } from '../api';
+import DOMPurify from 'dompurify';
 import RazorpayCheckout from '../components/RazorpayCheckout';
 
 export default function GameDetailsSteamStyleLayout() {
@@ -109,7 +110,7 @@ export default function GameDetailsSteamStyleLayout() {
           <div className="flex-1 overflow-y-auto space-y-4">
             <div 
               className="text-on-surface text-[14px] leading-relaxed quill-content"
-              dangerouslySetInnerHTML={{ __html: game.description }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(game.description) }}
             />
             <div className="grid grid-cols-[100px_1fr] gap-y-2 text-[11px] uppercase">
               <span className="text-on-surface-variant">RECENT_REVIEWS:</span>
@@ -163,7 +164,7 @@ export default function GameDetailsSteamStyleLayout() {
               &gt;_ README.TXT
             </div>
             <div className="font-body-md text-on-surface quill-content">
-              <div dangerouslySetInnerHTML={{ __html: game.description }} />
+              <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(game.description) }} />
             </div>
           </section>
 

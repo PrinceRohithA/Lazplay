@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Self-hosted backend API for the LazPlay game hosting platform.",
   "scripts": {
-    "start": "npm run db:sync && node --env-file=.env src/server.js",
+    "start": "npm run db:migrate && npm run db:generate && node --env-file=.env src/server.js",
     "dev": "npm run db:sync && node --watch --env-file=.env src/server.js",
     "check": "node --check --env-file=.env src/app.js && node --check --env-file=.env src/server.js && node --check src/validation.js",
     "db:init:psql": "node scripts/init-db-with-psql.js",

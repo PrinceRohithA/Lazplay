@@ -165,7 +165,7 @@ export default function DeveloperWorkspace() {
               <div>
                 <span className="font-label-mono text-label-mono text-on-surface-variant block mb-1">TOTAL_GROSS_REVENUE</span>
                 <span className="font-headline-lg text-headline-lg text-secondary-container drop-shadow-[0_0_8px_rgba(254,0,254,0.6)] block">
-                  ₹{stats.totalRevenue?.toLocaleString() || 0}
+                  ₹{(stats.totalRevenue / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </span>
               </div>
               <span className="bg-surface-container border-2 border-secondary-container text-secondary-container font-label-mono text-label-mono px-2 py-1 flex items-center gap-1 shadow-[2px_2px_0_0_#fe00fe]">
@@ -250,7 +250,7 @@ export default function DeveloperWorkspace() {
                         {game.status}
                       </span>
                     </div>
-                    <div className="col-span-3">₹{game.price} [{game.priceType}]</div>
+                    <div className="col-span-3">₹{(game.price / 100).toFixed(2)} [{game.priceType}]</div>
                     <div className="col-span-3 text-right flex items-center justify-end gap-3">
                       <span className="text-[10px] opacity-70">{new Date(game.createdAt).toLocaleDateString()}</span>
                       <Link to={`/deployment?id=${game.id}`} className="material-symbols-outlined text-sm text-on-surface-variant hover:text-primary transition-colors">edit_square</Link>

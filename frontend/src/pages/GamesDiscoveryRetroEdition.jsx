@@ -33,7 +33,7 @@ export default function GamesDiscoveryRetroEdition() {
 
   const priceLabel = (game) => {
     if (!game.price || game.price === 0) return 'FREE_TO_PLAY';
-    return `$${(game.price / 100).toFixed(2)}`;
+    return `₹${(game.price / 100).toFixed(2)}`;
   };
 
   const priceColor = (game) => (!game.price || game.price === 0) ? 'text-primary-container' : 'text-secondary-fixed';
