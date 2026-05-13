@@ -121,16 +121,29 @@ export default function GameDetailsSteamStyleLayout() {
                     <span className="material-symbols-outlined">close</span>
                 </button>
             </div>
-          ) : playingTrailer && videos.length > 0 ? (
-            <video src={videos[0].url} controls autoPlay className="w-full h-full object-cover" />
+          ) : playingTrailer && (game.trailerUrl || videos.length > 0) ? (
+            <div className="w-full h-full relative">
+                <video 
+                    src={game.trailerUrl || videos[0].url} 
+                    controls 
+                    autoPlay 
+                    className="w-full h-full object-contain" 
+                />
+                <button 
+                    onClick={() => setPlayingTrailer(false)}
+                    className="absolute top-4 right-4 bg-surface/50 text-on-surface p-1 pixel-border hover:bg-surface transition-all z-10 opacity-0 group-hover:opacity-100"
+                >
+                    <span className="material-symbols-outlined text-[18px]">close</span>
+                </button>
+            </div>
           ) : (
             <>
               <img alt={game.title} className="w-full h-full object-cover opacity-80" src={game.heroBannerUrl || game.heroImageUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuC9KrQ5YpZIImJ1Kd2RBfr-IeRwo5ttSkse1x9Q71QkonTieCCBK-ZICf1E_3LD5-X4q63if0DYzWnYTFcwoRStnzJtmrdqfhsIouTLhtzkMmCzw0y_69VlGf5INbG4nK77O9oKMw9FDOaqKgWuh-yDPS9BKfJsFzcuP9Ueuv1CFIMfot1RHyyIqegrc4toawTb6VxlS0VnqAc-XiUBOixMQ6hvHARoZbpH1Dlt9IHWrRbvaJaqI_mte6dOhR4-5vmnF9sG75TI6lXu"}/>
               <div 
-                className={`absolute inset-0 flex items-center justify-center ${videos.length > 0 ? 'cursor-pointer hover:bg-black/20 pointer-events-auto' : 'pointer-events-none'} transition-colors`}
-                onClick={() => { if (videos.length > 0) setPlayingTrailer(true); }}
+                className={`absolute inset-0 flex items-center justify-center ${(game.trailerUrl || videos.length > 0) ? 'cursor-pointer hover:bg-black/20 pointer-events-auto' : 'pointer-events-none'} transition-colors`}
+                onClick={() => { if (game.trailerUrl || videos.length > 0) setPlayingTrailer(true); }}
               >
-                <div className={`bg-surface/80 p-4 pixel-border ${videos.length > 0 ? 'hover:bg-surface pointer-events-none' : ''} transition-colors`}>
+                <div className={`bg-surface/80 p-4 pixel-border ${(game.trailerUrl || videos.length > 0) ? 'hover:bg-surface pointer-events-none' : ''} transition-colors`}>
                   <span className="material-symbols-outlined text-primary-container text-6xl">play_circle</span>
                 </div>
               </div>
