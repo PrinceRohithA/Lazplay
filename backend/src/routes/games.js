@@ -29,7 +29,7 @@ router.add('GET', '/games/featured', async (req) => {
       slug: game.slug,
       title: game.title,
       heroImageUrl: game.heroImageUrl,
-      tagline: game.shortDescription,
+      tagline: game.tagline,
       isOwned: user ? await userOwnsGame(user.id, game.id) : false
     })));
     return ok(results);
@@ -50,7 +50,7 @@ router.add('GET', '/games', async (req) => {
     if (search) {
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },
-        { shortDescription: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
         { tags: { hasSome: [search] } }
       ];
     }

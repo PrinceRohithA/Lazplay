@@ -487,7 +487,7 @@ async function publicGame(game, user = null) {
   const isOwned = user ? await userOwnsGame(user.id, game.id) : false;
   const isWishlisted = user ? !!(await prisma.wishlistItem.findFirst({ where: { userId: user.id, gameId: game.id } })) : false;
   return {
-    id: game.id, slug: game.slug, title: game.title, shortDescription: game.shortDescription,
+    id: game.id, slug: game.slug, title: game.title,
     description: game.description, price: game.price, currency: game.currency, priceType: game.priceType,
     releaseDate: game.releaseDate,
     developer: developer ? { id: developer.id, displayName: developer.displayName } : null,

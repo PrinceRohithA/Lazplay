@@ -67,7 +67,6 @@ model Game {
   developer          DeveloperProfile @relation(fields: [developerId], references: [id])
   slug               String   @unique
   title              String
-  shortDescription   String?
   description        String?
   tagline            String?
   price              Int      @default(0)

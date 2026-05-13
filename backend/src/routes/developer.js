@@ -90,7 +90,6 @@ router.add('POST', '/developer/games', async (req) => {
     if (!profile) throw new HttpError(404, 'PROFILE_NOT_FOUND', 'Developer profile not found');
     const body = validateBody(req.body, {
       title: validators.string({ min: 2, max: 120 }),
-      shortDescription: validators.string({ required: false, min: 0, max: 1024, allowBlank: true }),
       description: validators.string({ required: false, min: 0, max: 10000, allowBlank: true, trim: false }),
       tagline: validators.string({ required: false, min: 0, max: 120, allowBlank: true }),
       price: validators.int({ required: false, min: 0, max: 10000000 }),
@@ -115,7 +114,6 @@ router.add('POST', '/developer/games', async (req) => {
         price: body.price ?? 0,
         currency: 'INR',
         priceType: body.priceType ?? 'FREE',
-        shortDescription: body.shortDescription,
         description: body.description,
         tagline: body.tagline,
         releaseDate: body.releaseDate,
@@ -153,7 +151,6 @@ router.add('PATCH', '/developer/games/:gameId', async (req) => {
     await assertDeveloperOwnsGame(user, game);
     const body = validateBody(req.body, {
       title: validators.string({ required: false, min: 2, max: 120 }),
-      shortDescription: validators.string({ required: false, min: 0, max: 1024, allowBlank: true }),
       description: validators.string({ required: false, min: 0, max: 10000, allowBlank: true, trim: false }),
       tagline: validators.string({ required: false, min: 0, max: 120, allowBlank: true }),
       price: validators.int({ required: false, min: 0, max: 10000000 }),
@@ -168,7 +165,7 @@ router.add('PATCH', '/developer/games/:gameId', async (req) => {
       systemRequirements: validators.object({ required: false })
     }, {
       atLeastOne: [
-        'title', 'shortDescription', 'description', 'tagline',
+        'title', 'description', 'tagline',
         'price', 'priceType', 'releaseDate', 'publisher',
         'genres', 'tags', 'platforms', 'licensingModel',
         'hardwareSpecs', 'systemRequirements'
@@ -230,7 +227,6 @@ router.add('PATCH', '/developer/games/:gameId', async (req) => {
     }
 
     setIfChanged('title', body.title);
-    setIfChanged('shortDescription', body.shortDescription);
     setIfChanged('description', body.description);
     setIfChanged('tagline', body.tagline);
     setIfChanged('releaseDate', body.releaseDate);

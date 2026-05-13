@@ -77,7 +77,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
       setForm({
         title: game.title,
         version: game.version || builds[0]?.version || 'v1.0.0',
-        description: game.description || game.shortDescription || '',
+        description: game.description || '',
         hardwareSpecs: game.platforms || ['PC'],
         genres: game.genres || ['ACTION'],
         customTags: game.tags || [],
@@ -289,7 +289,6 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         addLog('STEP_01: CREATING_NEW_GRID_RECORD...');
         const gameRes = await devApi.createGame({
           title: form.title,
-          shortDescription: form.description,
           tagline: form.customTags.join(', '),
           description: form.description,
           price: form.licensing === 'FREE' ? 0 : parseFloat(form.price),
@@ -308,7 +307,6 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         addLog('STEP_01: UPDATING_GRID_METADATA...');
         await devApi.updateGame(gameId, {
           title: form.title,
-          shortDescription: form.description,
           tagline: form.customTags.join(', '),
           description: form.description,
           price: form.licensing === 'FREE' ? 0 : parseFloat(form.price),
