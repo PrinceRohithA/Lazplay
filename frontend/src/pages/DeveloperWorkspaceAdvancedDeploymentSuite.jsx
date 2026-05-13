@@ -401,6 +401,12 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     } catch (err) {
       console.error(err);
       addLog(`CRITICAL_FAILURE: ${err.message || 'UNKNOWN_ERROR'}`);
+      if (err.details) {
+        const details = Array.isArray(err.details)
+          ? err.details.map((item) => `${item.field}: ${item.message}`).join(' | ')
+          : String(err.details);
+        addLog(`DETAILS: ${details}`);
+      }
     } finally {
       setUploadProgress(null);
       setUploadLabel('');
