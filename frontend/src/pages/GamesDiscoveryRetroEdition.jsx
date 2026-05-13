@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { games as gamesApi } from '../api';
 
 export default function GamesDiscoveryRetroEdition() {
@@ -144,8 +145,8 @@ export default function GamesDiscoveryRetroEdition() {
                       ))}
                     </div>
                     <div className="mt-auto grid grid-cols-2 gap-2">
-                      <button className="bg-primary-container text-on-primary-container font-label-mono py-2 text-[12px] font-bold hover:brightness-110 active:translate-y-0.5 transition-all">HOST_NOW</button>
-                      <button className="border border-outline-variant text-on-surface-variant font-label-mono py-2 text-[12px] hover:bg-surface-bright transition-all uppercase">DETAILS</button>
+                      <Link to={`/game?id=${game.id}`} className="bg-primary-container text-on-primary-container font-label-mono py-2 text-[12px] font-bold hover:brightness-110 active:translate-y-0.5 transition-all text-center">HOST_NOW</Link>
+                      <Link to={`/game?id=${game.id}`} className="border border-outline-variant text-on-surface-variant font-label-mono py-2 text-[12px] hover:bg-surface-bright transition-all uppercase text-center">DETAILS</Link>
                     </div>
                   </div>
                 </div>
