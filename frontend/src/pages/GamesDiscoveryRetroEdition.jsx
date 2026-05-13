@@ -37,6 +37,15 @@ export default function GamesDiscoveryRetroEdition() {
 
   const priceColor = (game) => (!game.price || game.price === 0) ? 'text-primary-container' : 'text-secondary-fixed';
 
+  const toPlainText = (value) => {
+    if (!value) return '';
+    return value
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
   return (
     <div className="p-gutter lg:p-margin flex-1 pb-12">
       <section className="mb-12">
@@ -126,7 +135,9 @@ export default function GamesDiscoveryRetroEdition() {
                       <h4 className="font-headline-md text-primary group-hover:text-primary-container transition-colors uppercase">{game.title}</h4>
                       <span className={`font-label-mono text-[14px] ${priceColor(game)}`}>{priceLabel(game)}</span>
                     </div>
-                    <p className="text-on-surface-variant text-body-md mb-4 line-clamp-2 opacity-80">{game.shortDescription}</p>
+                    <p className="text-on-surface-variant text-body-md mb-4 line-clamp-2 opacity-80">
+                      {game.tagline || toPlainText(game.description)}
+                    </p>
                     <div className="flex flex-wrap gap-2 mb-6">
                       {(game.genres || []).slice(0,2).map(genre => (
                         <span key={genre} className="bg-surface-variant text-[10px] font-label-mono px-2 py-1 border border-outline uppercase">{genre}</span>
