@@ -36,14 +36,19 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
 
   const [form, setForm] = useState({
     title: '',
+    shortDescription: '',
+    tagline: '',
     version: 'v1.0.0',
     description: '',
     hardwareSpecs: ['PC'],
     genres: ['ACTION'],
     customTags: [],
     licensing: 'PAID',
+    licensingModel: '',
     price: '999',
     status: 'DRAFT',
+    releaseDate: '',
+    publisher: '',
     minSpecs: { cpu: 'I5-6600K', ram: '8GB', gpu: 'GTX 1060', storage: '50GB' },
     recSpecs: { cpu: 'I7-9700K', ram: '16GB', gpu: 'RTX 2070', storage: '50GB' }
   });
@@ -76,14 +81,19 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
       const builds = Array.isArray(game.builds) ? game.builds : [];
       setForm({
         title: game.title,
+        shortDescription: game.shortDescription || '',
+        tagline: game.tagline || '',
         version: game.version || builds[0]?.version || 'v1.0.0',
         description: game.description || '',
         hardwareSpecs: game.platforms || ['PC'],
         genres: game.genres || ['ACTION'],
         customTags: game.tags || [],
         licensing: game.priceType || 'PAID',
+        licensingModel: game.licensingModel || '',
         price: game.price?.toString() || '0',
         status: game.status || 'DRAFT',
+        releaseDate: game.releaseDate || '',
+        publisher: game.publisher || '',
         minSpecs: game.systemRequirements?.minimum || { cpu: 'I5-6600K', ram: '8GB', gpu: 'GTX 1060', storage: '50GB' },
         recSpecs: game.systemRequirements?.recommended || { cpu: 'I7-9700K', ram: '16GB', gpu: 'RTX 2070', storage: '50GB' }
       });
@@ -289,12 +299,17 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         addLog('STEP_01: CREATING_NEW_GRID_RECORD...');
         const gameRes = await devApi.createGame({
           title: form.title,
+          shortDescription: form.shortDescription,
+          tagline: form.tagline,
           description: form.description,
           price: form.licensing === 'FREE' ? 0 : parseFloat(form.price),
           priceType: form.licensing === 'PAID' ? 'PAID' : 'FREE',
+          releaseDate: form.releaseDate,
+          publisher: form.publisher,
           genres: form.genres,
           tags: form.customTags,
           platforms: form.hardwareSpecs,
+          licensingModel: form.licensingModel,
           systemRequirements: {
               minimum: form.minSpecs,
               recommended: form.recSpecs
@@ -306,12 +321,17 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         addLog('STEP_01: UPDATING_GRID_METADATA...');
         await devApi.updateGame(gameId, {
           title: form.title,
+          shortDescription: form.shortDescription,
+          tagline: form.tagline,
           description: form.description,
           price: form.licensing === 'FREE' ? 0 : parseFloat(form.price),
           priceType: form.licensing === 'PAID' ? 'PAID' : 'FREE',
+          releaseDate: form.releaseDate,
+          publisher: form.publisher,
           genres: form.genres,
           tags: form.customTags,
           platforms: form.hardwareSpecs,
+          licensingModel: form.licensingModel,
           systemRequirements: {
               minimum: form.minSpecs,
               recommended: form.recSpecs
@@ -515,6 +535,21 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
               </div>
             </div>
             <div className="space-y-2">
+              <label className="block font-label-mono text-[10px] text-on-surface-variant">_SHORT_DESCRIPTION</label>
+              <div className="flex items-center bg-surface-container text-primary-container p-3 border border-outline-variant focus-within:border-primary-container group">
+                <span className="mr-2 group-focus-within:animate-pulse">&gt;</span>
+                <input
+                  className="bg-transparent border-none focus:ring-0 p-0 w-full font-label-mono placeholder:opacity-30"
+                  placeholder="ONE_LINE_HOOK"
+                  type="text"
+                  name="shortDescription"
+                  value={form.shortDescription}
+                  onChange={handleInputChange}
+                  autoComplete="off"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
               <label className="block font-label-mono text-[10px] text-on-surface-variant">_VERSION</label>
               <div className="flex items-center bg-surface-container text-primary-container p-3 border border-outline-variant focus-within:border-primary-container group">
                 <span className="mr-2 group-focus-within:animate-pulse">&gt;</span>
@@ -523,6 +558,21 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
                   type="text" 
                   name="version"
                   value={form.version}
+                  onChange={handleInputChange}
+                  autoComplete="off"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="block font-label-mono text-[10px] text-on-surface-variant">_TAGLINE</label>
+              <div className="flex items-center bg-surface-container text-primary-container p-3 border border-outline-variant focus-within:border-primary-container group">
+                <span className="mr-2 group-focus-within:animate-pulse">&gt;</span>
+                <input
+                  className="bg-transparent border-none focus:ring-0 p-0 w-full font-label-mono placeholder:opacity-30"
+                  placeholder="BITE_SIZE_PHRASE"
+                  type="text"
+                  name="tagline"
+                  value={form.tagline}
                   onChange={handleInputChange}
                   autoComplete="off"
                 />
@@ -537,6 +587,51 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
                   onChange={handleDescriptionChange}
                   modules={quillModules}
                   placeholder="DECRYPT_CONTENT_SYNOPSIS..."
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="block font-label-mono text-[10px] text-on-surface-variant">_RELEASE_DATE</label>
+              <div className="flex items-center bg-surface-container text-primary-container p-3 border border-outline-variant focus-within:border-primary-container group">
+                <span className="mr-2 group-focus-within:animate-pulse">&gt;</span>
+                <input
+                  className="bg-transparent border-none focus:ring-0 p-0 w-full font-label-mono placeholder:opacity-30"
+                  placeholder="YYYY-MM-DD"
+                  type="text"
+                  name="releaseDate"
+                  value={form.releaseDate}
+                  onChange={handleInputChange}
+                  autoComplete="off"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="block font-label-mono text-[10px] text-on-surface-variant">_PUBLISHER</label>
+              <div className="flex items-center bg-surface-container text-primary-container p-3 border border-outline-variant focus-within:border-primary-container group">
+                <span className="mr-2 group-focus-within:animate-pulse">&gt;</span>
+                <input
+                  className="bg-transparent border-none focus:ring-0 p-0 w-full font-label-mono placeholder:opacity-30"
+                  placeholder="STUDIO_NAME"
+                  type="text"
+                  name="publisher"
+                  value={form.publisher}
+                  onChange={handleInputChange}
+                  autoComplete="off"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="block font-label-mono text-[10px] text-on-surface-variant">_LICENSING_MODEL</label>
+              <div className="flex items-center bg-surface-container text-primary-container p-3 border border-outline-variant focus-within:border-primary-container group">
+                <span className="mr-2 group-focus-within:animate-pulse">&gt;</span>
+                <input
+                  className="bg-transparent border-none focus:ring-0 p-0 w-full font-label-mono placeholder:opacity-30"
+                  placeholder="SINGLE_PURCHASE / SUBSCRIPTION"
+                  type="text"
+                  name="licensingModel"
+                  value={form.licensingModel}
+                  onChange={handleInputChange}
+                  autoComplete="off"
                 />
               </div>
             </div>

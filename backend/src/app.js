@@ -604,6 +604,30 @@ async function moveRuntimeObjects(gameId, fromBucket, toBucket) {
   } while (continuationToken);
 }
 
+async function deleteRuntimeObjects(gameId, bucket) {
+  if (!gameId || !bucket) return;
+  assertR2Config(bucket);
+
+  const prefix = runtimePrefixForGame(gameId);
+  let continuationToken = undefined;
+
+  do {
+    const response = await r2.send(new ListObjectsV2Command({
+      Bucket: bucket,
+      Prefix: prefix,
+      ContinuationToken: continuationToken
+    }));
+
+    const contents = response.Contents || [];
+    for (const item of contents) {
+      if (!item.Key) continue;
+      await r2.send(new DeleteObjectCommand({ Bucket: bucket, Key: item.Key }));
+    }
+
+    continuationToken = response.IsTruncated ? response.NextContinuationToken : undefined;
+  } while (continuationToken);
+}
+
 async function fetchWithTimeout(url, options = {}, timeoutMs = 45000) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -839,7 +863,7 @@ function registerRoutes(router) {
     getRuntimeBucketForGame, assertR2Config, resolveBucketForPurpose, resolveBucketForKey, publicObjectUrl,
     signedStorageUrl, runtimePrefixForGame, buildCopySource, moveRuntimeObjects, fetchWithTimeout,
     normalizeArchivePath, contentTypeForPath, extractObjectKeyFromUrl, isWebRuntime, uploadRuntimeObject,
-    scanAndPrepareBuild, deleteStorageObject, deleteStorageRecord, deleteStorageObjectFromUrl, razorpaySignature
+    scanAndPrepareBuild, deleteRuntimeObjects, deleteStorageObject, deleteStorageRecord, deleteStorageObjectFromUrl, razorpaySignature
   };
 
   registerAuthRoutes(router, ctx);

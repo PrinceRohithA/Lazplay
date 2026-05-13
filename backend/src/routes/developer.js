@@ -13,7 +13,7 @@ export function registerDeveloperRoutes(router, ctx) {
     getRuntimeBucketForGame, assertR2Config, resolveBucketForPurpose, resolveBucketForKey, publicObjectUrl,
     signedStorageUrl, runtimePrefixForGame, buildCopySource, moveRuntimeObjects, fetchWithTimeout,
     normalizeArchivePath, contentTypeForPath, extractObjectKeyFromUrl, isWebRuntime, uploadRuntimeObject,
-    scanAndPrepareBuild, deleteStorageObject, deleteStorageRecord, deleteStorageObjectFromUrl, razorpaySignature
+    scanAndPrepareBuild, deleteRuntimeObjects, deleteStorageObject, deleteStorageRecord, deleteStorageObjectFromUrl, razorpaySignature
   } = ctx;
 
 router.add('POST', '/developer/register', async (req) => {
@@ -89,7 +89,20 @@ router.add('POST', '/developer/games', async (req) => {
     const profile = await developerForUser(user);
     if (!profile) throw new HttpError(404, 'PROFILE_NOT_FOUND', 'Developer profile not found');
     const body = validateBody(req.body, {
-      title: validators.string({ min: 2, max: 120 })
+      title: validators.string({ min: 2, max: 120 }),
+      shortDescription: validators.string({ required: false, min: 0, max: 240, allowBlank: true }),
+      description: validators.string({ required: false, min: 0, max: 10000, allowBlank: true, trim: false }),
+      tagline: validators.string({ required: false, min: 0, max: 120, allowBlank: true }),
+      price: validators.int({ required: false, min: 0, max: 10000000 }),
+      priceType: validators.enum(['FREE', 'PAID'], { required: false }),
+      releaseDate: validators.string({ required: false, min: 0, max: 40, allowBlank: true }),
+      publisher: validators.string({ required: false, min: 0, max: 120, allowBlank: true }),
+      genres: validators.stringArray({ required: false, maxItems: 10, maxLength: 60 }),
+      tags: validators.stringArray({ required: false, maxItems: 20, maxLength: 60 }),
+      platforms: validators.stringArray({ required: false, maxItems: 12, maxLength: 60, upper: true }),
+      licensingModel: validators.string({ required: false, min: 0, max: 60, allowBlank: true }),
+      hardwareSpecs: validators.object({ required: false }),
+      systemRequirements: validators.object({ required: false })
     });
 
     const game = await prisma.game.create({
@@ -99,9 +112,20 @@ router.add('POST', '/developer/games', async (req) => {
         title: body.title,
         slug: slugify(body.title) + '-' + createId('').slice(-4),
         status: 'DRAFT',
-        price: 0,
+        price: body.price ?? 0,
         currency: 'INR',
-        priceType: 'FREE'
+        priceType: body.priceType ?? 'FREE',
+        shortDescription: body.shortDescription,
+        description: body.description,
+        tagline: body.tagline,
+        releaseDate: body.releaseDate,
+        publisher: body.publisher,
+        genres: body.genres || [],
+        tags: body.tags || [],
+        platforms: body.platforms || [],
+        licensingModel: body.licensingModel,
+        hardwareSpecs: body.hardwareSpecs,
+        systemRequirements: body.systemRequirements
       }
     });
     return ok(game, 201);
@@ -130,15 +154,25 @@ router.add('PATCH', '/developer/games/:gameId', async (req) => {
     const body = validateBody(req.body, {
       title: validators.string({ required: false, min: 2, max: 120 }),
       shortDescription: validators.string({ required: false, min: 0, max: 240, allowBlank: true }),
-      description: validators.string({ required: false, min: 0, max: 10000, allowBlank: true }),
+      description: validators.string({ required: false, min: 0, max: 10000, allowBlank: true, trim: false }),
       tagline: validators.string({ required: false, min: 0, max: 120, allowBlank: true }),
       price: validators.int({ required: false, min: 0, max: 10000000 }),
       priceType: validators.enum(['FREE', 'PAID'], { required: false }),
+      releaseDate: validators.string({ required: false, min: 0, max: 40, allowBlank: true }),
+      publisher: validators.string({ required: false, min: 0, max: 120, allowBlank: true }),
       genres: validators.stringArray({ required: false, maxItems: 10, maxLength: 60 }),
       tags: validators.stringArray({ required: false, maxItems: 20, maxLength: 60 }),
-      platforms: validators.stringArray({ required: false, maxItems: 12, maxLength: 60, upper: true })
+      platforms: validators.stringArray({ required: false, maxItems: 12, maxLength: 60, upper: true }),
+      licensingModel: validators.string({ required: false, min: 0, max: 60, allowBlank: true }),
+      hardwareSpecs: validators.object({ required: false }),
+      systemRequirements: validators.object({ required: false })
     }, {
-      atLeastOne: ['title', 'shortDescription', 'description', 'tagline', 'price', 'priceType', 'genres', 'tags', 'platforms']
+      atLeastOne: [
+        'title', 'shortDescription', 'description', 'tagline',
+        'price', 'priceType', 'releaseDate', 'publisher',
+        'genres', 'tags', 'platforms', 'licensingModel',
+        'hardwareSpecs', 'systemRequirements'
+      ]
     });
 
     const updates = {};
@@ -174,24 +208,24 @@ router.add('PATCH', '/developer/games/:gameId', async (req) => {
     if (priceTypeChanged) {
       const fromBucket = getRuntimeBucketForPriceType(game.priceType);
       const toBucket = getRuntimeBucketForPriceType(nextPriceType);
-      try {
-        if (nextPriceType === 'FREE') {
-          // Moving to FREE: We should actually re-scan or move if they exist.
-          // But our new logic only creates them for FREE games.
-          await moveRuntimeObjects(game.id, fromBucket, toBucket);
+      if (nextPriceType === 'FREE') {
+        // Moving to FREE: re-scan latest web build to generate runtime in public bucket.
+        const latestBuild = game.latestBuildId
+          ? await prisma.gameBuild.findUnique({ where: { id: game.latestBuildId } })
+          : await prisma.gameBuild.findFirst({ where: { gameId: game.id }, orderBy: { createdAt: 'desc' } });
+
+        if (latestBuild && isWebRuntime(latestBuild.runtime || latestBuild.platform)) {
+          await scanAndPrepareBuild(latestBuild, { ...game, priceType: 'FREE' });
         } else {
-          // Moving to PAID: Web games cannot be played online. Delete the runtime.
-          // Note: moveRuntimeObjects with same buckets is handled inside the function.
-          const prefix = runtimePrefixForGame(game.id);
-          // Simple way: list and delete from the current bucket
-          const response = await r2.send(new ListObjectsV2Command({ Bucket: fromBucket, Prefix: prefix }));
-          const contents = response.Contents || [];
-          for (const item of contents) {
-            if (item.Key) await r2.send(new DeleteObjectCommand({ Bucket: fromBucket, Key: item.Key }));
-          }
+          await moveRuntimeObjects(game.id, fromBucket, toBucket);
         }
-      } catch (error) {
-        console.error('[runtime-update-failed]', { gameId: game.id, message: error?.message });
+      } else {
+        // Moving to PAID: Web games cannot be played online. Remove any public runtime.
+        try {
+          await deleteRuntimeObjects(game.id, fromBucket);
+        } catch (error) {
+          console.error('[runtime-update-failed]', { gameId: game.id, message: error?.message });
+        }
       }
     }
 
@@ -199,11 +233,16 @@ router.add('PATCH', '/developer/games/:gameId', async (req) => {
     setIfChanged('shortDescription', body.shortDescription);
     setIfChanged('description', body.description);
     setIfChanged('tagline', body.tagline);
+    setIfChanged('releaseDate', body.releaseDate);
+    setIfChanged('publisher', body.publisher);
     if (body.price !== undefined) setIfChanged('price', nextPrice);
     if (body.priceType !== undefined) setIfChanged('priceType', nextPriceType);
     setIfChanged('genres', body.genres);
     setIfChanged('tags', body.tags);
     setIfChanged('platforms', body.platforms);
+    setIfChanged('licensingModel', body.licensingModel);
+    setIfChanged('hardwareSpecs', body.hardwareSpecs);
+    setIfChanged('systemRequirements', body.systemRequirements);
 
     if (pricingChanged) updates.pricingUpdatedAt = new Date();
 
