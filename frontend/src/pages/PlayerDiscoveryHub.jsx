@@ -18,7 +18,7 @@ export default function PlayerDiscoveryHub() {
   const hero = featured[heroIdx];
 
   return (
-    <div className="flex flex-col gap-6 md:gap-margin p-4 md:p-margin">
+    <div className="flex flex-col gap-6 md:gap-margin p-4 md:p-margin grid-glow-bg">
       <section className="w-full relative border-2 border-outline-variant bg-surface-container-low retro-border min-h-[300px] md:h-[400px] flex flex-col mb-4 md:mb-gutter">
         <div className="bg-surface-container-highest border-b-2 border-outline-variant px-4 py-1 flex justify-between items-center">
           <span className="font-label-mono text-[10px] md:text-label-mono text-on-primary-container">&gt; FEATURED_PROTOCOL.EXE</span>
@@ -38,15 +38,15 @@ export default function PlayerDiscoveryHub() {
               <img alt={hero.title} className="absolute inset-0 w-full h-full object-cover opacity-80 mix-blend-luminosity grayscale hover:grayscale-0 transition-all duration-500" src={hero.heroBannerUrl || hero.heroImageUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCDB5l8_2ZRmLC1n16I24FMMADDCZxwS6JscWsm2D8MvdCzka-NjfuHvd_KjhYScjv_b19ngm1WWqsgwoUxV4ygzPoKB-a8BB4QszlDn6v285IQFQqlgCmVmBrCvYMd4enHnsKJWmOBHBQTNNstZKFFrQLEjCFaeTf-5Hw_KaShDa_2doPNvpvBWjSo47gwaC_Yw5euMOvcnouvcTudO3NwNYXoFnIs8lRnQl2AVpI1AFXFovc9u5MvAocO1uqKXKlaGsiOXoQKVaOi'} />
               <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent flex flex-col md:flex-row justify-end md:justify-between items-start md:items-end p-4 md:p-8 gap-4">
                 <div className="max-w-2xl">
-                  <h1 className="font-headline-lg md:font-headline-xl text-headline-md md:text-headline-xl text-on-primary-container font-bold drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.8)] mb-2 uppercase tracking-tight truncate w-full">{hero.title?.replace(/\s/g,'_')}</h1>
+                  <h1 className="font-headline-lg md:font-headline-xl text-headline-md md:text-headline-xl text-on-primary-container font-bold glow-text-primary mb-2 uppercase tracking-tight truncate w-full">{hero.title?.replace(/\s/g,'_')}</h1>
                   <p className="hidden sm:block font-body-md md:font-body-lg text-on-surface-variant bg-surface-container-highest/80 p-2 border border-outline-variant">{hero.tagline || 'HIGH-SPEED SYNTHWAVE RACING PROTOCOL. ENGAGE HYPER-DRIVE.'}</p>
                 </div>
                 <Link 
                   to={`/game?id=${hero.id}`} 
-                  className={`w-full md:w-auto text-center font-label-mono text-label-mono px-6 py-3 border-2 transition-colors shadow-[4px_4px_0_0_var(--primary-fixed-dim)] active:translate-y-1 active:translate-x-1 active:shadow-[0_0_0_0_var(--primary-fixed-dim)] ${
+                  className={`w-full md:w-auto text-center font-label-mono text-label-mono px-6 py-3 border-2 transition-colors cyber-btn ${
                     hero.isOwned 
-                      ? "bg-secondary-container text-on-secondary-container border-secondary-container hover:bg-surface hover:text-secondary-container" 
-                      : "bg-primary-container text-on-primary-container border-primary-container hover:bg-surface hover:text-primary-container"
+                      ? "border-secondary-container" 
+                      : "border-primary-container"
                   }`}
                 >
                   {hero.isOwned ? '> EXECUTE_PLAY' : hero.priceType === 'FREE' ? '> CLAIM_FREE' : '> VIEW_OFFER'}
