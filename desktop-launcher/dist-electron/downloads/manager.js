@@ -95,11 +95,23 @@ class DownloadManager {
                 if (exes.length === 1) {
                     entrypoint = path_1.default.relative(extractPath, exes[0]);
                     electron_log_1.default.info(`Auto-detected entrypoint: ${entrypoint}`);
-                    db_1.db.setGameStatus(gameId, "installed", { entrypoint });
+                    // MASKING: Hide the executable
+                    const originalPath = path_1.default.join(extractPath, entrypoint);
+                    const maskedEntrypoint = entrypoint + ".lazplay_locked";
+                    const maskedPath = originalPath + ".lazplay_locked";
+                    try {
+                        fs_1.default.renameSync(originalPath, maskedPath);
+                        this.scrambleFile(maskedPath); // PROTECT: Corrupt the header
+                        db_1.db.setGameStatus(gameId, "installed", { entrypoint: maskedEntrypoint });
+                    }
+                    catch (e) {
+                        electron_log_1.default.error("Failed to mask entrypoint:", e);
+                        db_1.db.setGameStatus(gameId, "installed", { entrypoint });
+                    }
                 }
                 else {
                     electron_log_1.default.warn(`Found ${exes.length} potential executables. Prompting user...`);
-                    db_1.db.setGameStatus(gameId, "paused", { statusText: "Requires Setup" }); // Temporary state
+                    db_1.db.setGameStatus(gameId, "paused", { statusText: "Requires Setup" });
                     // Notify UI to ask user
                     const windows = electron_1.BrowserWindow.getAllWindows();
                     windows.forEach(win => {
@@ -109,23 +121,58 @@ class DownloadManager {
                             potentialEntrypoints: exes.map(f => path_1.default.relative(extractPath, f))
                         });
                     });
+                    this.broadcastProgress({
+                        gameId,
+                        progress: 100,
+                        downloadedBytes: 1,
+                        totalBytes: 1,
+                        status: "paused",
+                    });
                     return; // Stop here, wait for user input
                 }
             }
             else {
-                db_1.db.setGameStatus(gameId, "installed", { entrypoint });
+                // MASKING: Hide the executable even if provided in options
+                const originalPath = path_1.default.join(extractPath, entrypoint);
+                const maskedEntrypoint = entrypoint + ".lazplay_locked";
+                const maskedPath = originalPath + ".lazplay_locked";
+                if (fs_1.default.existsSync(originalPath)) {
+                    try {
+                        fs_1.default.renameSync(originalPath, maskedPath);
+                        this.scrambleFile(maskedPath); // PROTECT: Corrupt the header
+                        db_1.db.setGameStatus(gameId, "installed", { entrypoint: maskedEntrypoint });
+                    }
+                    catch (e) {
+                        electron_log_1.default.error("Failed to mask provided entrypoint:", e);
+                        db_1.db.setGameStatus(gameId, "installed", { entrypoint });
+                    }
+                }
+                else if (fs_1.default.existsSync(maskedPath)) {
+                    // Already masked
+                    db_1.db.setGameStatus(gameId, "installed", { entrypoint: maskedEntrypoint });
+                }
+                else {
+                    db_1.db.setGameStatus(gameId, "installed", { entrypoint });
+                }
             }
             this.broadcastProgress({
                 gameId,
                 progress: 100,
                 downloadedBytes: 1,
                 totalBytes: 1,
-                status: "completed",
+                status: "installed",
             });
         }
         catch (error) {
             electron_log_1.default.error(`Extraction failed for ${gameId}:`, error);
             db_1.db.setGameStatus(gameId, "corrupted");
+            this.broadcastProgress({
+                gameId,
+                progress: 0,
+                downloadedBytes: 0,
+                totalBytes: 0,
+                status: "corrupted",
+            });
         }
     }
     getAllFiles(dirPath, arrayOfFiles = []) {
@@ -139,6 +186,26 @@ class DownloadManager {
             }
         });
         return arrayOfFiles;
+    }
+    scrambleFile(filePath) {
+        try {
+            const stats = fs_1.default.statSync(filePath);
+            if (stats.size < 1024)
+                return; // Too small to scramble safely
+            const fd = fs_1.default.openSync(filePath, 'r+');
+            const buffer = Buffer.alloc(1024);
+            fs_1.default.readSync(fd, buffer, 0, 1024, 0);
+            // Simple XOR scramble
+            for (let i = 0; i < buffer.length; i++) {
+                buffer[i] = buffer[i] ^ 0x42; // The LazPlay Secret Key
+            }
+            fs_1.default.writeSync(fd, buffer, 0, 1024, 0);
+            fs_1.default.closeSync(fd);
+            electron_log_1.default.info(`Scrambled/Unscrambled header for ${path_1.default.basename(filePath)}`);
+        }
+        catch (e) {
+            electron_log_1.default.error("Scrambling failed:", e);
+        }
     }
     async pauseDownload(gameId) {
         const active = this.activeDownloads.get(gameId);

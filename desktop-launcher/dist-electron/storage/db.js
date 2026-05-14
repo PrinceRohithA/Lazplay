@@ -45,6 +45,21 @@ const initStorage = () => {
       manifestData TEXT
     );
   `);
+    // Migration: Ensure new columns exist for existing databases
+    const columns = db.prepare("PRAGMA table_info(games)").all();
+    const columnNames = columns.map((c) => c.name);
+    if (!columnNames.includes("entrypoint")) {
+        db.exec("ALTER TABLE games ADD COLUMN entrypoint TEXT");
+    }
+    if (!columnNames.includes("statusText")) {
+        db.exec("ALTER TABLE games ADD COLUMN statusText TEXT");
+    }
+    if (!columnNames.includes("lastPlayed")) {
+        db.exec("ALTER TABLE games ADD COLUMN lastPlayed INTEGER");
+    }
+    if (!columnNames.includes("playtime")) {
+        db.exec("ALTER TABLE games ADD COLUMN playtime INTEGER DEFAULT 0");
+    }
 };
 exports.initStorage = initStorage;
 exports.storageDb = {

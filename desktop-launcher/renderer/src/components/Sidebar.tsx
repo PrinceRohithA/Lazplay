@@ -7,38 +7,21 @@ import {
   Library,
   Play,
   Pause,
-  Trash2,
-  FolderOpen,
 } from "lucide-react";
 
 export default function Sidebar() {
   const { games, activePage, setActivePage } = useLauncherStore();
   const gameList = Object.values(games);
 
-  const installedGames = gameList.filter(
-    (g) => g.status === "installed" || g.status === "uninstalled",
-  );
   const activeDownloads = gameList.filter(
     (g) => g.status === "downloading" || g.status === "paused",
   );
-
-  const handleLaunch = (id: string) => {
-    if (window.lazplayAPI) window.lazplayAPI.launchGame(id);
-  };
 
   const handlePauseResume = (id: string, isPaused: boolean) => {
     if (window.lazplayAPI) {
       if (isPaused) window.lazplayAPI.resumeDownload(id);
       else window.lazplayAPI.pauseDownload(id);
     }
-  };
-
-  const handleUninstall = (id: string) => {
-    if (window.lazplayAPI) window.lazplayAPI.uninstallGame(id);
-  };
-
-  const handleOpenFolder = (id: string) => {
-    if (window.lazplayAPI) window.lazplayAPI.openInstallFolder(id);
   };
 
   return (

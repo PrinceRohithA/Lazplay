@@ -9,6 +9,7 @@ const manager_1 = require("../downloads/manager");
 const process_manager_1 = require("../runtime/process-manager");
 const db_1 = require("../storage/db");
 const electron_log_1 = __importDefault(require("electron-log"));
+const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 function setupIpcHandlers(mainWindow, storeView) {
     // Sync Session from website
@@ -69,7 +70,15 @@ function setupIpcHandlers(mainWindow, storeView) {
     electron_1.ipcMain.handle("open-install-folder", async (event, gameId) => {
         const game = db_1.db.getGame(gameId);
         if (game && game.installPath) {
-            electron_1.shell.showItemInFolder(path_1.default.join(game.installPath, "executable.exe")); // Or main directory
+            const targetPath = game.entrypoint
+                ? path_1.default.join(game.installPath, game.entrypoint)
+                : game.installPath;
+            if (fs_1.default.existsSync(targetPath)) {
+                electron_1.shell.showItemInFolder(targetPath);
+            }
+            else {
+                electron_1.shell.openPath(game.installPath);
+            }
             return true;
         }
         return false;
@@ -154,6 +163,10 @@ function setupIpcHandlers(mainWindow, storeView) {
                     downloadUrl: game.downloadUrl || game.buildUrl || null,
                     entrypoint: game.entrypoint || null,
                     coverUrl: game.coverImageUrl || game.coverUrl || null,
+                    bannerUrl: game.bannerUrl || game.heroBannerUrl || game.heroImageUrl || null,
+                    playtime: game.playtimeSeconds || 0,
+                    lastPlayed: game.lastPlayedAt ? new Date(game.lastPlayedAt).getTime() : null,
+                    size: game.size || 0,
                     platforms,
                     isOwned: true,
                 };
