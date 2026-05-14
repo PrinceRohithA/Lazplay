@@ -19,6 +19,15 @@ function clearTokens() {
 }
 
 let isRefreshing = false;
+let refreshQueue = [];
+
+const processQueue = (error, token = null) => {
+  refreshQueue.forEach((prom) => {
+    if (error) prom.reject(error);
+    else prom.resolve(token);
+  });
+  refreshQueue = [];
+};
 
 async function request(method, path, body, options = {}) {
   const headers = { 'Content-Type': 'application/json' };
@@ -26,19 +35,36 @@ async function request(method, path, body, options = {}) {
   if (token) headers['Authorization'] = `Bearer ${token}`;
   if (options.headers) Object.assign(headers, options.headers);
 
-  let res = await fetch(`${BASE}${path}`, {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  let res;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  } catch (err) {
+    throw new Error('Network error. Check your connection.');
+  }
 
   let data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
     // 401 Unauthorized - Try to refresh token
-    if (res.status === 401 && !options._retry && !isRefreshing) {
+    if (res.status === 401 && !options._retry && path !== '/auth/refresh') {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          refreshQueue.push({ resolve, reject });
+        })
+          .then((newToken) => {
+            return request(method, path, body, { ...options, _retry: true });
+          })
+          .catch((err) => {
+            throw err;
+          });
+      }
+
       const refreshToken = localStorage.getItem('refreshToken');
-      if (refreshToken && path !== '/auth/refresh') {
+      if (refreshToken) {
         isRefreshing = true;
         try {
           // Attempt refresh
@@ -50,24 +76,28 @@ async function request(method, path, body, options = {}) {
 
           if (refreshRes.ok) {
             const refreshData = await refreshRes.json();
-            setTokens(refreshData.data.accessToken, refreshData.data.refreshToken);
-            
-            // Retry original request
+            const newAccessToken = refreshData.data.accessToken;
+            setTokens(newAccessToken, refreshData.data.refreshToken);
+            processQueue(null, newAccessToken);
             isRefreshing = false;
             return request(method, path, body, { ...options, _retry: true });
+          } else {
+            throw new Error('REFRESH_FAILED');
           }
         } catch (err) {
-          console.error('Token refresh failed', err);
-        } finally {
+          processQueue(err, null);
           isRefreshing = false;
+          clearTokens();
+          if (!['/login', '/signup'].includes(window.location.pathname)) {
+            window.location.href = '/login';
+          }
+          throw err;
         }
-      }
-
-      // If refresh failed or was not possible
-      clearTokens();
-      const here = window.location.pathname;
-      if (here !== '/login' && here !== '/signup') {
-        window.location.href = '/login';
+      } else {
+        clearTokens();
+        if (!['/login', '/signup'].includes(window.location.pathname)) {
+          window.location.href = '/login';
+        }
       }
     }
 
