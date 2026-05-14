@@ -449,7 +449,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
           </p>
           <Link
             to="/login"
-            className="bg-secondary-container text-on-secondary px-8 py-4 font-label-mono font-bold uppercase tracking-widest hover:bg-transparent hover:text-secondary-container border-2 border-secondary-container transition-all shadow-[8px_8px_0_0_#5b005b]"
+            className="bg-secondary-container text-on-secondary px-8 py-4 font-label-mono font-bold uppercase tracking-widest hover:bg-transparent hover:text-secondary-container border-2 border-secondary-container transition-all shadow-[8px_8px_0_0_var(--secondary-container)]"
           >
             INITIALIZE_AUTH_SEQUENCE
           </Link>
@@ -471,7 +471,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
           </p>
           <Link
             to="/developer"
-            className="bg-secondary-container text-on-secondary px-8 py-4 font-label-mono font-bold uppercase tracking-widest hover:bg-transparent hover:text-secondary-container border-2 border-secondary-container transition-all shadow-[8px_8px_0_0_#5b005b]"
+            className="bg-secondary-container text-on-secondary px-8 py-4 font-label-mono font-bold uppercase tracking-widest hover:bg-transparent hover:text-secondary-container border-2 border-secondary-container transition-all shadow-[8px_8px_0_0_var(--secondary-container)]"
           >
             RETURN_TO_WORKSPACE
           </Link>
@@ -868,31 +868,44 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
           )}
         </div>
 
-        {/*  Terminal Log Area  */}
-        <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest pixel-border-active p-4 flex flex-col h-64 shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]">
-          <div className="flex items-center gap-2 mb-3 px-2 border-b border-outline-variant pb-2">
-            <div className="w-3 h-3 rounded-full bg-error animate-pulse"></div>
-            <div className="w-3 h-3 rounded-full bg-secondary-container"></div>
-            <div className="w-3 h-3 rounded-full bg-primary-container"></div>
-            <span className="ml-4 font-label-mono text-[10px] text-primary-fixed uppercase tracking-widest uppercase">DEPLOYMENT_LOG_CONSOLE_V1.0</span>
+        {/*  Terminal Feed / Console Output  */}
+        <div className="col-span-12 lg:col-span-8 bg-[#050505] border-2 border-outline-variant h-[300px] flex flex-col relative overflow-hidden group shadow-[0_0_20px_rgba(var(--primary-rgb),0.1)]">
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[length:100%_4px] pointer-events-none"></div>
+          <div className="bg-surface-container border-b-2 border-outline-variant px-3 py-1.5 flex justify-between items-center">
+            <span className="font-label-mono text-[10px] text-primary-container flex items-center gap-2">
+              <span className="material-symbols-outlined text-[14px]">terminal</span> DEPLOYMENT_LOGS.txt
+            </span>
+            <div className="flex gap-1">
+              <div className="w-2 h-2 border border-outline-variant"></div>
+              <div className="w-2 h-2 border border-outline-variant"></div>
+              <div className="w-2 h-2 bg-primary-container"></div>
+            </div>
           </div>
-          <div className="overflow-y-auto flex-1 font-label-mono text-[11px] space-y-1 p-2 text-primary-container/80 scrollbar-thin scrollbar-thumb-primary-container/20">
+          <div className="flex-1 p-4 overflow-y-auto font-label-mono text-[10px] space-y-1">
             {logs.map((log, i) => (
-              <p key={i}><span className="text-on-surface-variant">[{log.time}]</span> &gt; {log.msg}</p>
+              <div key={i} className="flex gap-4">
+                <span className="text-on-surface-variant opacity-40">[{log.time}]</span>
+                <span className={log.msg.includes('ERROR') ? 'text-error' : (log.msg.includes('SUCCESS') ? 'text-secondary-fixed' : 'text-primary-container')}>
+                  {log.msg.startsWith('STEP') ? `>> ${log.msg}` : `> ${log.msg}`}
+                </span>
+              </div>
             ))}
-            <div className="animate-pulse flex items-center gap-1"><span className="w-1 h-3 bg-primary-container"></span></div>
+            <div className="flex items-center gap-2 pt-2">
+              <span className="text-primary-container animate-pulse">&gt;</span>
+              <span className="w-2 h-4 bg-primary-container animate-blink"></span>
+            </div>
           </div>
           {uploadProgress !== null && (
-            <div className="mt-3 border-t border-outline-variant pt-3">
-              <div className="flex items-center justify-between text-[10px] font-label-mono text-on-surface-variant mb-2 uppercase tracking-widest">
-                <span>UPLOAD_PROGRESS</span>
-                <span>{uploadLabel ? `${uploadLabel} · ` : ''}{uploadProgress}%</span>
+            <div className="absolute bottom-0 left-0 right-0 bg-surface-container-highest border-t border-primary-container/30 p-4 animate-slide-up">
+              <div className="flex justify-between font-label-mono text-[10px] text-primary-container mb-2">
+                <span>UPLOADING_PAYLOAD: {uploadLabel}</span>
+                <span>{uploadProgress}%</span>
               </div>
-              <div className="h-2 bg-surface-container-highest border border-outline-variant">
-                <div
-                  className="h-full bg-primary-container transition-all"
+              <div className="h-1 bg-surface-container border border-outline-variant relative overflow-hidden">
+                <div 
+                  className="absolute inset-y-0 left-0 bg-primary-container shadow-[0_0_10px_var(--primary-container)] transition-all duration-300" 
                   style={{ width: `${uploadProgress}%` }}
-                />
+                ></div>
               </div>
             </div>
           )}
