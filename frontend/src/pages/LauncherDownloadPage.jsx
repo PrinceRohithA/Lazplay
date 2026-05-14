@@ -33,7 +33,7 @@ export default function LauncherDownloadPage() {
                   DOWNLOAD_WINDOWS
                 </a>
                 <a
-                  href="https://github.com/PrinceRohithA/Lazplay/releases/latest/download/LazPlay-Linux.AppImage"
+                  href="https://media.lazplay.tech/launcher_builds/windows_launcher_v1.0.0/LazPlay-Linux-1.0.0-Setup.zip"
                   className="bg-surface border-2 border-primary-container text-primary-container px-8 py-4 font-label-mono font-bold uppercase tracking-widest hover:bg-primary-container/10 transition-all flex items-center justify-center gap-3"
                 >
                   <span className="material-symbols-outlined">terminal</span>
