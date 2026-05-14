@@ -223,7 +223,8 @@ router.add('POST', '/games/:gameId/plays/start', async (req) => {
     const user = await requireAuth(req, null, ['PLAYER']);
     const game = await findGame(req.params.gameId);
     if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
-    if (!(await userOwnsGame(user.id, game.id))) throw new HttpError(403, 'GAME_NOT_OWNED', 'You do not own this game');
+    const libItem = await prisma.libraryItem.findUnique({ where: { userId_gameId: { userId: user.id, gameId: game.id } } });
+    if (!libItem) throw new HttpError(403, 'NOT_IN_LIBRARY', 'You must add this game to your library before playing');
 
     await prisma.gamePlaySession.updateMany({
       where: { gameId: game.id, userId: user.id, endedAt: null },
@@ -295,7 +296,8 @@ router.add('GET', '/games/:gameId/launch-manifest', async (req) => {
     const user = await requireAuth(req, null, ['PLAYER']);
     const game = await findGame(req.params.gameId);
     if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
-    if (!(await userOwnsGame(user.id, game.id))) throw new HttpError(403, 'GAME_NOT_OWNED', 'You do not own this game');
+    const libItem = await prisma.libraryItem.findUnique({ where: { userId_gameId: { userId: user.id, gameId: game.id } } });
+    if (!libItem) throw new HttpError(403, 'NOT_IN_LIBRARY', 'You must add this game to your library before playing');
 
     // WEB GAMES CANNOT BE SOLD: Only FREE games can be played online in the browser.
     if (game.priceType !== 'FREE') {

@@ -447,8 +447,6 @@ async function assertDeveloperOwnsGame(user, game) {
 }
 
 async function userOwnsGame(userId, gameId) {
-  const game = await prisma.game.findUnique({ where: { id: gameId } });
-  if (game?.priceType === 'FREE') return true;
   const ent = await prisma.entitlement.findFirst({ where: { userId, gameId, status: 'ACTIVE' } });
   return !!ent;
 }
@@ -520,7 +518,10 @@ async function publicGame(game, user = null) {
     .filter(m => m.type === 'IMAGE' && !mainAssetUrls.includes(m.url))
     .map(m => resolveUrl(m.url));
 
-  const isOwned = user ? await userOwnsGame(user.id, game.id) : false;
+  const entitlement = user ? await prisma.entitlement.findFirst({ where: { userId: user.id, gameId: game.id, status: 'ACTIVE' } }) : null;
+  const libItem = user ? await prisma.libraryItem.findUnique({ where: { userId_gameId: { userId: user.id, gameId: game.id } } }) : null;
+  const isOwned = !!libItem;
+  const hasEntitlement = !!entitlement;
   const isWishlisted = user ? !!(await prisma.wishlistItem.findFirst({ where: { userId: user.id, gameId: game.id } })) : false;
 
   return {
@@ -535,7 +536,7 @@ async function publicGame(game, user = null) {
     version: game.version || null,
     hardwareSpecs: game.hardwareSpecs,
     systemRequirements: game.systemRequirements,
-    isOwned, isWishlisted, rating, reviewCount: reviews.length,
+    isOwned, hasEntitlement, isWishlisted, rating, reviewCount: reviews.length,
     status: game.status, publishedAt: game.publishedAt, createdAt: game.createdAt, updatedAt: game.updatedAt,
   };
 }

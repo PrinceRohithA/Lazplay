@@ -59,7 +59,29 @@ router.add('POST', '/library', async (req) => {
     const body = validateBody(req.body, {
       gameId: validators.id()
     });
-    const item = await ensureLibraryItem(user.id, body.gameId, 'FREE');
+    
+    const game = await prisma.game.findUnique({ where: { id: body.gameId } });
+    if (!game || (game.status !== 'PUBLISHED' && !user.roles.includes('ADMIN'))) {
+      throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
+    }
+
+    // If it's a free game, we grant the entitlement and add to library
+    if (game.priceType === 'FREE') {
+      await grantEntitlement(user.id, game.id, 'FREE');
+    } else {
+      // For paid games, the user MUST have an active entitlement already
+      const hasEnt = await userOwnsGame(user.id, game.id);
+      if (!hasEnt) {
+        throw new HttpError(403, 'PURCHASE_REQUIRED', 'You must purchase this game before adding it to your library');
+      }
+      // ensureLibraryItem will create it if it doesn't exist
+      await ensureLibraryItem(user.id, game.id, 'PURCHASED');
+    }
+
+    const item = await prisma.libraryItem.findUnique({
+      where: { userId_gameId: { userId: user.id, gameId: game.id } },
+      include: { game: true }
+    });
     return ok(item, 201);
   });
 
