@@ -42,7 +42,7 @@ export default function Layout() {
   }, [user]);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col grid-glow-bg">
       {/* CRT Scanline Overlay */}
       <div className="fixed inset-0 scanlines z-[60] pointer-events-none opacity-20"></div>
 

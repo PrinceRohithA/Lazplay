@@ -28,10 +28,12 @@
                 root.style.setProperty('--primary', primaryHex);
                 root.style.setProperty('--primary-fixed', primaryHex);
                 
-                // Primary Container: 25% opacity background for a vibrant glow
-                root.style.setProperty('--primary-container', `rgba(${r}, ${g}, ${b}, 0.25)`);
+                // Primary Container: Subtle background for cards
+                root.style.setProperty('--primary-container', `rgba(${r}, ${g}, ${b}, 0.15)`);
                 root.style.setProperty('--on-primary-container', primaryHex);
                 
+                // Glow effect color
+                root.style.setProperty('--glow-primary', `rgba(${r}, ${g}, ${b}, 0.5)`);
                 root.style.setProperty('--primary-fixed-dim', `rgba(${r}, ${g}, ${b}, 0.8)`);
             }
 
@@ -41,9 +43,10 @@
                 root.style.setProperty('--secondary', secondaryHex);
                 root.style.setProperty('--secondary-fixed', secondaryHex);
                 
-                // Secondary Container: 25% opacity background
-                root.style.setProperty('--secondary-container', `rgba(${r}, ${g}, ${b}, 0.25)`);
+                // Secondary Container: Subtle background
+                root.style.setProperty('--secondary-container', `rgba(${r}, ${g}, ${b}, 0.15)`);
                 root.style.setProperty('--on-secondary-container', secondaryHex);
+                root.style.setProperty('--glow-secondary', `rgba(${r}, ${g}, ${b}, 0.5)`);
             }
         };
 
@@ -71,6 +74,17 @@
                     rgba(0, 0, 0, 0.2));
             background-size: 100% 4px;
             pointer-events: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+        }
+
+        .grid-glow-bg {
+            background-image: 
+                linear-gradient(rgba(var(--primary-rgb), 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(var(--primary-rgb), 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-position: center center;
         }
 
         .retro-border {
@@ -82,7 +96,26 @@
         }
 
         .neon-glow {
-            box-shadow: 0 0 10px var(--primary-container);
+            box-shadow: 0 0 15px var(--glow-primary);
+        }
+
+        .glow-text-primary {
+            text-shadow: 0 0 8px var(--glow-primary);
+        }
+
+        .cyber-btn {
+            position: relative;
+            background: rgba(var(--primary-rgb), 0.1);
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .cyber-btn:hover {
+            background: var(--primary);
+            color: #000;
+            box-shadow: 0 0 20px var(--glow-primary);
         }
 
         /* Autofill Override to prevent white background */

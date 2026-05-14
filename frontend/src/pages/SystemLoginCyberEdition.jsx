@@ -47,13 +47,13 @@ export default function SystemLoginCyberEdition() {
           </div>
         </div>
       </header>
-      <main className="flex-grow flex flex-col items-center justify-center p-margin relative z-10">
+      <main className="flex-grow flex flex-col items-center justify-center p-margin relative z-10 grid-glow-bg">
         <div className="absolute inset-0 -z-10 opacity-5">
           <img className="w-full h-full object-cover grayscale" alt="Cybernetic circuit board" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPalAwPKqEL-Ly_Rh7yE6ozPaAKgX4VSCN5qTP3N5WXysaAaZg0K0lpuUQRUigkO6ANaq0WJBv1kEPmrRY2wMF_sieOyhC6J4qChCYMaVEp6Ifl9QAKoDWTNQirkdpkVB3O6_rJsagm_F8YdALa67osno1PNZQjgM8yiH2O3Nwh5CnqIgIA7dGvZTm9tAjpSMqDujHuHcMvZ-Nf25xc3eDsnkRMaq4fD6ZVNafuWz1PyaP4HOZDeiVkhJ6c2OcXUaQHZIS0nJ1S1oV"/>
         </div>
         <div className="w-full max-w-md">
           <div className="mb-10 flex flex-col items-center">
-            <h1 className="font-headline-lg text-headline-lg text-primary-container tracking-tighter uppercase font-bold text-center">
+            <h1 className="font-headline-lg text-headline-lg text-primary-container tracking-tighter uppercase font-bold text-center glow-text-primary">
               SYSTEM_AUTH // LOGIN
             </h1>
             <div className="h-0.5 w-32 bg-primary-container mt-3 neon-glow-primary"></div>
@@ -105,12 +105,11 @@ export default function SystemLoginCyberEdition() {
                 </div>
               </div>
               <button 
-                className="w-full bg-primary-container text-on-primary-container font-headline-md py-4 font-bold uppercase tracking-[0.2em] hover:bg-primary-fixed-dim active:scale-[0.98] transition-all neon-glow-primary relative overflow-hidden group mt-4 disabled:opacity-50" 
+                className="w-full cyber-btn py-4 pixel-border uppercase font-bold tracking-widest flex items-center justify-center gap-2 disabled:opacity-50" 
                 type="submit"
                 disabled={loading}
               >
-                <span className="relative z-10">{loading ? 'BOOTING...' : 'BOOT_SEQUENCE'}</span>
-                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity"></div>
+                {loading ? 'BOOTING...' : 'BOOT_SEQUENCE'}
               </button>
             </form>
             <div className="mt-8 pt-6 border-t border-outline-variant/30 flex flex-col gap-4 items-center">
