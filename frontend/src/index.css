@@ -27,7 +27,7 @@
 /* Global Input Styling */
 input:not([type="color"]), textarea, select {
   background-color: #201f1f !important;
-  border: 1px solid var(--primary-container) !important;
+  border: 1px solid var(--primary-container);
   color: #e5e2e1 !important;
   font-family: "Space Grotesk", sans-serif !important;
   padding: 8px 12px !important;

@@ -179,7 +179,7 @@ export default function GameDetailsSteamStyleLayout() {
   const recSpecs = sysReqs.recommended || {};
 
   return (
-    <div className="flex flex-col min-w-0 p-4 md:p-margin gap-4 md:gap-6 grid-glow-bg">
+    <div className="flex flex-col min-w-0 p-4 md:p-margin gap-4 md:gap-6 grid-glow-bg overflow-x-hidden">
       {loading && <div className="text-center py-24 font-label-mono text-primary animate-pulse">LOADING_GAME_DATA...</div>}
       {error && <div className="p-4 border border-error text-error font-label-mono bg-error/10 pixel-border">&gt; ERROR: {error}</div>}
       {successMsg && <div className="p-4 border border-primary-container text-primary font-label-mono bg-primary-container/10 pixel-border">&gt; SUCCESS: {successMsg}</div>}
@@ -242,7 +242,7 @@ export default function GameDetailsSteamStyleLayout() {
           </div>
 
           {/*  Horizontal Info Bar  */}
-          <div className="flex flex-col md:flex-row gap-6 p-4 font-label-mono text-label-mono bg-surface-container-low rounded-lg">
+          <div className="flex flex-col md:flex-row gap-6 p-4 font-label-mono text-label-mono bg-surface-container-low rounded-lg overflow-hidden">
             <div className="w-32 h-48 md:w-40 md:h-60 bg-black pixel-border overflow-hidden shrink-0 shadow-lg hidden sm:block">
               <img 
                 src={game.coverUrl || game.heroImageUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuC9KrQ5YpZIImJ1Kd2RBfr-IeRwo5ttSkse1x9Q71QkonTieCCBK-ZICf1E_3LD5-X4q63if0DYzWnYTFcwoRStnzJtmrdqfhsIouTLhtzkMmCzw0y_69VlGf5INbG4nK77O9oKMw9FDOaqKgWuh-yDPS9BKfJsFzcuP9Ueuv1CFIMfot1RHyyIqegrc4toawTb6VxlS0VnqAc-XiUBOixMQ6hvHARoZbpH1Dlt9IHWrRbvaJaqI_mte6dOhR4-5vmnF9sG75TI6lXu"} 
@@ -334,7 +334,7 @@ export default function GameDetailsSteamStyleLayout() {
             <div className="bg-surface-variant text-on-surface border-b-2 border-outline-variant -mx-gutter -mt-gutter mb-gutter px-gutter py-2 font-label-mono text-label-mono">
               &gt;_ README.TXT
             </div>
-            <div className="font-body-md text-on-surface quill-content">
+            <div className="font-body-md text-on-surface quill-content break-words overflow-hidden w-full">
               <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(game.description) }} />
             </div>
           </section>
@@ -357,7 +357,7 @@ export default function GameDetailsSteamStyleLayout() {
               )}
 
               {screenshots.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-[5px]">
                   {screenshots.map(s => (
                     <div key={s.id} className="pixel-border overflow-hidden bg-black aspect-video max-h-[300px] relative group/item">
                       <img src={s.url} alt="Screenshot" className="w-full h-full object-cover group-hover/item:scale-105 transition-transform duration-500" />

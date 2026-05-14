@@ -69,7 +69,7 @@ export default function Layout() {
         <div className="flex-1 max-w-md mx-8 hidden lg:block">
           <div className="relative w-full border-2 border-outline-variant bg-surface flex items-center px-3 py-1">
             <span className="text-primary mr-2 font-label-mono">&gt;</span>
-            <input className="w-full bg-transparent border-none text-primary focus:ring-0 placeholder:text-outline-variant/50 focus:outline-none font-label-mono text-label-mono" placeholder="SEARCH_DATABASE..." type="text"/>
+            <input className="w-full bg-transparent border-none text-primary focus:ring-0 placeholder:text-outline-variant/50 focus:outline-none font-label-mono text-label-mono !border-none !ring-0" placeholder="SEARCH_DATABASE..." type="text"/>
             <span className="material-symbols-outlined text-primary" style={{fontVariationSettings: "'FILL' 0"}}>search</span>
           </div>
         </div>
@@ -120,7 +120,7 @@ export default function Layout() {
                 to={item.path}
                 onClick={() => { if (window.innerWidth < 768) setIsCollapsed(true); }}
                 end={item.path === '/'}
-                className={({ isActive }) => `flex items-center gap-3 px-6 py-3 transition-all font-label-mono text-label-mono border-l-4 w-full ${
+                className={({ isActive }) => `flex items-center gap-3 py-3 transition-all font-label-mono text-label-mono border-l-4 w-full ${isCollapsed ? 'px-0 justify-center' : 'px-6 justify-start'} ${
                   isActive
                   ? 'bg-primary-container text-on-primary-fixed-variant font-bold border-primary-fixed shadow-[4px_0_0_0_var(--primary-container)]'
                   : 'text-on-surface-variant opacity-80 hover:opacity-100 hover:bg-surface-bright hover:text-primary border-transparent'
