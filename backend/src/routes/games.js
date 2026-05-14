@@ -85,14 +85,18 @@ router.add('GET', '/games/featured', async (req) => {
       .slice(0, limit)
       .map(s => s.game);
 
-    const results = await Promise.all(topScored.map(async (game) => ({
-      id: game.id,
-      slug: game.slug,
-      title: game.title,
-      heroImageUrl: game.heroImageUrl,
-      tagline: game.tagline,
-      isOwned: user ? await userOwnsGame(user.id, game.id) : false,
-    })));
+    const results = await Promise.all(topScored.map(async (game) => {
+      const mapped = await publicGame(game, user);
+      return {
+        id: mapped.id,
+        slug: mapped.slug,
+        title: mapped.title,
+        heroImageUrl: mapped.heroImageUrl,
+        heroBannerUrl: mapped.heroBannerUrl,
+        tagline: mapped.tagline,
+        isOwned: mapped.isOwned,
+      };
+    }));
 
     return ok(results);
   } catch (error) {
@@ -112,8 +116,8 @@ router.add('GET', '/games/featured', async (req) => {
 router.add('GET', '/games', async (req) => {
     const user = await getOptionalUser(req);
     const search = req.query.get('search') || '';
-    const genre = req.query.get('genre');
-    const tags = toArray(req.query.get('tags'));
+    const genres = toArray(req.query.get('genre') || req.query.get('genres'));
+    const tags = toArray(req.query.get('tags') || req.query.get('tag'));
     const platform = req.query.get('platform');
     const priceType = req.query.get('priceType');
     const status = req.query.get('status') || 'PUBLISHED';
@@ -128,7 +132,7 @@ router.add('GET', '/games', async (req) => {
         { tags: { hasSome: [search] } }
       ];
     }
-    if (genre) where.genres = { has: genre };
+    if (genres.length > 0) where.genres = { hasEvery: genres };
     if (tags.length > 0) where.tags = { hasEvery: tags };
     if (platform) where.platforms = { has: platform };
     if (priceType) where.priceType = priceType;

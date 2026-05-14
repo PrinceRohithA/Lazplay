@@ -9,53 +9,77 @@ export default function GamesDiscoveryRetroEdition() {
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('featured');
   const [selectedGenres, setSelectedGenres] = useState([]);
+  const [selectedTags, setSelectedTags] = useState([]);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ totalPages: 1 });
+  
+  const [genreOpen, setGenreOpen] = useState(false);
+  const [tagOpen, setTagOpen] = useState(false);
 
   const fetchGames = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      const params = { page, limit: 9, sort };
+      const params = { page, limit: 12, sort };
       if (search.trim()) params.search = search.trim();
-      if (selectedGenres.length) params.genre = selectedGenres[0];
+      if (selectedGenres.length) params.genre = selectedGenres;
+      if (selectedTags.length) params.tags = selectedTags;
       const res = await gamesApi.list(params);
       setGamesList(res.data || []);
       setPagination(res.pagination || { totalPages: 1 });
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
-  }, [page, sort, search, selectedGenres]);
+  }, [page, sort, search, selectedGenres, selectedTags]);
 
   useEffect(() => { fetchGames(); }, [fetchGames]);
 
-  const toggleGenre = (g) => setSelectedGenres(prev =>
-    prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]
+  const toggleFilter = (list, setList, item) => {
+    setList(prev => prev.includes(item) ? prev.filter(x => x !== item) : [...prev, item]);
+    setPage(1);
+  };
+
+  const genres = ['Action', 'RPG', 'Strategy', 'Simulation', 'Racing', 'Indie', 'Adventure', 'Casual'];
+  const tags = ['2D', '3D', 'Multiplayer', 'Singleplayer', 'Retro', 'Sci-Fi', 'Fantasy', 'Horror'];
+
+  const FilterDropdown = ({ label, items, selected, onToggle, isOpen, setIsOpen }) => (
+    <div className="relative">
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="bg-surface-container border border-outline-variant text-primary-container font-label-mono text-[11px] px-4 py-2 hover:bg-surface-container-high transition-colors flex items-center gap-2 min-w-[140px] uppercase"
+      >
+        <span>{selected.length > 0 ? `${label} (${selected.length})` : label}</span>
+        <span className="material-symbols-outlined text-[16px]">{isOpen ? 'expand_less' : 'expand_more'}</span>
+      </button>
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
+          <div className="absolute top-full left-0 mt-1 w-56 bg-surface-container-highest border-2 border-outline-variant z-20 pixel-border p-2 max-h-64 overflow-y-auto">
+            {items.map(item => (
+              <label key={item} className="flex items-center gap-3 p-2 hover:bg-surface-container transition-colors cursor-pointer group">
+                <input 
+                  type="checkbox" 
+                  className="w-4 h-4 border-outline-variant text-primary-container focus:ring-primary-container rounded-none"
+                  checked={selected.includes(item)}
+                  onChange={() => onToggle(item)}
+                />
+                <span className="font-label-mono text-[10px] text-on-surface-variant group-hover:text-primary-container uppercase">{item}</span>
+              </label>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   );
-
-  const priceLabel = (game) => {
-    if (!game.price || game.price === 0) return 'FREE_TO_PLAY';
-    return `₹${(game.price / 100).toFixed(2)}`;
-  };
-
-  const priceColor = (game) => (!game.price || game.price === 0) ? 'text-primary-container' : 'text-secondary-fixed';
-
-  const toPlainText = (value) => {
-    if (!value) return '';
-    return value
-      .replace(/<[^>]*>/g, ' ')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-  };
 
   return (
     <div className="p-gutter lg:p-margin flex-1 pb-12">
-      <section className="mb-12">
+      <section className="mb-8">
         <div className="bg-surface-container-low border-2 border-outline-variant p-4 pixel-border">
-          <div className="flex flex-col md:flex-row items-center gap-4">
-            <div className="relative flex-1 w-full">
+          <div className="flex flex-col gap-4">
+            <div className="relative w-full">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-primary-container font-label-mono">&gt;</span>
               <input
-                className="w-full bg-surface-container-highest border-0 pl-10 text-primary-container font-label-mono focus:ring-1 focus:ring-primary-container placeholder:text-outline/50 uppercase"
+                className="w-full bg-surface-container-highest border-0 pl-10 text-primary-container font-label-mono focus:ring-1 focus:ring-primary-container focus:outline-none placeholder:text-outline/50 uppercase"
+                style={{ outline: 'none', boxShadow: 'none' }}
                 placeholder="SEARCH_DATABASE_FOR_GAMES..."
                 type="text"
                 value={search}
@@ -63,46 +87,55 @@ export default function GamesDiscoveryRetroEdition() {
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 w-2 h-5 bg-primary-container animate-pulse"></span>
             </div>
-            <div className="flex items-center gap-2 w-full md:w-auto">
-              <label className="font-label-mono text-on-surface-variant text-[10px] uppercase">SORT_BY:</label>
-              <select
-                className="bg-surface-container border border-outline-variant text-primary-container font-label-mono text-[12px] px-4 py-2 focus:ring-primary-container appearance-none min-w-[150px]"
-                value={sort}
-                onChange={e => { setSort(e.target.value); setPage(1); }}
-              >
-                <option value="featured">FEATURED_HOSTS</option>
-                <option value="newest">NEWEST_ENTRIES</option>
-                <option value="price_asc">PRICE_LOW_TO_HIGH</option>
-                <option value="price_desc">PRICE_HIGH_TO_LOW</option>
-                <option value="rating">TOP_RATED</option>
-              </select>
+            
+            <div className="flex flex-wrap items-center gap-3 border-t border-outline-variant pt-4">
+              <div className="flex items-center gap-2">
+                <label className="font-label-mono text-on-surface-variant text-[10px] uppercase">SORT:</label>
+                <select
+                  className="bg-surface-container border border-outline-variant text-primary-container font-label-mono text-[11px] px-4 py-2 focus:outline-none appearance-none min-w-[140px] uppercase cursor-pointer"
+                  value={sort}
+                  onChange={e => { setSort(e.target.value); setPage(1); }}
+                >
+                  <option value="featured">FEATURED_HOSTS</option>
+                  <option value="newest">NEWEST_ENTRIES</option>
+                  <option value="price_asc">PRICE_LOW_TO_HIGH</option>
+                  <option value="price_desc">PRICE_HIGH_TO_LOW</option>
+                  <option value="rating">TOP_RATED</option>
+                </select>
+              </div>
+
+              <FilterDropdown 
+                label="GENRES" 
+                items={genres} 
+                selected={selectedGenres} 
+                onToggle={(item) => toggleFilter(selectedGenres, setSelectedGenres, item)}
+                isOpen={genreOpen}
+                setIsOpen={setGenreOpen}
+              />
+
+              <FilterDropdown 
+                label="TAGS" 
+                items={tags} 
+                selected={selectedTags} 
+                onToggle={(item) => toggleFilter(selectedTags, setSelectedTags, item)}
+                isOpen={tagOpen}
+                setIsOpen={setTagOpen}
+              />
+
+              {(selectedGenres.length > 0 || selectedTags.length > 0) && (
+                <button 
+                  onClick={() => { setSelectedGenres([]); setSelectedTags([]); setPage(1); }}
+                  className="font-label-mono text-[10px] text-error hover:underline uppercase px-2"
+                >
+                  CLEAR_ALL_FILTERS
+                </button>
+              )}
             </div>
           </div>
         </div>
       </section>
 
-      <div className="flex flex-col xl:flex-row gap-gutter">
-        <aside className="xl:w-64 flex-shrink-0">
-          <div className="space-y-8">
-            <div>
-              <h3 className="font-label-mono text-primary-container text-label-mono border-b border-outline-variant pb-2 mb-4 uppercase">GENRE_FILTERS</h3>
-              <div className="space-y-3">
-                {['Action', 'RPG', 'Strategy', 'Simulation', 'Racing', 'Indie'].map(genre => (
-                  <label key={genre} className="flex items-center gap-3 group cursor-pointer">
-                    <input
-                      className="w-4 h-4 rounded-none bg-surface border-outline-variant text-primary-container focus:ring-primary-container"
-                      type="checkbox"
-                      checked={selectedGenres.includes(genre)}
-                      onChange={() => { toggleGenre(genre); setPage(1); }}
-                    />
-                    <span className="font-label-mono text-on-surface-variant text-[12px] group-hover:text-primary-container transition-colors uppercase">{genre.toUpperCase()}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-        </aside>
-
+      <div className="flex flex-col gap-gutter">
         <div className="flex-1">
           {error && <div className="mb-4 p-3 border border-error text-error font-label-mono text-[12px]">&gt; ERROR: {error}</div>}
           {loading ? (
