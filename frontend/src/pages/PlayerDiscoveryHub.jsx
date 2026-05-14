@@ -66,7 +66,7 @@ export default function PlayerDiscoveryHub() {
         <section className="space-y-4">
           <div className="flex justify-between items-end border-b-2 border-outline-variant pb-2">
             <h2 className="font-headline-md text-headline-sm md:text-headline-md text-on-surface uppercase tracking-wide flex items-center gap-2">
-              <span className="text-on-primary-container">&gt;</span> TRENDING_MATRIX
+              <span className="text-on-primary-container glow-text-primary">&gt;</span> TRENDING_MATRIX
             </h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-4">
@@ -97,7 +97,7 @@ export default function PlayerDiscoveryHub() {
         <div className="lg:col-span-9 space-y-4">
           <div className="flex justify-between items-end border-b-2 border-outline-variant pb-2">
             <h2 className="font-headline-md text-headline-sm md:text-headline-md text-on-surface uppercase tracking-wide flex items-center gap-2">
-              <span className="text-on-primary-container">&gt;</span> MEMORY_BANKS
+              <span className="text-on-primary-container glow-text-primary">&gt;</span> MEMORY_BANKS
             </h2>
             <Link to="/library" className="font-label-mono text-[10px] md:text-label-mono text-on-surface-variant hover:text-on-primary-container underline decoration-dotted">VIEW_ALL</Link>
           </div>
@@ -120,7 +120,7 @@ export default function PlayerDiscoveryHub() {
                       <div className="flex gap-1 h-2 w-16 bg-surface-container-highest border border-outline">
                         <div className="bg-primary-container" style={{ width: item.updateAvailable ? '50%' : '100%' }} />
                       </div>
-                      <Link to={`/game?id=${item.gameId}`} className="text-on-primary-container hover:text-primary-fixed bg-surface border border-outline-variant hover:border-primary-container px-3 py-1 font-label-mono text-[10px]">&gt; RESUME</Link>
+                      <Link to={`/game?id=${item.gameId}`} className="text-on-primary-container hover:text-primary-fixed bg-surface border border-outline-variant hover:border-primary-container px-3 py-1 font-label-mono text-[10px] cyber-btn">&gt; RESUME</Link>
                     </div>
                   </div>
                 </div>
@@ -137,7 +137,7 @@ export default function PlayerDiscoveryHub() {
         <aside className="lg:col-span-3 space-y-4">
           <div className="border-b-2 border-outline-variant pb-2">
             <h2 className="font-headline-md text-headline-sm md:text-[20px] text-on-surface uppercase tracking-wide flex items-center gap-2">
-              <span className="text-primary-container">&gt;</span> NETWORK_STATUS
+              <span className="text-primary-container glow-text-primary">&gt;</span> NETWORK_STATUS
             </h2>
           </div>
           <div className="bg-surface border-2 border-outline-variant p-4 space-y-4 retro-border">
