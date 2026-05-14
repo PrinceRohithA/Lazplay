@@ -1,5 +1,51 @@
 @import "tailwindcss";
 
+:root {
+  --secondary: #ffabf3;
+  --secondary-container: #500050;
+  --on-secondary-container: #ffabf3;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #1c1b1b;
+  border-left: 1px solid var(--primary-container);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--primary-container);
+  border: 2px solid #1c1b1b;
+  box-shadow: inset -1px -1px 0px 0px rgba(0,0,0,0.5);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Global Input Styling */
+input:not([type="color"]), textarea, select {
+  background-color: #201f1f !important;
+  border: 1px solid var(--primary-container) !important;
+  color: #e5e2e1 !important;
+  font-family: "Space Grotesk", sans-serif !important;
+  padding: 8px 12px !important;
+  outline: none !important;
+  transition: all 0.2s ease;
+  border-radius: 0 !important;
+}
+
+input:not([type="color"]):focus, textarea:focus, select:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 5px var(--primary) !important;
+}
+
+input[type="color"] {
+  border-radius: 0;
+  border: 2px solid var(--primary-container);
+}
+
 @theme {
   --color-surface-container-lowest: #0e0e0e;
   --color-on-secondary: #5b005b;
@@ -32,10 +78,10 @@
   --color-on-primary-fixed-variant: var(--on-primary-container);
   --color-primary-container: var(--primary-container);
   --color-surface-container: #201f1f;
-  --color-secondary-container: #fe00fe;
+  --color-secondary-container: var(--secondary-container);
   --color-surface-container-low: #1c1b1b;
   --color-on-tertiary: #003737;
-  --color-secondary: #ffabf3;
+  --color-secondary: var(--secondary);
   --color-on-primary: var(--on-primary);
   --color-tertiary-container: #00f6f6;
   --color-on-error: #690005;
@@ -46,7 +92,7 @@
   --color-primary: var(--primary);
   --color-primary-fixed-dim: var(--primary-fixed-dim);
   --color-tertiary: #e6fffe;
-  --color-on-secondary-container: #500050;
+  --color-on-secondary-container: var(--on-secondary-container);
   --color-on-error-container: #ffdad6;
 
   --radius-default: 0.25rem;

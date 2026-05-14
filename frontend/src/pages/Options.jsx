@@ -1,18 +1,29 @@
 import React, { useState, useEffect } from 'react';
 
 export default function Options() {
-  const [selectedColor, setSelectedColor] = useState('#39ff14');
+  const [primaryColor, setPrimaryColor] = useState('#39ff14');
+  const [secondaryColor, setSecondaryColor] = useState('#ffabf3');
 
   useEffect(() => {
-    const savedColor = localStorage.getItem('lazplay-theme-color') || '#39ff14';
-    setSelectedColor(savedColor);
+    const savedPrimary = localStorage.getItem('lazplay-theme-color') || '#39ff14';
+    const savedSecondary = localStorage.getItem('lazplay-secondary-color') || '#ffabf3';
+    setPrimaryColor(savedPrimary);
+    setSecondaryColor(savedSecondary);
   }, []);
 
-  const handleColorChange = (e) => {
+  const handlePrimaryChange = (e) => {
     const color = e.target.value;
-    setSelectedColor(color);
+    setPrimaryColor(color);
     if (window.setThemeColor) {
       window.setThemeColor(color);
+    }
+  };
+
+  const handleSecondaryChange = (e) => {
+    const color = e.target.value;
+    setSecondaryColor(color);
+    if (window.setSecondaryColor) {
+      window.setSecondaryColor(color);
     }
   };
 
@@ -34,60 +45,97 @@ export default function Options() {
         <div className="h-1 w-24 bg-primary-container mb-8"></div>
       </div>
 
-      <section className="bg-surface-container border-2 border-outline-variant p-8 mb-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-2 text-[10px] text-outline-variant font-label-mono">UI_THEME_MODULE</div>
-        
-        <h2 className="font-headline-md text-headline-md text-primary mb-6 flex items-center gap-2">
-          <span className="material-symbols-outlined">palette</span>
-          THEME_COLOR_CALIBRATION
-        </h2>
+      <div className="flex flex-col gap-8">
+        {/* Primary Color Section */}
+        <section className="bg-surface-container border-2 border-outline-variant p-8 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-2 text-[10px] text-outline-variant font-label-mono">UI_THEME_MODULE // PRIMARY</div>
+          
+          <h2 className="font-headline-md text-headline-md text-primary mb-6 flex items-center gap-2 uppercase">
+            <span className="material-symbols-outlined">palette</span>
+            PRIMARY_COLOR_CALIBRATION
+          </h2>
 
-        <p className="text-on-surface-variant font-body-md mb-8 max-w-2xl opacity-80">
-          Adjust the global aesthetic of the LAZPLAY OS. Selecting a new base color will automatically generate its respective gradients and variants across the entire interface.
-        </p>
+          <div className="flex flex-col md:flex-row gap-12 items-start">
+            <div className="flex flex-col gap-4">
+              <label className="font-label-mono text-[10px] text-outline-variant uppercase">MANUAL_PICKER</label>
+              <div className="flex items-center gap-4 bg-surface p-4 border-2 border-outline-variant">
+                <input 
+                  type="color" 
+                  value={primaryColor}
+                  onChange={handlePrimaryChange}
+                  className="w-12 h-12 cursor-pointer bg-transparent"
+                />
+                <div className="font-label-mono text-lg text-primary-container">{primaryColor.toUpperCase()}</div>
+              </div>
+            </div>
 
-        <div className="flex flex-col md:flex-row gap-12 items-start">
-          <div className="flex flex-col gap-4">
-            <label className="font-label-mono text-label-mono text-outline-variant uppercase">MANUAL_COLOR_PICKER</label>
-            <div className="flex items-center gap-4 bg-surface p-4 border-2 border-outline-variant">
-              <input 
-                type="color" 
-                value={selectedColor}
-                onChange={handleColorChange}
-                className="w-16 h-16 cursor-pointer bg-transparent border-2 border-outline-variant p-1"
-              />
-              <div className="font-label-mono text-xl text-primary-container">{selectedColor.toUpperCase()}</div>
+            <div className="flex-1">
+              <label className="font-label-mono text-[10px] text-outline-variant uppercase mb-4 block">PRESET_PALETTES</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {presetColors.map((color) => (
+                  <button
+                    key={color.hex}
+                    onClick={() => handlePrimaryChange({ target: { value: color.hex } })}
+                    className={`flex items-center gap-3 p-2 border-2 transition-all ${
+                      primaryColor.toLowerCase() === color.hex.toLowerCase()
+                        ? 'border-primary-container bg-primary-container/10'
+                        : 'border-outline-variant hover:border-primary-container/50 bg-surface'
+                    }`}
+                  >
+                    <div className="w-4 h-4 border-2 border-outline" style={{ backgroundColor: color.hex }}></div>
+                    <span className="font-label-mono text-[9px] truncate">{color.name}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
+        </section>
 
-          <div className="flex-1">
-            <label className="font-label-mono text-label-mono text-outline-variant uppercase mb-4 block">PRESET_PALETTES</label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {presetColors.map((color) => (
-                <button
-                  key={color.hex}
-                  onClick={() => handleColorChange({ target: { value: color.hex } })}
-                  className={`flex items-center gap-3 p-3 border-2 transition-all group ${
-                    selectedColor.toLowerCase() === color.hex.toLowerCase()
-                      ? 'border-primary-container bg-primary-container/10'
-                      : 'border-outline-variant hover:border-primary-container/50 bg-surface'
-                  }`}
-                >
-                  <div 
-                    className="w-6 h-6 border-2 border-outline" 
-                    style={{ backgroundColor: color.hex }}
-                  ></div>
-                  <span className={`font-label-mono text-[10px] ${
-                    selectedColor.toLowerCase() === color.hex.toLowerCase() ? 'text-primary-container' : 'text-on-surface-variant'
-                  }`}>
-                    {color.name}
-                  </span>
-                </button>
-              ))}
+        {/* Secondary Color Section */}
+        <section className="bg-surface-container border-2 border-outline-variant p-8 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-2 text-[10px] text-outline-variant font-label-mono">UI_THEME_MODULE // SECONDARY</div>
+          
+          <h2 className="font-headline-md text-headline-md text-secondary mb-6 flex items-center gap-2 uppercase">
+            <span className="material-symbols-outlined">colorize</span>
+            ACCENT_COLOR_CALIBRATION
+          </h2>
+
+          <div className="flex flex-col md:flex-row gap-12 items-start">
+            <div className="flex flex-col gap-4">
+              <label className="font-label-mono text-[10px] text-outline-variant uppercase">MANUAL_PICKER</label>
+              <div className="flex items-center gap-4 bg-surface p-4 border-2 border-outline-variant">
+                <input 
+                  type="color" 
+                  value={secondaryColor}
+                  onChange={handleSecondaryChange}
+                  className="w-12 h-12 cursor-pointer bg-transparent"
+                />
+                <div className="font-label-mono text-lg text-secondary">{secondaryColor.toUpperCase()}</div>
+              </div>
+            </div>
+
+            <div className="flex-1">
+              <label className="font-label-mono text-[10px] text-outline-variant uppercase mb-4 block">ACCENT_PRESETS</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {presetColors.map((color) => (
+                  <button
+                    key={color.hex}
+                    onClick={() => handleSecondaryChange({ target: { value: color.hex } })}
+                    className={`flex items-center gap-3 p-2 border-2 transition-all ${
+                      secondaryColor.toLowerCase() === color.hex.toLowerCase()
+                        ? 'border-secondary bg-secondary/10'
+                        : 'border-outline-variant hover:border-secondary/50 bg-surface'
+                    }`}
+                  >
+                    <div className="w-4 h-4 border-2 border-outline" style={{ backgroundColor: color.hex }}></div>
+                    <span className="font-label-mono text-[9px] truncate">{color.name}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
       <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="bg-surface-container border-2 border-outline-variant p-8 opacity-50 cursor-not-allowed">

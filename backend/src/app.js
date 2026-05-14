@@ -932,7 +932,7 @@ async function sendEmail({ to, subject, html }) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: 'LazPlay <noreply@lazplay.tech>',
+        from: 'LazPlay <noreply@mail.lazplay.tech>',
         to,
         subject,
         html

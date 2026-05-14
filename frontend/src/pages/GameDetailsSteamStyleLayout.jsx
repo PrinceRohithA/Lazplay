@@ -186,126 +186,138 @@ export default function GameDetailsSteamStyleLayout() {
       {!loading && !game && <div className="text-center py-24 font-label-mono text-on-surface-variant">GAME_NOT_FOUND</div>}
       {!loading && game && (
         <>
-        {/*  Hero Section (Steam Style)  */}
-        <section className="grid grid-cols-1 xl:grid-cols-[1fr_360px] lg:grid-cols-[1fr_320px] gap-gutter bg-surface-container-low pixel-border p-2">
-        {/*  Left: Main Media  */}
-        <div className="relative aspect-video xl:h-[450px] overflow-hidden bg-black pixel-border group min-w-0">
-          {playingGame && launchData ? (
-            <div ref={gameContainerRef} className="absolute inset-0 z-50 bg-black flex flex-col">
-              <div className="flex items-center justify-between p-2 bg-surface-container-highest border-b border-outline-variant h-10 px-4">
-                <span className="font-label-mono text-[10px] text-primary-container uppercase truncate">{game.title} // ONLINE_SESSION</span>
-                <div className="flex gap-2">
-                  <button onClick={handleFullscreen} className="text-on-surface-variant hover:text-white transition-colors">
-                    <span className="material-symbols-outlined text-[18px]">{isFullscreen ? 'fullscreen_exit' : 'fullscreen'}</span>
-                  </button>
-                  <button onClick={handleStopPlay} className="text-error hover:text-red-400 transition-colors">
-                    <span className="material-symbols-outlined text-[18px]">close</span>
-                  </button>
+        {/*  Hero Section (Modern Layout)  */}
+        <section className="flex flex-col gap-4 bg-surface-container-low pixel-border p-2">
+          {/*  Main Media  */}
+          <div className="relative aspect-video w-full overflow-hidden bg-black pixel-border group">
+            {playingGame && launchData ? (
+              <div ref={gameContainerRef} className="absolute inset-0 z-50 bg-black flex flex-col">
+                <div className="flex items-center justify-between p-2 bg-surface-container-highest border-b border-outline-variant h-10 px-4">
+                  <span className="font-label-mono text-[10px] text-primary-container uppercase truncate">{game.title} // ONLINE_SESSION</span>
+                  <div className="flex gap-2">
+                    <button onClick={handleFullscreen} className="text-on-surface-variant hover:text-white transition-colors">
+                      <span className="material-symbols-outlined text-[18px]">{isFullscreen ? 'fullscreen_exit' : 'fullscreen'}</span>
+                    </button>
+                    <button onClick={handleStopPlay} className="text-error hover:text-red-400 transition-colors">
+                      <span className="material-symbols-outlined text-[18px]">close</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <iframe 
-                src={launchData.entrypointUrl} 
-                className="flex-1 w-full h-full border-none bg-black"
-                allow="autoplay; fullscreen; keyboard"
-                title={game.title}
-              />
-            </div>
-          ) : playingTrailer && (game.trailerUrl || videos.length > 0) ? (
-            <div className="w-full h-full relative">
-                <video 
-                    src={game.trailerUrl || (videos.length > 0 ? videos[0].url : '')} 
-                    poster={game.heroBannerUrl || game.heroImageUrl}
-                    controls 
-                    autoPlay 
-                    className="w-full h-full object-contain" 
+                <iframe 
+                  src={launchData.entrypointUrl} 
+                  className="flex-1 w-full h-full border-none bg-black"
+                  allow="autoplay; fullscreen; keyboard"
+                  title={game.title}
                 />
-                <button 
-                    onClick={() => setPlayingTrailer(false)}
-                    className="absolute top-4 right-4 bg-surface/50 text-on-surface p-1 pixel-border hover:bg-surface transition-all z-10 opacity-0 group-hover:opacity-100"
-                >
-                    <span className="material-symbols-outlined text-[18px]">close</span>
-                </button>
-            </div>
-          ) : (
-            <>
-              <img alt={game.title} className="w-full h-full object-cover opacity-80" src={game.heroBannerUrl || game.heroImageUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuC9KrQ5YpZIImJ1Kd2RBfr-IeRwo5ttSkse1x9Q71QkonTieCCBK-ZICf1E_3LD5-X4q63if0DYzWnYTFcwoRStnzJtmrdqfhsIouTLhtzkMmCzw0y_69VlGf5INbG4nK77O9oKMw9FDOaqKgWuh-yDPS9BKfJsFzcuP9Ueuv1CFIMfot1RHyyIqegrc4toawTb6VxlS0VnqAc-XiUBOixMQ6hvHARoZbpH1Dlt9IHWrRbvaJaqI_mte6dOhR4-5vmnF9sG75TI6lXu"}/>
-              <div 
-                className={`absolute inset-0 flex items-center justify-center ${(game.trailerUrl || videos.length > 0) ? 'cursor-pointer hover:bg-black/20 pointer-events-auto' : 'pointer-events-none'} transition-colors`}
-                onClick={() => { if (game.trailerUrl || videos.length > 0) setPlayingTrailer(true); }}
-              >
-                <div className={`bg-surface/80 p-4 pixel-border ${(game.trailerUrl || videos.length > 0) ? 'hover:bg-surface pointer-events-none' : ''} transition-colors`}>
-                  <span className="material-symbols-outlined text-primary-container text-6xl">play_circle</span>
-                </div>
               </div>
-            </>
-          )}
-        </div>
-        {/*  Right: Game Info Box  */}
-        <div className="flex flex-col gap-4 p-2 md:p-4 font-label-mono text-label-mono min-w-0">
-          <div className="w-full aspect-[2/3] bg-black pixel-border overflow-hidden mb-2 hidden lg:block shadow-[0_0_15px_rgba(0,0,0,0.3)]">
-            <img 
-              src={game.coverUrl || game.heroImageUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuC9KrQ5YpZIImJ1Kd2RBfr-IeRwo5ttSkse1x9Q71QkonTieCCBK-ZICf1E_3LD5-X4q63if0DYzWnYTFcwoRStnzJtmrdqfhsIouTLhtzkMmCzw0y_69VlGf5INbG4nK77O9oKMw9FDOaqKgWuh-yDPS9BKfJsFzcuP9Ueuv1CFIMfot1RHyyIqegrc4toawTb6VxlS0VnqAc-XiUBOixMQ6hvHARoZbpH1Dlt9IHWrRbvaJaqI_mte6dOhR4-5vmnF9sG75TI6lXu"} 
-              alt="Project Cover" 
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <h1 className="font-headline-md md:font-headline-lg text-headline-sm md:text-headline-lg text-primary-container uppercase tracking-tighter drop-shadow-[0_0_8px_rgba(57,255,20,0.6)] truncate">{game.title}</h1>
-          <div className="flex-1 overflow-y-auto space-y-4">
-            <div className="grid grid-cols-[100px_1fr] gap-y-2 text-[11px] uppercase">
-              <span className="text-on-surface-variant">RECENT_REVIEWS:</span>
-              <span className="text-primary-container">OVERWHELMINGLY_POSITIVE</span>
-              <span className="text-on-surface-variant">RELEASE_DATE:</span>
-              <span className="text-on-surface">{game.releaseDate || new Date(game.createdAt).toLocaleDateString()}</span>
-              <span className="text-on-surface-variant">DEVELOPER:</span>
-              <span className="text-secondary-container truncate">{game.developer?.displayName || 'UNKNOWN_DEV'}</span>
-              <span className="text-on-surface-variant">PUBLISHER:</span>
-              <span className="text-secondary-container truncate">{game.publisher || 'LAZPLAY_STUDIOS'}</span>
-            </div>
-          </div>
-          <div className="pt-4 border-t border-outline-variant">
-            <div className="flex flex-wrap gap-1 mb-4">
-              {game.genres?.map(g => (
-                <span key={g} className="bg-surface-variant px-1 text-[10px] text-tertiary-container pixel-border uppercase">{g}</span>
-              ))}
-            </div>
-            <div className="mb-4 text-headline-sm font-bold text-primary-container">
-              {game.priceType === 'FREE' ? 'FREE_TO_PLAY' : `₹${(game.price / 100).toFixed(2)}`}
-            </div>
-            {game.isOwned ? (
-              <div className="flex flex-col gap-2">
-                <button 
-                  onClick={handlePlay}
-                  className="w-full bg-primary-container text-on-primary-container py-3 pixel-border neon-glow hover:bg-primary-fixed transition-all uppercase flex justify-center items-center gap-2 font-bold"
-                >
-                  <span className="material-symbols-outlined">play_arrow</span>
-                  PLAY_NOW
-                </button>
-                <Link 
-                  to="/library"
-                  className="w-full bg-secondary-container text-on-secondary-container py-2 pixel-border hover:bg-secondary-fixed transition-all uppercase flex justify-center items-center gap-2 text-[10px]"
-                >
-                  <span className="material-symbols-outlined text-[14px]">library_books</span>
-                  GO_TO_LIBRARY
-                </Link>
+            ) : playingTrailer && (game.trailerUrl || videos.length > 0) ? (
+              <div className="w-full h-full relative">
+                  <video 
+                      src={game.trailerUrl || (videos.length > 0 ? videos[0].url : '')} 
+                      poster={game.heroBannerUrl || game.heroImageUrl}
+                      controls 
+                      autoPlay 
+                      className="w-full h-full object-contain" 
+                  />
+                  <button 
+                      onClick={() => setPlayingTrailer(false)}
+                      className="absolute top-4 right-4 bg-surface/50 text-on-surface p-1 pixel-border hover:bg-surface transition-all z-10 opacity-0 group-hover:opacity-100"
+                  >
+                      <span className="material-symbols-outlined text-[18px]">close</span>
+                  </button>
               </div>
-            ) : (game.priceType === 'FREE' || game.hasEntitlement) ? (
-              <button 
-                onClick={handleClaim}
-                className="w-full bg-primary-container text-on-primary-container py-3 pixel-border neon-glow hover:bg-primary-fixed transition-all uppercase flex justify-center items-center gap-2 font-bold disabled:opacity-50"
-              >
-                <span className="material-symbols-outlined">add_circle</span>
-                {game.hasEntitlement ? 'ADD_TO_LIBRARY' : 'CLAIM_FREE_GAME'}
-              </button>
             ) : (
-              <RazorpayCheckout 
-                game={game} 
-                onSuccess={handlePaymentSuccess} 
-                onError={handlePaymentError} 
-              />
+              <>
+                <img alt={game.title} className="w-full h-full object-cover opacity-80" src={game.heroBannerUrl || game.heroImageUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuC9KrQ5YpZIImJ1Kd2RBfr-IeRwo5ttSkse1x9Q71QkonTieCCBK-ZICf1E_3LD5-X4q63if0DYzWnYTFcwoRStnzJtmrdqfhsIouTLhtzkMmCzw0y_69VlGf5INbG4nK77O9oKMw9FDOaqKgWuh-yDPS9BKfJsFzcuP9Ueuv1CFIMfot1RHyyIqegrc4toawTb6VxlS0VnqAc-XiUBOixMQ6hvHARoZbpH1Dlt9IHWrRbvaJaqI_mte6dOhR4-5vmnF9sG75TI6lXu"}/>
+                <div 
+                  className={`absolute inset-0 flex items-center justify-center ${(game.trailerUrl || videos.length > 0) ? 'cursor-pointer hover:bg-black/20 pointer-events-auto' : 'pointer-events-none'} transition-colors`}
+                  onClick={() => { if (game.trailerUrl || videos.length > 0) setPlayingTrailer(true); }}
+                >
+                  <div className={`bg-surface/80 p-4 pixel-border ${(game.trailerUrl || videos.length > 0) ? 'hover:bg-surface pointer-events-none' : ''} transition-colors`}>
+                    <span className="material-symbols-outlined text-primary-container text-6xl">play_circle</span>
+                  </div>
+                </div>
+              </>
             )}
           </div>
-        </div>
-      </section>
+
+          {/*  Horizontal Info Bar  */}
+          <div className="flex flex-col md:flex-row gap-6 p-4 font-label-mono text-label-mono bg-surface-container-low rounded-lg">
+            <div className="w-32 h-48 md:w-40 md:h-60 bg-black pixel-border overflow-hidden shrink-0 shadow-lg hidden sm:block">
+              <img 
+                src={game.coverUrl || game.heroImageUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuC9KrQ5YpZIImJ1Kd2RBfr-IeRwo5ttSkse1x9Q71QkonTieCCBK-ZICf1E_3LD5-X4q63if0DYzWnYTFcwoRStnzJtmrdqfhsIouTLhtzkMmCzw0y_69VlGf5INbG4nK77O9oKMw9FDOaqKgWuh-yDPS9BKfJsFzcuP9Ueuv1CFIMfot1RHyyIqegrc4toawTb6VxlS0VnqAc-XiUBOixMQ6hvHARoZbpH1Dlt9IHWrRbvaJaqI_mte6dOhR4-5vmnF9sG75TI6lXu"} 
+                alt="Project Cover" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            
+            <div className="flex-1 flex flex-col min-w-0">
+              <h1 className="font-headline-md text-primary-container uppercase tracking-tighter drop-shadow-[0_0_8px_rgba(57,255,20,0.6)] truncate mb-4">{game.title}</h1>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-[10px] uppercase mb-6">
+                <div className="flex justify-between border-b border-outline-variant/30 pb-1">
+                  <span className="text-on-surface-variant">RECENT_REVIEWS:</span>
+                  <span className="text-primary-container">OVERWHELMINGLY_POSITIVE</span>
+                </div>
+                <div className="flex justify-between border-b border-outline-variant/30 pb-1">
+                  <span className="text-on-surface-variant">RELEASE_DATE:</span>
+                  <span className="text-on-surface">{game.releaseDate || new Date(game.createdAt).toLocaleDateString()}</span>
+                </div>
+                <div className="flex justify-between border-b border-outline-variant/30 pb-1">
+                  <span className="text-on-surface-variant">DEVELOPER:</span>
+                  <span className="text-secondary-container truncate">{game.developer?.displayName || 'UNKNOWN_DEV'}</span>
+                </div>
+                <div className="flex justify-between border-b border-outline-variant/30 pb-1">
+                  <span className="text-on-surface-variant">PUBLISHER:</span>
+                  <span className="text-secondary-container truncate">{game.publisher || 'LAZPLAY_STUDIOS'}</span>
+                </div>
+              </div>
+
+              <div className="mt-auto flex flex-col sm:flex-row items-center gap-4 border-t border-outline-variant pt-4">
+                <div className="text-2xl font-bold text-primary-container shrink-0">
+                  {game.priceType === 'FREE' ? 'FREE_TO_PLAY' : `₹${(game.price / 100).toFixed(2)}`}
+                </div>
+                
+                <div className="flex-1 w-full flex gap-2">
+                  {game.isOwned ? (
+                    <>
+                      <button 
+                        onClick={handlePlay}
+                        className="flex-1 bg-primary-container text-on-primary-container py-3 pixel-border neon-glow hover:bg-primary-fixed transition-all uppercase flex justify-center items-center gap-2 font-bold"
+                      >
+                        <span className="material-symbols-outlined">play_arrow</span>
+                        PLAY_NOW
+                      </button>
+                      <Link 
+                        to="/library"
+                        className="bg-secondary-container text-on-secondary-container px-4 py-2 pixel-border hover:bg-secondary-fixed transition-all uppercase flex justify-center items-center gap-2 text-[10px]"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">library_books</span>
+                        LIBRARY
+                      </Link>
+                    </>
+                  ) : (game.priceType === 'FREE' || game.hasEntitlement) ? (
+                    <button 
+                      onClick={handleClaim}
+                      className="w-full bg-primary-container text-on-primary-container py-3 pixel-border neon-glow hover:bg-primary-fixed transition-all uppercase flex justify-center items-center gap-2 font-bold"
+                    >
+                      <span className="material-symbols-outlined">add_circle</span>
+                      {game.hasEntitlement ? 'ADD_TO_LIBRARY' : 'CLAIM_FREE_GAME'}
+                    </button>
+                  ) : (
+                    <div className="w-full max-w-xs">
+                      <RazorpayCheckout 
+                        game={game} 
+                        onSuccess={handlePaymentSuccess} 
+                        onError={handlePaymentError} 
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
       {/*  Horizontal Navigation Bar  */}
       <nav className="flex overflow-x-auto no-scrollbar bg-surface-container-high pixel-border font-label-mono text-[11px] uppercase sticky top-16 z-30">

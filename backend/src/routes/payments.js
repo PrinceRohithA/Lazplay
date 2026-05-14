@@ -11,11 +11,54 @@ export function registerPaymentsRoutes(router, ctx) {
     userOwnsGame, ensureLibraryItem, setLatestBuild, grantEntitlement, addNotification, addAuditLog, publicGame,
     getMediaBucket, getPublicGameBucket, getPrivateGameBucket, getGameBucket, getRuntimeBucketForPriceType,
     getRuntimeBucketForGame, assertR2Config, resolveBucketForPurpose, resolveBucketForKey, publicObjectUrl,
-    signedStorageUrl, runtimePrefixForGame, buildCopySource, moveRuntimeObjects, fetchWithTimeout,
-    normalizeArchivePath, contentTypeForPath, extractObjectKeyFromUrl, isWebRuntime, uploadRuntimeObject,
     scanAndPrepareBuild, deleteStorageObject, deleteStorageRecord, deleteStorageObjectFromUrl, razorpaySignature,
-    assertRazorpayWebhook
+    assertRazorpayWebhook, sendEmail
   } = ctx;
+
+  async function sendPurchaseEmail(user, game, amount, currency = 'INR') {
+    const subject = `Purchase Confirmation: ${game.title}`;
+    const html = `
+      <div style="font-family: sans-serif; padding: 20px; color: #333; background: #fff; border-radius: 8px; border: 1px solid #eee; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #000; margin-bottom: 20px;">Thank you for your purchase!</h2>
+        <p>Hi <strong>${user.displayName || user.username}</strong>,</p>
+        <p>Your purchase of <strong>${game.title}</strong> has been confirmed and added to your LazPlay library.</p>
+        
+        <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin: 20px 0;">
+          <h3 style="margin-top: 0; font-size: 16px;">Order Details:</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 5px 0; color: #666;">Game:</td>
+              <td style="padding: 5px 0; text-align: right; font-weight: bold;">${game.title}</td>
+            </tr>
+            <tr>
+              <td style="padding: 5px 0; color: #666;">Amount Paid:</td>
+              <td style="padding: 5px 0; text-align: right; font-weight: bold;">${currency} ${amount}</td>
+            </tr>
+          </table>
+        </div>
+        
+        <p>You can now download and play this game using the LazPlay Desktop Launcher.</p>
+        <p style="margin-top: 30px; font-size: 12px; color: #999;">If you have any questions, please contact support.</p>
+      </div>
+    `;
+    return sendEmail({ to: user.email, subject, html }).catch(err => console.error('[purchase-email-failed]', err));
+  }
+
+  async function sendFreeGameEmail(user, game) {
+    const subject = `Game Added: ${game.title}`;
+    const html = `
+      <div style="font-family: sans-serif; padding: 20px; color: #333; background: #fff; border-radius: 8px; border: 1px solid #eee; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #000; margin-bottom: 20px;">Enjoy your new game!</h2>
+        <p>Hi <strong>${user.displayName || user.username}</strong>,</p>
+        <p><strong>${game.title}</strong> has been successfully added to your LazPlay library.</p>
+        
+        <p>Since this is a free game, no payment was required.</p>
+        <p>You can now download and play this game using the LazPlay Desktop Launcher.</p>
+        <p style="margin-top: 30px; font-size: 12px; color: #999;">Enjoy playing!</p>
+      </div>
+    `;
+    return sendEmail({ to: user.email, subject, html }).catch(err => console.error('[free-email-failed]', err));
+  }
 
 router.add('POST', '/payments/razorpay/orders', async (req) => {
     const user = await requireAuth(req, null, ['PLAYER']);
@@ -30,6 +73,7 @@ router.add('POST', '/payments/razorpay/orders', async (req) => {
     if (game.priceType === 'FREE') {
       const entitlement = await grantEntitlement(user.id, game.id, 'FREE');
       await addNotification(user.id, 'GAME_ADDED', 'Game added to library', `${game.title} was added to your library.`);
+      await sendFreeGameEmail(user, game);
       return ok({ free: true, entitlement, libraryItemCreated: true }, 201);
     }
 
@@ -120,6 +164,10 @@ router.add('POST', '/payments/razorpay/verify', async (req) => {
 
     const entitlement = await grantEntitlement(user.id, order.gameId, 'RAZORPAY_ORDER');
     await addNotification(user.id, 'PAYMENT_CAPTURED', 'Purchase complete', 'Your game was added to your library.');
+    
+    // Background send email
+    const game = await prisma.game.findUnique({ where: { id: order.gameId } });
+    if (game) await sendPurchaseEmail(user, game, order.amount / 100, order.currency);
 
     return ok({
       paymentStatus: 'CAPTURED',
@@ -152,6 +200,14 @@ router.add('POST', '/webhooks/razorpay', async (req) => {
           }),
         ]);
         await grantEntitlement(order.userId, order.gameId, 'RAZORPAY_WEBHOOK');
+        const [user, game] = await Promise.all([
+          prisma.user.findUnique({ where: { id: order.userId } }),
+          prisma.game.findUnique({ where: { id: order.gameId } })
+        ]);
+        if (user && game) {
+          await addNotification(user.id, 'PAYMENT_CAPTURED', 'Purchase complete', 'Your game was added to your library.');
+          await sendPurchaseEmail(user, game, entity.amount / 100, entity.currency);
+        }
       }
     }
     return ok({ received: true });
