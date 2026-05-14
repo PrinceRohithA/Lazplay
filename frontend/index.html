@@ -1,12 +1,17 @@
 <!doctype html>
 <html lang="en" class="dark">
-  <head>
+
+<head>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6281076479288893"
+        crossorigin="anonymous"></script>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LAZPLAY OS</title>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script id="theme-logic">
         const updateThemeColors = (hex) => {
@@ -15,11 +20,11 @@
             const b = parseInt(hex.slice(5, 7), 16);
 
             const root = document.documentElement;
-            
+
             // Primary Container (The main neon color)
             root.style.setProperty('--primary-container', hex);
             root.style.setProperty('--primary-container-rgb', `${r}, ${g}, ${b}`);
-            
+
             // On Primary Container (Dark version for text on neon)
             const onPrimaryContainer = `rgb(${Math.floor(r * 0.3)}, ${Math.floor(g * 0.3)}, ${Math.floor(b * 0.3)})`;
             root.style.setProperty('--on-primary-container', onPrimaryContainer);
@@ -43,7 +48,7 @@
         // Initialize from localStorage
         const savedColor = localStorage.getItem('lazplay-theme-color') || '#39ff14';
         document.documentElement.style.setProperty('--primary-container', savedColor);
-        
+
         // Apply saved color immediately
         updateThemeColors(savedColor);
 
@@ -55,38 +60,43 @@
     </script>
     <style>
         .scanlines {
-            background: linear-gradient(
-                to bottom,
-                rgba(255,255,255,0),
-                rgba(255,255,255,0) 50%,
-                rgba(0,0,0,0.2) 50%,
-                rgba(0,0,0,0.2)
-            );
+            background: linear-gradient(to bottom,
+                    rgba(255, 255, 255, 0),
+                    rgba(255, 255, 255, 0) 50%,
+                    rgba(0, 0, 0, 0.2) 50%,
+                    rgba(0, 0, 0, 0.2));
             background-size: 100% 4px;
             pointer-events: none;
         }
+
         .retro-border {
             box-shadow: -2px -2px 0 0 var(--on-primary-container), 2px 2px 0 0 #131313;
         }
+
         .retro-border-hover:hover {
             box-shadow: -2px -2px 0 0 var(--primary-container), 2px 2px 0 0 var(--on-primary-container);
         }
+
         .neon-glow {
             box-shadow: 0 0 10px var(--primary-container);
         }
+
         /* Autofill Override to prevent white background */
         input:-webkit-autofill,
-        input:-webkit-autofill:hover, 
-        input:-webkit-autofill:focus, 
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
         input:-webkit-autofill:active {
             -webkit-box-shadow: 0 0 0 30px #131313 inset !important;
             -webkit-text-fill-color: #e5e2e1 !important;
             transition: background-color 5000s ease-in-out 0s;
         }
     </style>
-  </head>
-  <body class="bg-background text-on-background font-body-md min-h-screen relative overflow-x-hidden selection:bg-primary-container selection:text-on-primary-container">
+</head>
+
+<body
+    class="bg-background text-on-background font-body-md min-h-screen relative overflow-x-hidden selection:bg-primary-container selection:text-on-primary-container">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
-  </body>
+</body>
+
 </html>
