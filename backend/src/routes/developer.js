@@ -794,7 +794,10 @@ router.add('GET', '/developer/dashboard', async (req) => {
     const games = await prisma.game.findMany({ where: { developerId: profile.id } });
     const gameIds = games.map(g => g.id);
 
-    const [orderStats, instanceCount, currentPlayers, allSessions, gameStatsRaw] = await Promise.all([
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+    const [orderStats, instanceCount, currentPlayers, allSessions, gameStatsRaw, recentOrders] = await Promise.all([
       prisma.order.aggregate({
         where: { gameId: { in: gameIds }, status: { in: ['PAID', 'COMPLETED'] } },
         _sum: { amount: true },
@@ -822,8 +825,35 @@ router.add('GET', '/developer/dashboard', async (req) => {
           })
         ]);
         return { g, gOrders, gCurrent };
-      }))
+      })),
+      prisma.order.findMany({
+        where: { 
+          gameId: { in: gameIds }, 
+          status: { in: ['PAID', 'COMPLETED'] },
+          createdAt: { gte: fourteenDaysAgo }
+        },
+        select: { amount: true, createdAt: true }
+      })
     ]);
+
+    // Group revenue by day
+    const revenueByDay = {};
+    for (let i = 0; i < 14; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      revenueByDay[d.toISOString().split('T')[0]] = 0;
+    }
+
+    recentOrders.forEach(o => {
+      const date = o.createdAt.toISOString().split('T')[0];
+      if (revenueByDay[date] !== undefined) {
+        revenueByDay[date] += o.amount;
+      }
+    });
+
+    const dailyRevenue = Object.entries(revenueByDay)
+      .map(([date, amount]) => ({ date, amount }))
+      .sort((a, b) => a.date.localeCompare(b.date));
 
     // Calculate unique players per game and total from the fetched sessions
     const totalPlayers = new Set(allSessions.map(s => s.userId)).size;
@@ -849,7 +879,8 @@ router.add('GET', '/developer/dashboard', async (req) => {
         totalSales: orderStats._count,
         activeInstances: instanceCount,
         currentPlayers,
-        totalPlayers
+        totalPlayers,
+        dailyRevenue
       },
       games: gameStats
     });

@@ -174,16 +174,28 @@ export default function DeveloperWorkspace() {
             </div>
             <div className="flex-1 flex items-end gap-1 mt-4 h-32 w-full border-b-2 border-l-2 border-outline-variant pt-2 pr-2 relative">
               <div className="absolute inset-0 bg-[linear-gradient(rgba(60,75,53,0.3)_1px,transparent_1px)] bg-[length:100%_20px] pointer-events-none"></div>
-              <div className="flex-1 bg-surface-container border-t-2 border-outline-variant h-[20%] group-hover:bg-secondary-fixed-dim transition-all"></div>
-              <div className="flex-1 bg-surface-container border-t-2 border-outline-variant h-[35%] group-hover:bg-secondary-fixed-dim transition-all"></div>
-              <div className="flex-1 bg-surface-container border-t-2 border-outline-variant h-[25%] group-hover:bg-secondary-fixed-dim transition-all"></div>
-              <div className="flex-1 bg-surface-container border-t-2 border-outline-variant h-[50%] group-hover:bg-secondary-fixed-dim transition-all"></div>
-              <div className="flex-1 bg-surface-container border-t-2 border-outline-variant h-[45%] group-hover:bg-secondary-fixed-dim transition-all"></div>
-              <div className="flex-1 bg-surface-container border-t-2 border-outline-variant h-[70%] group-hover:bg-secondary-fixed-dim transition-all"></div>
-              <div className="flex-1 bg-secondary-container border-t-2 border-secondary-fixed h-[90%] shadow-[0_0_10px_#fe00fe] relative">
-                <span className="absolute -top-6 left-1/2 -translate-x-1/2 font-label-mono text-[10px] text-secondary-fixed">PEAK</span>
-              </div>
-              <div className="flex-1 bg-surface-container border-t-2 border-outline-variant h-[60%] group-hover:bg-secondary-fixed-dim transition-all"></div>
+              {(() => {
+                const data = stats.dailyRevenue || [];
+                const max = Math.max(...data.map(d => d.amount), 1);
+                return data.map((d, i) => {
+                  const height = Math.max((d.amount / max) * 100, 5); // Min 5% height for visibility
+                  const isPeak = d.amount === max && d.amount > 0;
+                  return (
+                    <div 
+                      key={d.date} 
+                      className={`flex-1 group/bar relative border-t-2 transition-all ${isPeak ? 'bg-secondary-container border-secondary-fixed shadow-[0_0_10px_#fe00fe]' : 'bg-surface-container border-outline-variant hover:bg-secondary-fixed-dim'}`}
+                      style={{ height: `${height}%` }}
+                    >
+                      {isPeak && <span className="absolute -top-6 left-1/2 -translate-x-1/2 font-label-mono text-[10px] text-secondary-fixed">PEAK</span>}
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-surface-container-highest border border-outline-variant px-2 py-1 opacity-0 group-hover/bar:opacity-100 transition-opacity z-10 pointer-events-none whitespace-nowrap">
+                        <span className="font-label-mono text-[9px] text-primary-container">
+                          {new Date(d.date).toLocaleDateString()}: ₹{(d.amount / 100).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
             </div>
           </div>
         </div>
