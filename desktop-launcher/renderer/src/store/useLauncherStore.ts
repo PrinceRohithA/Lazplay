@@ -32,6 +32,7 @@ interface LauncherStore {
   setActivePage: (page: "library" | "store") => void;
   syncRemoteLibrary: () => Promise<void>;
   claimGame: (gameId: string) => Promise<void>;
+  uninstallGame: (gameId: string) => Promise<void>;
 }
 
 // In a real app, declare global types for the injected API
@@ -160,6 +161,18 @@ export const useLauncherStore = create<LauncherStore>((set, get) => ({
           },
         }));
       }
+    }
+  },
+
+  uninstallGame: async (gameId) => {
+    if (window.lazplayAPI) {
+      await window.lazplayAPI.uninstallGame(gameId);
+      set((prev) => ({
+        games: {
+          ...prev.games,
+          [gameId]: { ...prev.games[gameId], status: "uninstalled" },
+        },
+      }));
     }
   },
 }));

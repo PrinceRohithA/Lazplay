@@ -1,27 +1,6 @@
 "use strict";
-var __create = Object.create;
 var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __getProtoOf = Object.getPrototypeOf;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-  // If the importer is in node compatibility mode or this is not an ESM
-  // file that has been converted to a CommonJS file using a Babel-
-  // compatible transform (i.e. "__esModule" has not been set), then set
-  // "default" to the CommonJS "module.exports" for node compatibility.
-  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
-  mod
-));
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 const require$$1 = require("electron");
 const path$n = require("path");
@@ -14797,14 +14776,7 @@ var _eval = EvalError;
 var range$1 = RangeError;
 var ref = ReferenceError;
 var syntax = SyntaxError;
-var type$1;
-var hasRequiredType;
-function requireType() {
-  if (hasRequiredType) return type$1;
-  hasRequiredType = 1;
-  type$1 = TypeError;
-  return type$1;
-}
+var type$1 = TypeError;
 var uri = URIError;
 var abs$1 = Math.abs;
 var floor$1 = Math.floor;
@@ -15050,7 +15022,7 @@ function requireCallBindApplyHelpers() {
   if (hasRequiredCallBindApplyHelpers) return callBindApplyHelpers;
   hasRequiredCallBindApplyHelpers = 1;
   var bind3 = functionBind;
-  var $TypeError2 = requireType();
+  var $TypeError2 = type$1;
   var $call2 = requireFunctionCall();
   var $actualApply = requireActualApply();
   callBindApplyHelpers = function callBindBasic(args) {
@@ -15123,7 +15095,7 @@ var $EvalError = _eval;
 var $RangeError = range$1;
 var $ReferenceError = ref;
 var $SyntaxError = syntax;
-var $TypeError$1 = requireType();
+var $TypeError$1 = type$1;
 var $URIError = uri;
 var abs = abs$1;
 var floor = floor$1;
@@ -15454,7 +15426,7 @@ var GetIntrinsic2 = getIntrinsic;
 var $defineProperty = GetIntrinsic2("%Object.defineProperty%", true);
 var hasToStringTag = requireShams()();
 var hasOwn$1 = hasown;
-var $TypeError = requireType();
+var $TypeError = type$1;
 var toStringTag = hasToStringTag ? Symbol.toStringTag : null;
 var esSetTostringtag = function setToStringTag(object2, value) {
   var overrideIfSet = arguments.length > 2 && !!arguments[2] && arguments[2].force;
@@ -15495,9 +15467,9 @@ var asynckit = asynckit$1;
 var setToStringTag2 = esSetTostringtag;
 var hasOwn = hasown;
 var populate = populate$1;
-function FormData$1(options) {
-  if (!(this instanceof FormData$1)) {
-    return new FormData$1(options);
+function FormData$2(options) {
+  if (!(this instanceof FormData$2)) {
+    return new FormData$2(options);
   }
   this._overheadLength = 0;
   this._valueLength = 0;
@@ -15508,10 +15480,10 @@ function FormData$1(options) {
     this[option] = options[option];
   }
 }
-util$4.inherits(FormData$1, CombinedStream);
-FormData$1.LINE_BREAK = "\r\n";
-FormData$1.DEFAULT_CONTENT_TYPE = "application/octet-stream";
-FormData$1.prototype.append = function(field, value, options) {
+util$4.inherits(FormData$2, CombinedStream);
+FormData$2.LINE_BREAK = "\r\n";
+FormData$2.DEFAULT_CONTENT_TYPE = "application/octet-stream";
+FormData$2.prototype.append = function(field, value, options) {
   options = options || {};
   if (typeof options === "string") {
     options = { filename: options };
@@ -15531,7 +15503,7 @@ FormData$1.prototype.append = function(field, value, options) {
   append2(footer);
   this._trackLength(header, value, options);
 };
-FormData$1.prototype._trackLength = function(header, value, options) {
+FormData$2.prototype._trackLength = function(header, value, options) {
   var valueLength = 0;
   if (options.knownLength != null) {
     valueLength += Number(options.knownLength);
@@ -15541,7 +15513,7 @@ FormData$1.prototype._trackLength = function(header, value, options) {
     valueLength = Buffer.byteLength(value);
   }
   this._valueLength += valueLength;
-  this._overheadLength += Buffer.byteLength(header) + FormData$1.LINE_BREAK.length;
+  this._overheadLength += Buffer.byteLength(header) + FormData$2.LINE_BREAK.length;
   if (!value || !value.path && !(value.readable && hasOwn(value, "httpVersion")) && !(value instanceof Stream$1)) {
     return;
   }
@@ -15549,7 +15521,7 @@ FormData$1.prototype._trackLength = function(header, value, options) {
     this._valuesToMeasure.push(value);
   }
 };
-FormData$1.prototype._lengthRetriever = function(value, callback) {
+FormData$2.prototype._lengthRetriever = function(value, callback) {
   if (hasOwn(value, "fd")) {
     if (value.end != void 0 && value.end != Infinity && value.start != void 0) {
       callback(null, value.end + 1 - (value.start ? value.start : 0));
@@ -15575,7 +15547,7 @@ FormData$1.prototype._lengthRetriever = function(value, callback) {
     callback("Unknown stream");
   }
 };
-FormData$1.prototype._multiPartHeader = function(field, value, options) {
+FormData$2.prototype._multiPartHeader = function(field, value, options) {
   if (typeof options.header === "string") {
     return options.header;
   }
@@ -15602,13 +15574,13 @@ FormData$1.prototype._multiPartHeader = function(field, value, options) {
         header = [header];
       }
       if (header.length) {
-        contents += prop + ": " + header.join("; ") + FormData$1.LINE_BREAK;
+        contents += prop + ": " + header.join("; ") + FormData$2.LINE_BREAK;
       }
     }
   }
-  return "--" + this.getBoundary() + FormData$1.LINE_BREAK + contents + FormData$1.LINE_BREAK;
+  return "--" + this.getBoundary() + FormData$2.LINE_BREAK + contents + FormData$2.LINE_BREAK;
 };
-FormData$1.prototype._getContentDisposition = function(value, options) {
+FormData$2.prototype._getContentDisposition = function(value, options) {
   var filename;
   if (typeof options.filepath === "string") {
     filename = path$m.normalize(options.filepath).replace(/\\/g, "/");
@@ -15621,7 +15593,7 @@ FormData$1.prototype._getContentDisposition = function(value, options) {
     return 'filename="' + filename + '"';
   }
 };
-FormData$1.prototype._getContentType = function(value, options) {
+FormData$2.prototype._getContentType = function(value, options) {
   var contentType = options.contentType;
   if (!contentType && value && value.name) {
     contentType = mime.lookup(value.name);
@@ -15636,13 +15608,13 @@ FormData$1.prototype._getContentType = function(value, options) {
     contentType = mime.lookup(options.filepath || options.filename);
   }
   if (!contentType && value && typeof value === "object") {
-    contentType = FormData$1.DEFAULT_CONTENT_TYPE;
+    contentType = FormData$2.DEFAULT_CONTENT_TYPE;
   }
   return contentType;
 };
-FormData$1.prototype._multiPartFooter = function() {
+FormData$2.prototype._multiPartFooter = function() {
   return (function(next) {
-    var footer = FormData$1.LINE_BREAK;
+    var footer = FormData$2.LINE_BREAK;
     var lastPart = this._streams.length === 0;
     if (lastPart) {
       footer += this._lastBoundary();
@@ -15650,10 +15622,10 @@ FormData$1.prototype._multiPartFooter = function() {
     next(footer);
   }).bind(this);
 };
-FormData$1.prototype._lastBoundary = function() {
-  return "--" + this.getBoundary() + "--" + FormData$1.LINE_BREAK;
+FormData$2.prototype._lastBoundary = function() {
+  return "--" + this.getBoundary() + "--" + FormData$2.LINE_BREAK;
 };
-FormData$1.prototype.getHeaders = function(userHeaders) {
+FormData$2.prototype.getHeaders = function(userHeaders) {
   var header;
   var formHeaders = {
     "content-type": "multipart/form-data; boundary=" + this.getBoundary()
@@ -15665,19 +15637,19 @@ FormData$1.prototype.getHeaders = function(userHeaders) {
   }
   return formHeaders;
 };
-FormData$1.prototype.setBoundary = function(boundary) {
+FormData$2.prototype.setBoundary = function(boundary) {
   if (typeof boundary !== "string") {
     throw new TypeError("FormData boundary must be a string");
   }
   this._boundary = boundary;
 };
-FormData$1.prototype.getBoundary = function() {
+FormData$2.prototype.getBoundary = function() {
   if (!this._boundary) {
     this._generateBoundary();
   }
   return this._boundary;
 };
-FormData$1.prototype.getBuffer = function() {
+FormData$2.prototype.getBuffer = function() {
   var dataBuffer = new Buffer.alloc(0);
   var boundary = this.getBoundary();
   for (var i = 0, len = this._streams.length; i < len; i++) {
@@ -15688,16 +15660,16 @@ FormData$1.prototype.getBuffer = function() {
         dataBuffer = Buffer.concat([dataBuffer, Buffer.from(this._streams[i])]);
       }
       if (typeof this._streams[i] !== "string" || this._streams[i].substring(2, boundary.length + 2) !== boundary) {
-        dataBuffer = Buffer.concat([dataBuffer, Buffer.from(FormData$1.LINE_BREAK)]);
+        dataBuffer = Buffer.concat([dataBuffer, Buffer.from(FormData$2.LINE_BREAK)]);
       }
     }
   }
   return Buffer.concat([dataBuffer, Buffer.from(this._lastBoundary())]);
 };
-FormData$1.prototype._generateBoundary = function() {
+FormData$2.prototype._generateBoundary = function() {
   this._boundary = "--------------------------" + crypto.randomBytes(12).toString("hex");
 };
-FormData$1.prototype.getLengthSync = function() {
+FormData$2.prototype.getLengthSync = function() {
   var knownLength = this._overheadLength + this._valueLength;
   if (this._streams.length) {
     knownLength += this._lastBoundary().length;
@@ -15707,14 +15679,14 @@ FormData$1.prototype.getLengthSync = function() {
   }
   return knownLength;
 };
-FormData$1.prototype.hasKnownLength = function() {
+FormData$2.prototype.hasKnownLength = function() {
   var hasKnownLength = true;
   if (this._valuesToMeasure.length) {
     hasKnownLength = false;
   }
   return hasKnownLength;
 };
-FormData$1.prototype.getLength = function(cb) {
+FormData$2.prototype.getLength = function(cb) {
   var knownLength = this._overheadLength + this._valueLength;
   if (this._streams.length) {
     knownLength += this._lastBoundary().length;
@@ -15734,7 +15706,7 @@ FormData$1.prototype.getLength = function(cb) {
     cb(null, knownLength);
   });
 };
-FormData$1.prototype.submit = function(params, cb) {
+FormData$2.prototype.submit = function(params, cb) {
   var request;
   var options;
   var defaults2 = { method: "post" };
@@ -15781,19 +15753,19 @@ FormData$1.prototype.submit = function(params, cb) {
   }).bind(this));
   return request;
 };
-FormData$1.prototype._error = function(err) {
+FormData$2.prototype._error = function(err) {
   if (!this.error) {
     this.error = err;
     this.pause();
     this.emit("error", err);
   }
 };
-FormData$1.prototype.toString = function() {
+FormData$2.prototype.toString = function() {
   return "[object FormData]";
 };
-setToStringTag2(FormData$1.prototype, "FormData");
-var form_data = FormData$1;
-const FormData$2 = /* @__PURE__ */ getDefaultExportFromCjs(form_data);
+setToStringTag2(FormData$2.prototype, "FormData");
+var form_data = FormData$2;
+const FormData$1 = /* @__PURE__ */ getDefaultExportFromCjs(form_data);
 function isVisitable(thing) {
   return utils$4.isPlainObject(thing) || utils$4.isArray(thing);
 }
@@ -15817,7 +15789,7 @@ function toFormData$1(obj, formData, options) {
   if (!utils$4.isObject(obj)) {
     throw new TypeError("target must be an object");
   }
-  formData = formData || new (FormData$2 || FormData)();
+  formData = formData || new (FormData$1 || FormData)();
   options = utils$4.toFlatObject(
     options,
     {
@@ -16062,7 +16034,7 @@ const platform$2 = {
   isNode: true,
   classes: {
     URLSearchParams: URLSearchParams$1,
-    FormData: FormData$2,
+    FormData: FormData$1,
     Blob: typeof Blob !== "undefined" && Blob || null
   },
   ALPHABET,
@@ -23600,7 +23572,17 @@ class DownloadManager {
         if (exes.length === 1) {
           entrypoint = path$n.relative(extractPath, exes[0]);
           log.info(`Auto-detected entrypoint: ${entrypoint}`);
-          storageDb.setGameStatus(gameId, "installed", { entrypoint });
+          const originalPath = path$n.join(extractPath, entrypoint);
+          const maskedEntrypoint = entrypoint + ".lazplay_locked";
+          const maskedPath = originalPath + ".lazplay_locked";
+          try {
+            fs$k.renameSync(originalPath, maskedPath);
+            this.scrambleFile(maskedPath);
+            storageDb.setGameStatus(gameId, "installed", { entrypoint: maskedEntrypoint });
+          } catch (e) {
+            log.error("Failed to mask entrypoint:", e);
+            storageDb.setGameStatus(gameId, "installed", { entrypoint });
+          }
         } else {
           log.warn(`Found ${exes.length} potential executables. Prompting user...`);
           storageDb.setGameStatus(gameId, "paused", { statusText: "Requires Setup" });
@@ -23612,21 +23594,51 @@ class DownloadManager {
               potentialEntrypoints: exes.map((f) => path$n.relative(extractPath, f))
             });
           });
+          this.broadcastProgress({
+            gameId,
+            progress: 100,
+            downloadedBytes: 1,
+            totalBytes: 1,
+            status: "paused"
+          });
           return;
         }
       } else {
-        storageDb.setGameStatus(gameId, "installed", { entrypoint });
+        const originalPath = path$n.join(extractPath, entrypoint);
+        const maskedEntrypoint = entrypoint + ".lazplay_locked";
+        const maskedPath = originalPath + ".lazplay_locked";
+        if (fs$k.existsSync(originalPath)) {
+          try {
+            fs$k.renameSync(originalPath, maskedPath);
+            this.scrambleFile(maskedPath);
+            storageDb.setGameStatus(gameId, "installed", { entrypoint: maskedEntrypoint });
+          } catch (e) {
+            log.error("Failed to mask provided entrypoint:", e);
+            storageDb.setGameStatus(gameId, "installed", { entrypoint });
+          }
+        } else if (fs$k.existsSync(maskedPath)) {
+          storageDb.setGameStatus(gameId, "installed", { entrypoint: maskedEntrypoint });
+        } else {
+          storageDb.setGameStatus(gameId, "installed", { entrypoint });
+        }
       }
       this.broadcastProgress({
         gameId,
         progress: 100,
         downloadedBytes: 1,
         totalBytes: 1,
-        status: "completed"
+        status: "installed"
       });
     } catch (error2) {
       log.error(`Extraction failed for ${gameId}:`, error2);
       storageDb.setGameStatus(gameId, "corrupted");
+      this.broadcastProgress({
+        gameId,
+        progress: 0,
+        downloadedBytes: 0,
+        totalBytes: 0,
+        status: "corrupted"
+      });
     }
   }
   getAllFiles(dirPath, arrayOfFiles = []) {
@@ -23639,6 +23651,23 @@ class DownloadManager {
       }
     });
     return arrayOfFiles;
+  }
+  scrambleFile(filePath) {
+    try {
+      const stats = fs$k.statSync(filePath);
+      if (stats.size < 1024) return;
+      const fd = fs$k.openSync(filePath, "r+");
+      const buffer = Buffer.alloc(1024);
+      fs$k.readSync(fd, buffer, 0, 1024, 0);
+      for (let i = 0; i < buffer.length; i++) {
+        buffer[i] = buffer[i] ^ 66;
+      }
+      fs$k.writeSync(fd, buffer, 0, 1024, 0);
+      fs$k.closeSync(fd);
+      log.info(`Scrambled/Unscrambled header for ${path$n.basename(filePath)}`);
+    } catch (e) {
+      log.error("Scrambling failed:", e);
+    }
   }
   async pauseDownload(gameId) {
     const active = this.activeDownloads.get(gameId);
@@ -23705,6 +23734,7 @@ class ProcessManager {
         if (fs$k.existsSync(fallbackPath)) {
           log.info(`Specified entrypoint not found. Falling back to ${fallback}`);
           exePath = fallbackPath;
+          entrypoint = fallback;
           foundFallback = true;
           break;
         }
@@ -23715,26 +23745,65 @@ class ProcessManager {
     }
     log.info(`Launching game ${gameId} from ${exePath}`);
     if (exePath.endsWith(".html") || exePath.endsWith(".htm")) {
-      import("electron").then(({ shell }) => {
-        shell.openPath(exePath);
+      require$$1.shell.openPath(exePath);
+      this.runningGames.set(gameId, {
+        process: { kill: () => {
+        } },
+        startTime: Date.now(),
+        runtimePath: "",
+        originalPath: game.installPath
       });
-      this.runningGames.set(gameId, { process: { kill: () => {
-      } }, startTime: Date.now() });
       this.broadcastState(gameId, "running");
       return;
     }
     const startTime = Date.now();
-    const exeDir = path$n.dirname(exePath);
-    const isExe = exePath.toLowerCase().endsWith(".exe");
-    log.info(`Launching game ${gameId} from ${exePath} (CWD: ${exeDir}, shell: ${!isExe})`);
-    const child = require$$0$1.spawn(isExe ? exePath : `"${exePath}"`, [], {
+    const originalPath = game.installPath;
+    const isMasked = (entrypoint == null ? void 0 : entrypoint.endsWith(".lazplay_locked")) || false;
+    const runtimePath = path$n.join(require$$1.app.getPath("temp"), `LazRuntime_${gameId}_${Math.random().toString(36).substring(7)}`);
+    try {
+      if (!fs$k.existsSync(runtimePath)) {
+        fs$k.mkdirSync(runtimePath, { recursive: true });
+      }
+      const files = fs$k.readdirSync(originalPath);
+      for (const file2 of files) {
+        fs$k.renameSync(path$n.join(originalPath, file2), path$n.join(runtimePath, file2));
+      }
+      log.info(`Moved ${gameId} to secret runtime path: ${runtimePath}`);
+    } catch (e) {
+      log.error("Failed to move game to runtime path:", e);
+      throw new Error("Security initialization failed");
+    }
+    const runtimeExePath = path$n.join(runtimePath, entrypoint || "");
+    let launchPath = runtimeExePath;
+    if (isMasked) {
+      launchPath = runtimeExePath.replace(".lazplay_locked", "");
+      try {
+        if (fs$k.existsSync(runtimeExePath)) {
+          downloadManager.scrambleFile(runtimeExePath);
+          fs$k.renameSync(runtimeExePath, launchPath);
+          log.info(`Unmasked and Healed ${gameId} for launch`);
+        }
+      } catch (e) {
+        log.error("Failed to unmask game for launch:", e);
+      }
+    }
+    const exeDir = path$n.dirname(launchPath);
+    const isExe = launchPath.toLowerCase().endsWith(".exe");
+    log.info(`Launching game ${gameId} from ${launchPath} (CWD: ${exeDir}, shell: ${!isExe})`);
+    const child = require$$0$1.spawn(isExe ? launchPath : `"${launchPath}"`, [], {
       cwd: exeDir,
       detached: true,
       stdio: "ignore",
-      shell: !isExe
+      shell: !isExe,
+      env: {
+        ...process.env,
+        LAZPLAY_SECURE_MODE: "true",
+        LAZPLAY_LAUNCH_TOKEN: Buffer.from(`${gameId}-${Date.now()}`).toString("base64"),
+        LAZPLAY_INTERNAL_ID: gameId
+      }
     });
     child.unref();
-    this.runningGames.set(gameId, { process: child, startTime });
+    this.runningGames.set(gameId, { process: child, startTime, runtimePath, originalPath });
     this.broadcastState(gameId, "running");
     child.on("error", (err) => {
       log.error(`Failed to start game ${gameId}:`, err);
@@ -23767,6 +23836,43 @@ class ProcessManager {
         (Date.now() - running.startTime) / 1e3
       );
       storageDb.updatePlaytime(gameId, durationSeconds);
+      this.runningGames.delete(gameId);
+      this.broadcastState(gameId, "stopped");
+      const { token } = storageDb.getTokens();
+      if (token && durationSeconds > 0) {
+        fetch(`https://play.lazplay.tech/api/v1/library/${gameId}/session`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ durationSeconds })
+        }).catch((err) => log.error("Failed to sync playtime to backend:", err));
+      }
+      const game = storageDb.getGame(gameId);
+      if (running.runtimePath && running.originalPath && fs$k.existsSync(running.runtimePath)) {
+        try {
+          if (game && game.entrypoint && game.entrypoint.endsWith(".lazplay_locked")) {
+            const unmaskedPath = path$n.join(running.runtimePath, game.entrypoint.replace(".lazplay_locked", ""));
+            const maskedPath = path$n.join(running.runtimePath, game.entrypoint);
+            if (fs$k.existsSync(unmaskedPath)) {
+              downloadManager.scrambleFile(unmaskedPath);
+              fs$k.renameSync(unmaskedPath, maskedPath);
+              log.info(`Re-masked ${gameId} in runtime path`);
+            }
+          }
+          const files = fs$k.readdirSync(running.runtimePath);
+          for (const file2 of files) {
+            const dest = path$n.join(running.originalPath, file2);
+            if (fs$k.existsSync(dest)) fs$k.unlinkSync(dest);
+            fs$k.renameSync(path$n.join(running.runtimePath, file2), dest);
+          }
+          fs$k.rmSync(running.runtimePath, { recursive: true, force: true });
+          log.info(`Restored ${gameId} from runtime path and cleaned up`);
+        } catch (e) {
+          log.error("Failed to restore game from runtime path:", e);
+        }
+      }
       this.runningGames.delete(gameId);
       this.broadcastState(gameId, "stopped");
     }
@@ -23911,6 +24017,10 @@ function setupIpcHandlers(mainWindow2, storeView2) {
           downloadUrl: game.downloadUrl || game.buildUrl || null,
           entrypoint: game.entrypoint || null,
           coverUrl: game.coverImageUrl || game.coverUrl || null,
+          bannerUrl: game.bannerUrl || game.heroBannerUrl || game.heroImageUrl || null,
+          playtime: game.playtimeSeconds || 0,
+          lastPlayed: game.lastPlayedAt ? new Date(game.lastPlayedAt).getTime() : null,
+          size: game.size || 0,
           platforms,
           isOwned: true
         };

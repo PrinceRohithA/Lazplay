@@ -1,14 +1,15 @@
 import { spawn, ChildProcess } from "child_process";
-import { BrowserWindow } from "electron";
+import { BrowserWindow, app, shell } from "electron";
 import path from "path";
 import fs from "fs";
 import { db } from "../storage/db";
 import log from "electron-log";
+import { downloadManager } from "../downloads/manager";
 
 class ProcessManager {
   private runningGames: Map<
     string,
-    { process: ChildProcess; startTime: number }
+    { process: ChildProcess; startTime: number; runtimePath: string; originalPath: string }
   > = new Map();
 
   async launchGame(gameId: string) {
@@ -34,6 +35,7 @@ class ProcessManager {
         if (fs.existsSync(fallbackPath)) {
           log.info(`Specified entrypoint not found. Falling back to ${fallback}`);
           exePath = fallbackPath;
+          entrypoint = fallback; // SYNC: Update entrypoint string
           foundFallback = true;
           break;
         }
@@ -47,32 +49,75 @@ class ProcessManager {
     log.info(`Launching game ${gameId} from ${exePath}`);
 
     if (exePath.endsWith(".html") || exePath.endsWith(".htm")) {
-      // For web games, we open them in the system browser (or we could open a new Electron window)
-      // Note: Tracking playtime for web games launched this way is difficult
-      import("electron").then(({ shell }) => {
-        shell.openPath(exePath);
+      shell.openPath(exePath);
+      this.runningGames.set(gameId, { 
+        process: { kill: () => {} } as any, 
+        startTime: Date.now(),
+        runtimePath: "", 
+        originalPath: game.installPath 
       });
-      this.runningGames.set(gameId, { process: { kill: () => {} } as any, startTime: Date.now() });
       this.broadcastState(gameId, "running");
       // For now, we'll just keep it "running" until the user manually stops it or we implement a window tracker
       return;
     }
 
     const startTime = Date.now();
-    const exeDir = path.dirname(exePath);
-    const isExe = exePath.toLowerCase().endsWith(".exe");
-    log.info(`Launching game ${gameId} from ${exePath} (CWD: ${exeDir}, shell: ${!isExe})`);
+    const originalPath = game.installPath;
+    const isMasked = entrypoint?.endsWith(".lazplay_locked") || false;
+    const runtimePath = path.join(app.getPath("temp"), `LazRuntime_${gameId}_${Math.random().toString(36).substring(7)}`);
 
-    const child = spawn(isExe ? exePath : `"${exePath}"`, [], {
+    try {
+        if (!fs.existsSync(runtimePath)) {
+            fs.mkdirSync(runtimePath, { recursive: true });
+        }
+        
+        // MOVE TO RUNTIME PATH: Move everything to the secret temp folder
+        const files = fs.readdirSync(originalPath);
+        for (const file of files) {
+            fs.renameSync(path.join(originalPath, file), path.join(runtimePath, file));
+        }
+        log.info(`Moved ${gameId} to secret runtime path: ${runtimePath}`);
+    } catch (e) {
+        log.error("Failed to move game to runtime path:", e);
+        throw new Error("Security initialization failed");
+    }
+
+    const runtimeExePath = path.join(runtimePath, entrypoint || "");
+    let launchPath = runtimeExePath;
+
+    if (isMasked) {
+        launchPath = runtimeExePath.replace(".lazplay_locked", "");
+        try {
+            if (fs.existsSync(runtimeExePath)) {
+                downloadManager.scrambleFile(runtimeExePath); // HEAL: Restore the header
+                fs.renameSync(runtimeExePath, launchPath);
+                log.info(`Unmasked and Healed ${gameId} for launch`);
+            }
+        } catch (e) {
+            log.error("Failed to unmask game for launch:", e);
+        }
+    }
+
+    const exeDir = path.dirname(launchPath);
+    const isExe = launchPath.toLowerCase().endsWith(".exe");
+    log.info(`Launching game ${gameId} from ${launchPath} (CWD: ${exeDir}, shell: ${!isExe})`);
+
+    const child = spawn(isExe ? launchPath : `"${launchPath}"`, [], {
       cwd: exeDir,
       detached: true,
       stdio: "ignore",
       shell: !isExe,
+      env: {
+        ...process.env,
+        LAZPLAY_SECURE_MODE: "true",
+        LAZPLAY_LAUNCH_TOKEN: Buffer.from(`${gameId}-${Date.now()}`).toString('base64'),
+        LAZPLAY_INTERNAL_ID: gameId
+      }
     });
 
     child.unref(); 
 
-    this.runningGames.set(gameId, { process: child, startTime });
+    this.runningGames.set(gameId, { process: child, startTime, runtimePath, originalPath });
     this.broadcastState(gameId, "running");
 
     child.on("error", (err) => {
@@ -126,6 +171,40 @@ class ProcessManager {
           body: JSON.stringify({ durationSeconds })
         }).catch(err => log.error("Failed to sync playtime to backend:", err));
       }
+
+      // RE-MASK and MOVE BACK
+      const game = db.getGame(gameId);
+      if (running.runtimePath && running.originalPath && fs.existsSync(running.runtimePath)) {
+          try {
+              // First, re-mask the entrypoint while still in temp
+              if (game && game.entrypoint && game.entrypoint.endsWith(".lazplay_locked")) {
+                  const unmaskedPath = path.join(running.runtimePath, game.entrypoint.replace(".lazplay_locked", ""));
+                  const maskedPath = path.join(running.runtimePath, game.entrypoint);
+                  if (fs.existsSync(unmaskedPath)) {
+                      downloadManager.scrambleFile(unmaskedPath); // PROTECT: Corrupt header
+                      fs.renameSync(unmaskedPath, maskedPath);
+                      log.info(`Re-masked ${gameId} in runtime path`);
+                  }
+              }
+
+              // Move everything back to the official folder
+              const files = fs.readdirSync(running.runtimePath);
+              for (const file of files) {
+                  const dest = path.join(running.originalPath, file);
+                  if (fs.existsSync(dest)) fs.unlinkSync(dest);
+                  fs.renameSync(path.join(running.runtimePath, file), dest);
+              }
+
+              // Delete the secret temp folder
+              fs.rmSync(running.runtimePath, { recursive: true, force: true });
+              log.info(`Restored ${gameId} from runtime path and cleaned up`);
+          } catch (e) {
+              log.error("Failed to restore game from runtime path:", e);
+          }
+      }
+
+      this.runningGames.delete(gameId);
+      this.broadcastState(gameId, "stopped");
     }
   }
 

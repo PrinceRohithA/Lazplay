@@ -3,7 +3,7 @@ import { Play, Download, Search, LayoutGrid, List, Info, Clock, HardDrive, Gamep
 import { useState } from "react";
 
 export default function Library() {
-  const { games, claimGame, syncRemoteLibrary, selectedGameId, setSelectedGame } = useLauncherStore();
+  const { games, claimGame, syncRemoteLibrary, selectedGameId, setSelectedGame, uninstallGame } = useLauncherStore();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [libraryFilter, setLibraryFilter] = useState<"all" | "installed">("all");
@@ -50,7 +50,7 @@ export default function Library() {
 
     if (game.status === "installed") {
       window.lazplayAPI.launchGame(game.id);
-    } else if (game.status === "uninstalled" || !game.status) {
+    } else if (game.status === "uninstalled" || !game.status || game.status === "paused") {
       window.lazplayAPI.installGame(game.id, {
         title: game.title,
         downloadUrl: game.downloadUrl,
@@ -117,11 +117,17 @@ export default function Library() {
                         ? "bg-emerald-500 hover:bg-emerald-400 text-white shadow-emerald-500/20"
                         : heroGame.status === "installed"
                           ? "bg-brand-500 hover:bg-brand-400 text-white shadow-brand-500/20"
-                          : "bg-white hover:bg-slate-200 text-slate-950 shadow-white/10"
+                          : heroGame.status === "paused"
+                            ? "bg-amber-500 hover:bg-amber-400 text-white shadow-amber-500/20"
+                            : "bg-white hover:bg-slate-200 text-slate-950 shadow-white/10"
                     }`}
                   >
                     {heroGame.isRunning ? (
                       <><RefreshCw size={24} className="animate-spin" /> RUNNING</>
+                    ) : heroGame.status === "downloading" ? (
+                      <><RefreshCw size={24} className="animate-spin" /> DOWNLOADING ({Math.round(heroGame.progress || 0)}%)</>
+                    ) : heroGame.status === "paused" ? (
+                      <><Info size={24} /> SETUP REQUIRED</>
                     ) : heroGame.status === "installed" ? (
                       <><Play size={24} fill="currentColor" /> START GAME</>
                     ) : (
@@ -139,7 +145,7 @@ export default function Library() {
                         <FolderOpen size={24} />
                       </button>
                       <button 
-                        onClick={() => window.lazplayAPI.uninstallGame(heroGame.id)}
+                        onClick={() => uninstallGame(heroGame.id)}
                         className="p-4 rounded-xl bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white transition-colors border border-red-500/20 backdrop-blur-md"
                         title="Uninstall"
                       >
@@ -246,6 +252,7 @@ export default function Library() {
                 isSelected={heroGame?.id === game.id}
                 onSelect={() => setSelectedGame(game.id)}
                 onAction={() => handleAction(game)} 
+                onUninstall={() => uninstallGame(game.id)}
               />
             ))}
           </div>
@@ -258,6 +265,7 @@ export default function Library() {
                 isSelected={heroGame?.id === game.id}
                 onSelect={() => setSelectedGame(game.id)}
                 onAction={() => handleAction(game)} 
+                onUninstall={() => uninstallGame(game.id)}
               />
             ))}
           </div>
@@ -267,7 +275,7 @@ export default function Library() {
   );
 }
 
-function GameCard({ game, isSelected, onSelect, onAction }: { game: any, isSelected: boolean, onSelect: () => void, onAction: () => void }) {
+function GameCard({ game, isSelected, onSelect, onAction, onUninstall }: { game: any, isSelected: boolean, onSelect: () => void, onAction: () => void, onUninstall: () => void }) {
   return (
     <div 
       onClick={onSelect}
@@ -304,8 +312,8 @@ function GameCard({ game, isSelected, onSelect, onAction }: { game: any, isSelec
                   : "bg-brand-500 text-white"
             }`}
           >
-            {!game.isOwned ? <Gamepad2 size={16} /> : game.status === "installed" ? <Play size={16} fill="currentColor" /> : <Download size={16} />}
-            {!game.isOwned ? "Claim" : game.isRunning ? "Running" : game.status === "installed" ? "Launch" : "Install"}
+            {!game.isOwned ? <Gamepad2 size={16} /> : (game.status === "downloading" || game.isRunning) ? <RefreshCw size={16} className="animate-spin" /> : game.status === "installed" ? <Play size={16} fill="currentColor" /> : <Download size={16} />}
+            {!game.isOwned ? "Claim" : game.isRunning ? "Running" : game.status === "downloading" ? "Downloading" : game.status === "paused" ? "Setup" : game.status === "installed" ? "Launch" : "Install"}
           </button>
 
           {game.status === "installed" && !game.isRunning && (
@@ -317,7 +325,7 @@ function GameCard({ game, isSelected, onSelect, onAction }: { game: any, isSelec
                  <FolderOpen size={12} /> FOLDER
                </button>
                <button 
-                 onClick={(e) => { e.stopPropagation(); window.lazplayAPI.uninstallGame(game.id); }}
+                 onClick={(e) => { e.stopPropagation(); onUninstall(); }}
                  className="flex-1 py-2 bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 transition-colors"
                >
                  <Trash2 size={12} /> DELETE
@@ -337,7 +345,7 @@ function GameCard({ game, isSelected, onSelect, onAction }: { game: any, isSelec
   );
 }
 
-function GameListRow({ game, isSelected, onSelect, onAction }: { game: any, isSelected: boolean, onSelect: () => void, onAction: () => void }) {
+function GameListRow({ game, isSelected, onSelect, onAction, onUninstall }: { game: any, isSelected: boolean, onSelect: () => void, onAction: () => void, onUninstall: () => void }) {
   return (
     <div 
       onClick={onSelect}
@@ -372,7 +380,7 @@ function GameListRow({ game, isSelected, onSelect, onAction }: { game: any, isSe
               <FolderOpen size={16} />
             </button>
             <button 
-              onClick={(e) => { e.stopPropagation(); window.lazplayAPI.uninstallGame(game.id); }}
+              onClick={(e) => { e.stopPropagation(); onUninstall(); }}
               className="p-2 bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white rounded-lg transition-colors"
               title="Delete"
             >
