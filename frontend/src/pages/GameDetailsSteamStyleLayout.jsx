@@ -187,9 +187,9 @@ export default function GameDetailsSteamStyleLayout() {
       {!loading && game && (
         <>
         {/*  Hero Section (Modern Layout)  */}
-        <section className="flex flex-col gap-4 bg-surface-container-low pixel-border p-2">
+        <section className="flex flex-col gap-4 bg-surface-container-low pixel-border p-2 max-w-screen-xl mx-auto w-full">
           {/*  Main Media  */}
-          <div className="relative aspect-video w-full overflow-hidden bg-black pixel-border group">
+          <div className="relative aspect-video w-full max-h-[500px] overflow-hidden bg-black pixel-border group self-center">
             {playingGame && launchData ? (
               <div ref={gameContainerRef} className="absolute inset-0 z-50 bg-black flex flex-col">
                 <div className="flex items-center justify-between p-2 bg-surface-container-highest border-b border-outline-variant h-10 px-4">
@@ -217,7 +217,7 @@ export default function GameDetailsSteamStyleLayout() {
                       poster={game.heroBannerUrl || game.heroImageUrl}
                       controls 
                       autoPlay 
-                      className="w-full h-full object-contain" 
+                      className="w-full h-full object-cover" 
                   />
                   <button 
                       onClick={() => setPlayingTrailer(false)}
@@ -348,7 +348,7 @@ export default function GameDetailsSteamStyleLayout() {
               {videos.length > 1 && (
                 <div className="mb-4 space-y-4">
                   {videos.slice(1).map(v => (
-                    <video key={v.id} controls className="w-full aspect-video pixel-border bg-black">
+                    <video key={v.id} controls className="w-full aspect-video max-h-[400px] pixel-border bg-black object-cover">
                       <source src={v.url} />
                       Your browser does not support the video tag.
                     </video>
@@ -359,7 +359,7 @@ export default function GameDetailsSteamStyleLayout() {
               {screenshots.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {screenshots.map(s => (
-                    <div key={s.id} className="pixel-border overflow-hidden bg-black aspect-video relative group/item">
+                    <div key={s.id} className="pixel-border overflow-hidden bg-black aspect-video max-h-[300px] relative group/item">
                       <img src={s.url} alt="Screenshot" className="w-full h-full object-cover group-hover/item:scale-105 transition-transform duration-500" />
                       <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover/item:opacity-100 transition-opacity pointer-events-none" />
                     </div>
