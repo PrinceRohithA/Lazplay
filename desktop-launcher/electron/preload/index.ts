@@ -25,6 +25,7 @@ contextBridge.exposeInMainWorld("lazplayAPI", {
   setStoreVisibility: (visible: boolean) =>
     ipcRenderer.invoke("set-store-visibility", visible),
   syncRemoteLibrary: () => ipcRenderer.invoke("sync-remote-library"),
+  claimGame: (gameId: string) => ipcRenderer.invoke("claim-game", gameId),
 
   // UI Communications
   onDeepLink: (callback: (url: string) => void) => {

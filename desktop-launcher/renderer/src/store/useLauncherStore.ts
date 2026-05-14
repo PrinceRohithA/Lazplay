@@ -8,6 +8,7 @@ interface GameState {
   downloadedBytes?: number;
   totalBytes?: number;
   isRunning?: boolean;
+  isOwned?: boolean;
 }
 
 interface LauncherStore {
@@ -19,6 +20,7 @@ interface LauncherStore {
   setRunningState: (id: string, isRunning: boolean) => void;
   setActivePage: (page: "library" | "store") => void;
   syncRemoteLibrary: () => Promise<void>;
+  claimGame: (gameId: string) => Promise<void>;
 }
 
 // In a real app, declare global types for the injected API
@@ -95,18 +97,41 @@ export const useLauncherStore = create<LauncherStore>((set, get) => ({
       if (result.success) {
         set((prev) => {
           const newGames = { ...prev.games };
-          result.items.forEach((item: any) => {
-            // Only add if not already present or if status is not 'installed'
+          const ownedSet = new Set(result.ownedIds);
+
+          result.allGames.forEach((item: any) => {
+            const isOwned = ownedSet.has(item.id);
             if (!newGames[item.id]) {
               newGames[item.id] = {
                 id: item.id,
                 title: item.title,
                 status: "uninstalled",
+                isOwned,
+              };
+            } else {
+              newGames[item.id] = {
+                ...newGames[item.id],
+                title: item.title,
+                isOwned,
               };
             }
           });
           return { games: newGames };
         });
+      }
+    }
+  },
+
+  claimGame: async (gameId) => {
+    if (window.lazplayAPI) {
+      const result = await window.lazplayAPI.claimGame(gameId);
+      if (result.success) {
+        set((prev) => ({
+          games: {
+            ...prev.games,
+            [gameId]: { ...prev.games[gameId], isOwned: true },
+          },
+        }));
       }
     }
   },

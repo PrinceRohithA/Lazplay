@@ -3,7 +3,7 @@ import { Play, Download, Search, LayoutGrid, List, Info, Clock, HardDrive, Gamep
 import { useState } from "react";
 
 export default function Library() {
-  const { games } = useLauncherStore();
+  const { games, claimGame } = useLauncherStore();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [libraryFilter, setLibraryFilter] = useState<"all" | "installed">("all");
@@ -15,8 +15,14 @@ export default function Library() {
     return matchesSearch && matchesFilter;
   });
 
-  const handleAction = (game: any) => {
+  const handleAction = async (game: any) => {
     if (!window.lazplayAPI) return;
+    
+    if (!game.isOwned) {
+      await claimGame(game.id);
+      return;
+    }
+
     if (game.status === "installed") {
       window.lazplayAPI.launchGame(game.id);
     } else if (game.status === "uninstalled" || !game.status) {
@@ -114,10 +120,14 @@ function GameCard({ game, onAction }: { game: any, onAction: () => void }) {
         <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-4 p-4 text-center backdrop-blur-sm">
           <button 
             onClick={onAction}
-            className="w-full py-2.5 bg-brand-500 hover:bg-brand-400 text-white rounded-lg font-bold flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20 transform translate-y-4 group-hover:translate-y-0 transition-transform"
+            className={`w-full py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform ${
+              !game.isOwned 
+                ? "bg-amber-500 hover:bg-amber-400 text-white shadow-amber-500/20" 
+                : "bg-brand-500 hover:bg-brand-400 text-white shadow-brand-500/20"
+            }`}
           >
-            {game.status === "installed" ? <Play size={18} fill="currentColor" /> : <Download size={18} />}
-            {game.status === "installed" ? "Launch" : "Install"}
+            {!game.isOwned ? <Gamepad2 size={18} /> : game.status === "installed" ? <Play size={18} fill="currentColor" /> : <Download size={18} />}
+            {!game.isOwned ? "Claim Game" : game.status === "installed" ? "Launch" : "Install"}
           </button>
           <button className="text-xs text-slate-400 hover:text-white flex items-center gap-1 transition-colors">
             <Info size={14} />
@@ -170,9 +180,13 @@ function GameListRow({ game, onAction }: { game: any, onAction: () => void }) {
       </div>
       <button 
         onClick={onAction}
-        className="px-6 py-2 bg-slate-700 hover:bg-brand-500 text-white rounded-lg text-xs font-bold transition-all opacity-0 group-hover:opacity-100"
+        className={`px-6 py-2 rounded-lg text-xs font-bold transition-all opacity-0 group-hover:opacity-100 ${
+          !game.isOwned 
+            ? "bg-amber-600 hover:bg-amber-500 text-white" 
+            : "bg-slate-700 hover:bg-brand-500 text-white"
+        }`}
       >
-        {game.status === "installed" ? "Launch" : "Install"}
+        {!game.isOwned ? "Claim" : game.status === "installed" ? "Launch" : "Install"}
       </button>
     </div>
   );

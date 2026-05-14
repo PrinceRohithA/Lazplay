@@ -107,21 +107,51 @@ export function setupIpcHandlers(
     if (!token) return { success: false, error: "Not logged in" };
 
     try {
-      const response = await fetch("https://play.lazplay.tech/api/library", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      // Fetch both user library AND all available games
+      const [libRes, gamesRes] = await Promise.all([
+        fetch("https://play.lazplay.tech/api/library", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch("https://play.lazplay.tech/api/games", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
 
-      if (!response.ok) throw new Error("Failed to fetch library");
+      if (!libRes.ok || !gamesRes.ok) throw new Error("Failed to fetch data");
 
-      const data = await response.json();
-      // 'data' is usually { items: [...] } or just [...] based on my reading of games.js
-      // Wait, games.js shows 'ok(pageItems, 200, { pagination: ... })' for /games
-      // but let's assume /library returns a flat list or similar.
-      return { success: true, items: data.items || data };
+      const libData = await libRes.json();
+      const gamesData = await gamesRes.json();
+
+      // Return combined data
+      return {
+        success: true,
+        ownedIds: (libData.items || libData).map((i: any) => i.gameId || i.id),
+        allGames: gamesData.items || gamesData,
+      };
     } catch (error: any) {
       log.error("Sync library failed:", error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle("claim-game", async (event, gameId: string) => {
+    const { token } = db.getTokens();
+    if (!token) return { success: false, error: "Not logged in" };
+
+    try {
+      const response = await fetch("https://play.lazplay.tech/api/library", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ gameId }),
+      });
+
+      if (!response.ok) throw new Error("Claim failed");
+      return { success: true };
+    } catch (error: any) {
+      log.error("Claim failed:", error);
       return { success: false, error: error.message };
     }
   });

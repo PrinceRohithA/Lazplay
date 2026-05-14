@@ -2924,16 +2924,43 @@ function setupIpcHandlers(mainWindow2, storeView2) {
     const { token } = storageDb.getTokens();
     if (!token) return { success: false, error: "Not logged in" };
     try {
-      const response = await fetch("https://play.lazplay.tech/api/library", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      if (!response.ok) throw new Error("Failed to fetch library");
-      const data = await response.json();
-      return { success: true, items: data.items || data };
+      const [libRes, gamesRes] = await Promise.all([
+        fetch("https://play.lazplay.tech/api/library", {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch("https://play.lazplay.tech/api/games", {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
+      if (!libRes.ok || !gamesRes.ok) throw new Error("Failed to fetch data");
+      const libData = await libRes.json();
+      const gamesData = await gamesRes.json();
+      return {
+        success: true,
+        ownedIds: (libData.items || libData).map((i) => i.gameId || i.id),
+        allGames: gamesData.items || gamesData
+      };
     } catch (error2) {
       log.error("Sync library failed:", error2);
+      return { success: false, error: error2.message };
+    }
+  });
+  require$$1.ipcMain.handle("claim-game", async (event, gameId) => {
+    const { token } = storageDb.getTokens();
+    if (!token) return { success: false, error: "Not logged in" };
+    try {
+      const response = await fetch("https://play.lazplay.tech/api/library", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ gameId })
+      });
+      if (!response.ok) throw new Error("Claim failed");
+      return { success: true };
+    } catch (error2) {
+      log.error("Claim failed:", error2);
       return { success: false, error: error2.message };
     }
   });

@@ -16,6 +16,7 @@ electron.contextBridge.exposeInMainWorld("lazplayAPI", {
   openInstallFolder: (gameId) => electron.ipcRenderer.invoke("open-install-folder", gameId),
   setStoreVisibility: (visible) => electron.ipcRenderer.invoke("set-store-visibility", visible),
   syncRemoteLibrary: () => electron.ipcRenderer.invoke("sync-remote-library"),
+  claimGame: (gameId) => electron.ipcRenderer.invoke("claim-game", gameId),
   // UI Communications
   onDeepLink: (callback) => {
     electron.ipcRenderer.on("deep-link", (_event, url) => callback(url));
