@@ -26,7 +26,7 @@ export default function LauncherDownloadPage() {
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
                 <a 
-                  href="https://github.com/PrinceRohithA/Lazplay/releases/latest/download/LazPlay-Setup.exe" 
+                  href="https://media.lazplay.tech/launcher_builds/windows_launcher_v1.0.0/LazPlay-Windows-1.0.0-Setup.exe" 
                   className="bg-primary-container text-on-primary-fixed-variant px-8 py-4 font-label-mono font-bold uppercase tracking-widest hover:brightness-110 transition-all flex items-center justify-center gap-3 shadow-[8px_8px_0_0_rgba(0,0,0,0.5)] active:translate-x-1 active:translate-y-1 active:shadow-none"
                 >
                   <span className="material-symbols-outlined">download</span>
@@ -42,7 +42,7 @@ export default function LauncherDownloadPage() {
               </div>
 
               <p className="mt-8 font-label-mono text-[10px] text-outline-variant uppercase">
-                VERSION: 1.0.4-BETA // BUILD: GRID_STABLE // SIZE: ~64MB
+                VERSION: 1.0.0-STABLE // BUILD: GRID_STABLE // SIZE: ~64MB
               </p>
             </div>
 
