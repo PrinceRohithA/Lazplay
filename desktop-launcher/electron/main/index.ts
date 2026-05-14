@@ -1,8 +1,8 @@
 import { app, BrowserWindow, shell, ipcMain, WebContentsView } from "electron";
 import { join, resolve } from "path";
-import { setupIpcHandlers } from "../ipc/handlers.js";
-import { initStorage } from "../storage/db.js";
-import { initAutoUpdater } from "../updater/auto-updater.js";
+import { setupIpcHandlers } from "../ipc/handlers";
+import { initStorage } from "../storage/db";
+import { initAutoUpdater } from "../updater/auto-updater";
 import log from "electron-log";
 
 // Configure logger

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import Sidebar from "./components/Sidebar.ts";
+import Sidebar from "./components/Sidebar";
 import { useLauncherStore } from "./store/useLauncherStore";
 
 function App() {

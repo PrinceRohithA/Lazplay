@@ -1,7 +1,7 @@
 import { ipcMain, BrowserWindow, WebContentsView, shell } from "electron";
-import { downloadManager } from "../downloads/manager.js";
-import { processManager } from "../runtime/process-manager.js";
-import { db } from "../storage/db.js";
+import { downloadManager } from "../downloads/manager";
+import { processManager } from "../runtime/process-manager";
+import { db } from "../storage/db";
 import log from "electron-log";
 import path from "path";
 
