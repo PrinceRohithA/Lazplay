@@ -155,8 +155,10 @@ export default function GamesDiscoveryRetroEdition() {
         <div className="flex-1">
           {error && <div className="mb-4 p-3 border border-error text-error font-label-mono text-[12px]">&gt; ERROR: {error}</div>}
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-gutter">
-              {[1,2,3,4,5,6].map(i => <div key={i} className="h-72 bg-surface-container-low border-2 border-outline-variant animate-pulse" />)}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-gutter">
+              {[1,2,3,4,5,6,7,8].map(i => (
+                <div key={i} className="aspect-[2/3] bg-surface-container-low border-2 border-outline-variant animate-pulse" />
+              ))}
             </div>
           ) : gamesList.length === 0 ? (
             <div className="text-center py-24 font-label-mono text-on-surface-variant border-2 border-dashed border-outline-variant">
@@ -164,15 +166,16 @@ export default function GamesDiscoveryRetroEdition() {
               <p className="text-[10px] mt-2">TRY_ADJUSTING_YOUR_SEARCH_FILTERS</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-gutter">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-gutter">
               {gamesList.map(game => (
                 <div key={game.id} className="bg-surface-container border-2 border-outline-variant group hover:border-primary-container transition-all flex flex-col pixel-border relative overflow-hidden">
-                  <div className="h-48 overflow-hidden relative">
+                  <div className="aspect-[2/3] overflow-hidden relative bg-surface-container-lowest">
                     <img
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100"
                       alt={game.title}
-                      src={game.heroBannerUrl || game.coverUrl || game.heroImageUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCekcLG1R4SPSVFiOQxJ1zoNzQ9hrbKDAiiYqBAeLqrLKCe_hFKR7NQ6QI_WlQHU8mWEsb-PN9p4qJydIeJrkybfFyNewcxuYsq9lrkU4QHMrVXWy7tqEYSjlwaXcvaqjHceNI8yTD15ng1V985MpmirSstKeXb1qNcl-auZLfMscpTK0UIE5icpoufxSRg1IjEHpHvNFFlS_nSBeGkIcSpscgQMmO7KTndk9Hj-yiqimxsjd1VLpKfCRSPY_VMPqKfQq8LxefHchno'}
+                      src={game.coverUrl || game.heroImageUrl || game.heroBannerUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCekcLG1R4SPSVFiOQxJ1zoNzQ9hrbKDAiiYqBAeLqrLKCe_hFKR7NQ6QI_WlQHU8mWEsb-PN9p4qJydIeJrkybfFyNewcxuYsq9lrkU4QHMrVXWy7tqEYSjlwaXcvaqjHceNI8yTD15ng1V985MpmirSstKeXb1qNcl-auZLfMscpTK0UIE5icpoufxSRg1IjEHpHvNFFlS_nSBeGkIcSpscgQMmO7KTndk9Hj-yiqimxsjd1VLpKfCRSPY_VMPqKfQq8LxefHchno'}
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60"></div>
                     <div className="absolute top-2 right-2 bg-background/80 border border-primary-container px-2 py-1">
                       <span className="text-primary-container font-label-mono text-[10px]">{game.rating ? `${game.rating.toFixed(1)}_RTG` : 'NEW'}</span>
                     </div>

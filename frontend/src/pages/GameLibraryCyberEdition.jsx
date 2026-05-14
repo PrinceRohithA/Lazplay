@@ -66,9 +66,9 @@ export default function GameLibraryCyberEdition() {
       {error && <div className="mb-8 p-4 border-2 border-error/50 bg-error/10 text-error font-label-mono text-[12px] animate-pulse">&gt; SYSTEM_FAILURE: {error}</div>}
 
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {[1,2,3,4,5,6,7,8].map(i => (
-            <div key={i} className="aspect-[4/5] bg-surface-container-low border-2 border-outline-variant animate-pulse" />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          {[1,2,3,4,5,6,7,8,9,10].map(i => (
+            <div key={i} className="aspect-[2/3] bg-surface-container-low border-2 border-outline-variant animate-pulse" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
@@ -82,7 +82,7 @@ export default function GameLibraryCyberEdition() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {filtered.map(item => (
             <div 
               key={item.gameId} 
@@ -101,13 +101,13 @@ export default function GameLibraryCyberEdition() {
               </div>
 
               {/* Box Image Section */}
-              <div className="relative aspect-video overflow-hidden bg-surface">
+              <div className="relative aspect-[2/3] overflow-hidden bg-surface-container-lowest">
                 <img 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100" 
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100" 
                   alt={item.title} 
-                  src={item.heroBannerUrl || item.heroImageUrl || item.coverUrl || PLACEHOLDER} 
+                  src={item.coverUrl || item.heroImageUrl || item.heroBannerUrl || PLACEHOLDER} 
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-60"></div>
                 
                 {/* Platform Badges */}
                 <div className="absolute bottom-3 left-3 flex gap-1">
