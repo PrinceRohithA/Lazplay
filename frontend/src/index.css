@@ -1,6 +1,15 @@
 @import "tailwindcss";
 
 :root {
+  --primary: #00f6f6;
+  --primary-container: #003737;
+  --primary-fixed: #00fbfb;
+  --primary-fixed-dim: #00dddd;
+  --on-primary: #001414;
+  --on-primary-container: #00fbfb;
+  --surface-tint: #00f6f6;
+  --glow-primary: rgba(0, 246, 246, 0.6);
+  --primary-rgb: 0, 246, 246;
   --secondary: #ffabf3;
   --secondary-container: #500050;
   --on-secondary-container: #ffabf3;
@@ -143,6 +152,7 @@ input[type="color"] {
   border: 1px solid var(--primary);
   box-shadow: 0 0 8px rgba(var(--primary-rgb), 0.3);
   position: relative;
+  overflow: hidden;
 }
 
 @utility neon-glow {
@@ -159,7 +169,11 @@ input:-webkit-autofill:active {
   transition: background-color 5000s ease-in-out 0s;
 }
 
-/*  Rich Text Content Styling  */
+.quill-content {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
 .quill-content ul {
   list-style-type: disc;
   padding-left: 1.5rem;
@@ -204,14 +218,41 @@ input:-webkit-autofill:active {
   font-style: italic;
 }
 
+.quill-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+.quill-content pre {
+  overflow-x: auto;
+  padding: 1rem;
+  background: #111;
+  border: 1px solid var(--primary-container);
+  font-family: monospace;
+}
+
+.quill-content table {
+  display: block;
+  overflow-x: auto;
+  width: 100%;
+}
+
 /* Global Layout Fixes */
-html,
+
+
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   padding: 0;
   background: var(--color-background);
   color: var(--color-on-background);
   font-family: "Space Grotesk", sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 #root {
@@ -222,11 +263,24 @@ body {
 
 * {
   box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary-container) #1c1b1b;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.min-w-safe {
+  min-width: 0;
 }
 
 img,
 video,
-iframe {
+iframe,
+canvas {
   max-width: 100%;
+  height: auto;
   display: block;
 }
