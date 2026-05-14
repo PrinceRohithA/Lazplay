@@ -203,17 +203,17 @@ export default function DeveloperWorkspace() {
         <div className="col-span-12 lg:col-span-4 flex flex-col gap-gutter">
           <div className="bg-surface border-2 border-outline-variant p-4 hover:border-primary-container transition-all group flex-1 flex flex-col justify-center">
             <span className="font-label-mono text-label-mono text-on-surface-variant flex justify-between">
-              ACTIVE_INSTANCES 
+              PLAYERS (C/T)
               <span className="text-primary-container animate-pulse">●</span>
             </span>
             <span className="font-headline-md text-headline-md text-on-surface mt-2 block group-hover:text-primary-container transition-colors">
-              {stats.activeInstances || 0} / 500
+              {stats.currentPlayers || 0} / {stats.totalPlayers || 0}
             </span>
             <div className="flex gap-1 mt-4 h-3 w-full">
-              <div className={`flex-1 ${stats.activeInstances > 0 ? 'bg-primary-container shadow-[0_0_5px_var(--primary-container)]' : 'bg-surface-container border border-outline-variant'}`}></div>
-              <div className={`flex-1 ${stats.activeInstances > 10 ? 'bg-primary-container shadow-[0_0_5px_var(--primary-container)]' : 'bg-surface-container border border-outline-variant'}`}></div>
-              <div className={`flex-1 ${stats.activeInstances > 50 ? 'bg-primary-container shadow-[0_0_5px_var(--primary-container)]' : 'bg-surface-container border border-outline-variant'}`}></div>
-              <div className={`flex-1 ${stats.activeInstances > 100 ? 'bg-primary-container shadow-[0_0_5px_var(--primary-container)]' : 'bg-surface-container border border-outline-variant'}`}></div>
+              <div className={`flex-1 ${stats.currentPlayers > 0 ? 'bg-primary-container shadow-[0_0_5px_var(--primary-container)]' : 'bg-surface-container border border-outline-variant'}`}></div>
+              <div className={`flex-1 ${stats.currentPlayers > 5 ? 'bg-primary-container shadow-[0_0_5px_var(--primary-container)]' : 'bg-surface-container border border-outline-variant'}`}></div>
+              <div className={`flex-1 ${stats.currentPlayers > 20 ? 'bg-primary-container shadow-[0_0_5px_var(--primary-container)]' : 'bg-surface-container border border-outline-variant'}`}></div>
+              <div className={`flex-1 ${stats.currentPlayers > 100 ? 'bg-primary-container shadow-[0_0_5px_var(--primary-container)]' : 'bg-surface-container border border-outline-variant'}`}></div>
               <div className="flex-1 bg-surface-container border border-outline-variant"></div>
             </div>
           </div>
@@ -231,14 +231,14 @@ export default function DeveloperWorkspace() {
           </div>
           <div className="bg-surface border-2 border-outline-variant p-4 hover:border-tertiary-fixed transition-all group flex-1 flex flex-col justify-center">
             <span className="font-label-mono text-label-mono text-on-surface-variant flex justify-between">
-              CURRENT_PLAYERS
+              ACTIVE_INSTANCES
               <span className="text-tertiary-fixed font-bold block">LIVE</span>
             </span>
             <span className="font-headline-md text-headline-md text-tertiary-fixed mt-2 block drop-shadow-[0_0_5px_var(--tertiary-fixed)]">
-              {stats.currentPlayers || 0}
+              {stats.activeInstances || 0} / 500
             </span>
             <p className="font-label-mono text-[10px] text-on-surface-variant mt-4 uppercase">
-              TOTAL_PLAYERS: {stats.totalPlayers || 0}
+              SERVER_NODES: ONLINE
             </p>
           </div>
         </div>
