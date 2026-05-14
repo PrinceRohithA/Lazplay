@@ -217,6 +217,18 @@ export default function DeveloperWorkspace() {
               VERSION_CONTROL: ACTIVE
             </p>
           </div>
+          <div className="bg-surface border-2 border-outline-variant p-4 hover:border-tertiary-fixed transition-all group flex-1 flex flex-col justify-center">
+            <span className="font-label-mono text-label-mono text-on-surface-variant flex justify-between">
+              CURRENT_PLAYERS
+              <span className="text-tertiary-fixed font-bold block">LIVE</span>
+            </span>
+            <span className="font-headline-md text-headline-md text-tertiary-fixed mt-2 block drop-shadow-[0_0_5px_var(--tertiary-fixed)]">
+              {stats.currentPlayers || 0}
+            </span>
+            <p className="font-label-mono text-[10px] text-on-surface-variant mt-4 uppercase">
+              TOTAL_PLAYERS: {stats.totalPlayers || 0}
+            </p>
+          </div>
         </div>
 
         <div className="col-span-12 bg-surface-container-lowest border-2 border-outline-variant flex flex-col h-[500px] shadow-[8px_8px_0_0_rgba(60,75,53,0.5)] mb-8">
@@ -237,26 +249,41 @@ export default function DeveloperWorkspace() {
             <div className="mt-2 border border-outline-variant p-2 bg-surface-dim overflow-x-auto">
               <div className="min-w-[600px]">
                 <div className="grid grid-cols-12 gap-2 text-on-surface-variant border-b border-outline-variant pb-1 mb-1 text-[10px]">
-                  <div className="col-span-4">GAME_TITLE</div>
-                  <div className="col-span-2">STATUS</div>
-                  <div className="col-span-3">PRICE</div>
-                  <div className="col-span-3 text-right">CREATED_AT</div>
+                  <div className="col-span-3">GAME_TITLE</div>
+                  <div className="col-span-1 text-center">STATUS</div>
+                  <div className="col-span-2 text-center">PLAYERS (C/T)</div>
+                  <div className="col-span-1 text-center">SALES</div>
+                  <div className="col-span-2 text-center">REVENUE</div>
+                  <div className="col-span-3 text-right">ACTION</div>
                 </div>
-                {games.map(game => (
-                  <div key={game.id} className="grid grid-cols-12 gap-2 text-primary-container hover:bg-surface-container cursor-pointer transition-colors py-1 group items-center">
-                    <Link to={`/deployment?id=${game.id}`} className="col-span-4 truncate font-bold hover:underline">{game.title}</Link>
-                    <div className="col-span-2">
-                      <span className={`text-[10px] px-1 border ${game.status === 'PUBLISHED' ? 'border-secondary-container text-secondary-container shadow-[0_0_5px_#fe00fe]' : 'border-outline-variant text-on-surface-variant'}`}>
-                        {game.status}
-                      </span>
+                {games.map(game => {
+                  const gStat = (dash?.games || []).find(gs => gs.id === game.id) || {};
+                  return (
+                    <div key={game.id} className="grid grid-cols-12 gap-2 text-primary-container hover:bg-surface-container cursor-pointer transition-colors py-2 group items-center border-b border-outline-variant/10">
+                      <Link to={`/deployment?id=${game.id}`} className="col-span-3 truncate font-bold hover:underline">{game.title}</Link>
+                      <div className="col-span-1 text-center">
+                        <span className={`text-[9px] px-1 border ${game.status === 'PUBLISHED' ? 'border-secondary-container text-secondary-container shadow-[0_0_5px_#fe00fe]' : 'border-outline-variant text-on-surface-variant'}`}>
+                          {game.status}
+                        </span>
+                      </div>
+                      <div className="col-span-2 text-center font-label-mono text-[10px]">
+                        {gStat.currentPlayers || 0} / {gStat.totalPlayers || 0}
+                      </div>
+                      <div className="col-span-1 text-center font-label-mono text-[10px]">
+                        {gStat.sales || 0}
+                      </div>
+                      <div className="col-span-2 text-center font-label-mono text-[10px]">
+                        ₹{((gStat.revenue || 0) / 100).toLocaleString()}
+                      </div>
+                      <div className="col-span-3 text-right flex items-center justify-end gap-3">
+                        <span className="text-[10px] opacity-70 hidden md:inline">{new Date(game.createdAt).toLocaleDateString()}</span>
+                        <Link to={`/deployment?id=${game.id}`} className="bg-surface-container border border-outline-variant p-1 hover:border-primary transition-all flex items-center">
+                          <span className="material-symbols-outlined text-[14px]">edit_square</span>
+                        </Link>
+                      </div>
                     </div>
-                    <div className="col-span-3">₹{(game.price / 100).toFixed(2)} [{game.priceType}]</div>
-                    <div className="col-span-3 text-right flex items-center justify-end gap-3">
-                      <span className="text-[10px] opacity-70">{new Date(game.createdAt).toLocaleDateString()}</span>
-                      <Link to={`/deployment?id=${game.id}`} className="material-symbols-outlined text-sm text-on-surface-variant hover:text-primary transition-colors">edit_square</Link>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {games.length === 0 && (
                   <div className="p-4 text-center text-on-surface-variant opacity-50 italic">
                     NO_PROJECTS_FOUND_IN_WORKSPACE

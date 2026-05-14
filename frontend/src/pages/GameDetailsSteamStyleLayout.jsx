@@ -19,6 +19,7 @@ export default function GameDetailsSteamStyleLayout() {
   const [playingTrailer, setPlayingTrailer] = useState(false);
   const [playingGame, setPlayingGame] = useState(false);
   const [launchData, setLaunchData] = useState(null);
+  const [playSessionId, setPlaySessionId] = useState(null);
 
   useEffect(() => {
     if (!gameId) { setLoading(false); return; }
@@ -79,12 +80,39 @@ export default function GameDetailsSteamStyleLayout() {
           setLaunchData(res.data);
           setPlayingGame(true);
           setPlayingTrailer(false);
+          try {
+            const startRes = await gamesApi.playStart(gameId);
+            setPlaySessionId(startRes.data?.sessionId || null);
+          } catch (err) {
+            console.warn('Play start tracking failed', err);
+          }
       } catch (err) {
           setError(err.message || 'FAILED_TO_LOAD_LAUNCH_MANIFEST');
       } finally {
           setLoading(false);
       }
   };
+
+  const handleStopPlay = async () => {
+    setPlayingGame(false);
+    if (!gameId) return;
+    try {
+      await gamesApi.playEnd(gameId, playSessionId ? { sessionId: playSessionId } : undefined);
+    } catch (err) {
+      console.warn('Play end tracking failed', err);
+    } finally {
+      setPlaySessionId(null);
+    }
+  };
+
+  // Ensure tracking stops on unmount
+  useEffect(() => {
+    return () => {
+      if (playSessionId) {
+        gamesApi.playEnd(gameId, { sessionId: playSessionId }).catch(() => {});
+      }
+    };
+  }, [playSessionId, gameId]);
 
   const screenshots = media.filter((m) => m.type === 'IMAGE' && (m.alt === 'SCREENSHOT' || !m.alt));
   const videos = media.filter((m) => m.type === 'VIDEO');
@@ -114,7 +142,7 @@ export default function GameDetailsSteamStyleLayout() {
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                 />
                 <button 
-                    onClick={() => setPlayingGame(false)}
+                  onClick={handleStopPlay}
                     className="absolute top-4 right-4 bg-error text-on-error p-2 pixel-border hover:brightness-110 transition-all z-10 opacity-0 group-hover:opacity-100"
                     title="EXIT_RUNTIME"
                 >

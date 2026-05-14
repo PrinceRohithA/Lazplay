@@ -19,21 +19,25 @@ export function registerAdminRoutes(router, ctx) {
 
 router.add('GET', '/admin/dashboard', async (req) => {
     await requireAuth(req, null, ['ADMIN']);
-    const [userCount, gameCount, orderCount, revenue] = await Promise.all([
+    const [userCount, gameCount, orderCount, revenue, currentPlayers, totalPlayers] = await Promise.all([
       prisma.user.count(),
       prisma.game.count(),
-      prisma.order.count(),
+      prisma.order.count({ where: { status: { in: ['PAID', 'COMPLETED'] } } }),
       prisma.order.aggregate({
-        where: { status: 'PAID' },
+        where: { status: { in: ['PAID', 'COMPLETED'] } },
         _sum: { amount: true }
-      })
+      }),
+      prisma.gamePlaySession.count({ where: { endedAt: null } }),
+      prisma.gamePlaySession.count({ distinct: ['userId'] })
     ]);
     return ok({
       stats: {
         totalUsers: userCount,
         totalGames: gameCount,
         totalOrders: orderCount,
-        totalRevenue: revenue._sum.amount || 0
+        totalRevenue: revenue._sum.amount || 0,
+        currentPlayers,
+        totalPlayers
       }
     });
   });
@@ -430,24 +434,57 @@ router.add('GET', '/admin/audit-logs', async (req) => {
 
 router.add('GET', '/admin/analytics', async (req) => {
     await requireAuth(req, null, ['ADMIN']);
-    const [userCount, gameCount, deploymentCount, instanceCount, revenue] = await Promise.all([
+    const [userCount, gameCount, deploymentCount, instanceCount, revenue, currentPlayers, totalPlayers, topGames, topUsers] = await Promise.all([
       prisma.user.count(),
       prisma.game.count(),
       prisma.deployment.count(),
       prisma.gameInstance.count(),
       prisma.order.aggregate({
-        where: { status: 'PAID' },
+        where: { status: { in: ['PAID', 'COMPLETED'] } },
         _sum: { amount: true }
+      }),
+      prisma.gamePlaySession.count({ where: { endedAt: null } }),
+      prisma.gamePlaySession.count({ distinct: ['userId'] }),
+      prisma.order.groupBy({
+        by: ['gameId'],
+        where: { status: { in: ['PAID', 'COMPLETED'] } },
+        _sum: { amount: true },
+        orderBy: { _sum: { amount: 'desc' } },
+        take: 5
+      }),
+      prisma.order.groupBy({
+        by: ['userId'],
+        where: { status: { in: ['PAID', 'COMPLETED'] } },
+        _sum: { amount: true },
+        orderBy: { _sum: { amount: 'desc' } },
+        take: 5
       })
     ]);
+
+    // Enrich top games with titles
+    const enrichedGames = await Promise.all(topGames.map(async (tg) => {
+        const g = await prisma.game.findUnique({ where: { id: tg.gameId }, select: { title: true } });
+        return { id: tg.gameId, title: g?.title || 'Unknown', revenue: tg._sum.amount };
+    }));
+
+    // Enrich top users with usernames
+    const enrichedUsers = await Promise.all(topUsers.map(async (tu) => {
+        const u = await prisma.user.findUnique({ where: { id: tu.userId }, select: { username: true, email: true } });
+        return { id: tu.userId, username: u?.username || 'Unknown', email: u?.email, totalSpent: tu._sum.amount };
+    }));
+
     return ok({
       stats: {
         users: userCount,
         games: gameCount,
         deployments: deploymentCount,
         instances: instanceCount,
-        totalRevenue: revenue._sum.amount || 0
-      }
+        totalRevenue: revenue._sum.amount || 0,
+        currentPlayers,
+        totalPlayers
+      },
+      topGames: enrichedGames,
+      topUsers: enrichedUsers
     });
   });
 

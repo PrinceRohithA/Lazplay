@@ -141,6 +141,60 @@ router.add('POST', '/games/:gameId/reviews', async (req) => {
     return ok(review, 201);
   });
 
+router.add('POST', '/games/:gameId/plays/start', async (req) => {
+    const user = await requireAuth(req, null, ['PLAYER']);
+    const game = await findGame(req.params.gameId);
+    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
+    if (!(await userOwnsGame(user.id, game.id))) throw new HttpError(403, 'GAME_NOT_OWNED', 'You do not own this game');
+
+    await prisma.gamePlaySession.updateMany({
+      where: { gameId: game.id, userId: user.id, endedAt: null },
+      data: { endedAt: new Date(), durationSeconds: 0 }
+    });
+
+    const session = await prisma.gamePlaySession.create({
+      data: {
+        id: createId('play'),
+        gameId: game.id,
+        userId: user.id,
+        startedAt: new Date()
+      }
+    });
+
+    return ok({ sessionId: session.id, startedAt: session.startedAt }, 201);
+  });
+
+router.add('POST', '/games/:gameId/plays/end', async (req) => {
+    const user = await requireAuth(req, null, ['PLAYER']);
+    const game = await findGame(req.params.gameId);
+    if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game was not found');
+
+    const body = validateBody(req.body, {
+      sessionId: validators.id({ required: false })
+    });
+
+    const where = body.sessionId
+      ? { id: body.sessionId, gameId: game.id, userId: user.id, endedAt: null }
+      : { gameId: game.id, userId: user.id, endedAt: null };
+
+    const session = await prisma.gamePlaySession.findFirst({
+      where,
+      orderBy: { startedAt: 'desc' }
+    });
+
+    if (!session) throw new HttpError(404, 'PLAY_SESSION_NOT_FOUND', 'Active play session not found');
+
+    const endedAt = new Date();
+    const durationSeconds = Math.max(0, Math.floor((endedAt.getTime() - session.startedAt.getTime()) / 1000));
+
+    const updated = await prisma.gamePlaySession.update({
+      where: { id: session.id },
+      data: { endedAt, durationSeconds }
+    });
+
+    return ok({ sessionId: updated.id, endedAt: updated.endedAt, durationSeconds: updated.durationSeconds });
+  });
+
 router.add('DELETE', '/games/:gameId/reviews/:reviewId', async (req) => {
     const user = await requireAuth(req, null, ['PLAYER', 'DEVELOPER', 'ADMIN']);
     const game = await findGame(req.params.gameId);

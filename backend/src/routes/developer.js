@@ -770,15 +770,46 @@ router.add('GET', '/developer/dashboard', async (req) => {
     const games = await prisma.game.findMany({ where: { developerId: profile.id } });
     const gameIds = games.map(g => g.id);
 
-    const [orderStats, instanceCount] = await Promise.all([
+    const [orderStats, instanceCount, currentPlayers, totalPlayers, gameStats] = await Promise.all([
       prisma.order.aggregate({
-        where: { gameId: { in: gameIds }, status: 'PAID' },
+        where: { gameId: { in: gameIds }, status: { in: ['PAID', 'COMPLETED'] } },
         _sum: { amount: true },
         _count: true
       }),
       prisma.gameInstance.count({
         where: { gameId: { in: gameIds } }
-      })
+      }),
+      prisma.gamePlaySession.count({
+        where: { gameId: { in: gameIds }, endedAt: null }
+      }),
+      prisma.gamePlaySession.count({
+        where: { gameId: { in: gameIds } },
+        distinct: ['userId']
+      }),
+      Promise.all(games.map(async (g) => {
+        const [gOrders, gCurrent, gTotal] = await Promise.all([
+          prisma.order.aggregate({
+            where: { gameId: g.id, status: { in: ['PAID', 'COMPLETED'] } },
+            _sum: { amount: true },
+            _count: true
+          }),
+          prisma.gamePlaySession.count({
+            where: { gameId: g.id, endedAt: null }
+          }),
+          prisma.gamePlaySession.count({
+            where: { gameId: g.id },
+            distinct: ['userId']
+          })
+        ]);
+        return {
+          id: g.id,
+          title: g.title,
+          currentPlayers: gCurrent,
+          totalPlayers: gTotal,
+          sales: gOrders._count || 0,
+          revenue: gOrders._sum.amount || 0
+        };
+      }))
     ]);
 
     return ok({
@@ -786,8 +817,11 @@ router.add('GET', '/developer/dashboard', async (req) => {
         totalGames: games.length,
         totalRevenue: orderStats._sum.amount || 0,
         totalSales: orderStats._count,
-        activeInstances: instanceCount
-      }
+        activeInstances: instanceCount,
+        currentPlayers,
+        totalPlayers
+      },
+      games: gameStats
     });
   });
 

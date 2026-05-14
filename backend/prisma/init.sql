@@ -163,6 +163,19 @@ CREATE TABLE "GameReview" (
 );
 
 -- CreateTable
+CREATE TABLE "GamePlaySession" (
+    "id" TEXT NOT NULL,
+    "gameId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "endedAt" TIMESTAMP(3),
+    "durationSeconds" INTEGER,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "GamePlaySession_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "LibraryItem" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -360,6 +373,12 @@ CREATE UNIQUE INDEX "Game_slug_key" ON "Game"("slug");
 CREATE UNIQUE INDEX "GameReview_gameId_userId_key" ON "GameReview"("gameId", "userId");
 
 -- CreateIndex
+CREATE INDEX "GamePlaySession_gameId_startedAt_idx" ON "GamePlaySession"("gameId", "startedAt");
+
+-- CreateIndex
+CREATE INDEX "GamePlaySession_userId_startedAt_idx" ON "GamePlaySession"("userId", "startedAt");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "LibraryItem_userId_gameId_key" ON "LibraryItem"("userId", "gameId");
 
 -- CreateIndex
@@ -406,6 +425,12 @@ ALTER TABLE "GameReview" ADD CONSTRAINT "GameReview_gameId_fkey" FOREIGN KEY ("g
 
 -- AddForeignKey
 ALTER TABLE "GameReview" ADD CONSTRAINT "GameReview_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "GamePlaySession" ADD CONSTRAINT "GamePlaySession_gameId_fkey" FOREIGN KEY ("gameId") REFERENCES "Game"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "GamePlaySession" ADD CONSTRAINT "GamePlaySession_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "LibraryItem" ADD CONSTRAINT "LibraryItem_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -31,7 +31,7 @@ export default function AdminMainframe() {
           adminApi.listGames({ status: 'PENDING_REVIEW' })
         ]);
         
-        setStats(analyticsRes.data?.stats || {});
+        setStats(analyticsRes.data || {});
         setNodes(nodesRes.data || []);
         setInstances(instancesRes.data || []);
         setPendingGames(pendingGamesRes.data || []);
@@ -52,7 +52,7 @@ export default function AdminMainframe() {
         setReviewingGame(null);
         // Refresh stats
         const analyticsRes = await adminApi.dashboard();
-        setStats(analyticsRes.data?.stats || {});
+        setStats(analyticsRes.data || {});
     } catch (err) {
         alert(`Failed to update status: ${err.message}`);
     }
@@ -104,19 +104,27 @@ export default function AdminMainframe() {
             <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-6 flex-1">
               <div className="flex flex-col gap-1 border-l-2 border-primary-container pl-3">
                 <span className="font-label-caps text-[10px] text-on-surface-variant">TOTAL_USERS</span>
-                <span className="font-headline-md text-primary-container">{stats.totalUsers || 0}</span>
+                <span className="font-headline-md text-primary-container">{stats.stats?.users || 0}</span>
               </div>
               <div className="flex flex-col gap-1 border-l-2 border-tertiary-fixed pl-3">
                 <span className="font-label-caps text-[10px] text-on-surface-variant">ACTIVE_GAMES</span>
-                <span className="font-headline-md text-tertiary-fixed">{stats.totalGames || 0}</span>
+                <span className="font-headline-md text-tertiary-fixed">{stats.stats?.games || 0}</span>
               </div>
               <div className="flex flex-col gap-1 border-l-2 border-secondary-fixed pl-3">
                 <span className="font-label-caps text-[10px] text-on-surface-variant">DEPLOYMENTS</span>
-                <span className="font-headline-md text-secondary-fixed">{stats.totalOrders || 0}</span>
+                <span className="font-headline-md text-secondary-fixed">{stats.stats?.deployments || 0}</span>
               </div>
               <div className="flex flex-col gap-1 border-l-2 border-error pl-3">
                 <span className="font-label-caps text-[10px] text-on-surface-variant">REVENUE</span>
-                <span className="font-headline-md text-error">₹{((stats.totalRevenue || 0) / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                <span className="font-headline-md text-error">₹{((stats.stats?.totalRevenue || 0) / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex flex-col gap-1 border-l-2 border-primary-container pl-3">
+                <span className="font-label-caps text-[10px] text-on-surface-variant">CURRENT_PLAYERS</span>
+                <span className="font-headline-md text-primary-container">{stats.stats?.currentPlayers || 0}</span>
+              </div>
+              <div className="flex flex-col gap-1 border-l-2 border-tertiary-fixed pl-3">
+                <span className="font-label-caps text-[10px] text-on-surface-variant">TOTAL_PLAYERS</span>
+                <span className="font-headline-md text-tertiary-fixed">{stats.stats?.totalPlayers || 0}</span>
               </div>
             </div>
           </div>
@@ -198,30 +206,80 @@ export default function AdminMainframe() {
           </div>
         </div>
 
-        {/*  Terminal Feed  */}
-        <div className="col-span-12 xl:col-span-4 border-2 border-outline-variant bg-[#050505] flex flex-col h-[600px] xl:h-auto hover:border-primary-container transition-colors duration-300 relative overflow-hidden">
-          <div className="bg-surface-variant text-on-surface-variant font-label-mono text-label-mono px-2 py-1 uppercase border-b-2 border-outline-variant flex justify-between items-center">
-            <span>Terminal_Feed</span>
-            <div className="flex gap-2">
-              <span className="w-2 h-2 bg-primary-container rounded-full animate-flicker"></span>
-              <span className="w-2 h-2 bg-error rounded-full"></span>
+        {/*  Terminal Feed & Leaderboards  */}
+        <div className="col-span-12 xl:col-span-4 flex flex-col gap-4">
+          {/* Top Performance Sections */}
+          <div className="border-2 border-outline-variant bg-surface-container-low flex flex-col hover:border-secondary-fixed transition-colors duration-300">
+            <div className="bg-secondary-fixed/10 text-secondary-fixed font-label-mono text-label-mono px-2 py-1 uppercase border-b-2 border-secondary-fixed/20 flex justify-between items-center">
+              <span>Top_Revenue_Games</span>
+              <span className="material-symbols-outlined text-[16px]">stars</span>
+            </div>
+            <div className="p-2">
+              <table className="w-full text-left border-collapse font-label-mono text-[10px]">
+                <tbody>
+                  {(stats.topGames || []).map((g, i) => (
+                    <tr key={g.id} className="border-b border-outline-variant/30 hover:bg-surface-bright transition-colors">
+                      <td className="p-2 w-8 opacity-50">#0{i+1}</td>
+                      <td className="p-2 text-on-surface font-bold">{g.title}</td>
+                      <td className="p-2 text-right text-error font-bold">₹{(g.revenue / 100).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                  {(!stats.topGames || stats.topGames.length === 0) && (
+                    <tr><td className="p-4 text-center opacity-50 italic">NO_DATA_AVAILABLE</td></tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
-          <div className="p-4 font-label-mono text-[10px] text-primary-container flex-1 overflow-y-auto leading-relaxed flex flex-col gap-1">
-            <div><span className="text-on-surface-variant">[{new Date().toLocaleTimeString()}]</span> &gt; INITIALIZING_ADMIN_MAINFRAME... OK</div>
-            <div><span className="text-on-surface-variant">[{new Date().toLocaleTimeString()}]</span> &gt; SYNCING_WITH_CORE_DATABASE... OK</div>
-            <div><span className="text-on-surface-variant">[{new Date().toLocaleTimeString()}]</span> &gt; FETCHING_GRID_METRICS... OK</div>
-            <div className="text-tertiary-fixed"><span className="text-on-surface-variant">[{new Date().toLocaleTimeString()}]</span> &gt; DATA_LINK_ESTABLISHED</div>
-            <div className="mt-4 border-t border-outline-variant/30 pt-2 opacity-50">
-              -- LOGGING_ACTIVE --
-              {instances.length > 0 && <div>&gt; {instances.length} ACTIVE_INSTANCES_DETECTED</div>}
-              {nodes.length > 0 && <div>&gt; {nodes.length} SERVER_NODES_ONLINE</div>}
-              {pendingGames.length > 0 && <div className="text-error">&gt; ATTENTION: {pendingGames.length} PROJECTS_AWAITING_APPROVAL</div>}
-              &gt; MONITORING_ALL_TRAFFIC...
+
+          <div className="border-2 border-outline-variant bg-surface-container-low flex flex-col hover:border-tertiary-fixed transition-colors duration-300">
+            <div className="bg-tertiary-fixed/10 text-tertiary-fixed font-label-mono text-label-mono px-2 py-1 uppercase border-b-2 border-tertiary-fixed/20 flex justify-between items-center">
+              <span>Top_Spending_Users</span>
+              <span className="material-symbols-outlined text-[16px]">person_celebrate</span>
             </div>
-            <div className="mt-auto pt-4 flex gap-2">
-              <span className="text-primary-container animate-pulse">&gt;</span>
-              <span className="w-2 h-4 bg-primary-container animate-blink"></span>
+            <div className="p-2">
+              <table className="w-full text-left border-collapse font-label-mono text-[10px]">
+                <tbody>
+                  {(stats.topUsers || []).map((u, i) => (
+                    <tr key={u.id} className="border-b border-outline-variant/30 hover:bg-surface-bright transition-colors">
+                      <td className="p-2 w-8 opacity-50">#0{i+1}</td>
+                      <td className="p-2 text-on-surface font-bold">{u.username}</td>
+                      <td className="p-2 text-right text-tertiary-fixed font-bold">₹{(u.totalSpent / 100).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                  {(!stats.topUsers || stats.topUsers.length === 0) && (
+                    <tr><td className="p-4 text-center opacity-50 italic">NO_DATA_AVAILABLE</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/*  Terminal Feed  */}
+          <div className="border-2 border-outline-variant bg-[#050505] flex flex-col h-[400px] xl:h-auto hover:border-primary-container transition-colors duration-300 relative overflow-hidden flex-1">
+            <div className="bg-surface-variant text-on-surface-variant font-label-mono text-label-mono px-2 py-1 uppercase border-b-2 border-outline-variant flex justify-between items-center">
+              <span>Terminal_Feed</span>
+              <div className="flex gap-2">
+                <span className="w-2 h-2 bg-primary-container rounded-full animate-flicker"></span>
+                <span className="w-2 h-2 bg-error rounded-full"></span>
+              </div>
+            </div>
+            <div className="p-4 font-label-mono text-[10px] text-primary-container flex-1 overflow-y-auto leading-relaxed flex flex-col gap-1">
+              <div><span className="text-on-surface-variant">[{new Date().toLocaleTimeString()}]</span> &gt; INITIALIZING_ADMIN_MAINFRAME... OK</div>
+              <div><span className="text-on-surface-variant">[{new Date().toLocaleTimeString()}]</span> &gt; SYNCING_WITH_CORE_DATABASE... OK</div>
+              <div><span className="text-on-surface-variant">[{new Date().toLocaleTimeString()}]</span> &gt; FETCHING_GRID_METRICS... OK</div>
+              <div className="text-tertiary-fixed"><span className="text-on-surface-variant">[{new Date().toLocaleTimeString()}]</span> &gt; DATA_LINK_ESTABLISHED</div>
+              <div className="mt-4 border-t border-outline-variant/30 pt-2 opacity-50">
+                -- LOGGING_ACTIVE --
+                {instances.length > 0 && <div>&gt; {instances.length} ACTIVE_INSTANCES_DETECTED</div>}
+                {nodes.length > 0 && <div>&gt; {nodes.length} SERVER_NODES_ONLINE</div>}
+                {pendingGames.length > 0 && <div className="text-error">&gt; ATTENTION: {pendingGames.length} PROJECTS_AWAITING_APPROVAL</div>}
+                &gt; MONITORING_ALL_TRAFFIC...
+              </div>
+              <div className="mt-auto pt-4 flex gap-2">
+                <span className="text-primary-container animate-pulse">&gt;</span>
+                <span className="w-2 h-4 bg-primary-container animate-blink"></span>
+              </div>
             </div>
           </div>
         </div>

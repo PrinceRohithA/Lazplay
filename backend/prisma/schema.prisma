@@ -180,6 +180,21 @@ model GameReview {
   @@unique([gameId, userId])
 }
 
+model GamePlaySession {
+  id               String   @id
+  gameId           String
+  game             Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startedAt        DateTime @default(now())
+  endedAt          DateTime?
+  durationSeconds  Int?
+  createdAt        DateTime @default(now())
+
+  @@index([gameId, startedAt])
+  @@index([userId, startedAt])
+}
+
 model LibraryItem {
   id                    String    @id
   userId                String
