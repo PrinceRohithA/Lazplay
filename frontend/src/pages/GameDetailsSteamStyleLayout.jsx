@@ -180,9 +180,9 @@ export default function GameDetailsSteamStyleLayout() {
 
   return (
     <div className="flex flex-col min-w-0 p-4 md:p-margin gap-4 md:gap-6 grid-glow-bg">
-      {loading && <div className="text-center py-24 font-label-mono text-primary-container animate-pulse">LOADING_GAME_DATA...</div>}
+      {loading && <div className="text-center py-24 font-label-mono text-primary animate-pulse">LOADING_GAME_DATA...</div>}
       {error && <div className="p-4 border border-error text-error font-label-mono bg-error/10 pixel-border">&gt; ERROR: {error}</div>}
-      {successMsg && <div className="p-4 border border-primary-container text-primary-container font-label-mono bg-primary-container/10 pixel-border">&gt; SUCCESS: {successMsg}</div>}
+      {successMsg && <div className="p-4 border border-primary-container text-primary font-label-mono bg-primary-container/10 pixel-border">&gt; SUCCESS: {successMsg}</div>}
       {!loading && !game && <div className="text-center py-24 font-label-mono text-on-surface-variant">GAME_NOT_FOUND</div>}
       {!loading && game && (
         <>
@@ -193,7 +193,7 @@ export default function GameDetailsSteamStyleLayout() {
             {playingGame && launchData ? (
               <div ref={gameContainerRef} className="absolute inset-0 z-50 bg-black flex flex-col">
                 <div className="flex items-center justify-between p-2 bg-surface-container-highest border-b border-outline-variant h-10 px-4">
-                  <span className="font-label-mono text-[10px] text-primary-container uppercase truncate">{game.title} // ONLINE_SESSION</span>
+                  <span className="font-label-mono text-[10px] text-primary uppercase truncate">{game.title} // ONLINE_SESSION</span>
                   <div className="flex gap-2">
                     <button onClick={handleFullscreen} className="text-on-surface-variant hover:text-white transition-colors">
                       <span className="material-symbols-outlined text-[18px]">{isFullscreen ? 'fullscreen_exit' : 'fullscreen'}</span>
@@ -234,7 +234,7 @@ export default function GameDetailsSteamStyleLayout() {
                   onClick={() => { if (game.trailerUrl || videos.length > 0) setPlayingTrailer(true); }}
                 >
                   <div className={`bg-surface/80 p-4 pixel-border ${(game.trailerUrl || videos.length > 0) ? 'hover:bg-surface pointer-events-none' : ''} transition-colors`}>
-                    <span className="material-symbols-outlined text-primary-container text-6xl">play_circle</span>
+                    <span className="material-symbols-outlined text-primary text-6xl">play_circle</span>
                   </div>
                 </div>
               </>
@@ -252,12 +252,12 @@ export default function GameDetailsSteamStyleLayout() {
             </div>
             
             <div className="flex-1 flex flex-col min-w-0">
-              <h1 className="font-headline-md text-primary-container uppercase tracking-tighter drop-shadow-[0_0_8px_rgba(57,255,20,0.6)] truncate mb-4">{game.title}</h1>
+              <h1 className="font-headline-md text-primary uppercase tracking-tighter drop-shadow-[0_0_8px_rgba(57,255,20,0.6)] truncate mb-4">{game.title}</h1>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-[10px] uppercase mb-6">
                 <div className="flex justify-between border-b border-outline-variant/30 pb-1">
                   <span className="text-on-surface-variant">RECENT_REVIEWS:</span>
-                  <span className="text-primary-container">OVERWHELMINGLY_POSITIVE</span>
+                  <span className="text-primary">OVERWHELMINGLY_POSITIVE</span>
                 </div>
                 <div className="flex justify-between border-b border-outline-variant/30 pb-1">
                   <span className="text-on-surface-variant">RELEASE_DATE:</span>
@@ -265,16 +265,16 @@ export default function GameDetailsSteamStyleLayout() {
                 </div>
                 <div className="flex justify-between border-b border-outline-variant/30 pb-1">
                   <span className="text-on-surface-variant">DEVELOPER:</span>
-                  <span className="text-secondary-container truncate">{game.developer?.displayName || 'UNKNOWN_DEV'}</span>
+                  <span className="text-secondary truncate">{game.developer?.displayName || 'UNKNOWN_DEV'}</span>
                 </div>
                 <div className="flex justify-between border-b border-outline-variant/30 pb-1">
                   <span className="text-on-surface-variant">PUBLISHER:</span>
-                  <span className="text-secondary-container truncate">{game.publisher || 'LAZPLAY_STUDIOS'}</span>
+                  <span className="text-secondary truncate">{game.publisher || 'LAZPLAY_STUDIOS'}</span>
                 </div>
               </div>
 
               <div className="mt-auto flex flex-col sm:flex-row items-center gap-4 border-t border-outline-variant pt-4">
-                <div className="text-2xl font-bold text-primary-container shrink-0">
+                <div className="text-2xl font-bold text-primary shrink-0">
                   {game.priceType === 'FREE' ? 'FREE_TO_PLAY' : `₹${(game.price / 100).toFixed(2)}`}
                 </div>
                 
@@ -372,7 +372,7 @@ export default function GameDetailsSteamStyleLayout() {
             <div className="text-on-surface-variant border-b border-outline-variant pb-2 mb-4 text-[12px] uppercase">System Requirements</div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-[11px]">
               <div>
-                <div className="text-primary-container mb-2">MINIMUM_SPECS:</div>
+                <div className="text-primary mb-2">MINIMUM_SPECS:</div>
                 <ul className="space-y-1 text-on-surface-variant">
                   <li>OS: {minSpecs.os || 'SYSTEM_OS V_1.0.4'}</li>
                   <li>PROC: {minSpecs.processor || '8-BIT ZILOG Z80'}</li>
@@ -382,7 +382,7 @@ export default function GameDetailsSteamStyleLayout() {
                 </ul>
               </div>
               <div>
-                <div className="text-secondary-container mb-2">RECOMMENDED_SPECS:</div>
+                <div className="text-secondary mb-2">RECOMMENDED_SPECS:</div>
                 <ul className="space-y-1 text-on-surface-variant">
                   <li>OS: {recSpecs.os || 'SYSTEM_OS V_1.0.4+'}</li>
                   <li>PROC: {recSpecs.processor || '16-BIT MOTOROLA 68000'}</li>
@@ -394,7 +394,7 @@ export default function GameDetailsSteamStyleLayout() {
             </div>
           </section>
           <section id="reviews" className="bg-surface-container-lowest pixel-border p-gutter">
-            <div className="bg-surface text-primary-container border-b-2 border-primary-container -mx-gutter -mt-gutter mb-gutter px-gutter py-2 font-label-mono text-label-mono uppercase">
+            <div className="bg-surface text-primary border-b-2 border-primary-container -mx-gutter -mt-gutter mb-gutter px-gutter py-2 font-label-mono text-label-mono uppercase">
               COMM_LINK_ESTABLISHED // USER_FEEDBACK
             </div>
             
@@ -408,7 +408,7 @@ export default function GameDetailsSteamStyleLayout() {
                   <select 
                     value={reviewRating} 
                     onChange={e => setReviewRating(Number(e.target.value))}
-                    className="bg-surface border border-outline-variant text-primary-container text-[11px] p-1 pixel-border focus:outline-none font-label-mono uppercase"
+                    className="bg-surface border border-outline-variant text-primary text-[11px] p-1 pixel-border focus:outline-none font-label-mono uppercase"
                   >
                     <option value="5">5 - OVERWHELMINGLY_POSITIVE</option>
                     <option value="4">4 - POSITIVE</option>
@@ -442,9 +442,9 @@ export default function GameDetailsSteamStyleLayout() {
                       <div className="w-6 h-6 bg-surface-variant pixel-border flex items-center justify-center">
                          <span className="material-symbols-outlined text-[12px]">person</span>
                       </div>
-                      <span className="text-[11px] font-label-mono text-secondary-container uppercase">{review.author?.username || 'ANONYMOUS'}</span>
+                      <span className="text-[11px] font-label-mono text-secondary uppercase">{review.author?.username || 'ANONYMOUS'}</span>
                     </div>
-                    <div className="text-[11px] font-label-mono text-primary-container flex items-center gap-1">
+                    <div className="text-[11px] font-label-mono text-primary flex items-center gap-1">
                       <span className="material-symbols-outlined text-[14px]">star</span>
                       {review.rating}/5
                     </div>

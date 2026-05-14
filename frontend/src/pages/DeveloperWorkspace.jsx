@@ -52,7 +52,7 @@ export default function DeveloperWorkspace() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center font-label-mono text-secondary-container animate-pulse">
+      <div className="flex-1 flex items-center justify-center font-label-mono text-secondary animate-pulse">
         [ INITIALIZING_DEVELOPER_WORKSPACE_ENV... ]
       </div>
     );
@@ -63,7 +63,7 @@ export default function DeveloperWorkspace() {
     return (
       <div className="max-w-container-max mx-auto p-gutter md:p-margin flex flex-col items-center justify-center min-h-[70vh] gap-8">
         <div className="text-center max-w-2xl">
-          <h1 className="font-headline-lg text-headline-lg text-secondary-container uppercase mb-4 animate-pulse glow-primary-text">
+          <h1 className="font-headline-lg text-headline-lg text-secondary uppercase mb-4 animate-pulse glow-primary-text">
             ACCESS_DENIED
           </h1>
           <p className="font-body-md text-on-surface-variant mb-8 leading-relaxed">
@@ -72,7 +72,7 @@ export default function DeveloperWorkspace() {
           </p>
           <Link 
             to="/login"
-            className="bg-secondary-container text-on-secondary-container px-8 py-4 font-label-mono font-bold uppercase tracking-widest hover:bg-transparent hover:text-secondary-container border-2 border-secondary-container transition-all shadow-[8px_8px_0_0_var(--secondary-container)]"
+            className="bg-secondary-container text-on-secondary-container px-8 py-4 font-label-mono font-bold uppercase tracking-widest hover:bg-transparent hover:text-secondary border-2 border-secondary-container transition-all shadow-[8px_8px_0_0_var(--secondary-container)]"
           >
             INITIALIZE_AUTH_SEQUENCE
           </Link>
@@ -176,7 +176,7 @@ export default function DeveloperWorkspace() {
         {/*  Analytics: Revenue (8-bit style)  */}
         <div className="col-span-12 lg:col-span-8 bg-surface border-2 border-outline-variant hover:border-secondary-container transition-colors group relative overflow-hidden flex flex-col">
           <div className="bg-surface-container border-b-2 border-outline-variant px-3 py-1.5 flex justify-between items-center group-hover:bg-surface-container-high transition-colors">
-            <span className="font-label-mono text-label-mono text-secondary-container drop-shadow-[0_0_4px_var(--secondary)]">REVENUE_ANALYTICS.exe</span>
+            <span className="font-label-mono text-label-mono text-secondary drop-shadow-[0_0_4px_var(--secondary)]">REVENUE_ANALYTICS.exe</span>
             <div className="flex gap-1">
               <div className="w-3 h-3 border border-outline-variant"></div>
               <div className="w-3 h-3 border border-outline-variant"></div>
@@ -269,17 +269,17 @@ export default function DeveloperWorkspace() {
         <div className="col-span-12 bg-surface-container-lowest border-2 border-outline-variant flex flex-col h-[500px] shadow-[8px_8px_0_0_rgba(60,75,53,0.5)] mb-8">
           <div className="bg-surface-container border-b-2 border-outline-variant px-4 py-2 flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-primary-container">terminal</span>
+              <span className="material-symbols-outlined text-primary">terminal</span>
               <span className="font-label-mono text-label-mono text-on-surface font-bold">PROJECT_TERMINAL :: ROOT_ACCESS</span>
             </div>
             <div className="font-label-mono text-[10px] text-on-surface-variant">
               SYNC_TS: {new Date().toISOString().slice(0, 19).replace('T', ' ')}
             </div>
           </div>
-          <div className="flex-1 p-4 font-label-mono text-label-mono text-primary-container overflow-y-auto flex flex-col gap-1 leading-relaxed">
+          <div className="flex-1 p-4 font-label-mono text-label-mono text-primary overflow-y-auto flex flex-col gap-1 leading-relaxed">
             <p className="text-on-surface-variant opacity-70">LAZPLAY OS v.1.0.4 - Authentication Successful.</p>
             <p className="text-on-surface-variant opacity-70">Session initialized for {user?.username}.</p>
-            <p className="mt-4"><span className="text-secondary-container">sys_admin@lazplay:~$</span> list_projects --status=all</p>
+            <p className="mt-4"><span className="text-secondary">sys_admin@lazplay:~$</span> list_projects --status=all</p>
             
             <div className="mt-2 border border-outline-variant p-2 bg-surface-dim overflow-x-auto">
               <div className="min-w-[600px]">
@@ -294,10 +294,10 @@ export default function DeveloperWorkspace() {
                 {games.map(game => {
                   const gStat = (dash?.games || []).find(gs => gs.id === game.id) || {};
                   return (
-                    <div key={game.id} className="grid grid-cols-12 gap-2 text-primary-container hover:bg-surface-container cursor-pointer transition-colors py-2 group items-center border-b border-outline-variant/10">
+                    <div key={game.id} className="grid grid-cols-12 gap-2 text-primary hover:bg-surface-container cursor-pointer transition-colors py-2 group items-center border-b border-outline-variant/10">
                       <Link to={`/deployment?id=${game.id}`} className="col-span-3 truncate font-bold hover:underline">{game.title}</Link>
                       <div className="col-span-1 text-center">
-                        <span className={`text-[9px] px-1 border ${game.status === 'PUBLISHED' ? 'border-secondary-container text-secondary-container shadow-[0_0_5px_var(--secondary)]' : 'border-outline-variant text-on-surface-variant'}`}>
+                        <span className={`text-[9px] px-1 border ${game.status === 'PUBLISHED' ? 'border-secondary-container text-secondary shadow-[0_0_5px_var(--secondary)]' : 'border-outline-variant text-on-surface-variant'}`}>
                           {game.status}
                         </span>
                       </div>
@@ -328,7 +328,7 @@ export default function DeveloperWorkspace() {
             </div>
 
             <div className="mt-auto pt-4 flex items-center">
-              <span className="text-secondary-container mr-2">sys_admin@lazplay:~$</span>
+              <span className="text-secondary mr-2">sys_admin@lazplay:~$</span>
               <div className="flex-1 flex items-center gap-1">
                 <span>AWAITING_INPUT</span>
                 <span className="w-2 h-4 bg-primary-container animate-blink"></span>

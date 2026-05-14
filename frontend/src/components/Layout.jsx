@@ -55,22 +55,22 @@ export default function Layout() {
       )}
 
       {/* TopAppBar */}
-      <header className="bg-surface text-primary-container font-label-mono text-label-mono uppercase tracking-widest border-b-2 border-outline-variant shadow-[0_0_15px_rgba(0,0,0,0.5)] flex justify-between items-center px-4 md:px-gutter py-2 w-full z-50 fixed top-0 h-16">
+      <header className="bg-surface text-primary font-label-mono text-label-mono uppercase tracking-widest border-b-2 border-outline-variant shadow-[0_0_15px_rgba(0,0,0,0.5)] flex justify-between items-center px-4 md:px-gutter py-2 w-full z-50 fixed top-0 h-16">
         <div className="flex items-center gap-2 md:gap-4 h-full">
           <button 
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="w-10 h-10 flex items-center justify-center text-primary-container hover:bg-surface-variant transition-colors border-2 border-outline-variant shrink-0"
+            className="w-10 h-10 flex items-center justify-center text-primary hover:bg-surface-variant transition-colors border-2 border-outline-variant shrink-0"
           >
             <span className="material-symbols-outlined">{isCollapsed ? 'menu' : 'close'}</span>
           </button>
-          <Link to="/" className="font-headline-md text-headline-sm md:text-headline-md font-bold text-primary-container drop-shadow-[0_0_8px_rgba(var(--primary-container-rgb),0.6)]">LAZPLAY</Link>
+          <Link to="/" className="font-headline-md text-headline-sm md:text-headline-md font-bold text-primary drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.6)]">LAZPLAY</Link>
         </div>
         
         <div className="flex-1 max-w-md mx-8 hidden lg:block">
           <div className="relative w-full border-2 border-outline-variant bg-surface flex items-center px-3 py-1">
-            <span className="text-primary-container mr-2 font-label-mono">&gt;</span>
-            <input className="w-full bg-transparent border-none text-primary-container focus:ring-0 placeholder:text-outline-variant/50 focus:outline-none font-label-mono text-label-mono" placeholder="SEARCH_DATABASE..." type="text"/>
-            <span className="material-symbols-outlined text-primary-container" style={{fontVariationSettings: "'FILL' 0"}}>search</span>
+            <span className="text-primary mr-2 font-label-mono">&gt;</span>
+            <input className="w-full bg-transparent border-none text-primary focus:ring-0 placeholder:text-outline-variant/50 focus:outline-none font-label-mono text-label-mono" placeholder="SEARCH_DATABASE..." type="text"/>
+            <span className="material-symbols-outlined text-primary" style={{fontVariationSettings: "'FILL' 0"}}>search</span>
           </div>
         </div>
 
@@ -99,11 +99,11 @@ export default function Layout() {
         `}>
           <div className={`px-6 py-8 border-b-2 border-outline-variant mb-4 overflow-hidden transition-all duration-300 ${isCollapsed ? 'opacity-0 h-0 p-0 border-0 mb-0' : 'opacity-100'}`}>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 border-2 border-primary-container bg-surface flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-primary-container" style={{fontVariationSettings: "'FILL' 1"}}>terminal</span>
+              <div className="w-10 h-10 border-2 border-primary bg-surface flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-primary" style={{fontVariationSettings: "'FILL' 1"}}>terminal</span>
               </div>
               <div className="overflow-hidden">
-                <div className="font-headline-md text-headline-sm font-bold text-primary-container truncate max-w-[140px]">
+                <div className="font-headline-md text-headline-sm font-bold text-primary truncate max-w-[140px]">
                   {user ? user.displayName.toUpperCase() : 'GUEST_USER'}
                 </div>
                 <div className="text-[10px] text-on-surface-variant uppercase">

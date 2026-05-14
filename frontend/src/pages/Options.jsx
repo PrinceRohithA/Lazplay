@@ -39,7 +39,7 @@ export default function Options() {
   return (
     <div className="p-margin max-w-4xl mx-auto grid-glow-bg">
       <div className="mb-12">
-        <h1 className="font-headline-xl text-headline-xl text-primary-container mb-2 glow-text-primary uppercase tracking-tighter">
+        <h1 className="font-headline-xl text-headline-xl text-primary mb-2 glow-text-primary uppercase tracking-tighter">
           SYSTEM_OPTIONS
         </h1>
         <div className="h-1 w-24 bg-primary-container mb-8 neon-glow"></div>
@@ -65,7 +65,7 @@ export default function Options() {
                   onChange={handlePrimaryChange}
                   className="w-12 h-12 cursor-pointer bg-transparent"
                 />
-                <div className="font-label-mono text-lg text-primary-container">{primaryColor.toUpperCase()}</div>
+                <div className="font-label-mono text-lg text-primary">{primaryColor.toUpperCase()}</div>
               </div>
             </div>
 

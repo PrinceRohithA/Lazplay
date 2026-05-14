@@ -129,7 +129,7 @@ export default function PlayerDiscoveryHub() {
           ) : (
             <div className="text-center py-12 font-label-mono text-on-surface-variant border-2 border-dashed border-outline-variant p-4">
               <p>NO_GAMES_IN_LIBRARY</p>
-              <Link to="/games" className="text-primary-container underline mt-2 block">&gt; BROWSE_CATALOG</Link>
+              <Link to="/games" className="text-primary underline mt-2 block">&gt; BROWSE_CATALOG</Link>
             </div>
           )}
         </div>
@@ -137,7 +137,7 @@ export default function PlayerDiscoveryHub() {
         <aside className="lg:col-span-3 space-y-4">
           <div className="border-b-2 border-outline-variant pb-2">
             <h2 className="font-headline-md text-headline-sm md:text-[20px] text-on-surface uppercase tracking-wide flex items-center gap-2">
-              <span className="text-primary-container glow-text-primary">&gt;</span> NETWORK_STATUS
+              <span className="text-primary glow-text-primary">&gt;</span> NETWORK_STATUS
             </h2>
           </div>
           <div className="bg-surface border-2 border-outline-variant p-4 space-y-4 retro-border">
@@ -152,7 +152,7 @@ export default function PlayerDiscoveryHub() {
               ].map(({ label, value }) => (
                 <div key={label} className="flex justify-between font-label-mono text-[10px]">
                   <span className="text-on-surface-variant uppercase">{label}</span>
-                  <span className={loading ? 'text-secondary-container animate-pulse' : 'text-primary-container'}>{value}</span>
+                  <span className={loading ? 'text-secondary animate-pulse' : 'text-primary'}>{value}</span>
                 </div>
               ))}
             </div>
