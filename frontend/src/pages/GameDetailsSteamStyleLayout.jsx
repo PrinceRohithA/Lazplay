@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { games as gamesApi, payments } from '../api';
 import DOMPurify from 'dompurify';
@@ -20,6 +20,19 @@ export default function GameDetailsSteamStyleLayout() {
   const [playingGame, setPlayingGame] = useState(false);
   const [launchData, setLaunchData] = useState(null);
   const [playSessionId, setPlaySessionId] = useState(null);
+  const gameContainerRef = useRef(null);
+
+  const handleFullscreen = () => {
+    if (gameContainerRef.current) {
+      if (gameContainerRef.current.requestFullscreen) {
+        gameContainerRef.current.requestFullscreen();
+      } else if (gameContainerRef.current.webkitRequestFullscreen) { /* Safari */
+        gameContainerRef.current.webkitRequestFullscreen();
+      } else if (gameContainerRef.current.msRequestFullscreen) { /* IE11 */
+        gameContainerRef.current.msRequestFullscreen();
+      }
+    }
+  };
 
   useEffect(() => {
     if (!gameId) { setLoading(false); return; }
@@ -134,20 +147,29 @@ export default function GameDetailsSteamStyleLayout() {
         {/*  Left: Main Media  */}
         <div className="relative aspect-video xl:h-[450px] overflow-hidden bg-black pixel-border group">
           {playingGame && launchData ? (
-            <div className="w-full h-full relative">
+            <div ref={gameContainerRef} className="w-full h-full relative">
                 <iframe 
                     src={launchData.entrypointUrl} 
                     className="w-full h-full border-none"
                     title={game.title}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                 />
-                <button 
-                  onClick={handleStopPlay}
-                    className="absolute top-4 right-4 bg-error text-on-error p-2 pixel-border hover:brightness-110 transition-all z-10 opacity-0 group-hover:opacity-100"
-                    title="EXIT_RUNTIME"
-                >
-                    <span className="material-symbols-outlined">close</span>
-                </button>
+                <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    <button 
+                      onClick={handleFullscreen}
+                      className="bg-surface/80 text-on-surface p-2 pixel-border hover:bg-surface transition-all"
+                      title="FULL_SCREEN"
+                    >
+                      <span className="material-symbols-outlined text-[20px]">fullscreen</span>
+                    </button>
+                    <button 
+                      onClick={handleStopPlay}
+                      className="bg-error text-on-error p-2 pixel-border hover:brightness-110 transition-all"
+                      title="EXIT_RUNTIME"
+                    >
+                      <span className="material-symbols-outlined text-[20px]">close</span>
+                    </button>
+                </div>
             </div>
           ) : playingTrailer && (game.trailerUrl || videos.length > 0) ? (
             <div className="w-full h-full relative">

@@ -45,8 +45,8 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     licensing: 'PAID',
     price: '999',
     status: 'DRAFT',
-    minSpecs: { cpu: 'I5-6600K', ram: '8GB', gpu: 'GTX 1060', storage: '50GB' },
-    recSpecs: { cpu: 'I7-9700K', ram: '16GB', gpu: 'RTX 2070', storage: '50GB' }
+    minSpecs: { os: 'WINDOWS_10_X64', processor: 'I5-6600K', memory: '8GB', graphics: 'GTX 1060', storage: '50GB' },
+    recSpecs: { os: 'WINDOWS_11_X64', processor: 'I7-9700K', memory: '16GB', graphics: 'RTX 2070', storage: '50GB' }
   });
 
   const [existingMedia, setExistingMedia] = useState([]);
@@ -85,8 +85,8 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         licensing: game.priceType || 'PAID',
         price: ((game.price || 0) / 100).toString(),
         status: game.status || 'DRAFT',
-        minSpecs: game.systemRequirements?.minimum || { cpu: 'I5-6600K', ram: '8GB', gpu: 'GTX 1060', storage: '50GB' },
-        recSpecs: game.systemRequirements?.recommended || { cpu: 'I7-9700K', ram: '16GB', gpu: 'RTX 2070', storage: '50GB' }
+        minSpecs: game.systemRequirements?.minimum || { os: 'WINDOWS_10_X64', processor: 'I5-6600K', memory: '8GB', graphics: 'GTX 1060', storage: '50GB' },
+        recSpecs: game.systemRequirements?.recommended || { os: 'WINDOWS_11_X64', processor: 'I7-9700K', memory: '16GB', graphics: 'RTX 2070', storage: '50GB' }
       });
       
       // Fetch media
@@ -590,12 +590,12 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
                   {/* Minimum Specs */}
                   <div className="space-y-3 bg-surface-container/50 p-4 border border-outline-variant/30">
                       <p className="font-label-mono text-[9px] text-secondary-container uppercase mb-2 underline underline-offset-4">MINIMUM_SPECS</p>
-                      {['cpu', 'gpu', 'ram', 'storage'].map(field => (
+                      {['os', 'processor', 'memory', 'graphics', 'storage'].map(field => (
                           <div key={field} className="space-y-1">
                               <label className="block font-label-mono text-[8px] text-on-surface-variant uppercase">{field}</label>
                               <input 
                                   className="w-full bg-surface-container border border-outline-variant p-2 text-[10px] font-label-mono text-on-surface focus:border-primary-container outline-none"
-                                  value={form.minSpecs[field]}
+                                  value={form.minSpecs[field] || ''}
                                   onChange={(e) => handleSpecChange('minSpecs', field, e.target.value)}
                                   autoComplete="off"
                               />
@@ -606,12 +606,12 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
                   {/* Recommended Specs */}
                   <div className="space-y-3 bg-surface-container/50 p-4 border border-outline-variant/30">
                       <p className="font-label-mono text-[9px] text-tertiary-fixed uppercase mb-2 underline underline-offset-4">RECOMMENDED_SPECS</p>
-                      {['cpu', 'gpu', 'ram', 'storage'].map(field => (
+                      {['os', 'processor', 'memory', 'graphics', 'storage'].map(field => (
                           <div key={field} className="space-y-1">
                               <label className="block font-label-mono text-[8px] text-on-surface-variant uppercase">{field}</label>
                               <input 
                                   className="w-full bg-surface-container border border-outline-variant p-2 text-[10px] font-label-mono text-on-surface focus:border-primary-container outline-none"
-                                  value={form.recSpecs[field]}
+                                  value={form.recSpecs[field] || ''}
                                   onChange={(e) => handleSpecChange('recSpecs', field, e.target.value)}
                                   autoComplete="off"
                               />
