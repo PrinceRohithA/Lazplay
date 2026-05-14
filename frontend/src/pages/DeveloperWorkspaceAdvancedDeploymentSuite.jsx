@@ -327,9 +327,8 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
       // 2. Upload Assets
       if (files.HERO_BANNER) {
         addLog('STEP_02: TRANSMITTING_HERO_ASSETS...');
-        await replaceHeroBannerIfNeeded();
         const hero = await uploadMediaFile(files.HERO_BANNER, 'GAME_MEDIA', files.HERO_BANNER.name);
-        await devApi.addMedia(gameId, { type: 'IMAGE', url: hero.url, alt: 'HERO_BANNER' });
+        await devApi.updateGame(gameId, { heroBannerUrl: hero.url });
         addLog('SUCCESS: HERO_BANNER_UPLOADED');
       }
 
@@ -344,9 +343,11 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
 
       if (files.VIDEO_TRAILER) {
         addLog('STEP_02C: TRANSMITTING_VIDEO_TRAILER...');
-        await replaceVideoTrailerIfNeeded();
         const trailer = await uploadMediaFile(files.VIDEO_TRAILER, 'GAME_MEDIA', files.VIDEO_TRAILER.name);
-        await devApi.addMedia(gameId, { type: 'VIDEO', url: trailer.url, alt: 'VIDEO_TRAILER' });
+        await devApi.updateGame(gameId, { 
+          trailerUrl: trailer.url,
+          trailerObjectKey: trailer.objectKey
+        });
         addLog('SUCCESS: VIDEO_TRAILER_UPLOADED');
       }
 

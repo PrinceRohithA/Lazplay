@@ -152,7 +152,8 @@ export default function GameDetailsSteamStyleLayout() {
           ) : playingTrailer && (game.trailerUrl || videos.length > 0) ? (
             <div className="w-full h-full relative">
                 <video 
-                    src={game.trailerUrl || videos[0].url} 
+                    src={game.trailerUrl || (videos.length > 0 ? videos[0].url : '')} 
+                    poster={game.heroBannerUrl || game.heroImageUrl}
                     controls 
                     autoPlay 
                     className="w-full h-full object-contain" 

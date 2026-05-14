@@ -171,13 +171,22 @@ router.add('PATCH', '/developer/games/:gameId', async (req) => {
       platforms: validators.stringArray({ required: false, maxItems: 12, maxLength: 60, upper: true }),
       licensingModel: validators.string({ required: false, min: 0, max: 60, allowBlank: true }),
       hardwareSpecs: validators.object({ required: false }),
-      systemRequirements: validators.object({ required: false })
+      licensingModel: validators.string({ required: false, min: 0, max: 60, allowBlank: true }),
+      hardwareSpecs: validators.object({ required: false }),
+      systemRequirements: validators.object({ required: false }),
+      coverUrl: validators.string({ required: false, min: 0, max: 500, allowBlank: true }),
+      coverObjectKey: validators.string({ required: false, min: 0, max: 500, allowBlank: true }),
+      heroImageUrl: validators.string({ required: false, min: 0, max: 500, allowBlank: true }),
+      heroBannerUrl: validators.string({ required: false, min: 0, max: 500, allowBlank: true }),
+      trailerUrl: validators.string({ required: false, min: 0, max: 500, allowBlank: true }),
+      trailerObjectKey: validators.string({ required: false, min: 0, max: 500, allowBlank: true })
     }, {
       atLeastOne: [
         'title', 'description', 'tagline',
         'price', 'priceType', 'releaseDate', 'publisher',
         'genres', 'tags', 'platforms', 'licensingModel',
-        'hardwareSpecs', 'systemRequirements'
+        'hardwareSpecs', 'systemRequirements',
+        'coverUrl', 'heroImageUrl', 'heroBannerUrl', 'trailerUrl'
       ]
     });
 
@@ -190,6 +199,13 @@ router.add('PATCH', '/developer/games/:gameId', async (req) => {
         changes[field] = { from: game[field], to: value };
       }
     };
+
+    setIfChanged('coverUrl', body.coverUrl);
+    setIfChanged('coverObjectKey', body.coverObjectKey);
+    setIfChanged('heroImageUrl', body.heroImageUrl);
+    setIfChanged('heroBannerUrl', body.heroBannerUrl);
+    setIfChanged('trailerUrl', body.trailerUrl);
+    setIfChanged('trailerObjectKey', body.trailerObjectKey);
 
     const nextPriceType = body.priceType !== undefined
       ? body.priceType
