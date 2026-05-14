@@ -257,13 +257,13 @@ export default function GameDetailsSteamStyleLayout() {
                   GO_TO_LIBRARY
                 </Link>
               </div>
-            ) : game.priceType === 'FREE' ? (
+            ) : (game.priceType === 'FREE' || game.hasEntitlement) ? (
               <button 
                 onClick={handleClaim}
                 className="w-full bg-primary-container text-on-primary-container py-3 pixel-border neon-glow hover:bg-primary-fixed transition-all uppercase flex justify-center items-center gap-2 font-bold disabled:opacity-50"
               >
                 <span className="material-symbols-outlined">add_circle</span>
-                CLAIM_FREE_GAME
+                {game.hasEntitlement ? 'ADD_TO_LIBRARY' : 'CLAIM_FREE_GAME'}
               </button>
             ) : (
               <RazorpayCheckout 
