@@ -138,14 +138,22 @@ export default function GameDetailsSteamStyleLayout() {
     }
   };
 
-  // Ensure tracking stops on unmount
+  // Ensure tracking stops on unmount and handle autoPlay
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('autoPlay') === 'true' && game && game.isOwned && !playingGame && !loading) {
+        handlePlay();
+        // Clear param so it doesn't re-trigger on refresh
+        const newUrl = window.location.pathname + '?id=' + gameId;
+        window.history.replaceState({ path: newUrl }, '', newUrl);
+    }
+
     return () => {
       if (playSessionId) {
         gamesApi.playEnd(gameId, { sessionId: playSessionId }).catch(() => {});
       }
     };
-  }, [playSessionId, gameId]);
+  }, [playSessionId, gameId, game, loading]);
 
   const screenshots = media.filter((m) => m.type === 'IMAGE' && (m.alt === 'SCREENSHOT' || !m.alt));
   const videos = media.filter((m) => m.type === 'VIDEO');

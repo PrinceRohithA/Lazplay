@@ -23,7 +23,18 @@ router.add('GET', '/library', async (req) => {
       include: { game: true },
       orderBy: { lastPlayedAt: 'desc' }
     });
-    return ok(items);
+    
+    // Transform items to include public game data at the root
+    const formatted = await Promise.all(items.map(async (item) => {
+      const g = await publicGame(item.game, user);
+      return {
+        ...item,
+        ...g,
+        game: undefined // avoid circular or redundant data
+      };
+    }));
+    
+    return ok(formatted);
   });
 
 router.add('GET', '/library/:gameId', async (req) => {

@@ -28,9 +28,9 @@ export default function GameLibraryCyberEdition() {
   const handlePlayNow = (item) => {
     const platforms = (item.platforms || []).map(p => p.toUpperCase());
     
-    // If it's a web game, go to the game page (which has the player)
+    // If it's a web game, go to the game page with auto-play enabled
     if (platforms.includes('WEB') || platforms.includes('BROWSER')) {
-      navigate(`/game?id=${item.gameId}`);
+      navigate(`/game?id=${item.gameId}&autoPlay=true`);
     } else {
       // If it's a native game (Windows/Linux/PC), go to the launcher download page
       navigate('/download-launcher');
