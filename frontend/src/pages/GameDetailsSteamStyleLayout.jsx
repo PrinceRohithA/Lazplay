@@ -182,10 +182,6 @@ export default function GameDetailsSteamStyleLayout() {
         <div className="flex flex-col gap-4 p-4 font-label-mono text-label-mono">
           <h1 className="font-headline-lg text-headline-lg text-primary-container uppercase tracking-tighter drop-shadow-[0_0_8px_rgba(57,255,20,0.6)]">{game.title}</h1>
           <div className="flex-1 overflow-y-auto space-y-4">
-            <div 
-              className="text-on-surface text-[14px] leading-relaxed quill-content"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(game.description) }}
-            />
             <div className="grid grid-cols-[100px_1fr] gap-y-2 text-[11px] uppercase">
               <span className="text-on-surface-variant">RECENT_REVIEWS:</span>
               <span className="text-primary-container">OVERWHELMINGLY_POSITIVE</span>
