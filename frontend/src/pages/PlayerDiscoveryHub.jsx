@@ -19,7 +19,7 @@ export default function PlayerDiscoveryHub() {
 
   return (
     <div className="flex flex-col gap-margin p-gutter md:p-margin">
-      <section className="w-full relative border-2 border-outline-variant bg-surface-container-low retro-border h-[400px] flex flex-col">
+      <section className="w-full relative border-2 border-outline-variant bg-surface-container-low retro-border h-[400px] flex flex-col mb-gutter">
         <div className="bg-surface-container-highest border-b-2 border-outline-variant px-4 py-1 flex justify-between items-center">
           <span className="font-label-mono text-label-mono text-primary-container">&gt; FEATURED_PROTOCOL.EXE</span>
           <div className="flex gap-2">
