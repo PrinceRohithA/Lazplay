@@ -30,5 +30,8 @@ electron.contextBridge.exposeInMainWorld("lazplayAPI", {
   },
   onRequestEntrypoint: (callback) => {
     electron.ipcRenderer.on("request-entrypoint", (_event, data) => callback(data));
+  },
+  onSessionUpdated: (callback) => {
+    electron.ipcRenderer.on("session-updated", (_event, data) => callback(data));
   }
 });

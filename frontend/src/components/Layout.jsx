@@ -8,7 +8,17 @@ export default function Layout() {
 
   useEffect(() => {
     authApi.me()
-      .then(res => setUser(res.data))
+      .then(res => {
+        setUser(res.data);
+        // Sync session with native launcher if running inside Electron
+        if (window.electron && window.electron.syncSession) {
+          const access = localStorage.getItem('accessToken');
+          const refresh = localStorage.getItem('refreshToken');
+          if (access && refresh) {
+            window.electron.syncSession(access, refresh);
+          }
+        }
+      })
       .catch(() => setUser(null));
   }, []);
 

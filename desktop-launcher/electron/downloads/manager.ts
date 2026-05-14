@@ -141,7 +141,7 @@ class DownloadManager {
                 return; // Stop here, wait for user input
             }
         } else {
-            db.setGameStatus(gameId, "installed");
+            db.setGameStatus(gameId, "installed", { entrypoint });
         }
 
         this.broadcastProgress({

@@ -40,6 +40,11 @@ function App() {
         });
       });
 
+      window.lazplayAPI.onSessionUpdated(() => {
+        console.log("Session updated, syncing library...");
+        syncRemoteLibrary();
+      });
+
       window.lazplayAPI.onDeepLink((url: string) => {
         console.log("Deep link received:", url);
       });
@@ -85,7 +90,7 @@ function App() {
               <h3 className="text-xl font-bold mb-2">Setup Required</h3>
               <p className="text-slate-400 text-sm mb-6">
                 We couldn't automatically identify the executable for{" "}
-                <span className="text-white font-medium">{setupPrompt.title}</span>. 
+                <span className="text-white font-medium">{setupPrompt.title}</span>.
                 Please select the correct file to launch the game:
               </p>
 

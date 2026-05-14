@@ -103,10 +103,11 @@ export const useLauncherStore = create<LauncherStore>((set, get) => ({
           const ownedSet = new Set(result.ownedIds);
 
           result.allGames.forEach((item: any) => {
-            const isOwned = ownedSet.has(item.id);
-            if (!newGames[item.id]) {
-              newGames[item.id] = {
-                id: item.id,
+            const itemId = String(item.id);
+            const isOwned = ownedSet.has(itemId);
+            if (!newGames[itemId]) {
+              newGames[itemId] = {
+                id: itemId,
                 title: item.title,
                 status: "uninstalled",
                 isOwned,
@@ -114,8 +115,8 @@ export const useLauncherStore = create<LauncherStore>((set, get) => ({
                 entrypoint: item.entrypoint,
               };
             } else {
-              newGames[item.id] = {
-                ...newGames[item.id],
+              newGames[itemId] = {
+                ...newGames[itemId],
                 title: item.title,
                 isOwned,
                 downloadUrl: item.downloadUrl,

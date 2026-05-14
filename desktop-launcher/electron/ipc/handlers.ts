@@ -128,11 +128,15 @@ export function setupIpcHandlers(
       const libData = await libRes.json();
       const gamesData = await gamesRes.json();
 
+      // Extract arrays safely
+      const ownedItems = libData.data || libData.items || (Array.isArray(libData) ? libData : []);
+      const allGamesItems = gamesData.data || gamesData.items || (Array.isArray(gamesData) ? gamesData : []);
+
       // Return combined data
       return {
         success: true,
-        ownedIds: (libData.data || libData.items || libData).map((i: any) => i.gameId || i.id),
-        allGames: gamesData.data || gamesData.items || gamesData,
+        ownedIds: ownedItems.map((i: any) => String(typeof i === 'string' ? i : (i.gameId || i.id))),
+        allGames: allGamesItems,
       };
     } catch (error: any) {
       log.error("Sync library failed:", error);

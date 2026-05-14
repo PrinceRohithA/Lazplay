@@ -46,14 +46,27 @@ class ProcessManager {
 
     log.info(`Launching game ${gameId} from ${exePath}`);
 
+    if (exePath.endsWith(".html") || exePath.endsWith(".htm")) {
+      // For web games, we open them in the system browser (or we could open a new Electron window)
+      // Note: Tracking playtime for web games launched this way is difficult
+      import("electron").then(({ shell }) => {
+        shell.openPath(exePath);
+      });
+      this.runningGames.set(gameId, { process: { kill: () => {} } as any, startTime: Date.now() });
+      this.broadcastState(gameId, "running");
+      // For now, we'll just keep it "running" until the user manually stops it or we implement a window tracker
+      return;
+    }
+
     const startTime = Date.now();
     const child = spawn(exePath, [], {
       cwd: game.installPath,
       detached: true,
       stdio: "ignore",
+      shell: true, // Crucial for some Windows executables and paths with spaces
     });
 
-    child.unref(); // Allow the launcher to exit without terminating the game
+    child.unref(); 
 
     this.runningGames.set(gameId, { process: child, startTime });
     this.broadcastState(gameId, "running");

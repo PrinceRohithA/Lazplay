@@ -1,6 +1,27 @@
 "use strict";
+var __create = Object.create;
 var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 const require$$1 = require("electron");
 const require$$1$1 = require("path");
@@ -23573,7 +23594,7 @@ class DownloadManager {
           return;
         }
       } else {
-        storageDb.setGameStatus(gameId, "installed");
+        storageDb.setGameStatus(gameId, "installed", { entrypoint });
       }
       this.broadcastProgress({
         gameId,
@@ -23672,11 +23693,22 @@ class ProcessManager {
       }
     }
     log.info(`Launching game ${gameId} from ${exePath}`);
+    if (exePath.endsWith(".html") || exePath.endsWith(".htm")) {
+      import("electron").then(({ shell }) => {
+        shell.openPath(exePath);
+      });
+      this.runningGames.set(gameId, { process: { kill: () => {
+      } }, startTime: Date.now() });
+      this.broadcastState(gameId, "running");
+      return;
+    }
     const startTime = Date.now();
     const child = require$$0$1.spawn(exePath, [], {
       cwd: game.installPath,
       detached: true,
-      stdio: "ignore"
+      stdio: "ignore",
+      shell: true
+      // Crucial for some Windows executables and paths with spaces
     });
     child.unref();
     this.runningGames.set(gameId, { process: child, startTime });
@@ -23821,10 +23853,12 @@ function setupIpcHandlers(mainWindow2, storeView2) {
       if (!libRes.ok || !gamesRes.ok) throw new Error("Failed to fetch data");
       const libData = await libRes.json();
       const gamesData = await gamesRes.json();
+      const ownedItems = libData.data || libData.items || (Array.isArray(libData) ? libData : []);
+      const allGamesItems = gamesData.data || gamesData.items || (Array.isArray(gamesData) ? gamesData : []);
       return {
         success: true,
-        ownedIds: (libData.data || libData.items || libData).map((i) => i.gameId || i.id),
-        allGames: gamesData.data || gamesData.items || gamesData
+        ownedIds: ownedItems.map((i) => String(typeof i === "string" ? i : i.gameId || i.id)),
+        allGames: allGamesItems
       };
     } catch (error2) {
       log.error("Sync library failed:", error2);

@@ -1,9 +1,12 @@
 import { contextBridge, ipcRenderer } from "electron";
 
 // This is the preload script injected into the external WebContentsView (https://play.lazplay.tech)
-contextBridge.exposeInMainWorld("lazplayDesktop", {
-  // Methods triggered from web to desktop
-  installGame: (gameId: string) => ipcRenderer.invoke("install-game", gameId),
+contextBridge.exposeInMainWorld("electron", {
+  // Generic invoke for any IPC channel
+  invoke: (channel: string, ...args: any[]) => ipcRenderer.invoke(channel, ...args),
+
+  // Explicit methods (convenience)
+  installGame: (gameId: string, options?: any) => ipcRenderer.invoke("install-game", gameId, options),
   launchGame: (gameId: string) => ipcRenderer.invoke("launch-game", gameId),
   uninstallGame: (gameId: string) =>
     ipcRenderer.invoke("uninstall-game", gameId),

@@ -42,4 +42,7 @@ contextBridge.exposeInMainWorld("lazplayAPI", {
   onRequestEntrypoint: (callback: (data: any) => void) => {
     ipcRenderer.on("request-entrypoint", (_event, data) => callback(data));
   },
+  onSessionUpdated: (callback: (data: any) => void) => {
+    ipcRenderer.on("session-updated", (_event, data) => callback(data));
+  },
 });
