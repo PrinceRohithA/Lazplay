@@ -30,7 +30,7 @@ const config = {
   publicWebUrl: process.env.PUBLIC_WEB_URL || 'https://play.lazplay.tech',
   authSecret: process.env.AUTH_SECRET || 'lazplay-dev-secret-change-before-production',
   accessTokenTtlSeconds: Number(process.env.ACCESS_TOKEN_TTL_SECONDS || 7200),
-  refreshTokenTtlSeconds: Number(process.env.REFRESH_TOKEN_TTL_SECONDS || 2592000),
+  refreshTokenTtlSeconds: Number(process.env.REFRESH_TOKEN_TTL_SECONDS || 7776000),
   runtimeTokenTtlSeconds: Number(process.env.RUNTIME_TOKEN_TTL_SECONDS || 900),
   r2Endpoint: process.env.R2_ENDPOINT,
   r2Bucket: process.env.R2_BUCKET,
@@ -371,8 +371,12 @@ async function getOptionalUser(req) {
   try {
     const payload = verifyToken(token);
     if (payload.type !== 'access') return null;
-    const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+    const [user, session] = await Promise.all([
+      prisma.user.findUnique({ where: { id: payload.sub } }),
+      prisma.refreshSession.findUnique({ where: { id: payload.sid } })
+    ]);
     if (!user || user.status !== 'ACTIVE') return null;
+    if (!session || session.revokedAt || session.expiresAt < new Date()) return null;
     return user;
   } catch { return null; }
 }
@@ -382,8 +386,16 @@ async function requireAuth(req, _db, roles = []) {
   if (!token) throw new HttpError(401, 'AUTH_REQUIRED', 'Authentication is required');
   const payload = verifyToken(token);
   if (payload.type !== 'access') throw new HttpError(401, 'INVALID_TOKEN', 'Access token is required');
-  const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+  
+  const [user, session] = await Promise.all([
+    prisma.user.findUnique({ where: { id: payload.sub } }),
+    prisma.refreshSession.findUnique({ where: { id: payload.sid } })
+  ]);
+
   if (!user || user.status !== 'ACTIVE') throw new HttpError(401, 'USER_INACTIVE', 'User is inactive or missing');
+  if (!session || session.revokedAt) throw new HttpError(401, 'SESSION_REVOKED', 'Session has been revoked or expired');
+  if (session.expiresAt < new Date()) throw new HttpError(401, 'SESSION_EXPIRED', 'Session has expired');
+
   if (roles.length > 0 && !roles.some((role) => user.roles.includes(role))) {
     throw new HttpError(403, 'FORBIDDEN', 'You do not have permission to access this resource');
   }

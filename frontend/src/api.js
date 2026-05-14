@@ -18,29 +18,59 @@ function clearTokens() {
   localStorage.removeItem('refreshToken');
 }
 
+let isRefreshing = false;
+
 async function request(method, path, body, options = {}) {
   const headers = { 'Content-Type': 'application/json' };
   const token = getToken();
   if (token) headers['Authorization'] = `Bearer ${token}`;
   if (options.headers) Object.assign(headers, options.headers);
 
-  const res = await fetch(`${BASE}${path}`, {
+  let res = await fetch(`${BASE}${path}`, {
     method,
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
-  const data = await res.json().catch(() => ({}));
+  let data = await res.json().catch(() => ({}));
+
   if (!res.ok) {
-    // Global 401 handler — clear tokens and bounce to login
-    if (res.status === 401) {
+    // 401 Unauthorized - Try to refresh token
+    if (res.status === 401 && !options._retry && !isRefreshing) {
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (refreshToken && path !== '/auth/refresh') {
+        isRefreshing = true;
+        try {
+          // Attempt refresh
+          const refreshRes = await fetch(`${BASE}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken }),
+          });
+
+          if (refreshRes.ok) {
+            const refreshData = await refreshRes.json();
+            setTokens(refreshData.data.accessToken, refreshData.data.refreshToken);
+            
+            // Retry original request
+            isRefreshing = false;
+            return request(method, path, body, { ...options, _retry: true });
+          }
+        } catch (err) {
+          console.error('Token refresh failed', err);
+        } finally {
+          isRefreshing = false;
+        }
+      }
+
+      // If refresh failed or was not possible
       clearTokens();
-      // Avoid redirect loop if already on /login or /signup
       const here = window.location.pathname;
       if (here !== '/login' && here !== '/signup') {
         window.location.href = '/login';
       }
     }
+
     const err = new Error(data?.error?.message || `HTTP ${res.status}`);
     err.code = data?.error?.code || 'UNKNOWN';
     err.status = res.status;
