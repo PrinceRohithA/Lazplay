@@ -1,6 +1,7 @@
 import { spawn, ChildProcess } from "child_process";
 import { BrowserWindow } from "electron";
 import path from "path";
+import fs from "fs";
 import { db } from "../storage/db";
 import log from "electron-log";
 
@@ -20,8 +21,28 @@ class ProcessManager {
       throw new Error("Game is not installed");
     }
 
-    const entrypoint = game.entrypoint || "executable.exe";
-    const exePath = path.join(game.installPath, entrypoint);
+    let entrypoint = game.entrypoint;
+    let exePath = entrypoint ? path.join(game.installPath, entrypoint) : "";
+
+    // Fallback logic
+    if (!entrypoint || !fs.existsSync(exePath)) {
+      const fallbacks = ["game.exe", "index.html", "start.bat", "run.sh"];
+      let foundFallback = false;
+
+      for (const fallback of fallbacks) {
+        const fallbackPath = path.join(game.installPath, fallback);
+        if (fs.existsSync(fallbackPath)) {
+          log.info(`Specified entrypoint not found. Falling back to ${fallback}`);
+          exePath = fallbackPath;
+          foundFallback = true;
+          break;
+        }
+      }
+
+      if (!foundFallback) {
+        throw new Error(`Executable not found. Tried ${entrypoint || "nothing"} and common fallbacks.`);
+      }
+    }
 
     log.info(`Launching game ${gameId} from ${exePath}`);
 
@@ -29,7 +50,7 @@ class ProcessManager {
     const child = spawn(exePath, [], {
       cwd: game.installPath,
       detached: true,
-      stdio: "ignore", // For production, we might redirect stdio to a log file
+      stdio: "ignore",
     });
 
     child.unref(); // Allow the launcher to exit without terminating the game

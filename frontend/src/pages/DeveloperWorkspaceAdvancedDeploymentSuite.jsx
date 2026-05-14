@@ -38,6 +38,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
   const [form, setForm] = useState({
     title: '',
     version: 'v1.0.0',
+    entrypoint: '',
     description: '',
     hardwareSpecs: ['PC'],
     genres: ['ACTION'],
@@ -78,6 +79,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
       setForm({
         title: game.title,
         version: game.version || builds[0]?.version || 'v1.0.0',
+        entrypoint: game.entrypoint || builds[0]?.entrypoint || '',
         description: game.description || '',
         hardwareSpecs: game.platforms || ['PC'],
         genres: game.genres || ['ACTION'],
@@ -359,7 +361,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
           version: form.version,
           platform: form.hardwareSpecs[0] || 'PC',
           runtime: form.hardwareSpecs.includes('WEB') ? 'WEB' : 'NATIVE',
-          entrypoint: form.hardwareSpecs.includes('WEB') ? 'index.html' : 'game.exe'
+          entrypoint: form.entrypoint || (form.hardwareSpecs.includes('WEB') ? 'index.html' : 'game.exe')
         });
         const buildId = buildRes.data.id;
         addLog(`SUCCESS: BUILD_READY (ID: ${buildId})`);
@@ -580,6 +582,24 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
                   autoComplete="off"
                 />
               </div>
+            </div>
+            <div className="col-span-full space-y-2">
+              <label className="block font-label-mono text-[10px] text-on-surface-variant">_TARGET_ENTRYPOINT (E.G. GAME.EXE / INDEX.HTML)</label>
+              <div className="flex items-center bg-surface-container text-secondary-container p-3 border border-outline-variant focus-within:border-secondary-container group">
+                <span className="mr-2 group-focus-within:animate-pulse text-secondary-container">&gt;</span>
+                <input 
+                  className="bg-transparent border-none focus:ring-0 p-0 w-full font-label-mono placeholder:opacity-30" 
+                  placeholder="DEFAULTS_TO_PLATFORM_STANDARD" 
+                  type="text" 
+                  name="entrypoint"
+                  value={form.entrypoint}
+                  onChange={handleInputChange}
+                  autoComplete="off"
+                />
+              </div>
+              <p className="text-[9px] font-label-mono text-on-surface-variant opacity-60">
+                NOTE: THIS IS THE FILE THE LAUNCHER WILL ATTEMPT TO EXECUTE. LEAVE BLANK TO AUTO-DETECT.
+              </p>
             </div>
             <div className="col-span-full space-y-2">
               <label className="block font-label-mono text-[10px] text-on-surface-variant">_DESCRIPTION_MANIFEST</label>
