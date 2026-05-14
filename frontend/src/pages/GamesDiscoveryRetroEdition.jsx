@@ -70,6 +70,22 @@ export default function GamesDiscoveryRetroEdition() {
     </div>
   );
 
+  const priceLabel = (game) => {
+    if (!game.price || game.price === 0) return 'FREE_TO_PLAY';
+    return `₹${(game.price / 100).toFixed(2)}`;
+  };
+
+  const priceColor = (game) => (!game.price || game.price === 0) ? 'text-primary-container' : 'text-secondary-fixed';
+
+  const toPlainText = (value) => {
+    if (!value) return '';
+    return value
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
   return (
     <div className="p-gutter lg:p-margin flex-1 pb-12">
       <section className="mb-8">
