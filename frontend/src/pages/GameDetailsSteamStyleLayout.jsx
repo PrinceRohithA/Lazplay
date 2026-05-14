@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { games as gamesApi, payments } from '../api';
+import { games as gamesApi, payments, library as libraryApi } from '../api';
 import DOMPurify from 'dompurify';
 import RazorpayCheckout from '../components/RazorpayCheckout';
 
@@ -94,25 +94,19 @@ export default function GameDetailsSteamStyleLayout() {
     }
   };
   
-  const handlePlayNow = async () => {
-      if (!gameId) return;
-      setLoading(true);
-      try {
-          const res = await gamesApi.launchManifest(gameId);
-          setLaunchData(res.data);
-          setPlayingGame(true);
-          setPlayingTrailer(false);
-          try {
-            const startRes = await gamesApi.playStart(gameId);
-            setPlaySessionId(startRes.data?.sessionId || null);
-          } catch (err) {
-            console.warn('Play start tracking failed', err);
-          }
-      } catch (err) {
-          setError(err.message || 'FAILED_TO_LOAD_LAUNCH_MANIFEST');
-      } finally {
-          setLoading(false);
-      }
+  const handleClaim = async () => {
+    if (!gameId) return;
+    setLoading(true);
+    try {
+      await libraryApi.add(gameId);
+      setSuccessMsg("GAME_ADDED_TO_LIBRARY!");
+      const res = await gamesApi.get(gameId);
+      setGame(res.data);
+    } catch (err) {
+      setError(err.message || 'CLAIM_FAILED');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleStopPlay = async () => {
@@ -155,34 +149,7 @@ export default function GameDetailsSteamStyleLayout() {
         <section className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-gutter bg-surface-container-low pixel-border p-2">
         {/*  Left: Main Media  */}
         <div className="relative aspect-video xl:h-[450px] overflow-hidden bg-black pixel-border group">
-          {playingGame && launchData ? (
-            <div ref={gameContainerRef} className="w-full h-full relative">
-                <iframe 
-                    src={launchData.entrypointUrl} 
-                    className="w-full h-full border-none"
-                    title={game.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                />
-                {!isFullscreen && (
-                  <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                      <button 
-                        onClick={handleFullscreen}
-                        className="bg-surface/80 text-on-surface p-1.5 pixel-border hover:bg-surface transition-all flex items-center justify-center"
-                        title="FULL_SCREEN"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">fullscreen</span>
-                      </button>
-                      <button 
-                        onClick={handleStopPlay}
-                        className="bg-error text-on-error p-1.5 pixel-border hover:brightness-110 transition-all flex items-center justify-center"
-                        title="EXIT_RUNTIME"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">close</span>
-                      </button>
-                  </div>
-                )}
-            </div>
-          ) : playingTrailer && (game.trailerUrl || videos.length > 0) ? (
+          {playingTrailer && (game.trailerUrl || videos.length > 0) ? (
             <div className="w-full h-full relative">
                 <video 
                     src={game.trailerUrl || (videos.length > 0 ? videos[0].url : '')} 
@@ -236,13 +203,21 @@ export default function GameDetailsSteamStyleLayout() {
             <div className="mb-4 text-headline-sm font-bold text-primary-container">
               {game.priceType === 'FREE' ? 'FREE_TO_PLAY' : `₹${(game.price / 100).toFixed(2)}`}
             </div>
-            {(game.isOwned || (game.priceType === 'FREE' && game.platforms?.includes('WEB'))) ? (
+            {game.isOwned ? (
+              <Link 
+                to="/library"
+                className="w-full bg-secondary-container text-on-secondary-container py-3 pixel-border neon-glow hover:bg-secondary-fixed transition-all uppercase flex justify-center items-center gap-2 font-bold"
+              >
+                <span className="material-symbols-outlined">library_books</span>
+                GO_TO_LIBRARY
+              </Link>
+            ) : game.priceType === 'FREE' ? (
               <button 
-                onClick={game.priceType === 'FREE' && game.platforms?.includes('WEB') ? handlePlayNow : undefined}
+                onClick={handleClaim}
                 className="w-full bg-primary-container text-on-primary-container py-3 pixel-border neon-glow hover:bg-primary-fixed transition-all uppercase flex justify-center items-center gap-2 font-bold disabled:opacity-50"
               >
-                <span className="material-symbols-outlined">play_circle</span>
-                {game.priceType === 'FREE' && game.platforms?.includes('WEB') ? 'PLAY_IN_BROWSER' : 'PLAY_NOW'}
+                <span className="material-symbols-outlined">add_circle</span>
+                CLAIM_FREE_GAME
               </button>
             ) : (
               <RazorpayCheckout 
