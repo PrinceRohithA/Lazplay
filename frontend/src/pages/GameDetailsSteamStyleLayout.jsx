@@ -179,7 +179,7 @@ export default function GameDetailsSteamStyleLayout() {
   const recSpecs = sysReqs.recommended || {};
 
   return (
-    <div className="flex flex-col min-w-0 p-4 md:p-margin gap-4 md:gap-6">
+    <div className="flex flex-col min-w-0 p-4 md:p-margin gap-4 md:gap-6 grid-glow-bg">
       {loading && <div className="text-center py-24 font-label-mono text-primary-container animate-pulse">LOADING_GAME_DATA...</div>}
       {error && <div className="p-4 border border-error text-error font-label-mono bg-error/10 pixel-border">&gt; ERROR: {error}</div>}
       {successMsg && <div className="p-4 border border-primary-container text-primary-container font-label-mono bg-primary-container/10 pixel-border">&gt; SUCCESS: {successMsg}</div>}

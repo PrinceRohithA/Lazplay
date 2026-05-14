@@ -481,7 +481,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
   }
 
   return (
-    <div className="p-gutter min-h-screen flex flex-col gap-gutter bg-background pb-12">
+    <div className="p-gutter min-h-screen flex flex-col gap-gutter bg-background pb-12 grid-glow-bg">
       <style>{`
         .ql-container.ql-snow { border: none !important; font-family: inherit; font-size: 14px; color: var(--on-surface); background: var(--surface-container); }
         .ql-editor { min-height: 200px; }
@@ -516,7 +516,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
       {/*  Header Section  */}
       <section className="flex flex-col md:flex-row md:items-end justify-between gap-4 py-4">
         <div>
-          <h1 className="font-headline-xl text-headline-xl text-primary-container uppercase leading-none tracking-tighter">
+          <h1 className="font-headline-xl text-headline-xl text-primary-container uppercase leading-none tracking-tighter glow-text-primary">
             {gameIdParam ? 'PROJECT_CORE_MANAGEMENT' : 'ADVANCED_DEPLOYMENT_SUITE'}
           </h1>
           <p className="font-label-mono text-on-surface-variant mt-2 tracking-widest">

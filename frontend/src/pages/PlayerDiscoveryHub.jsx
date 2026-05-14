@@ -45,8 +45,8 @@ export default function PlayerDiscoveryHub() {
                   to={`/game?id=${hero.id}`} 
                   className={`w-full md:w-auto text-center font-label-mono text-label-mono px-6 py-3 border-2 transition-colors cyber-btn ${
                     hero.isOwned 
-                      ? "border-secondary-container" 
-                      : "border-primary-container"
+                      ? "border-secondary-container text-on-secondary-container" 
+                      : "border-primary-container text-on-primary-container"
                   }`}
                 >
                   {hero.isOwned ? '> EXECUTE_PLAY' : hero.priceType === 'FREE' ? '> CLAIM_FREE' : '> VIEW_OFFER'}

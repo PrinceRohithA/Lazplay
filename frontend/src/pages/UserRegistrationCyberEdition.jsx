@@ -42,7 +42,7 @@ export default function UserRegistrationCyberEdition() {
   return (
     <>
       <div className="scanline-overlay"></div>
-      <main className="flex-grow flex items-center justify-center p-gutter relative overflow-hidden">
+      <main className="flex-grow flex items-center justify-center p-gutter relative overflow-hidden grid-glow-bg">
         <div className="absolute inset-0 z-0 opacity-20">
           <div className="absolute top-10 left-10 font-label-caps text-primary text-[10px]">SYSTEM_LOAD: 14.2%<br/>UPTIME: 42:12:09</div>
           <div className="absolute bottom-10 right-10 font-label-caps text-secondary text-[10px] text-right">ENCRYPTION: AES_256_ACTIVE<br/>NODE_ID: CH_8832_X</div>
@@ -62,7 +62,7 @@ export default function UserRegistrationCyberEdition() {
             </div>
             <div className="px-6 pb-8">
               <div className="mb-10 text-center">
-                <h2 className="font-headline-lg text-primary-container mb-2 drop-shadow-[0_0_5px_rgba(0,240,255,0.5)] uppercase tracking-tight">USER_REGISTRATION // PROTOCOL</h2>
+                <h2 className="font-headline-lg text-primary-container mb-2 glow-text-primary uppercase tracking-tight">USER_REGISTRATION // PROTOCOL</h2>
                 <p className="font-label-caps text-on-surface-variant opacity-70">ESTABLISHING NEW IDENTITY IN THE GRID...</p>
               </div>
 
@@ -160,14 +160,11 @@ export default function UserRegistrationCyberEdition() {
                 {/*  EXECUTE Button  */}
                 <div className="pt-4">
                   <button 
-                    className="w-full bg-primary-container text-on-primary-container font-headline-md py-4 rounded hover:bg-primary-fixed-dim active:scale-[0.98] transition-all flex items-center justify-center gap-3 group shadow-[0_0_15px_rgba(0,240,255,0.4)] disabled:opacity-50" 
+                    className="w-full cyber-btn py-4 pixel-border uppercase font-bold tracking-widest flex items-center justify-center gap-2 disabled:opacity-50" 
                     type="submit"
                     disabled={loading}
                   >
-                    <span className={`material-symbols-outlined ${loading ? 'animate-spin' : 'group-hover:animate-pulse'}`}>
-                      {loading ? 'sync' : 'bolt'}
-                    </span>
-                    {loading ? 'EXECUTING_PROTOCOL...' : 'EXECUTE_REGISTRATION'}
+                    {loading ? 'SYNCHRONIZING...' : 'REGISTER_IDENTITY'}
                   </button>
                 </div>
               </form>

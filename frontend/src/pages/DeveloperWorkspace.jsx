@@ -130,7 +130,7 @@ export default function DeveloperWorkspace() {
 
                 <button 
                   type="submit"
-                  className="mt-4 bg-secondary-container text-on-secondary-container py-4 font-label-mono font-bold uppercase tracking-widest hover:bg-transparent hover:text-secondary-container border-2 border-secondary-container transition-all shadow-[8px_8px_0_0_var(--secondary-container)]"
+                  className="mt-4 cyber-btn py-4 font-label-mono font-bold uppercase tracking-widest border-secondary-container text-secondary"
                 >
                   INITIALIZE_DEVELOPER_PROTOCOL
                 </button>
@@ -144,11 +144,11 @@ export default function DeveloperWorkspace() {
   const stats = dash?.stats || {};
 
   return (
-    <div className="max-w-container-max mx-auto p-gutter md:p-margin flex flex-col gap-gutter min-h-full">
+    <div className="max-w-container-max mx-auto p-gutter md:p-margin flex flex-col gap-gutter min-h-full grid-glow-bg">
       {/*  Page Header  */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b-2 border-outline-variant pb-4 mb-4 gap-4">
         <div>
-          <h1 className="font-headline-lg text-headline-lg text-on-surface uppercase mb-1 flex items-center gap-3">
+          <h1 className="font-headline-lg text-headline-lg text-on-surface uppercase mb-1 flex items-center gap-3 glow-text-primary">
             <span className="w-4 h-4 bg-secondary-container animate-pulse shadow-[0_0_8px_var(--secondary)]"></span>
             WORKSPACE_ENV
           </h1>
@@ -164,7 +164,7 @@ export default function DeveloperWorkspace() {
             <span className="material-symbols-outlined text-sm group-hover:animate-spin">sync</span>
             RELOAD_DATA
           </button>
-          <Link to="/deployment" className="bg-secondary-container text-on-secondary border-2 border-transparent px-4 py-2 font-label-mono text-label-mono font-bold shadow-[4px_4px_0_0_var(--secondary-container)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_var(--secondary-container)] transition-all flex items-center gap-2">
+          <Link to="/deployment" className="cyber-btn px-4 py-2 font-label-mono text-label-mono font-bold flex items-center gap-2 border-secondary-container text-secondary">
             <span className="material-symbols-outlined text-sm">add_box</span>
             NEW_DEPLOY
           </Link>
@@ -187,7 +187,7 @@ export default function DeveloperWorkspace() {
             <div className="flex justify-between items-baseline">
               <div>
                 <span className="font-label-mono text-label-mono text-on-surface-variant block mb-1">TOTAL_GROSS_REVENUE</span>
-                <span className="font-headline-lg text-headline-lg text-on-secondary-container drop-shadow-[0_0_8px_var(--secondary)] block">
+                <span className="font-headline-lg text-headline-lg text-secondary glow-text-secondary block">
                   ₹{(stats.totalRevenue / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </span>
               </div>

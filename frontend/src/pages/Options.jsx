@@ -37,12 +37,12 @@ export default function Options() {
   ];
 
   return (
-    <div className="p-margin max-w-4xl mx-auto">
+    <div className="p-margin max-w-4xl mx-auto grid-glow-bg">
       <div className="mb-12">
-        <h1 className="font-headline-xl text-headline-xl text-primary-container mb-2 drop-shadow-[0_0_10px_rgba(var(--primary-container-rgb),0.5)] uppercase tracking-tighter">
+        <h1 className="font-headline-xl text-headline-xl text-primary-container mb-2 glow-text-primary uppercase tracking-tighter">
           SYSTEM_OPTIONS
         </h1>
-        <div className="h-1 w-24 bg-primary-container mb-8"></div>
+        <div className="h-1 w-24 bg-primary-container mb-8 neon-glow"></div>
       </div>
 
       <div className="flex flex-col gap-8">
@@ -169,7 +169,7 @@ export default function Options() {
         </div>
         <button 
           onClick={() => window.location.href = '/'}
-          className="bg-primary-container text-on-primary-fixed-variant px-8 py-3 font-label-mono text-label-mono font-bold hover:brightness-110 active:scale-95 transition-all shadow-[0_0_15px_rgba(var(--primary-container-rgb),0.3)]"
+          className="cyber-btn px-8 py-3 font-label-mono text-label-mono font-bold"
         >
           RETURN_TO_DASHBOARD
         </button>
