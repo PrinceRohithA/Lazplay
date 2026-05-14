@@ -170,6 +170,7 @@ export const games = {
 export const library = {
   list: (params) => get('/library', params),
   get: (gameId) => get(`/library/${gameId}`),
+  add: (gameId) => post('/library', { gameId }),
   addFavorite: (gameId) => post(`/library/${gameId}/favorite`),
   removeFavorite: (gameId) => del(`/library/${gameId}/favorite`),
 };
