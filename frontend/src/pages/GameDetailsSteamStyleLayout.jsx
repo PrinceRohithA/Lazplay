@@ -20,7 +20,16 @@ export default function GameDetailsSteamStyleLayout() {
   const [playingGame, setPlayingGame] = useState(false);
   const [launchData, setLaunchData] = useState(null);
   const [playSessionId, setPlaySessionId] = useState(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const gameContainerRef = useRef(null);
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
 
   const handleFullscreen = () => {
     if (gameContainerRef.current) {
@@ -154,22 +163,24 @@ export default function GameDetailsSteamStyleLayout() {
                     title={game.title}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                 />
-                <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                    <button 
-                      onClick={handleFullscreen}
-                      className="bg-surface/80 text-on-surface p-2 pixel-border hover:bg-surface transition-all"
-                      title="FULL_SCREEN"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">fullscreen</span>
-                    </button>
-                    <button 
-                      onClick={handleStopPlay}
-                      className="bg-error text-on-error p-2 pixel-border hover:brightness-110 transition-all"
-                      title="EXIT_RUNTIME"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">close</span>
-                    </button>
-                </div>
+                {!isFullscreen && (
+                  <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                      <button 
+                        onClick={handleFullscreen}
+                        className="bg-surface/80 text-on-surface p-1.5 pixel-border hover:bg-surface transition-all flex items-center justify-center"
+                        title="FULL_SCREEN"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">fullscreen</span>
+                      </button>
+                      <button 
+                        onClick={handleStopPlay}
+                        className="bg-error text-on-error p-1.5 pixel-border hover:brightness-110 transition-all flex items-center justify-center"
+                        title="EXIT_RUNTIME"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">close</span>
+                      </button>
+                  </div>
+                )}
             </div>
           ) : playingTrailer && (game.trailerUrl || videos.length > 0) ? (
             <div className="w-full h-full relative">
