@@ -242,81 +242,76 @@ export default function GameDetailsSteamStyleLayout() {
           </div>
 
           {/*  Horizontal Info Bar  */}
-          <div className="flex flex-col md:flex-row gap-6 p-4 font-label-mono text-label-mono bg-surface-container-low rounded-lg overflow-hidden">
-            <div className="w-32 h-48 md:w-40 md:h-60 bg-black pixel-border overflow-hidden shrink-0 shadow-lg hidden sm:block">
-              <img 
-                src={game.coverUrl || game.heroImageUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuC9KrQ5YpZIImJ1Kd2RBfr-IeRwo5ttSkse1x9Q71QkonTieCCBK-ZICf1E_3LD5-X4q63if0DYzWnYTFcwoRStnzJtmrdqfhsIouTLhtzkMmCzw0y_69VlGf5INbG4nK77O9oKMw9FDOaqKgWuh-yDPS9BKfJsFzcuP9Ueuv1CFIMfot1RHyyIqegrc4toawTb6VxlS0VnqAc-XiUBOixMQ6hvHARoZbpH1Dlt9IHWrRbvaJaqI_mte6dOhR4-5vmnF9sG75TI6lXu"} 
-                alt="Project Cover" 
-                className="w-full h-full object-cover"
-              />
-            </div>
-            
+          <div className="flex flex-col lg:flex-row justify-between gap-8 p-6 font-label-mono text-label-mono bg-surface-container-low rounded-lg overflow-hidden border border-outline-variant/30">
+            {/* Left Side: Metadata */}
             <div className="flex-1 flex flex-col min-w-0">
-              <h1 className="font-headline-md text-primary uppercase tracking-tighter drop-shadow-[0_0_8px_rgba(57,255,20,0.6)] truncate mb-4">{game.title}</h1>
+              <h1 className="font-headline-lg text-primary uppercase tracking-tighter drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.6)] mb-6">{game.title}</h1>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-[10px] uppercase mb-6">
-                <div className="flex justify-between border-b border-outline-variant/30 pb-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-3 text-[11px] uppercase">
+                <div className="flex justify-between border-b border-outline-variant/20 pb-1">
                   <span className="text-on-surface-variant">RECENT_REVIEWS:</span>
-                  <span className="text-primary">OVERWHELMINGLY_POSITIVE</span>
+                  <span className="text-primary font-bold">OVERWHELMINGLY_POSITIVE</span>
                 </div>
-                <div className="flex justify-between border-b border-outline-variant/30 pb-1">
+                <div className="flex justify-between border-b border-outline-variant/20 pb-1">
                   <span className="text-on-surface-variant">RELEASE_DATE:</span>
                   <span className="text-on-surface">{game.releaseDate || new Date(game.createdAt).toLocaleDateString()}</span>
                 </div>
-                <div className="flex justify-between border-b border-outline-variant/30 pb-1">
+                <div className="flex justify-between border-b border-outline-variant/20 pb-1">
                   <span className="text-on-surface-variant">DEVELOPER:</span>
                   <span className="text-secondary truncate">{game.developer?.displayName || 'UNKNOWN_DEV'}</span>
                 </div>
-                <div className="flex justify-between border-b border-outline-variant/30 pb-1">
+                <div className="flex justify-between border-b border-outline-variant/20 pb-1">
                   <span className="text-on-surface-variant">PUBLISHER:</span>
                   <span className="text-secondary truncate">{game.publisher || 'LAZPLAY_STUDIOS'}</span>
                 </div>
               </div>
-
-              <div className="mt-auto flex flex-col sm:flex-row items-center gap-4 border-t border-outline-variant pt-4">
-                <div className="text-2xl font-bold text-primary shrink-0">
-                  {game.priceType === 'FREE' ? 'FREE_TO_PLAY' : `₹${(game.price / 100).toFixed(2)}`}
-                </div>
-                
-                <div className="flex-1 w-full flex gap-2">
-                  {game.isOwned ? (
-                    <>
-                      <button 
-                        onClick={handlePlay}
-                        className="flex-1 bg-primary-container text-on-primary-container py-3 pixel-border neon-glow hover:bg-primary-fixed transition-all uppercase flex justify-center items-center gap-2 font-bold"
-                      >
-                        <span className="material-symbols-outlined">play_arrow</span>
-                        PLAY_NOW
-                      </button>
-                      <Link 
-                        to="/library"
-                        className="bg-secondary-container text-on-secondary-container px-4 py-2 pixel-border hover:bg-secondary-fixed transition-all uppercase flex justify-center items-center gap-2 text-[10px]"
-                      >
-                        <span className="material-symbols-outlined text-[14px]">library_books</span>
-                        LIBRARY
-                      </Link>
-                    </>
-                  ) : (game.priceType === 'FREE' || game.hasEntitlement) ? (
+            </div>
+            
+            {/* Right Side: Actions */}
+            <div className="flex flex-col justify-center items-center lg:items-end gap-4 min-w-[280px]">
+              <div className="text-3xl font-bold text-primary mb-2">
+                {game.priceType === 'FREE' ? 'FREE_TO_PLAY' : `₹${(game.price / 100).toFixed(2)}`}
+              </div>
+              
+              <div className="w-full flex flex-col gap-3">
+                {game.isOwned ? (
+                  <>
                     <button 
-                      onClick={handleClaim}
-                      className="w-full bg-primary-container text-on-primary-container py-3 pixel-border neon-glow hover:bg-primary-fixed transition-all uppercase flex justify-center items-center gap-2 font-bold"
+                      onClick={handlePlay}
+                      className="w-full bg-primary-container text-primary py-4 pixel-border neon-glow hover:bg-primary-fixed hover:text-black transition-all uppercase flex justify-center items-center gap-3 font-bold text-lg"
                     >
-                      <span className="material-symbols-outlined">add_circle</span>
-                      {game.hasEntitlement ? 'ADD_TO_LIBRARY' : 'CLAIM_FREE_GAME'}
+                      <span className="material-symbols-outlined text-2xl">play_circle</span>
+                      PLAY_NOW
                     </button>
-                  ) : (
-                    <div className="w-full max-w-xs">
-                      <RazorpayCheckout 
-                        game={game} 
-                        onSuccess={handlePaymentSuccess} 
-                        onError={handlePaymentError} 
-                      />
-                    </div>
-                  )}
-                </div>
+                    <Link 
+                      to="/library"
+                      className="w-full bg-surface text-on-surface py-2 pixel-border hover:bg-surface-variant transition-all uppercase flex justify-center items-center gap-2 text-sm"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">inventory_2</span>
+                      ACCESS_LIBRARY
+                    </Link>
+                  </>
+                ) : (game.priceType === 'FREE' || game.hasEntitlement) ? (
+                  <button 
+                    onClick={handleClaim}
+                    className="w-full bg-primary-container text-primary py-4 pixel-border neon-glow hover:bg-primary-fixed hover:text-black transition-all uppercase flex justify-center items-center gap-3 font-bold text-lg"
+                  >
+                    <span className="material-symbols-outlined text-2xl">add_circle</span>
+                    {game.hasEntitlement ? 'ADD_TO_LIBRARY' : 'CLAIM_FREE_GAME'}
+                  </button>
+                ) : (
+                  <div className="w-full">
+                    <RazorpayCheckout 
+                      game={game} 
+                      onSuccess={handlePaymentSuccess} 
+                      onError={handlePaymentError} 
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
+
         </section>
 
       {/*  Horizontal Navigation Bar  */}
