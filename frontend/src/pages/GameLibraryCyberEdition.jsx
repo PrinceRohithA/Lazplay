@@ -101,11 +101,11 @@ export default function GameLibraryCyberEdition() {
               </div>
 
               {/* Box Image Section */}
-              <div className="relative aspect-[3/4] overflow-hidden bg-surface">
+              <div className="relative aspect-video overflow-hidden bg-surface">
                 <img 
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100" 
                   alt={item.title} 
-                  src={item.heroBannerUrl || item.coverUrl || PLACEHOLDER} 
+                  src={item.heroBannerUrl || item.heroImageUrl || item.coverUrl || PLACEHOLDER} 
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60"></div>
                 

@@ -57,6 +57,14 @@ export default function Layout() {
         </div>
 
         <div className="flex items-center gap-4">
+          <Link 
+            to="/download-launcher" 
+            className="hover:text-primary-fixed hover:bg-surface-variant transition-colors p-1 flex items-center justify-center border-2 border-transparent hover:border-primary-container group relative"
+            title="DOWNLOAD_LAUNCHER"
+          >
+            <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 0"}}>download</span>
+            <span className="absolute -bottom-8 right-0 bg-surface border border-outline-variant px-2 py-1 text-[8px] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">GET_LAUNCHER</span>
+          </Link>
           <button className="hover:text-primary-fixed hover:bg-surface-variant transition-colors p-1 flex items-center justify-center border-2 border-transparent hover:border-primary-container">
             <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 0"}}>notifications</span>
           </button>
@@ -68,7 +76,10 @@ export default function Layout() {
 
       <div className="flex flex-1 pt-16">
         {/* SideNavBar */}
-        <nav className={`fixed left-0 top-16 h-[calc(100vh-64px)] bg-surface-container border-r-2 border-outline-variant flex flex-col pb-4 z-40 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
+        <nav className={`fixed left-0 top-16 h-[calc(100vh-64px)] bg-surface-container border-r-2 border-outline-variant flex flex-col pb-4 z-40 transition-all duration-300 
+          ${isCollapsed ? 'w-20' : 'w-64'} 
+          ${isCollapsed ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        `}>
           <div className={`px-margin py-8 border-b-2 border-outline-variant mb-4 overflow-hidden transition-all duration-300 ${isCollapsed ? 'opacity-0 h-0 p-0 border-0 mb-0' : 'opacity-100'}`}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 border-2 border-primary-container bg-surface flex items-center justify-center">
@@ -100,7 +111,7 @@ export default function Layout() {
                 {({ isActive }) => (
                   <>
                     <span className="material-symbols-outlined shrink-0" style={{fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0"}}>{item.icon}</span>
-                    {!isCollapsed && <span className="whitespace-nowrap">{item.name}</span>}
+                    <span className={`whitespace-nowrap transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>{item.name}</span>
                   </>
                 )}
               </NavLink>
@@ -110,13 +121,15 @@ export default function Layout() {
           <div className="px-2 mt-auto border-t-2 border-outline-variant pt-4">
             <Link className="flex items-center gap-3 p-3 text-error opacity-80 hover:opacity-100 hover:bg-surface-bright hover:text-error transition-all border-l-4 border-transparent" to="/login">
               <span className="material-symbols-outlined shrink-0">power_settings_new</span>
-              {!isCollapsed && <span className="font-label-mono text-label-mono">LOGOUT</span>}
+              <span className={`font-label-mono text-label-mono transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>LOGOUT</span>
             </Link>
           </div>
         </nav>
 
         {/* Main Content Area */}
-        <main className={`flex-1 transition-all duration-300 min-h-[calc(100vh-64px)] ${isCollapsed ? 'ml-20' : 'ml-64'}`}>
+        <main className={`flex-1 transition-all duration-300 min-h-[calc(100vh-64px)] 
+          ${isCollapsed ? 'ml-20' : 'ml-0 md:ml-64'}
+        `}>
           <Outlet />
         </main>
       </div>

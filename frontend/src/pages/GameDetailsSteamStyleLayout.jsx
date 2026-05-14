@@ -163,9 +163,9 @@ export default function GameDetailsSteamStyleLayout() {
       {!loading && game && (
         <>
         {/*  Hero Section (Steam Style)  */}
-        <section className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-gutter bg-surface-container-low pixel-border p-2">
+        <section className="grid grid-cols-1 xl:grid-cols-[1fr_360px] lg:grid-cols-[1fr_320px] gap-gutter bg-surface-container-low pixel-border p-2">
         {/*  Left: Main Media  */}
-        <div className="relative aspect-video xl:h-[450px] overflow-hidden bg-black pixel-border group">
+        <div className="relative aspect-video xl:h-[450px] overflow-hidden bg-black pixel-border group min-w-0">
           {playingGame && launchData ? (
             <div ref={gameContainerRef} className="absolute inset-0 z-50 bg-black flex flex-col">
               <div className="flex items-center justify-between p-2 bg-surface-container-highest border-b border-outline-variant h-10 px-4">
@@ -217,8 +217,8 @@ export default function GameDetailsSteamStyleLayout() {
           )}
         </div>
         {/*  Right: Game Info Box  */}
-        <div className="flex flex-col gap-4 p-4 font-label-mono text-label-mono">
-          <h1 className="font-headline-lg text-headline-lg text-primary-container uppercase tracking-tighter drop-shadow-[0_0_8px_rgba(57,255,20,0.6)]">{game.title}</h1>
+        <div className="flex flex-col gap-4 p-4 font-label-mono text-label-mono min-w-0">
+          <h1 className="font-headline-lg text-headline-lg text-primary-container uppercase tracking-tighter drop-shadow-[0_0_8px_rgba(57,255,20,0.6)] truncate">{game.title}</h1>
           <div className="flex-1 overflow-y-auto space-y-4">
             <div className="grid grid-cols-[100px_1fr] gap-y-2 text-[11px] uppercase">
               <span className="text-on-surface-variant">RECENT_REVIEWS:</span>
@@ -226,9 +226,9 @@ export default function GameDetailsSteamStyleLayout() {
               <span className="text-on-surface-variant">RELEASE_DATE:</span>
               <span className="text-on-surface">{game.releaseDate || new Date(game.createdAt).toLocaleDateString()}</span>
               <span className="text-on-surface-variant">DEVELOPER:</span>
-              <span className="text-secondary-container">{game.developer?.displayName || 'UNKNOWN_DEV'}</span>
+              <span className="text-secondary-container truncate">{game.developer?.displayName || 'UNKNOWN_DEV'}</span>
               <span className="text-on-surface-variant">PUBLISHER:</span>
-              <span className="text-secondary-container">{game.publisher || 'LAZPLAY_STUDIOS'}</span>
+              <span className="text-secondary-container truncate">{game.publisher || 'LAZPLAY_STUDIOS'}</span>
             </div>
           </div>
           <div className="pt-4 border-t border-outline-variant">
