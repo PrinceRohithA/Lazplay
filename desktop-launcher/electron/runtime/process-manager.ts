@@ -113,6 +113,19 @@ class ProcessManager {
       db.updatePlaytime(gameId, durationSeconds);
       this.runningGames.delete(gameId);
       this.broadcastState(gameId, "stopped");
+
+      // Sync to backend if logged in
+      const { token } = db.getTokens();
+      if (token && durationSeconds > 0) {
+        fetch(`https://play.lazplay.tech/api/v1/library/${gameId}/session`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ durationSeconds })
+        }).catch(err => log.error("Failed to sync playtime to backend:", err));
+      }
     }
   }
 
