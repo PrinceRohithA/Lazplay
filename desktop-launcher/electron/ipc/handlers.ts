@@ -91,4 +91,14 @@ export function setupIpcHandlers(
       total: 500000000000,
     };
   });
+
+  ipcMain.handle("set-store-visibility", (event, visible: boolean) => {
+    if (storeView && mainWindow) {
+      if (visible) {
+        mainWindow.contentView.addChildView(storeView);
+      } else {
+        mainWindow.contentView.removeChildView(storeView);
+      }
+    }
+  });
 }

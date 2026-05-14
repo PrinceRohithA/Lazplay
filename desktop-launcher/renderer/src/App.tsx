@@ -1,10 +1,15 @@
 import { useEffect } from "react";
 import Sidebar from "./components/Sidebar";
+import Library from "./pages/Library";
 import { useLauncherStore } from "./store/useLauncherStore";
 
 function App() {
-  const { loadInstalledGames, updateDownloadProgress, setRunningState } =
-    useLauncherStore();
+  const {
+    activePage,
+    loadInstalledGames,
+    updateDownloadProgress,
+    setRunningState,
+  } = useLauncherStore();
 
   useEffect(() => {
     // Initial Load
@@ -33,15 +38,20 @@ function App() {
         <Sidebar />
       </div>
 
-      {/* The remaining area is physically covered by the Electron WebContentsView */}
-      {/* We can provide a placeholder or loading state here */}
-      <div className="flex-1 h-full flex items-center justify-center bg-slate-900 relative">
-        <div className="flex flex-col items-center opacity-30">
-          <div className="w-16 h-16 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <span className="text-slate-400 font-medium animate-pulse">
-            Loading Storefront...
-          </span>
-        </div>
+      {/* The remaining area is either the Native Library UI or covered by the Electron WebContentsView (Store) */}
+      <div className="flex-1 h-full relative overflow-hidden bg-slate-900">
+        {activePage === "library" ? (
+          <Library />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="flex flex-col items-center opacity-30">
+              <div className="w-16 h-16 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+              <span className="text-slate-400 font-medium animate-pulse">
+                Loading Storefront...
+              </span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -102,9 +102,26 @@ function createWindow() {
   });
 
   // Initialize modules
-  initStorage();
-  setupIpcHandlers(mainWindow, storeView);
-  initAutoUpdater(mainWindow);
+  try {
+    initStorage();
+    log.info("Storage initialized");
+  } catch (err) {
+    log.error("Failed to initialize storage:", err);
+  }
+
+  try {
+    setupIpcHandlers(mainWindow, storeView);
+    log.info("IPC Handlers initialized");
+  } catch (err) {
+    log.error("Failed to setup IPC handlers:", err);
+  }
+
+  try {
+    initAutoUpdater(mainWindow);
+    log.info("Auto-updater initialized");
+  } catch (err) {
+    log.error("Failed to initialize auto-updater:", err);
+  }
 }
 
 app.whenReady().then(() => {

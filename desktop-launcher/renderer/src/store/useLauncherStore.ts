@@ -12,10 +12,12 @@ interface GameState {
 
 interface LauncherStore {
   games: Record<string, GameState>;
+  activePage: "library" | "store";
   setGameState: (id: string, state: Partial<GameState>) => void;
   loadInstalledGames: () => Promise<void>;
   updateDownloadProgress: (data: any) => void;
   setRunningState: (id: string, isRunning: boolean) => void;
+  setActivePage: (page: "library" | "store") => void;
 }
 
 // In a real app, declare global types for the injected API
@@ -27,6 +29,7 @@ declare global {
 
 export const useLauncherStore = create<LauncherStore>((set, get) => ({
   games: {},
+  activePage: "store",
 
   setGameState: (id, state) =>
     set((prev) => ({
@@ -76,5 +79,12 @@ export const useLauncherStore = create<LauncherStore>((set, get) => ({
         [id]: { ...prev.games[id], isRunning },
       },
     }));
+  },
+
+  setActivePage: (page) => {
+    set({ activePage: page });
+    if (window.lazplayAPI) {
+      window.lazplayAPI.setStoreVisibility(page === "store");
+    }
   },
 }));

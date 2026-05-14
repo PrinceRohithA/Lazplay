@@ -5,4 +5,5 @@ backend/.env
 backend/data/db.json
 frontend/.env
 desktop-launcher/node_modules/
+desktop-launcher/node_modules
 .vscode/

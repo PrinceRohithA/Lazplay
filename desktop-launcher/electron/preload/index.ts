@@ -22,6 +22,8 @@ contextBridge.exposeInMainWorld("lazplayAPI", {
   getDiskUsage: () => ipcRenderer.invoke("get-disk-usage"),
   openInstallFolder: (gameId: string) =>
     ipcRenderer.invoke("open-install-folder", gameId),
+  setStoreVisibility: (visible: boolean) =>
+    ipcRenderer.invoke("set-store-visibility", visible),
 
   // UI Communications
   onDeepLink: (callback: (url: string) => void) => {

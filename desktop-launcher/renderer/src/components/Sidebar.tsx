@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 export default function Sidebar() {
-  const { games } = useLauncherStore();
+  const { games, activePage, setActivePage } = useLauncherStore();
   const gameList = Object.values(games);
 
   const installedGames = gameList.filter(
@@ -56,11 +56,25 @@ export default function Sidebar() {
 
       {/* Main Navigation */}
       <div className="px-4 py-2 space-y-1">
-        <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-brand-500/10 text-brand-500 font-medium transition-colors">
+        <button
+          onClick={() => setActivePage("library")}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-colors ${
+            activePage === "library"
+              ? "bg-brand-500/10 text-brand-500"
+              : "hover:bg-slate-800/50 hover:text-slate-100 text-slate-400"
+          }`}
+        >
           <Library size={20} />
           <span>Library</span>
         </button>
-        <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800/50 hover:text-slate-100 transition-colors">
+        <button
+          onClick={() => setActivePage("store")}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-colors ${
+            activePage === "store"
+              ? "bg-brand-500/10 text-brand-500"
+              : "hover:bg-slate-800/50 hover:text-slate-100 text-slate-400"
+          }`}
+        >
           <LayoutGrid size={20} />
           <span>Store</span>
         </button>
