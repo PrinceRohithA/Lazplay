@@ -525,7 +525,8 @@ async function publicGame(game, user = null) {
   const isWishlisted = user ? !!(await prisma.wishlistItem.findFirst({ where: { userId: user.id, gameId: game.id } })) : false;
 
   const build = game.latestBuildId ? await prisma.gameBuild.findUnique({ where: { id: game.latestBuildId } }) : null;
-  const entrypoint = build?.entrypoint || 'executable.exe';
+  const isWeb = isWebRuntime(build?.runtime || build?.platform);
+  const entrypoint = build?.entrypoint || (isWeb ? 'index.html' : 'game.exe');
   
   let downloadUrl = null;
   if (isOwned && build?.artifactObjectKey) {
@@ -845,8 +846,24 @@ async function scanAndPrepareBuild(build, game) {
   }
 
   if (!entrypoint) {
-    console.error('[build-entrypoint-missing]', { buildId: build.id, objectKey });
-    throw new HttpError(400, 'BUILD_ENTRYPOINT_MISSING', 'index.html was not found in the build archive');
+    // If no root index.html, try to find any index.html or game.exe in the archive
+    const backup = normalizedEntries.find(e => 
+      e.normalized.toLowerCase().endsWith('index.html') || 
+      e.normalized.toLowerCase().endsWith('game.exe') ||
+      e.normalized.toLowerCase().endsWith('.exe')
+    );
+    
+    if (backup) {
+      entrypoint = backup.normalized;
+      console.log('[build-entrypoint-fallback]', { buildId: build.id, entrypoint });
+    } else if (isWeb) {
+      // For web, if we really can't find anything, we must fail
+      console.error('[build-entrypoint-missing]', { buildId: build.id, objectKey });
+      throw new HttpError(400, 'BUILD_ENTRYPOINT_MISSING', 'index.html was not found in the build archive');
+    } else {
+      // For native, we can default to game.exe and let the launcher handle it
+      entrypoint = 'game.exe';
+    }
   }
 
   console.log('[build-zip-entries]', { buildId: build.id, entries: normalizedEntries.length, entrypoint });
