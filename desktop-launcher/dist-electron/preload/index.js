@@ -2,9 +2,10 @@
 const electron = require("electron");
 electron.contextBridge.exposeInMainWorld("lazplayAPI", {
   // Game operations
-  installGame: (gameId) => electron.ipcRenderer.invoke("install-game", gameId),
+  installGame: (gameId, options) => electron.ipcRenderer.invoke("install-game", gameId, options),
   launchGame: (gameId) => electron.ipcRenderer.invoke("launch-game", gameId),
   uninstallGame: (gameId) => electron.ipcRenderer.invoke("uninstall-game", gameId),
+  setGameEntrypoint: (gameId, entrypoint) => electron.ipcRenderer.invoke("set-game-entrypoint", gameId, entrypoint),
   // Download operations
   pauseDownload: (gameId) => electron.ipcRenderer.invoke("pause-download", gameId),
   resumeDownload: (gameId) => electron.ipcRenderer.invoke("resume-download", gameId),
@@ -26,5 +27,8 @@ electron.contextBridge.exposeInMainWorld("lazplayAPI", {
   },
   onGameStateChange: (callback) => {
     electron.ipcRenderer.on("game-state-change", (_event, data) => callback(data));
+  },
+  onRequestEntrypoint: (callback) => {
+    electron.ipcRenderer.on("request-entrypoint", (_event, data) => callback(data));
   }
 });

@@ -29,11 +29,20 @@ export default function GameLibraryCyberEdition() {
     const platforms = (item.platforms || []).map(p => p.toUpperCase());
     
     // If it's a web game, go to the game page with auto-play enabled
-    if (platforms.includes('WEB') || platforms.includes('BROWSER')) {
+    const isWeb = platforms.includes('WEB') || platforms.includes('BROWSER');
+    
+    if (isWeb) {
       navigate(`/game?id=${item.gameId}&autoPlay=true`);
     } else {
       // If it's a native game (Windows/Linux/PC), go to the launcher download page
-      navigate('/download-launcher');
+      // In the desktop launcher, we'll handle this differently via window.electron
+      if (window.electron) {
+        window.electron.launchGame(item.gameId).then(res => {
+          if (!res.success) navigate(`/game?id=${item.gameId}`);
+        });
+      } else {
+        navigate('/download-launcher');
+      }
     }
   };
 

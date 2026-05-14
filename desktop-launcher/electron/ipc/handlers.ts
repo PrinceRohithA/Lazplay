@@ -115,10 +115,10 @@ export function setupIpcHandlers(
     try {
       // Fetch both user library AND all available games
       const [libRes, gamesRes] = await Promise.all([
-        fetch("https://play.lazplay.tech/api/library", {
+        fetch("https://play.lazplay.tech/api/v1/library", {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch("https://play.lazplay.tech/api/games", {
+        fetch("https://play.lazplay.tech/api/v1/games", {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -131,8 +131,8 @@ export function setupIpcHandlers(
       // Return combined data
       return {
         success: true,
-        ownedIds: (libData.items || libData).map((i: any) => i.gameId || i.id),
-        allGames: gamesData.items || gamesData,
+        ownedIds: (libData.data || libData.items || libData).map((i: any) => i.gameId || i.id),
+        allGames: gamesData.data || gamesData.items || gamesData,
       };
     } catch (error: any) {
       log.error("Sync library failed:", error);
@@ -145,7 +145,7 @@ export function setupIpcHandlers(
     if (!token) return { success: false, error: "Not logged in" };
 
     try {
-      const response = await fetch("https://play.lazplay.tech/api/library", {
+      const response = await fetch("https://play.lazplay.tech/api/v1/library", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

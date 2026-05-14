@@ -111,6 +111,22 @@ export default function GameDetailsSteamStyleLayout() {
 
   const handlePlay = async () => {
     if (!gameId) return;
+
+    // Check if we are in Electron and it's a native game
+    const platforms = (game.platforms || []).map(p => p.toUpperCase());
+    const isWeb = platforms.includes('WEB') || platforms.includes('BROWSER');
+
+    if (window.electron && !isWeb) {
+      try {
+        const res = await window.electron.invoke('launch-game', gameId);
+        if (res.success) return;
+        setError(res.error || 'FAILED_TO_LAUNCH_NATIVE_GAME');
+      } catch (err) {
+        setError('LAUNCHER_COMMUNICATION_ERROR');
+      }
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await gamesApi.launchManifest(gameId);

@@ -11,7 +11,7 @@ const GENRES = [
 ];
 
 const PLATFORMS = [
-  { id: 'PC', label: 'PC' },
+  { id: 'WINDOWS', label: 'WINDOWS' },
   { id: 'VR', label: 'VR' },
   { id: 'WEB', label: 'WEB' },
   { id: 'LINUX', label: 'LINUX' },
@@ -40,7 +40,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     version: 'v1.0.0',
     entrypoint: '',
     description: '',
-    hardwareSpecs: ['PC'],
+    hardwareSpecs: ['WINDOWS'],
     genres: ['ACTION'],
     customTags: [],
     licensing: 'PAID',
@@ -81,7 +81,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         version: game.version || builds[0]?.version || 'v1.0.0',
         entrypoint: game.entrypoint || builds[0]?.entrypoint || '',
         description: game.description || '',
-        hardwareSpecs: game.platforms || ['PC'],
+        hardwareSpecs: game.platforms || ['WINDOWS'],
         genres: game.genres || ['ACTION'],
         customTags: game.tags || [],
         licensing: game.priceType || 'PAID',
@@ -359,7 +359,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         addLog('STEP_03: INITIALIZING_BUILD_NODE...');
         const buildRes = await devApi.createBuild(gameId, {
           version: form.version,
-          platform: form.hardwareSpecs[0] || 'PC',
+          platform: form.hardwareSpecs[0] || 'WINDOWS',
           runtime: form.hardwareSpecs.includes('WEB') ? 'WEB' : 'NATIVE',
           entrypoint: form.entrypoint || (form.hardwareSpecs.includes('WEB') ? 'index.html' : 'game.exe')
         });
