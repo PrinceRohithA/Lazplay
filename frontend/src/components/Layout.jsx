@@ -1,17 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
+import { auth as authApi } from '../api';
 
 export default function Layout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [user, setUser] = useState(null);
 
-  const navItems = [
-    { name: 'START', path: '/', icon: 'play_arrow' },
-    { name: 'GAMES', path: '/games', icon: 'sports_esports' },
-    { name: 'LIBRARY', path: '/library', icon: 'inventory_2' },
-    { name: 'DEV_CONSOLE', path: '/developer', icon: 'terminal' },
-    { name: 'ADMIN', path: '/admin', icon: 'shield_person' },
-    { name: 'OPTIONS', path: '/options', icon: 'settings' },
-  ];
+  useEffect(() => {
+    authApi.me()
+      .then(res => setUser(res.data))
+      .catch(() => setUser(null));
+  }, []);
+
+  const navItems = useMemo(() => {
+    const items = [
+      { name: 'START', path: '/', icon: 'play_arrow' },
+      { name: 'GAMES', path: '/games', icon: 'sports_esports' },
+      { name: 'LIBRARY', path: '/library', icon: 'inventory_2' },
+      { name: 'OPTIONS', path: '/options', icon: 'settings' },
+    ];
+
+    if (user?.roles?.includes('DEVELOPER') || user?.roles?.includes('ADMIN')) {
+      items.splice(3, 0, { name: 'DEV_CONSOLE', path: '/developer', icon: 'terminal' });
+    }
+    if (user?.roles?.includes('ADMIN')) {
+      items.splice(4, 0, { name: 'ADMIN', path: '/admin', icon: 'shield_person' });
+    }
+
+    return items;
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -57,8 +74,12 @@ export default function Layout() {
                 <span className="material-symbols-outlined text-primary-container" style={{fontVariationSettings: "'FILL' 1"}}>terminal</span>
               </div>
               <div>
-                <div className="font-headline-md text-headline-md font-bold text-primary-container">SYSTEM_OS</div>
-                <div className="text-[10px] text-on-surface-variant uppercase">V_1.0.4_ARCADE</div>
+                <div className="font-headline-md text-headline-md font-bold text-primary-container truncate max-w-[140px]">
+                  {user ? user.displayName.toUpperCase() : 'GUEST_USER'}
+                </div>
+                <div className="text-[10px] text-on-surface-variant uppercase">
+                  {user ? `${user.roles[user.roles.length - 1]}_MODE` : 'OFFLINE_MODE'}
+                </div>
               </div>
             </div>
           </div>

@@ -33,6 +33,7 @@ model User {
   instancePlayers  InstancePlayer[]
   notifications    Notification[]
   auditLogs        AuditLog[]
+  playSessions     GamePlaySession[]
 }
 
 model RefreshSession {
@@ -107,6 +108,7 @@ model Game {
   wishlistItems WishlistItem[]
   entitlements Entitlement[]
   instances    GameInstance[]
+  playSessions GamePlaySession[]
 }
 
 model GameMedia {
