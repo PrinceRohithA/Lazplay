@@ -1,0 +1,94 @@
+import { ipcMain, BrowserWindow, WebContentsView, shell } from "electron";
+import { downloadManager } from "../downloads/manager.js";
+import { processManager } from "../runtime/process-manager.js";
+import { db } from "../storage/db.js";
+import log from "electron-log";
+import path from "path";
+
+export function setupIpcHandlers(
+  mainWindow: BrowserWindow,
+  storeView: WebContentsView | null,
+) {
+  // Sync Session from website
+  ipcMain.handle("sync-session", async (event, { token, refreshToken }) => {
+    log.info("Session tokens synced from website");
+    // Store tokens securely (e.g. in sqlite or keytar)
+    db.setTokens(token, refreshToken);
+    // Alert the native UI about the login state
+    mainWindow.webContents.send("session-updated", { loggedIn: true });
+    return { success: true };
+  });
+
+  // Game Operations
+  ipcMain.handle("install-game", async (event, gameId: string) => {
+    log.info(`Install requested for game: ${gameId}`);
+    try {
+      await downloadManager.startInstall(gameId);
+      return { success: true };
+    } catch (error: any) {
+      log.error(`Install failed for ${gameId}:`, error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle("launch-game", async (event, gameId: string) => {
+    log.info(`Launch requested for game: ${gameId}`);
+    try {
+      await processManager.launchGame(gameId);
+      return { success: true };
+    } catch (error: any) {
+      log.error(`Launch failed for ${gameId}:`, error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle("uninstall-game", async (event, gameId: string) => {
+    log.info(`Uninstall requested for game: ${gameId}`);
+    try {
+      await processManager.stopGame(gameId); // Force stop if running
+      await downloadManager.uninstall(gameId);
+      return { success: true };
+    } catch (error: any) {
+      log.error(`Uninstall failed for ${gameId}:`, error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle("pause-download", async (event, gameId: string) => {
+    return downloadManager.pauseDownload(gameId);
+  });
+
+  ipcMain.handle("resume-download", async (event, gameId: string) => {
+    return downloadManager.resumeDownload(gameId);
+  });
+
+  ipcMain.handle("open-install-folder", async (event, gameId: string) => {
+    const game = db.getGame(gameId);
+    if (game && game.installPath) {
+      shell.showItemInFolder(path.join(game.installPath, "executable.exe")); // Or main directory
+      return true;
+    }
+    return false;
+  });
+
+  // State queries
+  ipcMain.handle("get-installed-games", () => {
+    return db.getInstalledGames();
+  });
+
+  ipcMain.handle("get-running-games", () => {
+    return processManager.getRunningGames();
+  });
+
+  ipcMain.handle("get-download-progress", (event, gameId: string) => {
+    return downloadManager.getProgress(gameId);
+  });
+
+  ipcMain.handle("get-disk-usage", async () => {
+    // Basic implementation, you'd use a robust disk space library here
+    return {
+      free: 100000000000,
+      total: 500000000000,
+    };
+  });
+}
