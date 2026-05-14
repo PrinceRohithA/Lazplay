@@ -13,21 +13,22 @@ export default function Layout() {
   }, []);
 
   const navItems = useMemo(() => {
-    const items = [
+    const baseItems = [
       { name: 'START', path: '/', icon: 'play_arrow' },
       { name: 'GAMES', path: '/games', icon: 'sports_esports' },
       { name: 'LIBRARY', path: '/library', icon: 'inventory_2' },
+      { name: 'DEV_CONSOLE', path: '/developer', icon: 'terminal', roles: ['DEVELOPER', 'ADMIN'] },
+      { name: 'ADMIN', path: '/admin', icon: 'shield_person', roles: ['ADMIN'] },
       { name: 'OPTIONS', path: '/options', icon: 'settings' },
     ];
 
-    if (user?.roles?.includes('DEVELOPER') || user?.roles?.includes('ADMIN')) {
-      items.splice(3, 0, { name: 'DEV_CONSOLE', path: '/developer', icon: 'terminal' });
-    }
-    if (user?.roles?.includes('ADMIN')) {
-      items.splice(4, 0, { name: 'ADMIN', path: '/admin', icon: 'shield_person' });
-    }
+    if (!user) return baseItems.filter(i => !i.roles);
 
-    return items;
+    const userRoles = (user.roles || []).map(r => r.toUpperCase());
+    return baseItems.filter(item => {
+      if (!item.roles) return true;
+      return item.roles.some(r => userRoles.includes(r.toUpperCase()));
+    });
   }, [user]);
 
   return (

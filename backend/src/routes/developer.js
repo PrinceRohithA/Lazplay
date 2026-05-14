@@ -80,8 +80,14 @@ router.add('PATCH', '/developer/profile', async (req) => {
 router.add('GET', '/developer/games', async (req) => {
     const user = await requireAuth(req, null, ['DEVELOPER', 'ADMIN']);
     const profile = await developerForUser(user);
+    
+    if (user.roles.includes('ADMIN')) {
+      const games = await prisma.game.findMany({ orderBy: { createdAt: 'desc' } });
+      return ok(games);
+    }
+
     if (!profile) throw new HttpError(404, 'PROFILE_NOT_FOUND', 'Developer profile not found');
-    const games = await prisma.game.findMany({ where: { developerId: profile.id } });
+    const games = await prisma.game.findMany({ where: { developerId: profile.id }, orderBy: { createdAt: 'desc' } });
     return ok(games);
   });
 
