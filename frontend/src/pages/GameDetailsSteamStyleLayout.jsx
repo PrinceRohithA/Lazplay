@@ -109,6 +109,22 @@ export default function GameDetailsSteamStyleLayout() {
     }
   };
 
+  const handlePlay = async () => {
+    if (!gameId) return;
+    setLoading(true);
+    try {
+      const res = await gamesApi.launchManifest(gameId);
+      setLaunchData(res.data);
+      const sessionRes = await gamesApi.playStart(gameId);
+      setPlaySessionId(sessionRes.data.sessionId);
+      setPlayingGame(true);
+    } catch (err) {
+      setError(err.message || 'FAILED_TO_LAUNCH_GAME');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleStopPlay = async () => {
     setPlayingGame(false);
     if (!gameId) return;
@@ -118,6 +134,7 @@ export default function GameDetailsSteamStyleLayout() {
       console.warn('Play end tracking failed', err);
     } finally {
       setPlaySessionId(null);
+      setLaunchData(null);
     }
   };
 
@@ -149,7 +166,27 @@ export default function GameDetailsSteamStyleLayout() {
         <section className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-gutter bg-surface-container-low pixel-border p-2">
         {/*  Left: Main Media  */}
         <div className="relative aspect-video xl:h-[450px] overflow-hidden bg-black pixel-border group">
-          {playingTrailer && (game.trailerUrl || videos.length > 0) ? (
+          {playingGame && launchData ? (
+            <div ref={gameContainerRef} className="absolute inset-0 z-50 bg-black flex flex-col">
+              <div className="flex items-center justify-between p-2 bg-surface-container-highest border-b border-outline-variant h-10 px-4">
+                <span className="font-label-mono text-[10px] text-primary-container uppercase truncate">{game.title} // ONLINE_SESSION</span>
+                <div className="flex gap-2">
+                  <button onClick={handleFullscreen} className="text-on-surface-variant hover:text-white transition-colors">
+                    <span className="material-symbols-outlined text-[18px]">{isFullscreen ? 'fullscreen_exit' : 'fullscreen'}</span>
+                  </button>
+                  <button onClick={handleStopPlay} className="text-error hover:text-red-400 transition-colors">
+                    <span className="material-symbols-outlined text-[18px]">close</span>
+                  </button>
+                </div>
+              </div>
+              <iframe 
+                src={launchData.entrypointUrl} 
+                className="flex-1 w-full h-full border-none bg-black"
+                allow="autoplay; fullscreen; keyboard"
+                title={game.title}
+              />
+            </div>
+          ) : playingTrailer && (game.trailerUrl || videos.length > 0) ? (
             <div className="w-full h-full relative">
                 <video 
                     src={game.trailerUrl || (videos.length > 0 ? videos[0].url : '')} 
@@ -204,13 +241,22 @@ export default function GameDetailsSteamStyleLayout() {
               {game.priceType === 'FREE' ? 'FREE_TO_PLAY' : `₹${(game.price / 100).toFixed(2)}`}
             </div>
             {game.isOwned ? (
-              <Link 
-                to="/library"
-                className="w-full bg-secondary-container text-on-secondary-container py-3 pixel-border neon-glow hover:bg-secondary-fixed transition-all uppercase flex justify-center items-center gap-2 font-bold"
-              >
-                <span className="material-symbols-outlined">library_books</span>
-                GO_TO_LIBRARY
-              </Link>
+              <div className="flex flex-col gap-2">
+                <button 
+                  onClick={handlePlay}
+                  className="w-full bg-primary-container text-on-primary-container py-3 pixel-border neon-glow hover:bg-primary-fixed transition-all uppercase flex justify-center items-center gap-2 font-bold"
+                >
+                  <span className="material-symbols-outlined">play_arrow</span>
+                  PLAY_NOW
+                </button>
+                <Link 
+                  to="/library"
+                  className="w-full bg-secondary-container text-on-secondary-container py-2 pixel-border hover:bg-secondary-fixed transition-all uppercase flex justify-center items-center gap-2 text-[10px]"
+                >
+                  <span className="material-symbols-outlined text-[14px]">library_books</span>
+                  GO_TO_LIBRARY
+                </Link>
+              </div>
             ) : game.priceType === 'FREE' ? (
               <button 
                 onClick={handleClaim}

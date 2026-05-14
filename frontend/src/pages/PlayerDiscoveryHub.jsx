@@ -41,7 +41,16 @@ export default function PlayerDiscoveryHub() {
                   <h1 className="font-headline-xl text-headline-xl text-primary-container font-bold drop-shadow-[0_0_8px_rgba(57,255,20,0.8)] mb-2 uppercase tracking-tight">{hero.title?.replace(/\s/g,'_')}</h1>
                   <p className="font-body-lg text-body-lg text-on-surface-variant max-w-2xl bg-surface-container-highest/80 p-2 border border-outline-variant">{hero.tagline || 'HIGH-SPEED SYNTHWAVE RACING PROTOCOL. ENGAGE HYPER-DRIVE.'}</p>
                 </div>
-                <Link to={`/game?id=${hero.id}`} className="bg-primary-container text-on-primary-container font-label-mono text-label-mono px-6 py-3 border-2 border-primary-container hover:bg-surface hover:text-primary-container transition-colors shadow-[4px_4px_0_0_#107100] active:translate-y-1 active:translate-x-1 active:shadow-[0_0_0_0_#107100]">&gt; EXECUTE_PLAY</Link>
+                <Link 
+                  to={`/game?id=${hero.id}`} 
+                  className={`font-label-mono text-label-mono px-6 py-3 border-2 transition-colors shadow-[4px_4px_0_0_#107100] active:translate-y-1 active:translate-x-1 active:shadow-[0_0_0_0_#107100] ${
+                    hero.isOwned 
+                      ? "bg-secondary-container text-on-secondary-container border-secondary-container hover:bg-surface hover:text-secondary-container" 
+                      : "bg-primary-container text-on-primary-container border-primary-container hover:bg-surface hover:text-primary-container"
+                  }`}
+                >
+                  {hero.isOwned ? '> EXECUTE_PLAY' : hero.priceType === 'FREE' ? '> CLAIM_FREE' : '> VIEW_OFFER'}
+                </Link>
               </div>
             </>
           ) : (
