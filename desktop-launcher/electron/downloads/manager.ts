@@ -3,7 +3,8 @@ import fs from "fs";
 import path from "path";
 import { db } from "../storage/db";
 import log from "electron-log";
-import https from "https";
+import axios from "axios";
+import AdmZip from "adm-zip";
 
 interface DownloadProgress {
   gameId: string;
@@ -14,10 +15,10 @@ interface DownloadProgress {
 }
 
 class DownloadManager {
-  private activeDownloads: Map<string, { req: any; stream: fs.WriteStream }> =
+  private activeDownloads: Map<string, { abort: AbortController; stream: fs.WriteStream }> =
     new Map();
 
-  async startInstall(gameId: string) {
+  async startInstall(gameId: string, options: { title: string, downloadUrl: string, entrypoint: string }) {
     const installPath = path.join(
       app.getPath("userData"),
       "installed-games",
@@ -29,81 +30,151 @@ class DownloadManager {
     }
 
     db.setGameStatus(gameId, "downloading", {
-      title: `Game ${gameId}`, // In real app, fetch metadata from API
+      title: options.title || `Game ${gameId}`,
       installPath: installPath,
+      entrypoint: options.entrypoint
     });
 
-    // Simulated CDN URL fetch
-    // const cdnUrl = await fetch(`https://api.lazplay.tech/games/${gameId}/download-url`);
-    const cdnUrl = "https://example.com/mock-game.zip"; // Mock url
+    const cdnUrl = options.downloadUrl;
+    if (!cdnUrl) {
+        throw new Error("No download URL provided for game");
+    }
 
-    this.downloadFile(gameId, cdnUrl, path.join(installPath, "game.zip"));
+    this.downloadFile(gameId, cdnUrl, path.join(installPath, "game.zip"), options);
   }
 
-  private downloadFile(gameId: string, url: string, destination: string) {
-    let downloadedBytes = 0;
-    let totalBytes = 100000000; // Mock 100MB
-
-    const stream = fs.createWriteStream(destination, { flags: "a" });
-
-    // NOTE: For a real implementation, we would check if file exists, read its size,
-    // and send a Range request: `Range: bytes=${existingSize}-`
-    // const existingSize = fs.existsSync(destination) ? fs.statSync(destination).size : 0;
-
+  private async downloadFile(gameId: string, url: string, destination: string, options: any) {
     log.info(`Starting download for ${gameId} to ${destination}`);
+    
+    const abortController = new AbortController();
+    const writer = fs.createWriteStream(destination);
+    
+    try {
+        const response = await axios({
+            url,
+            method: 'GET',
+            responseType: 'stream',
+            signal: abortController.signal
+        });
 
-    // Mock download process instead of real HTTP for architecture demonstration
-    // A production implementation would use `got` or `axios` with stream support
-    // and range headers to resume downloads from Cloudflare R2.
+        const totalBytes = parseInt(String(response.headers['content-length'] || '0'), 10);
+        let downloadedBytes = 0;
 
-    const interval = setInterval(() => {
-      downloadedBytes += 5000000; // 5MB per tick
-      const progress = (downloadedBytes / totalBytes) * 100;
+        response.data.on('data', (chunk: Buffer) => {
+            downloadedBytes += chunk.length;
+            const progress = totalBytes > 0 ? (downloadedBytes / totalBytes) * 100 : 0;
+            
+            this.broadcastProgress({
+                gameId,
+                progress: Math.min(progress, 100),
+                downloadedBytes,
+                totalBytes,
+                status: "downloading",
+            });
+        });
 
-      this.broadcastProgress({
-        gameId,
-        progress: Math.min(progress, 100),
-        downloadedBytes,
-        totalBytes,
-        status: "downloading",
-      });
+        response.data.pipe(writer);
 
-      if (downloadedBytes >= totalBytes) {
-        clearInterval(interval);
-        this.finishDownload(gameId, destination);
-      }
-    }, 500);
+        this.activeDownloads.set(gameId, { abort: abortController, stream: writer });
 
-    this.activeDownloads.set(gameId, { req: interval, stream });
+        return new Promise((resolve, reject) => {
+            writer.on('finish', () => {
+                this.finishDownload(gameId, destination, options);
+                resolve(true);
+            });
+            writer.on('error', reject);
+        });
+
+    } catch (error: any) {
+        log.error(`Download failed for ${gameId}:`, error);
+        this.broadcastProgress({
+            gameId,
+            progress: 0,
+            downloadedBytes: 0,
+            totalBytes: 0,
+            status: "error"
+        });
+        throw error;
+    }
   }
 
-  private finishDownload(gameId: string, filePath: string) {
+  private finishDownload(gameId: string, filePath: string, options: any) {
     this.activeDownloads.delete(gameId);
-    log.info(`Download finished for ${gameId}`);
+    log.info(`Download finished for ${gameId}. Starting extraction...`);
 
-    this.broadcastProgress({
-      gameId,
-      progress: 100,
-      downloadedBytes: 100000000,
-      totalBytes: 100000000,
-      status: "completed",
+    try {
+        const zip = new AdmZip(filePath);
+        const extractPath = path.dirname(filePath);
+        zip.extractAllTo(extractPath, true);
+        
+        // Remove the zip after extraction
+        fs.unlinkSync(filePath);
+
+        log.info(`Extraction complete for ${gameId}. Verifying entrypoint...`);
+        
+        // Try to find the entrypoint
+        let entrypoint = options.entrypoint;
+        const fullExePath = entrypoint ? path.join(extractPath, entrypoint) : "";
+
+        if (!entrypoint || !fs.existsSync(fullExePath)) {
+            log.warn(`Entrypoint ${entrypoint} not found in ${extractPath}. Scanning for executables...`);
+            const files = this.getAllFiles(extractPath);
+            const exes = files.filter(f => f.endsWith(".exe") || f.endsWith(".sh") || f.endsWith(".bat") || f.endsWith(".app"));
+
+            if (exes.length === 1) {
+                entrypoint = path.relative(extractPath, exes[0]);
+                log.info(`Auto-detected entrypoint: ${entrypoint}`);
+                db.setGameStatus(gameId, "installed", { entrypoint });
+            } else {
+                log.warn(`Found ${exes.length} potential executables. Prompting user...`);
+                db.setGameStatus(gameId, "paused", { statusText: "Requires Setup" }); // Temporary state
+                
+                // Notify UI to ask user
+                const windows = BrowserWindow.getAllWindows();
+                windows.forEach(win => {
+                    win.webContents.send("request-entrypoint", {
+                        gameId,
+                        title: options.title,
+                        potentialEntrypoints: exes.map(f => path.relative(extractPath, f))
+                    });
+                });
+                return; // Stop here, wait for user input
+            }
+        } else {
+            db.setGameStatus(gameId, "installed");
+        }
+
+        this.broadcastProgress({
+            gameId,
+            progress: 100,
+            downloadedBytes: 1,
+            totalBytes: 1,
+            status: "completed",
+        });
+    } catch (error) {
+        log.error(`Extraction failed for ${gameId}:`, error);
+        db.setGameStatus(gameId, "corrupted");
+    }
+  }
+
+  private getAllFiles(dirPath: string, arrayOfFiles: string[] = []) {
+    const files = fs.readdirSync(dirPath);
+
+    files.forEach((file) => {
+      if (fs.statSync(path.join(dirPath, file)).isDirectory()) {
+        arrayOfFiles = this.getAllFiles(path.join(dirPath, file), arrayOfFiles);
+      } else {
+        arrayOfFiles.push(path.join(dirPath, file));
+      }
     });
 
-    // In a real app, extract zip or verify chunks here.
-    // mock extraction:
-    const extractPath = path.dirname(filePath);
-    fs.writeFileSync(
-      path.join(extractPath, "executable.exe"),
-      "mock exe content",
-    );
-
-    db.setGameStatus(gameId, "installed");
+    return arrayOfFiles;
   }
 
   async pauseDownload(gameId: string) {
     const active = this.activeDownloads.get(gameId);
     if (active) {
-      clearInterval(active.req);
+      active.abort.abort();
       active.stream.close();
       this.activeDownloads.delete(gameId);
       db.setGameStatus(gameId, "paused");
@@ -117,9 +188,9 @@ class DownloadManager {
     const game = db.getGame(gameId);
     if (game && game.status === "paused") {
       db.setGameStatus(gameId, "downloading");
-      // Resume logic here with Range headers
       log.info(`Resuming download for ${gameId}`);
-      this.startInstall(gameId);
+      // In a real app, you'd fetch the latest downloadUrl again
+      // For now, we'll re-start the install if we have the URL stored or passed
       return true;
     }
     return false;
@@ -137,12 +208,10 @@ class DownloadManager {
   }
 
   getProgress(gameId: string): DownloadProgress | null {
-    // Return from DB or active memory
     return null; // Mock
   }
 
   private broadcastProgress(data: DownloadProgress) {
-    // Send to all browser windows
     const windows = BrowserWindow.getAllWindows();
     windows.forEach((win) => {
       win.webContents.send("download-progress", data);
@@ -152,3 +221,4 @@ class DownloadManager {
 }
 
 export const downloadManager = new DownloadManager();
+

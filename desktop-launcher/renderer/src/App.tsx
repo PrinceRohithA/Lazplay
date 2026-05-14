@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "./components/Sidebar";
 import Library from "./pages/Library";
 import { useLauncherStore } from "./store/useLauncherStore";
@@ -11,6 +11,12 @@ function App() {
     updateDownloadProgress,
     setRunningState,
   } = useLauncherStore();
+
+  const [setupPrompt, setSetupPrompt] = useState<{
+    gameId: string;
+    title: string;
+    options: string[];
+  } | null>(null);
 
   useEffect(() => {
     // Initial Load
@@ -26,21 +32,36 @@ function App() {
         setRunningState(data.gameId, data.state === "running");
       });
 
+      window.lazplayAPI.onRequestEntrypoint((data: any) => {
+        setSetupPrompt({
+          gameId: data.gameId,
+          title: data.title,
+          options: data.potentialEntrypoints,
+        });
+      });
+
       window.lazplayAPI.onDeepLink((url: string) => {
         console.log("Deep link received:", url);
-        // Handle deep link logic
       });
     }
   }, [loadInstalledGames, updateDownloadProgress, setRunningState]);
 
+  const handleSelectEntrypoint = async (entrypoint: string) => {
+    if (setupPrompt && window.lazplayAPI) {
+      await window.lazplayAPI.setGameEntrypoint(setupPrompt.gameId, entrypoint);
+      setSetupPrompt(null);
+      loadInstalledGames(); // Refresh
+    }
+  };
+
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-900">
+    <div className="flex h-screen w-screen overflow-hidden bg-slate-900 text-slate-100">
       {/* Sidebar for Native Launcher UI */}
       <div className="w-[250px] h-full flex-shrink-0 bg-slate-950 border-r border-slate-800/50 shadow-2xl relative z-10">
         <Sidebar />
       </div>
 
-      {/* The remaining area is either the Native Library UI or covered by the Electron WebContentsView (Store) */}
+      {/* Main Content */}
       <div className="flex-1 h-full relative overflow-hidden bg-slate-900">
         {activePage === "library" ? (
           <Library />
@@ -55,6 +76,58 @@ function App() {
           </div>
         )}
       </div>
+
+      {/* Entrypoint Selection Modal */}
+      {setupPrompt && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6">
+              <h3 className="text-xl font-bold mb-2">Setup Required</h3>
+              <p className="text-slate-400 text-sm mb-6">
+                We couldn't automatically identify the executable for{" "}
+                <span className="text-white font-medium">{setupPrompt.title}</span>. 
+                Please select the correct file to launch the game:
+              </p>
+
+              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                {setupPrompt.options.length > 0 ? (
+                  setupPrompt.options.map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => handleSelectEntrypoint(option)}
+                      className="w-full text-left p-3 rounded-lg bg-slate-800 hover:bg-brand-600/20 hover:border-brand-500 border border-transparent transition-all group flex items-center gap-3"
+                    >
+                      <div className="w-8 h-8 rounded bg-slate-700 flex items-center justify-center text-xs font-mono text-slate-400 group-hover:bg-brand-500 group-hover:text-white transition-colors">
+                        EXE
+                      </div>
+                      <span className="truncate font-medium">{option}</span>
+                    </button>
+                  ))
+                ) : (
+                  <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+                    No executable files detected in the game folder. You may need to select the file manually from the installation folder.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-4 bg-slate-950/50 border-t border-slate-800 flex justify-end gap-3">
+              <button
+                onClick={() => setSetupPrompt(null)}
+                className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => window.lazplayAPI.openInstallFolder(setupPrompt.gameId)}
+                className="px-4 py-2 text-sm font-medium bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                Browse Folder
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

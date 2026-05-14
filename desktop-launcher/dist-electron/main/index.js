@@ -36,6 +36,7 @@ const initStorage = () => {
       installPath TEXT NOT NULL,
       version TEXT NOT NULL,
       size INTEGER DEFAULT 0,
+      entrypoint TEXT,
       lastPlayed INTEGER,
       playtime INTEGER DEFAULT 0
     );
@@ -94,8 +95,8 @@ const storageDb = {
       stmt.run(...values);
     } else {
       const stmt = db.prepare(`
-        INSERT INTO games (id, title, status, installPath, version, size)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO games (id, title, status, installPath, version, size, entrypoint)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `);
       stmt.run(
         id,
@@ -103,7 +104,8 @@ const storageDb = {
         status,
         additionalFields.installPath || "",
         additionalFields.version || "1.0.0",
-        additionalFields.size || 0
+        additionalFields.size || 0,
+        additionalFields.entrypoint || null
       );
     }
   },
@@ -2782,7 +2784,8 @@ class ProcessManager {
     if (!game || game.status !== "installed") {
       throw new Error("Game is not installed");
     }
-    const exePath = require$$1$1.join(game.installPath, "executable.exe");
+    const entrypoint = game.entrypoint || "executable.exe";
+    const exePath = require$$1$1.join(game.installPath, entrypoint);
     log.info(`Launching game ${gameId} from ${exePath}`);
     const startTime = Date.now();
     const child = require$$0.spawn(exePath, [], {
@@ -2845,10 +2848,10 @@ function setupIpcHandlers(mainWindow2, storeView2) {
     mainWindow2.webContents.send("session-updated", { loggedIn: true });
     return { success: true };
   });
-  require$$1.ipcMain.handle("install-game", async (event, gameId) => {
-    log.info(`Install requested for game: ${gameId}`);
+  require$$1.ipcMain.handle("install-game", async (event, gameId, options) => {
+    log.info(`Install requested for game: ${gameId}`, options);
     try {
-      await downloadManager.startInstall(gameId);
+      await downloadManager.startInstall(gameId, options);
       return { success: true };
     } catch (error2) {
       log.error(`Install failed for ${gameId}:`, error2);

@@ -9,6 +9,9 @@ interface GameState {
   totalBytes?: number;
   isRunning?: boolean;
   isOwned?: boolean;
+  downloadUrl?: string;
+  entrypoint?: string;
+  statusText?: string;
 }
 
 interface LauncherStore {
@@ -107,12 +110,16 @@ export const useLauncherStore = create<LauncherStore>((set, get) => ({
                 title: item.title,
                 status: "uninstalled",
                 isOwned,
+                downloadUrl: item.downloadUrl,
+                entrypoint: item.entrypoint,
               };
             } else {
               newGames[item.id] = {
                 ...newGames[item.id],
                 title: item.title,
                 isOwned,
+                downloadUrl: item.downloadUrl,
+                entrypoint: item.entrypoint,
               };
             }
           });

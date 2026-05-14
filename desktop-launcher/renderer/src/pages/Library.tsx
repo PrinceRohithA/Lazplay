@@ -26,7 +26,11 @@ export default function Library() {
     if (game.status === "installed") {
       window.lazplayAPI.launchGame(game.id);
     } else if (game.status === "uninstalled" || !game.status) {
-      window.lazplayAPI.installGame(game.id);
+      window.lazplayAPI.installGame(game.id, {
+        title: game.title,
+        downloadUrl: game.downloadUrl,
+        entrypoint: game.entrypoint
+      });
     }
   };
 

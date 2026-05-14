@@ -12,6 +12,8 @@ interface GameRecord {
   installPath: string;
   version: string;
   size: number;
+  entrypoint?: string;
+  statusText?: string;
   lastPlayed?: number;
   playtime?: number; // in seconds
 }
@@ -36,6 +38,8 @@ export const initStorage = () => {
       installPath TEXT NOT NULL,
       version TEXT NOT NULL,
       size INTEGER DEFAULT 0,
+      entrypoint TEXT,
+      statusText TEXT,
       lastPlayed INTEGER,
       playtime INTEGER DEFAULT 0
     );
@@ -104,8 +108,8 @@ export const storageDb = {
       stmt.run(...values);
     } else {
       const stmt = db.prepare(`
-        INSERT INTO games (id, title, status, installPath, version, size)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO games (id, title, status, installPath, version, size, entrypoint, statusText)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `);
       stmt.run(
         id,
@@ -114,6 +118,8 @@ export const storageDb = {
         additionalFields.installPath || "",
         additionalFields.version || "1.0.0",
         additionalFields.size || 0,
+        additionalFields.entrypoint || null,
+        additionalFields.statusText || null,
       );
     }
   },

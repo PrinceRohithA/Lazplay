@@ -3,10 +3,12 @@ import { contextBridge, ipcRenderer } from "electron";
 // This is the preload script for the Native UI (Launcher Sidebar, etc.)
 contextBridge.exposeInMainWorld("lazplayAPI", {
   // Game operations
-  installGame: (gameId: string) => ipcRenderer.invoke("install-game", gameId),
+  installGame: (gameId: string, options?: any) => ipcRenderer.invoke("install-game", gameId, options),
   launchGame: (gameId: string) => ipcRenderer.invoke("launch-game", gameId),
   uninstallGame: (gameId: string) =>
     ipcRenderer.invoke("uninstall-game", gameId),
+  setGameEntrypoint: (gameId: string, entrypoint: string) =>
+    ipcRenderer.invoke("set-game-entrypoint", gameId, entrypoint),
 
   // Download operations
   pauseDownload: (gameId: string) =>
@@ -36,5 +38,8 @@ contextBridge.exposeInMainWorld("lazplayAPI", {
   },
   onGameStateChange: (callback: (data: any) => void) => {
     ipcRenderer.on("game-state-change", (_event, data) => callback(data));
+  },
+  onRequestEntrypoint: (callback: (data: any) => void) => {
+    ipcRenderer.on("request-entrypoint", (_event, data) => callback(data));
   },
 });

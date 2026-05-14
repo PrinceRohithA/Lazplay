@@ -20,7 +20,8 @@ class ProcessManager {
       throw new Error("Game is not installed");
     }
 
-    const exePath = path.join(game.installPath, "executable.exe"); // Typically parsed from manifest
+    const entrypoint = game.entrypoint || "executable.exe";
+    const exePath = path.join(game.installPath, entrypoint);
 
     log.info(`Launching game ${gameId} from ${exePath}`);
 

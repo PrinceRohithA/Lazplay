@@ -20,10 +20,10 @@ export function setupIpcHandlers(
   });
 
   // Game Operations
-  ipcMain.handle("install-game", async (event, gameId: string) => {
-    log.info(`Install requested for game: ${gameId}`);
+  ipcMain.handle("install-game", async (event, gameId: string, options: any) => {
+    log.info(`Install requested for game: ${gameId}`, options);
     try {
-      await downloadManager.startInstall(gameId);
+      await downloadManager.startInstall(gameId, options);
       return { success: true };
     } catch (error: any) {
       log.error(`Install failed for ${gameId}:`, error);
@@ -60,6 +60,12 @@ export function setupIpcHandlers(
 
   ipcMain.handle("resume-download", async (event, gameId: string) => {
     return downloadManager.resumeDownload(gameId);
+  });
+  
+  ipcMain.handle("set-game-entrypoint", async (event, gameId: string, entrypoint: string) => {
+    log.info(`Setting entrypoint for game ${gameId}: ${entrypoint}`);
+    db.setGameStatus(gameId, "installed", { entrypoint });
+    return { success: true };
   });
 
   ipcMain.handle("open-install-folder", async (event, gameId: string) => {

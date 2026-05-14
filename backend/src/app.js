@@ -524,6 +524,15 @@ async function publicGame(game, user = null) {
   const hasEntitlement = !!entitlement;
   const isWishlisted = user ? !!(await prisma.wishlistItem.findFirst({ where: { userId: user.id, gameId: game.id } })) : false;
 
+  const build = game.latestBuildId ? await prisma.gameBuild.findUnique({ where: { id: game.latestBuildId } }) : null;
+  const entrypoint = build?.entrypoint || 'executable.exe';
+  
+  let downloadUrl = null;
+  if (isOwned && build?.artifactObjectKey) {
+    const signed = await signedStorageUrl(build.artifactObjectKey, 'GET', 3600, getPrivateGameBucket());
+    downloadUrl = signed.url;
+  }
+
   return {
     id: game.id, slug: game.slug, title: game.title,
     description: game.description, tagline: game.tagline,
@@ -536,6 +545,7 @@ async function publicGame(game, user = null) {
     version: game.version || null,
     hardwareSpecs: game.hardwareSpecs,
     systemRequirements: game.systemRequirements,
+    entrypoint, downloadUrl,
     isOwned, hasEntitlement, isWishlisted, rating, reviewCount: reviews.length,
     status: game.status, publishedAt: game.publishedAt, createdAt: game.createdAt, updatedAt: game.updatedAt,
   };
