@@ -56,10 +56,10 @@ export default function Layout() {
 
       {/* TopAppBar */}
       <header className="bg-surface text-primary-container font-label-mono text-label-mono uppercase tracking-widest border-b-2 border-outline-variant shadow-[0_0_15px_rgba(0,0,0,0.5)] flex justify-between items-center px-4 md:px-gutter py-2 w-full z-50 fixed top-0 h-16">
-        <div className="flex items-center gap-2 md:gap-4">
+        <div className="flex items-center gap-2 md:gap-4 h-full">
           <button 
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="text-primary-container hover:bg-surface-variant p-2 transition-colors border-2 border-outline-variant"
+            className="w-10 h-10 flex items-center justify-center text-primary-container hover:bg-surface-variant transition-colors border-2 border-outline-variant shrink-0"
           >
             <span className="material-symbols-outlined">{isCollapsed ? 'menu' : 'close'}</span>
           </button>
@@ -74,19 +74,19 @@ export default function Layout() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 md:gap-4">
+        <div className="flex items-center gap-2 md:gap-3 h-full">
           <Link 
             to="/download-launcher" 
-            className="hidden sm:flex hover:text-primary-fixed hover:bg-surface-variant transition-colors p-1 items-center justify-center border-2 border-transparent hover:border-primary-container group relative"
+            className="hidden sm:flex w-10 h-10 hover:text-primary-fixed hover:bg-surface-variant transition-colors items-center justify-center border-2 border-transparent hover:border-primary-container group relative"
             title="DOWNLOAD_LAUNCHER"
           >
             <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 0"}}>download</span>
             <span className="absolute -bottom-8 right-0 bg-surface border border-outline-variant px-2 py-1 text-[8px] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">GET_LAUNCHER</span>
           </Link>
-          <button className="hover:text-primary-fixed hover:bg-surface-variant transition-colors p-1 flex items-center justify-center border-2 border-transparent hover:border-primary-container">
+          <button className="w-10 h-10 hover:text-primary-fixed hover:bg-surface-variant transition-colors flex items-center justify-center border-2 border-transparent hover:border-primary-container">
             <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 0"}}>notifications</span>
           </button>
-          <Link to="/login" className="hover:text-primary-fixed hover:bg-surface-variant transition-colors p-1 flex items-center justify-center border-2 border-transparent hover:border-primary-container">
+          <Link to="/login" className="w-10 h-10 hover:text-primary-fixed hover:bg-surface-variant transition-colors flex items-center justify-center border-2 border-transparent hover:border-primary-container">
             <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 0"}}>account_circle</span>
           </Link>
         </div>
@@ -97,9 +97,9 @@ export default function Layout() {
         <nav className={`fixed left-0 top-16 h-[calc(100vh-64px)] bg-surface-container border-r-2 border-outline-variant flex flex-col pb-4 z-40 transition-all duration-300 
           ${isCollapsed ? 'w-0 -translate-x-full md:w-20 md:translate-x-0' : 'w-64 translate-x-0'} 
         `}>
-          <div className={`px-margin py-8 border-b-2 border-outline-variant mb-4 overflow-hidden transition-all duration-300 ${isCollapsed ? 'opacity-0 h-0 p-0 border-0 mb-0' : 'opacity-100'}`}>
+          <div className={`px-6 py-8 border-b-2 border-outline-variant mb-4 overflow-hidden transition-all duration-300 ${isCollapsed ? 'opacity-0 h-0 p-0 border-0 mb-0' : 'opacity-100'}`}>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 border-2 border-primary-container bg-surface flex items-center justify-center">
+              <div className="w-10 h-10 border-2 border-primary-container bg-surface flex items-center justify-center shrink-0">
                 <span className="material-symbols-outlined text-primary-container" style={{fontVariationSettings: "'FILL' 1"}}>terminal</span>
               </div>
               <div className="overflow-hidden">
@@ -113,14 +113,14 @@ export default function Layout() {
             </div>
           </div>
 
-          <div className="flex-1 px-2 space-y-1 overflow-y-auto overflow-x-hidden">
+          <div className="flex-1 space-y-1 overflow-y-auto overflow-x-hidden">
             {navItems.map((item) => (
               <NavLink
                 key={item.name}
                 to={item.path}
                 onClick={() => { if (window.innerWidth < 768) setIsCollapsed(true); }}
                 end={item.path === '/'}
-                className={({ isActive }) => `flex items-center gap-3 p-3 transition-all font-label-mono text-label-mono border-l-4 ${
+                className={({ isActive }) => `flex items-center gap-3 px-6 py-3 transition-all font-label-mono text-label-mono border-l-4 w-full ${
                   isActive
                   ? 'bg-primary-container text-on-primary-fixed-variant font-bold border-primary-fixed shadow-[4px_0_0_0_var(--primary-container)]'
                   : 'text-on-surface-variant opacity-80 hover:opacity-100 hover:bg-surface-bright hover:text-primary border-transparent'
@@ -129,17 +129,17 @@ export default function Layout() {
                 {({ isActive }) => (
                   <>
                     <span className="material-symbols-outlined shrink-0" style={{fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0"}}>{item.icon}</span>
-                    <span className={`whitespace-nowrap transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>{item.name}</span>
+                    <span className={`whitespace-nowrap transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 invisible' : 'opacity-100 w-auto'}`}>{item.name}</span>
                   </>
                 )}
               </NavLink>
             ))}
           </div>
 
-          <div className="px-2 mt-auto border-t-2 border-outline-variant pt-4">
-            <Link className="flex items-center gap-3 p-3 text-error opacity-80 hover:opacity-100 hover:bg-surface-bright hover:text-error transition-all border-l-4 border-transparent" to="/login">
+          <div className="mt-auto border-t-2 border-outline-variant pt-4">
+            <Link className="flex items-center gap-3 px-6 py-3 text-error opacity-80 hover:opacity-100 hover:bg-surface-bright hover:text-error transition-all border-l-4 border-transparent w-full" to="/login">
               <span className="material-symbols-outlined shrink-0">power_settings_new</span>
-              <span className={`font-label-mono text-label-mono transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}`}>LOGOUT</span>
+              <span className={`font-label-mono text-label-mono transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 invisible' : 'opacity-100 w-auto'}`}>LOGOUT</span>
             </Link>
           </div>
         </nav>
