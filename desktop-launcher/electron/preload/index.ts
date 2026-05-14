@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld("lazplayAPI", {
     ipcRenderer.invoke("open-install-folder", gameId),
   setStoreVisibility: (visible: boolean) =>
     ipcRenderer.invoke("set-store-visibility", visible),
+  syncRemoteLibrary: () => ipcRenderer.invoke("sync-remote-library"),
 
   // UI Communications
   onDeepLink: (callback: (url: string) => void) => {

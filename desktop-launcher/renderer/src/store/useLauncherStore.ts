@@ -18,6 +18,7 @@ interface LauncherStore {
   updateDownloadProgress: (data: any) => void;
   setRunningState: (id: string, isRunning: boolean) => void;
   setActivePage: (page: "library" | "store") => void;
+  syncRemoteLibrary: () => Promise<void>;
 }
 
 // In a real app, declare global types for the injected API
@@ -85,6 +86,28 @@ export const useLauncherStore = create<LauncherStore>((set, get) => ({
     set({ activePage: page });
     if (window.lazplayAPI) {
       window.lazplayAPI.setStoreVisibility(page === "store");
+    }
+  },
+
+  syncRemoteLibrary: async () => {
+    if (window.lazplayAPI) {
+      const result = await window.lazplayAPI.syncRemoteLibrary();
+      if (result.success) {
+        set((prev) => {
+          const newGames = { ...prev.games };
+          result.items.forEach((item: any) => {
+            // Only add if not already present or if status is not 'installed'
+            if (!newGames[item.id]) {
+              newGames[item.id] = {
+                id: item.id,
+                title: item.title,
+                status: "uninstalled",
+              };
+            }
+          });
+          return { games: newGames };
+        });
+      }
     }
   },
 }));

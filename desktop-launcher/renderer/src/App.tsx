@@ -7,6 +7,7 @@ function App() {
   const {
     activePage,
     loadInstalledGames,
+    syncRemoteLibrary,
     updateDownloadProgress,
     setRunningState,
   } = useLauncherStore();
@@ -14,6 +15,7 @@ function App() {
   useEffect(() => {
     // Initial Load
     loadInstalledGames();
+    syncRemoteLibrary();
 
     if (window.lazplayAPI) {
       window.lazplayAPI.onDownloadProgress((data: any) => {

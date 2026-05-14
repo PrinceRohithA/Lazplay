@@ -2920,6 +2920,23 @@ function setupIpcHandlers(mainWindow2, storeView2) {
       }
     }
   });
+  require$$1.ipcMain.handle("sync-remote-library", async () => {
+    const { token } = storageDb.getTokens();
+    if (!token) return { success: false, error: "Not logged in" };
+    try {
+      const response = await fetch("https://play.lazplay.tech/api/library", {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error("Failed to fetch library");
+      const data = await response.json();
+      return { success: true, items: data.items || data };
+    } catch (error2) {
+      log.error("Sync library failed:", error2);
+      return { success: false, error: error2.message };
+    }
+  });
 }
 var main$1 = {};
 var fs = {};

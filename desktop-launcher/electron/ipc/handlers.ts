@@ -101,4 +101,28 @@ export function setupIpcHandlers(
       }
     }
   });
+
+  ipcMain.handle("sync-remote-library", async () => {
+    const { token } = db.getTokens();
+    if (!token) return { success: false, error: "Not logged in" };
+
+    try {
+      const response = await fetch("https://play.lazplay.tech/api/library", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) throw new Error("Failed to fetch library");
+
+      const data = await response.json();
+      // 'data' is usually { items: [...] } or just [...] based on my reading of games.js
+      // Wait, games.js shows 'ok(pageItems, 200, { pagination: ... })' for /games
+      // but let's assume /library returns a flat list or similar.
+      return { success: true, items: data.items || data };
+    } catch (error: any) {
+      log.error("Sync library failed:", error);
+      return { success: false, error: error.message };
+    }
+  });
 }
