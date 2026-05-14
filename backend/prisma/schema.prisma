@@ -366,3 +366,14 @@ model StorageObject {
   completedAt DateTime?
   createdAt   DateTime  @default(now())
 }
+
+model Otp {
+  id        String   @id
+  email     String
+  code      String
+  purpose   String   // VERIFY_EMAIL, RESET_PASSWORD
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email, purpose])
+}

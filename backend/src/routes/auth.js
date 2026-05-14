@@ -11,9 +11,8 @@ export function registerAuthRoutes(router, ctx) {
     userOwnsGame, ensureLibraryItem, setLatestBuild, grantEntitlement, addNotification, addAuditLog, publicGame,
     getMediaBucket, getPublicGameBucket, getPrivateGameBucket, getGameBucket, getRuntimeBucketForPriceType,
     getRuntimeBucketForGame, assertR2Config, resolveBucketForPurpose, resolveBucketForKey, publicObjectUrl,
-    signedStorageUrl, runtimePrefixForGame, buildCopySource, moveRuntimeObjects, fetchWithTimeout,
-    normalizeArchivePath, contentTypeForPath, extractObjectKeyFromUrl, isWebRuntime, uploadRuntimeObject,
-    scanAndPrepareBuild, deleteStorageObject, deleteStorageRecord, deleteStorageObjectFromUrl, razorpaySignature
+    scanAndPrepareBuild, deleteStorageObject, deleteStorageRecord, deleteStorageObjectFromUrl, razorpaySignature,
+    sendOTP, verifyOTP
   } = ctx;
 
 router.add('POST', '/auth/register', async (req) => {
@@ -103,18 +102,63 @@ router.add('POST', '/auth/logout', async (req) => {
     return ok({ loggedOut: true });
   });
 
-router.add('POST', '/auth/forgot-password', async () =>
-    ok({
-      message: 'If the email exists, a reset link has been sent'
-    })
-  );
+router.add('POST', '/auth/forgot-password', async (req) => {
+    const body = validateBody(req.body, { email: validators.email() });
+    const user = await prisma.user.findUnique({ where: { email: body.email } });
+    if (user) {
+      await sendOTP(body.email, 'RESET_PASSWORD');
+    }
+    return ok({
+      message: 'If the email exists, a verification code has been sent'
+    });
+  });
 
 router.add('POST', '/auth/reset-password', async (req) => {
-    validateBody(req.body, {
-      token: validators.token(),
+    const body = validateBody(req.body, {
+      email: validators.email(),
+      code: validators.string({ min: 6, max: 6 }),
       newPassword: validators.password()
     });
+    
+    const isValid = await verifyOTP(body.email, 'RESET_PASSWORD', body.code);
+    if (!isValid) {
+      throw new HttpError(400, 'INVALID_OTP', 'The verification code is invalid or has expired');
+    }
+    
+    const user = await prisma.user.findUnique({ where: { email: body.email } });
+    if (!user) throw new HttpError(404, 'USER_NOT_FOUND', 'User not found');
+    
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash: hashPassword(body.newPassword) }
+    });
+    
     return ok({ passwordUpdated: true });
+  });
+
+router.add('POST', '/auth/resend-otp', async (req) => {
+    const body = validateBody(req.body, {
+      email: validators.email(),
+      purpose: validators.string({ pattern: /^(VERIFY_EMAIL|RESET_PASSWORD)$/ })
+    });
+    
+    await sendOTP(body.email, body.purpose);
+    return ok({ sent: true });
+  });
+
+router.add('POST', '/auth/verify-otp', async (req) => {
+    const body = validateBody(req.body, {
+      email: validators.email(),
+      purpose: validators.string({ pattern: /^(VERIFY_EMAIL|RESET_PASSWORD)$/ }),
+      code: validators.string({ min: 6, max: 6 })
+    });
+    
+    const isValid = await verifyOTP(body.email, body.purpose, body.code);
+    if (!isValid) {
+      throw new HttpError(400, 'INVALID_OTP', 'The verification code is invalid or has expired');
+    }
+    
+    return ok({ verified: true });
   });
 
 router.add('GET', '/auth/me', async (req) => {

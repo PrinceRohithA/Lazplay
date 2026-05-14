@@ -54,7 +54,8 @@ const config = {
   razorpayKeyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_lazplay',
   razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET || 'lazplay-razorpay-dev-secret',
   razorpayWebhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || 'lazplay-webhook-dev-secret',
-  allowMockPayments: (process.env.ALLOW_MOCK_PAYMENTS || 'true') === 'true'
+  allowMockPayments: (process.env.ALLOW_MOCK_PAYMENTS || 'true') === 'true',
+  resendApiKey: process.env.RESEND_API_KEY || 'resend_key'
 };
 
 const r2 = new S3Client({
@@ -386,7 +387,7 @@ async function requireAuth(req, _db, roles = []) {
   if (!token) throw new HttpError(401, 'AUTH_REQUIRED', 'Authentication is required');
   const payload = verifyToken(token);
   if (payload.type !== 'access') throw new HttpError(401, 'INVALID_TOKEN', 'Access token is required');
-  
+
   const [user, session] = await Promise.all([
     prisma.user.findUnique({ where: { id: payload.sub } }),
     prisma.refreshSession.findUnique({ where: { id: payload.sid } })
@@ -494,19 +495,19 @@ async function publicGame(game, user = null) {
   const developer = await gameDeveloper(game);
   const reviews = await prisma.gameReview.findMany({ where: { gameId: game.id } });
   const rating = reviews.length === 0 ? 0 : Math.round((reviews.reduce((t, r) => t + r.rating, 0) / reviews.length) * 10) / 10;
-  
+
   const allMedia = await prisma.gameMedia.findMany({ where: { gameId: game.id }, orderBy: { sortOrder: 'asc' } });
-  
+
   const resolveUrl = (url, keyHint = null) => {
     if (url && (url.startsWith('http') || url.startsWith('https'))) return url;
-    const key = keyHint || url; 
+    const key = keyHint || url;
     if (key && key.includes('/')) return publicObjectUrl(key, resolveBucketForKey(key));
     return url || null;
   };
 
   // Resolve assets with fallbacks from GameMedia
   const findMedia = (alt) => allMedia.find(m => m.alt === alt)?.url;
-  
+
   const coverUrl = resolveUrl(game.coverUrl, game.coverObjectKey) || findMedia('COVER_IMAGE') || findMedia('COVER');
   const heroImageUrl = resolveUrl(game.heroImageUrl) || findMedia('HERO_IMAGE') || findMedia('HERO');
   const heroBannerUrl = resolveUrl(game.heroBannerUrl) || findMedia('HERO_BANNER') || findMedia('BANNER');
@@ -527,7 +528,7 @@ async function publicGame(game, user = null) {
   const build = game.latestBuildId ? await prisma.gameBuild.findUnique({ where: { id: game.latestBuildId } }) : null;
   const isWeb = isWebRuntime(build?.runtime || build?.platform);
   const entrypoint = build?.entrypoint || (isWeb ? 'index.html' : 'game.exe');
-  
+
   let downloadUrl = null;
   if (isOwned && build?.artifactObjectKey) {
     const signed = await signedStorageUrl(build.artifactObjectKey, 'GET', 3600, getPrivateGameBucket());
@@ -848,12 +849,12 @@ async function scanAndPrepareBuild(build, game) {
 
   if (!entrypoint) {
     // If no root index.html, try to find any index.html or game.exe in the archive
-    const backup = normalizedEntries.find(e => 
-      e.normalized.toLowerCase().endsWith('index.html') || 
+    const backup = normalizedEntries.find(e =>
+      e.normalized.toLowerCase().endsWith('index.html') ||
       e.normalized.toLowerCase().endsWith('game.exe') ||
       e.normalized.toLowerCase().endsWith('.exe')
     );
-    
+
     if (backup) {
       entrypoint = backup.normalized;
       console.log('[build-entrypoint-fallback]', { buildId: build.id, entrypoint });
@@ -918,6 +919,83 @@ function assertRazorpayWebhook(req) {
   }
 }
 
+async function sendEmail({ to, subject, html }) {
+  if (!config.resendApiKey) {
+    console.warn('[email-skipped] Resend API key not configured', { to, subject });
+    return null;
+  }
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${config.resendApiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'LazPlay <noreply@lazplay.tech>',
+        to,
+        subject,
+        html
+      })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      console.error('[email-failed]', data);
+      throw new Error(data.message || 'Failed to send email');
+    }
+    return data;
+  } catch (error) {
+    console.error('[email-error]', error);
+    throw error;
+  }
+}
+
+async function createOTP(email, purpose) {
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+  const id = createId('otp');
+  
+  await prisma.otp.create({
+    data: { id, email, code, purpose, expiresAt }
+  });
+  
+  return code;
+}
+
+async function verifyOTP(email, purpose, code) {
+  const otp = await prisma.otp.findFirst({
+    where: { email, purpose, code, expiresAt: { gt: new Date() } },
+    orderBy: { createdAt: 'desc' }
+  });
+  
+  if (!otp) return false;
+  
+  // Mark as used by deleting it
+  await prisma.otp.delete({ where: { id: otp.id } });
+  return true;
+}
+
+async function sendOTP(email, purpose, subjectPrefix = 'LazPlay') {
+  const code = await createOTP(email, purpose);
+  const subject = purpose === 'VERIFY_EMAIL' 
+    ? `[${subjectPrefix}] Verify your email` 
+    : `[${subjectPrefix}] Reset your password`;
+    
+  const html = `
+    <div style="font-family: sans-serif; padding: 20px; color: #333; background: #fff; border-radius: 8px;">
+      <h2 style="color: #000;">${subject}</h2>
+      <p>Your verification code is:</p>
+      <div style="font-size: 32px; font-weight: bold; padding: 16px; background: #f0f0f0; border-radius: 6px; display: inline-block; letter-spacing: 4px; color: #000;">
+        ${code}
+      </div>
+      <p style="margin-top: 20px; font-size: 14px; color: #666;">This code will expire in 10 minutes.</p>
+      <p style="font-size: 12px; color: #999;">If you didn't request this, please ignore this email.</p>
+    </div>
+  `;
+  
+  return sendEmail({ to: email, subject, html });
+}
+
 function registerRoutes(router) {
 
   const ctx = {
@@ -932,7 +1010,7 @@ function registerRoutes(router) {
     signedStorageUrl, runtimePrefixForGame, buildCopySource, moveRuntimeObjects, fetchWithTimeout,
     normalizeArchivePath, contentTypeForPath, extractObjectKeyFromUrl, isWebRuntime, uploadRuntimeObject,
     scanAndPrepareBuild, deleteRuntimeObjects, deleteStorageObject, deleteStorageRecord, deleteStorageObjectFromUrl, razorpaySignature,
-    validationFailure, assertRazorpayWebhook
+    validationFailure, assertRazorpayWebhook, sendEmail, createOTP, verifyOTP, sendOTP
   };
 
   registerAuthRoutes(router, ctx);
