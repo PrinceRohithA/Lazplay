@@ -3,6 +3,7 @@ import { downloadManager } from "../downloads/manager";
 import { processManager } from "../runtime/process-manager";
 import { db } from "../storage/db";
 import log from "electron-log";
+import fs from "fs";
 import path from "path";
 
 export function setupIpcHandlers(
@@ -61,7 +62,7 @@ export function setupIpcHandlers(
   ipcMain.handle("resume-download", async (event, gameId: string) => {
     return downloadManager.resumeDownload(gameId);
   });
-  
+
   ipcMain.handle("set-game-entrypoint", async (event, gameId: string, entrypoint: string) => {
     log.info(`Setting entrypoint for game ${gameId}: ${entrypoint}`);
     db.setGameStatus(gameId, "installed", { entrypoint });
@@ -71,7 +72,15 @@ export function setupIpcHandlers(
   ipcMain.handle("open-install-folder", async (event, gameId: string) => {
     const game = db.getGame(gameId);
     if (game && game.installPath) {
-      shell.showItemInFolder(path.join(game.installPath, "executable.exe")); // Or main directory
+      const targetPath = game.entrypoint
+        ? path.join(game.installPath, game.entrypoint)
+        : game.installPath;
+
+      if (fs.existsSync(targetPath)) {
+        shell.showItemInFolder(targetPath);
+      } else {
+        shell.openPath(game.installPath);
+      }
       return true;
     }
     return false;
@@ -109,34 +118,87 @@ export function setupIpcHandlers(
   });
 
   ipcMain.handle("sync-remote-library", async () => {
-    const { token } = db.getTokens();
-    if (!token) return { success: false, error: "Not logged in" };
+    // Strategy 1: Read token directly from the store WebContentsView's localStorage.
+    // This is the most reliable approach — the user is already logged in on the store tab,
+    // so the token is right there without needing a prior sync-session call.
+    let token: string | null = null;
+
+    if (storeView && !storeView.webContents.isDestroyed()) {
+      try {
+        token = await storeView.webContents.executeJavaScript(
+          `localStorage.getItem('accessToken')`
+        );
+        if (token) log.info("Token read from storeView localStorage ✓");
+      } catch (e) {
+        log.warn("Could not read token from storeView:", e);
+      }
+    }
+
+    // Strategy 2: Fall back to SQLite-stored token (from sync-session)
+    if (!token) {
+      const stored = db.getTokens();
+      token = stored.token || null;
+      if (token) log.info("Token read from SQLite ✓");
+    }
+
+    if (!token) {
+      log.warn("sync-remote-library: No token found. User must log in via the Store tab.");
+      return { success: false, error: "Not logged in — please log in on the Store tab first." };
+    }
 
     try {
-      // Fetch both user library AND all available games
-      const [libRes, gamesRes] = await Promise.all([
-        fetch("https://play.lazplay.tech/api/v1/library", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        fetch("https://play.lazplay.tech/api/v1/games", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ]);
+      const libRes = await fetch("https://play.lazplay.tech/api/v1/library", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-      if (!libRes.ok || !gamesRes.ok) throw new Error("Failed to fetch data");
+      if (!libRes.ok) {
+        const text = await libRes.text();
+        log.error(`Library fetch failed (${libRes.status}):`, text);
+        throw new Error(`Library fetch failed: ${libRes.status}`);
+      }
 
       const libData = await libRes.json();
-      const gamesData = await gamesRes.json();
+      log.info("Library raw response:", JSON.stringify(libData).slice(0, 500));
 
-      // Extract arrays safely
-      const ownedItems = libData.data || libData.items || (Array.isArray(libData) ? libData : []);
-      const allGamesItems = gamesData.data || gamesData.items || (Array.isArray(gamesData) ? gamesData : []);
+      // Normalise to array — handle {data:[]}, {items:[]}, or bare array
+      const ownedItems: any[] = libData.data || libData.items || (Array.isArray(libData) ? libData : []);
+      log.info(`Library items count: ${ownedItems.length}`);
 
-      // Return combined data
+      // Each library item: game details may be nested under .game, or flat at top level
+      const WEB_PLATFORMS = new Set(["WEB", "BROWSER", "HTML5"]);
+
+      const ownedGames = ownedItems
+        .map((entry: any) => {
+          const game = entry.game || entry;
+          const id = String(game.id || game.gameId || entry.gameId);
+          const platforms: string[] = (game.platforms || entry.platforms || []).map((p: string) => p.toUpperCase());
+          return {
+            id,
+            title: game.title || entry.title || id,
+            downloadUrl: game.downloadUrl || game.buildUrl || null,
+            entrypoint: game.entrypoint || null,
+            coverUrl: game.coverImageUrl || game.coverUrl || null,
+            bannerUrl: game.bannerUrl || game.heroBannerUrl || game.heroImageUrl || null,
+            playtime: game.playtimeSeconds || 0,
+            lastPlayed: game.lastPlayedAt ? new Date(game.lastPlayedAt).getTime() : null,
+            size: game.size || 0,
+            platforms,
+            isOwned: true,
+          };
+        })
+        // Exclude games that are ONLY playable in a browser — they don't need the launcher
+        .filter((g: any) => {
+          if (g.platforms.length === 0) return true; // unknown platform — include by default
+          return g.platforms.some((p: string) => !WEB_PLATFORMS.has(p));
+        });
+
+      // Also persist the token for future use (so later calls work even if store view is hidden)
+      if (token) db.setTokens(token, db.getTokens().refreshToken || "");
+
       return {
         success: true,
-        ownedIds: ownedItems.map((i: any) => String(typeof i === 'string' ? i : (i.gameId || i.id))),
-        allGames: allGamesItems,
+        ownedIds: ownedGames.map((g: any) => g.id),
+        allGames: ownedGames,
       };
     } catch (error: any) {
       log.error("Sync library failed:", error);

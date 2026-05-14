@@ -544,6 +544,7 @@ async function publicGame(game, user = null) {
     coverUrl, heroImageUrl, heroBannerUrl, trailerUrl,
     screenshots,
     version: game.version || null,
+    size: build?.sizeBytes ? Number(build.sizeBytes) : 0,
     hardwareSpecs: game.hardwareSpecs,
     systemRequirements: game.systemRequirements,
     entrypoint, downloadUrl,

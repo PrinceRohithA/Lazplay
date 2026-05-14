@@ -113,4 +113,31 @@ router.add('GET', '/entitlements', async (req) => {
     return ok(entitlements);
   });
 
+  router.add('POST', '/library/:gameId/session', async (req) => {
+    const user = await requireAuth(req);
+    const body = validateBody(req.body, {
+      durationSeconds: validators.number()
+    });
+
+    const updated = await prisma.libraryItem.update({
+      where: { userId_gameId: { userId: user.id, gameId: req.params.gameId } },
+      data: {
+        playtimeSeconds: { increment: body.durationSeconds },
+        lastPlayedAt: new Date()
+      }
+    });
+
+    // Also log a play session for history
+    await prisma.gamePlaySession.create({
+      data: {
+        id: createId('gps_'),
+        gameId: req.params.gameId,
+        userId: user.id,
+        durationSeconds: body.durationSeconds,
+        endedAt: new Date()
+      }
+    });
+
+    return ok(updated);
+  });
 }

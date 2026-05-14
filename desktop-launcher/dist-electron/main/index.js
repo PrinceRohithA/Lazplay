@@ -24,33 +24,33 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 const require$$1 = require("electron");
-const require$$1$1 = require("path");
+const path$n = require("path");
 const fs$k = require("fs");
 const Database = require("better-sqlite3");
 const require$$0$1 = require("child_process");
-const require$$1$2 = require("os");
-const require$$1$3 = require("util");
+const require$$1$1 = require("os");
+const require$$1$2 = require("util");
 const require$$0$2 = require("events");
 const require$$0$3 = require("http");
-const require$$1$4 = require("https");
+const require$$1$3 = require("https");
 const stream = require("stream");
 const require$$2 = require("url");
 const require$$0$4 = require("crypto");
 const require$$0$5 = require("net");
-const require$$1$6 = require("tls");
+const require$$1$5 = require("tls");
 const require$$3 = require("assert");
-const require$$1$5 = require("tty");
+const require$$1$4 = require("tty");
 const http2 = require("http2");
 const zlib = require("zlib");
 const require$$0$6 = require("constants");
 let db;
 const initStorage = () => {
   const userDataPath = require$$1.app.getPath("userData");
-  const dbDir = require$$1$1.join(userDataPath, "storage");
+  const dbDir = path$n.join(userDataPath, "storage");
   if (!fs$k.existsSync(dbDir)) {
     fs$k.mkdirSync(dbDir, { recursive: true });
   }
-  db = new Database(require$$1$1.join(dbDir, "launcher.db"));
+  db = new Database(path$n.join(dbDir, "launcher.db"));
   db.pragma("journal_mode = WAL");
   db.exec(`
     CREATE TABLE IF NOT EXISTS games (
@@ -79,6 +79,20 @@ const initStorage = () => {
       manifestData TEXT
     );
   `);
+  const columns = db.prepare("PRAGMA table_info(games)").all();
+  const columnNames = columns.map((c) => c.name);
+  if (!columnNames.includes("entrypoint")) {
+    db.exec("ALTER TABLE games ADD COLUMN entrypoint TEXT");
+  }
+  if (!columnNames.includes("statusText")) {
+    db.exec("ALTER TABLE games ADD COLUMN statusText TEXT");
+  }
+  if (!columnNames.includes("lastPlayed")) {
+    db.exec("ALTER TABLE games ADD COLUMN lastPlayed INTEGER");
+  }
+  if (!columnNames.includes("playtime")) {
+    db.exec("ALTER TABLE games ADD COLUMN playtime INTEGER DEFAULT 0");
+  }
 };
 const storageDb = {
   setTokens: (token, refreshToken) => {
@@ -840,7 +854,7 @@ function requirePackageJson() {
   if (hasRequiredPackageJson) return packageJson;
   hasRequiredPackageJson = 1;
   const fs2 = fs$k;
-  const path2 = require$$1$1;
+  const path2 = path$n;
   packageJson = {
     findAndReadPackageJson,
     tryReadJsonAt
@@ -912,8 +926,8 @@ function requireNodeExternalApi() {
   if (hasRequiredNodeExternalApi) return NodeExternalApi_1;
   hasRequiredNodeExternalApi = 1;
   const childProcess = require$$0$1;
-  const os2 = require$$1$2;
-  const path2 = require$$1$1;
+  const os2 = require$$1$1;
+  const path2 = path$n;
   const packageJson2 = requirePackageJson();
   class NodeExternalApi {
     constructor() {
@@ -1094,7 +1108,7 @@ var hasRequiredElectronExternalApi;
 function requireElectronExternalApi() {
   if (hasRequiredElectronExternalApi) return ElectronExternalApi_1;
   hasRequiredElectronExternalApi = 1;
-  const path2 = require$$1$1;
+  const path2 = path$n;
   const NodeExternalApi = requireNodeExternalApi();
   class ElectronExternalApi extends NodeExternalApi {
     /**
@@ -1279,8 +1293,8 @@ function requireInitialize() {
   if (hasRequiredInitialize) return initialize;
   hasRequiredInitialize = 1;
   const fs2 = fs$k;
-  const os2 = require$$1$2;
-  const path2 = require$$1$1;
+  const os2 = require$$1$1;
+  const path2 = path$n;
   const preloadInitializeFn = requireElectronLogPreload();
   let preloadInitialized = false;
   let spyConsoleInitialized = false;
@@ -1848,7 +1862,7 @@ function requireObject() {
   if (hasRequiredObject) return object.exports;
   hasRequiredObject = 1;
   (function(module2) {
-    const util2 = require$$1$3;
+    const util2 = require$$1$2;
     module2.exports = {
       serialize,
       maxDepth({ data, transport, depth = (transport == null ? void 0 : transport.depth) ?? 6 }) {
@@ -2109,7 +2123,7 @@ function requireFile$1() {
   hasRequiredFile$1 = 1;
   const EventEmitter = require$$0$2;
   const fs2 = fs$k;
-  const os2 = require$$1$2;
+  const os2 = require$$1$1;
   class File extends EventEmitter {
     constructor({
       path: path2,
@@ -2268,7 +2282,7 @@ function requireFileRegistry() {
   hasRequiredFileRegistry = 1;
   const EventEmitter = require$$0$2;
   const fs2 = fs$k;
-  const path2 = require$$1$1;
+  const path2 = path$n;
   const File = requireFile$1();
   const NullFile = requireNullFile();
   class FileRegistry extends EventEmitter {
@@ -2338,8 +2352,8 @@ function requireFile() {
   if (hasRequiredFile) return file$1;
   hasRequiredFile = 1;
   const fs2 = fs$k;
-  const os2 = require$$1$2;
-  const path2 = require$$1$1;
+  const os2 = require$$1$1;
+  const path2 = path$n;
   const FileRegistry = requireFileRegistry();
   const { transform } = requireTransform();
   const { removeStyles } = requireStyle();
@@ -2504,7 +2518,7 @@ function requireRemote() {
   if (hasRequiredRemote) return remote;
   hasRequiredRemote = 1;
   const http3 = require$$0$3;
-  const https2 = require$$1$4;
+  const https2 = require$$1$3;
   const { transform } = requireTransform();
   const { removeStyles } = requireStyle();
   const { toJSON, maxDepth } = requireObject();
@@ -3584,7 +3598,7 @@ AxiosError$1.ERR_NOT_SUPPORT = "ERR_NOT_SUPPORT";
 AxiosError$1.ERR_INVALID_URL = "ERR_INVALID_URL";
 AxiosError$1.ERR_FORM_DATA_DEPTH_EXCEEDED = "ERR_FORM_DATA_DEPTH_EXCEEDED";
 var Stream$3 = stream.Stream;
-var util$6 = require$$1$3;
+var util$6 = require$$1$2;
 var delayed_stream = DelayedStream$1;
 function DelayedStream$1() {
   this.source = null;
@@ -3668,7 +3682,7 @@ DelayedStream$1.prototype._checkIfMaxDataSizeExceeded = function() {
   var message = "DelayedStream#maxDataSize of " + this.maxDataSize + " bytes exceeded.";
   this.emit("error", new Error(message));
 };
-var util$5 = require$$1$3;
+var util$5 = require$$1$2;
 var Stream$2 = stream.Stream;
 var DelayedStream = delayed_stream;
 var combined_stream = CombinedStream$1;
@@ -14549,7 +14563,7 @@ var mimeDb = require$$0;
  */
 (function(exports) {
   var db2 = mimeDb;
-  var extname = require$$1$1.extname;
+  var extname = path$n.extname;
   var EXTRACT_TYPE_REGEXP = /^\s*([^;\s]*)(?:;|\s|$)/;
   var TEXT_TYPE_REGEXP = /^text\//i;
   exports.charset = charset;
@@ -14783,7 +14797,14 @@ var _eval = EvalError;
 var range$1 = RangeError;
 var ref = ReferenceError;
 var syntax = SyntaxError;
-var type$1 = TypeError;
+var type$1;
+var hasRequiredType;
+function requireType() {
+  if (hasRequiredType) return type$1;
+  hasRequiredType = 1;
+  type$1 = TypeError;
+  return type$1;
+}
 var uri = URIError;
 var abs$1 = Math.abs;
 var floor$1 = Math.floor;
@@ -15029,7 +15050,7 @@ function requireCallBindApplyHelpers() {
   if (hasRequiredCallBindApplyHelpers) return callBindApplyHelpers;
   hasRequiredCallBindApplyHelpers = 1;
   var bind3 = functionBind;
-  var $TypeError2 = type$1;
+  var $TypeError2 = requireType();
   var $call2 = requireFunctionCall();
   var $actualApply = requireActualApply();
   callBindApplyHelpers = function callBindBasic(args) {
@@ -15102,7 +15123,7 @@ var $EvalError = _eval;
 var $RangeError = range$1;
 var $ReferenceError = ref;
 var $SyntaxError = syntax;
-var $TypeError$1 = type$1;
+var $TypeError$1 = requireType();
 var $URIError = uri;
 var abs = abs$1;
 var floor = floor$1;
@@ -15433,7 +15454,7 @@ var GetIntrinsic2 = getIntrinsic;
 var $defineProperty = GetIntrinsic2("%Object.defineProperty%", true);
 var hasToStringTag = requireShams()();
 var hasOwn$1 = hasown;
-var $TypeError = type$1;
+var $TypeError = requireType();
 var toStringTag = hasToStringTag ? Symbol.toStringTag : null;
 var esSetTostringtag = function setToStringTag(object2, value) {
   var overrideIfSet = arguments.length > 2 && !!arguments[2] && arguments[2].force;
@@ -15461,10 +15482,10 @@ var populate$1 = function(dst, src2) {
   return dst;
 };
 var CombinedStream = combined_stream;
-var util$4 = require$$1$3;
-var path$m = require$$1$1;
+var util$4 = require$$1$2;
+var path$m = path$n;
 var http$1 = require$$0$3;
-var https$1 = require$$1$4;
+var https$1 = require$$1$3;
 var parseUrl$3 = require$$2.parse;
 var fs$j = fs$k;
 var Stream$1 = stream.Stream;
@@ -16858,8 +16879,8 @@ var hasRequiredSupportsColor;
 function requireSupportsColor() {
   if (hasRequiredSupportsColor) return supportsColor_1;
   hasRequiredSupportsColor = 1;
-  const os2 = require$$1$2;
-  const tty = require$$1$5;
+  const os2 = require$$1$1;
+  const tty = require$$1$4;
   const hasFlag2 = requireHasFlag();
   const { env } = process;
   let forceColor;
@@ -16960,8 +16981,8 @@ function requireNode() {
   if (hasRequiredNode) return node.exports;
   hasRequiredNode = 1;
   (function(module2, exports) {
-    const tty = require$$1$5;
-    const util2 = require$$1$3;
+    const tty = require$$1$4;
+    const util2 = require$$1$2;
     exports.init = init;
     exports.log = log2;
     exports.formatArgs = formatArgs;
@@ -17421,7 +17442,7 @@ var __importDefault$1 = commonjsGlobal && commonjsGlobal.__importDefault || func
 };
 Object.defineProperty(agent, "__esModule", { value: true });
 const net_1 = __importDefault$1(require$$0$5);
-const tls_1 = __importDefault$1(require$$1$6);
+const tls_1 = __importDefault$1(require$$1$5);
 const url_1$8 = __importDefault$1(require$$2);
 const assert_1 = __importDefault$1(require$$3);
 const debug_1$3 = __importDefault$1(srcExports);
@@ -17573,7 +17594,7 @@ var debug_1$2 = function() {
 var url = require$$2;
 var URL$1 = url.URL;
 var http = require$$0$3;
-var https = require$$1$4;
+var https = require$$1$3;
 var Writable = stream.Writable;
 var assert$1 = require$$3;
 var debug$4 = debug_1$2;
@@ -18248,7 +18269,7 @@ const readBlob = async function* (blob) {
   }
 };
 const BOUNDARY_ALPHABET = platform$1.ALPHABET.ALPHA_DIGIT + "-_";
-const textEncoder = typeof TextEncoder === "function" ? new TextEncoder() : new require$$1$3.TextEncoder();
+const textEncoder = typeof TextEncoder === "function" ? new TextEncoder() : new require$$1$2.TextEncoder();
 const CRLF = "\r\n";
 const CRLF_BYTES = textEncoder.encode(CRLF);
 const CRLF_BYTES_COUNT = 2;
@@ -18726,7 +18747,7 @@ class Http2Sessions {
       let len = authoritySessions.length;
       for (let i = 0; i < len; i++) {
         const [sessionHandle, sessionOptions] = authoritySessions[i];
-        if (!sessionHandle.destroyed && !sessionHandle.closed && require$$1$3.isDeepStrictEqual(sessionOptions, options)) {
+        if (!sessionHandle.destroyed && !sessionHandle.closed && require$$1$2.isDeepStrictEqual(sessionOptions, options)) {
           return sessionHandle;
         }
       }
@@ -19122,7 +19143,7 @@ const httpAdapter = isHttpAdapterSupported && function httpAdapter2(config2) {
       setFormDataHeaders$1(headers2, data.getHeaders(), own2("formDataHeaderPolicy"));
       if (!headers2.hasContentLength()) {
         try {
-          const knownLength = await require$$1$3.promisify(data.getLength).call(data);
+          const knownLength = await require$$1$2.promisify(data.getLength).call(data);
           Number.isFinite(knownLength) && knownLength >= 0 && headers2.setContentLength(knownLength);
         } catch (e) {
         }
@@ -19241,9 +19262,9 @@ const httpAdapter = isHttpAdapterSupported && function httpAdapter2(config2) {
       }
       if (config2.allowedSocketPaths != null) {
         const allowed = Array.isArray(config2.allowedSocketPaths) ? config2.allowedSocketPaths : [config2.allowedSocketPaths];
-        const resolvedSocket = require$$1$1.resolve(config2.socketPath);
+        const resolvedSocket = path$n.resolve(config2.socketPath);
         const isAllowed = allowed.some(
-          (entry) => typeof entry === "string" && require$$1$1.resolve(entry) === resolvedSocket
+          (entry) => typeof entry === "string" && path$n.resolve(entry) === resolvedSocket
         );
         if (!isAllowed) {
           return reject(
@@ -19280,7 +19301,7 @@ const httpAdapter = isHttpAdapterSupported && function httpAdapter2(config2) {
       if (configTransport) {
         transport = configTransport;
       } else if (config2.maxRedirects === 0) {
-        transport = isHttpsRequest ? require$$1$4 : require$$0$3;
+        transport = isHttpsRequest ? require$$1$3 : require$$0$3;
         isNativeTransport = true;
       } else {
         if (config2.maxRedirects) {
@@ -21202,7 +21223,7 @@ var errors = {};
   }
 })(errors);
 const fsystem = fs$k;
-const pth$2 = require$$1$1;
+const pth$2 = path$n;
 const Constants$3 = constants$3;
 const Errors$1 = errors;
 const isWin = typeof process === "object" && "win32" === process.platform;
@@ -21453,7 +21474,7 @@ Utils$5.fromDate2DOS = function(val) {
 };
 Utils$5.isWin = isWin;
 Utils$5.crcTable = crcTable;
-const pth$1 = require$$1$1;
+const pth$1 = path$n;
 var fattr = function(path2, { fs: fs2 }) {
   var _path = path2 || "", _obj = newAttr(), _stat = null;
   function newAttr() {
@@ -22708,7 +22729,7 @@ var zipFile = function(inBuffer, options) {
   };
 };
 const Utils = utilExports;
-const pth = require$$1$1;
+const pth = path$n;
 const ZipEntry = zipEntry;
 const ZipFile = zipFile;
 const get_Bool = (...val) => Utils.findLast(val, (c) => typeof c === "boolean");
@@ -23497,7 +23518,7 @@ class DownloadManager {
     __publicField(this, "activeDownloads", /* @__PURE__ */ new Map());
   }
   async startInstall(gameId, options) {
-    const installPath = require$$1$1.join(
+    const installPath = path$n.join(
       require$$1.app.getPath("userData"),
       "installed-games",
       gameId
@@ -23514,7 +23535,7 @@ class DownloadManager {
     if (!cdnUrl) {
       throw new Error("No download URL provided for game");
     }
-    this.downloadFile(gameId, cdnUrl, require$$1$1.join(installPath, "game.zip"), options);
+    this.downloadFile(gameId, cdnUrl, path$n.join(installPath, "game.zip"), options);
   }
   async downloadFile(gameId, url2, destination, options) {
     log.info(`Starting download for ${gameId} to ${destination}`);
@@ -23566,18 +23587,18 @@ class DownloadManager {
     log.info(`Download finished for ${gameId}. Starting extraction...`);
     try {
       const zip = new AdmZip(filePath);
-      const extractPath = require$$1$1.dirname(filePath);
+      const extractPath = path$n.dirname(filePath);
       zip.extractAllTo(extractPath, true);
       fs$k.unlinkSync(filePath);
       log.info(`Extraction complete for ${gameId}. Verifying entrypoint...`);
       let entrypoint = options.entrypoint;
-      const fullExePath = entrypoint ? require$$1$1.join(extractPath, entrypoint) : "";
+      const fullExePath = entrypoint ? path$n.join(extractPath, entrypoint) : "";
       if (!entrypoint || !fs$k.existsSync(fullExePath)) {
         log.warn(`Entrypoint ${entrypoint} not found in ${extractPath}. Scanning for executables...`);
         const files = this.getAllFiles(extractPath);
         const exes = files.filter((f) => f.endsWith(".exe") || f.endsWith(".sh") || f.endsWith(".bat") || f.endsWith(".app"));
         if (exes.length === 1) {
-          entrypoint = require$$1$1.relative(extractPath, exes[0]);
+          entrypoint = path$n.relative(extractPath, exes[0]);
           log.info(`Auto-detected entrypoint: ${entrypoint}`);
           storageDb.setGameStatus(gameId, "installed", { entrypoint });
         } else {
@@ -23588,7 +23609,7 @@ class DownloadManager {
             win.webContents.send("request-entrypoint", {
               gameId,
               title: options.title,
-              potentialEntrypoints: exes.map((f) => require$$1$1.relative(extractPath, f))
+              potentialEntrypoints: exes.map((f) => path$n.relative(extractPath, f))
             });
           });
           return;
@@ -23611,10 +23632,10 @@ class DownloadManager {
   getAllFiles(dirPath, arrayOfFiles = []) {
     const files = fs$k.readdirSync(dirPath);
     files.forEach((file2) => {
-      if (fs$k.statSync(require$$1$1.join(dirPath, file2)).isDirectory()) {
-        arrayOfFiles = this.getAllFiles(require$$1$1.join(dirPath, file2), arrayOfFiles);
+      if (fs$k.statSync(path$n.join(dirPath, file2)).isDirectory()) {
+        arrayOfFiles = this.getAllFiles(path$n.join(dirPath, file2), arrayOfFiles);
       } else {
-        arrayOfFiles.push(require$$1$1.join(dirPath, file2));
+        arrayOfFiles.push(path$n.join(dirPath, file2));
       }
     });
     return arrayOfFiles;
@@ -23675,12 +23696,12 @@ class ProcessManager {
       throw new Error("Game is not installed");
     }
     let entrypoint = game.entrypoint;
-    let exePath = entrypoint ? require$$1$1.join(game.installPath, entrypoint) : "";
+    let exePath = entrypoint ? path$n.join(game.installPath, entrypoint) : "";
     if (!entrypoint || !fs$k.existsSync(exePath)) {
       const fallbacks = ["game.exe", "index.html", "start.bat", "run.sh"];
       let foundFallback = false;
       for (const fallback of fallbacks) {
-        const fallbackPath = require$$1$1.join(game.installPath, fallback);
+        const fallbackPath = path$n.join(game.installPath, fallback);
         if (fs$k.existsSync(fallbackPath)) {
           log.info(`Specified entrypoint not found. Falling back to ${fallback}`);
           exePath = fallbackPath;
@@ -23703,12 +23724,14 @@ class ProcessManager {
       return;
     }
     const startTime = Date.now();
-    const child = require$$0$1.spawn(exePath, [], {
-      cwd: game.installPath,
+    const exeDir = path$n.dirname(exePath);
+    const isExe = exePath.toLowerCase().endsWith(".exe");
+    log.info(`Launching game ${gameId} from ${exePath} (CWD: ${exeDir}, shell: ${!isExe})`);
+    const child = require$$0$1.spawn(isExe ? exePath : `"${exePath}"`, [], {
+      cwd: exeDir,
       detached: true,
       stdio: "ignore",
-      shell: true
-      // Crucial for some Windows executables and paths with spaces
+      shell: !isExe
     });
     child.unref();
     this.runningGames.set(gameId, { process: child, startTime });
@@ -23809,7 +23832,12 @@ function setupIpcHandlers(mainWindow2, storeView2) {
   require$$1.ipcMain.handle("open-install-folder", async (event, gameId) => {
     const game = storageDb.getGame(gameId);
     if (game && game.installPath) {
-      require$$1.shell.showItemInFolder(require$$1$1.join(game.installPath, "executable.exe"));
+      const targetPath = game.entrypoint ? path$n.join(game.installPath, game.entrypoint) : game.installPath;
+      if (fs$k.existsSync(targetPath)) {
+        require$$1.shell.showItemInFolder(targetPath);
+      } else {
+        require$$1.shell.openPath(game.installPath);
+      }
       return true;
     }
     return false;
@@ -23839,26 +23867,62 @@ function setupIpcHandlers(mainWindow2, storeView2) {
     }
   });
   require$$1.ipcMain.handle("sync-remote-library", async () => {
-    const { token } = storageDb.getTokens();
-    if (!token) return { success: false, error: "Not logged in" };
+    let token = null;
+    if (storeView2 && !storeView2.webContents.isDestroyed()) {
+      try {
+        token = await storeView2.webContents.executeJavaScript(
+          `localStorage.getItem('accessToken')`
+        );
+        if (token) log.info("Token read from storeView localStorage ✓");
+      } catch (e) {
+        log.warn("Could not read token from storeView:", e);
+      }
+    }
+    if (!token) {
+      const stored = storageDb.getTokens();
+      token = stored.token || null;
+      if (token) log.info("Token read from SQLite ✓");
+    }
+    if (!token) {
+      log.warn("sync-remote-library: No token found. User must log in via the Store tab.");
+      return { success: false, error: "Not logged in — please log in on the Store tab first." };
+    }
     try {
-      const [libRes, gamesRes] = await Promise.all([
-        fetch("https://play.lazplay.tech/api/v1/library", {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        fetch("https://play.lazplay.tech/api/v1/games", {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-      ]);
-      if (!libRes.ok || !gamesRes.ok) throw new Error("Failed to fetch data");
+      const libRes = await fetch("https://play.lazplay.tech/api/v1/library", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!libRes.ok) {
+        const text = await libRes.text();
+        log.error(`Library fetch failed (${libRes.status}):`, text);
+        throw new Error(`Library fetch failed: ${libRes.status}`);
+      }
       const libData = await libRes.json();
-      const gamesData = await gamesRes.json();
+      log.info("Library raw response:", JSON.stringify(libData).slice(0, 500));
       const ownedItems = libData.data || libData.items || (Array.isArray(libData) ? libData : []);
-      const allGamesItems = gamesData.data || gamesData.items || (Array.isArray(gamesData) ? gamesData : []);
+      log.info(`Library items count: ${ownedItems.length}`);
+      const WEB_PLATFORMS = /* @__PURE__ */ new Set(["WEB", "BROWSER", "HTML5"]);
+      const ownedGames = ownedItems.map((entry) => {
+        const game = entry.game || entry;
+        const id = String(game.id || game.gameId || entry.gameId);
+        const platforms = (game.platforms || entry.platforms || []).map((p) => p.toUpperCase());
+        return {
+          id,
+          title: game.title || entry.title || id,
+          downloadUrl: game.downloadUrl || game.buildUrl || null,
+          entrypoint: game.entrypoint || null,
+          coverUrl: game.coverImageUrl || game.coverUrl || null,
+          platforms,
+          isOwned: true
+        };
+      }).filter((g) => {
+        if (g.platforms.length === 0) return true;
+        return g.platforms.some((p) => !WEB_PLATFORMS.has(p));
+      });
+      if (token) storageDb.setTokens(token, storageDb.getTokens().refreshToken || "");
       return {
         success: true,
-        ownedIds: ownedItems.map((i) => String(typeof i === "string" ? i : i.gameId || i.id)),
-        allGames: allGamesItems
+        ownedIds: ownedGames.map((g) => g.id),
+        allGames: ownedGames
       };
     } catch (error2) {
       log.error("Sync library failed:", error2);
@@ -24300,7 +24364,7 @@ var fs$h = fs$k;
 var polyfills = polyfills$1;
 var legacy = legacyStreams;
 var clone = clone_1;
-var util$2 = require$$1$3;
+var util$2 = require$$1$2;
 var gracefulQueue;
 var previousSymbol;
 if (typeof Symbol === "function" && typeof Symbol.for === "function") {
@@ -24759,7 +24823,7 @@ function retry$2() {
 })(fs$i);
 var makeDir$1 = {};
 var utils$1 = {};
-const path$l = require$$1$1;
+const path$l = path$n;
 utils$1.checkPath = function checkPath(pth2) {
   if (process.platform === "win32") {
     const pathHasInvalidWinCharacters = /[<>:"|?*]/.test(pth2.replace(path$l.parse(pth2).root, ""));
@@ -24833,8 +24897,8 @@ var utimes = {
   utimesMillisSync: utimesMillisSync$1
 };
 const fs$d = fs$i;
-const path$k = require$$1$1;
-const util$1 = require$$1$3;
+const path$k = path$n;
+const util$1 = require$$1$2;
 function getStats$2(src2, dest, opts) {
   const statFunc = opts.dereference ? (file2) => fs$d.stat(file2, { bigint: true }) : (file2) => fs$d.lstat(file2, { bigint: true });
   return Promise.all([
@@ -24957,7 +25021,7 @@ var stat$4 = {
   areIdentical: areIdentical$2
 };
 const fs$c = gracefulFs;
-const path$j = require$$1$1;
+const path$j = path$n;
 const mkdirs$1 = mkdirs$2.mkdirs;
 const pathExists$5 = pathExists_1.pathExists;
 const utimesMillis = utimes.utimesMillis;
@@ -25147,7 +25211,7 @@ function copyLink$1(resolvedSrc, dest, cb) {
 }
 var copy_1 = copy$2;
 const fs$b = gracefulFs;
-const path$i = require$$1$1;
+const path$i = path$n;
 const mkdirsSync$1 = mkdirs$2.mkdirsSync;
 const utimesMillisSync = utimes.utimesMillisSync;
 const stat$2 = stat$4;
@@ -25279,7 +25343,7 @@ var copy$1 = {
   copySync: copySync_1
 };
 const fs$a = gracefulFs;
-const path$h = require$$1$1;
+const path$h = path$n;
 const assert = require$$3;
 const isWindows = process.platform === "win32";
 function defaults(options) {
@@ -25523,7 +25587,7 @@ var remove_1 = {
 };
 const u$6 = universalify$1.fromPromise;
 const fs$8 = fs$i;
-const path$g = require$$1$1;
+const path$g = path$n;
 const mkdir$3 = mkdirs$2;
 const remove$1 = remove_1;
 const emptyDir = u$6(async function emptyDir2(dir) {
@@ -25554,7 +25618,7 @@ var empty = {
   emptydir: emptyDir
 };
 const u$5 = universalify$1.fromCallback;
-const path$f = require$$1$1;
+const path$f = path$n;
 const fs$7 = gracefulFs;
 const mkdir$2 = mkdirs$2;
 function createFile$1(file2, callback) {
@@ -25609,7 +25673,7 @@ var file = {
   createFileSync: createFileSync$1
 };
 const u$4 = universalify$1.fromCallback;
-const path$e = require$$1$1;
+const path$e = path$n;
 const fs$6 = gracefulFs;
 const mkdir$1 = mkdirs$2;
 const pathExists$4 = pathExists_1.pathExists;
@@ -25663,7 +25727,7 @@ var link = {
   createLink: u$4(createLink$1),
   createLinkSync: createLinkSync$1
 };
-const path$d = require$$1$1;
+const path$d = path$n;
 const fs$5 = gracefulFs;
 const pathExists$3 = pathExists_1.pathExists;
 function symlinkPaths$1(srcpath, dstpath, callback) {
@@ -25761,7 +25825,7 @@ var symlinkType_1 = {
   symlinkTypeSync: symlinkTypeSync$1
 };
 const u$3 = universalify$1.fromCallback;
-const path$c = require$$1$1;
+const path$c = path$n;
 const fs$3 = fs$i;
 const _mkdirs = mkdirs$2;
 const mkdirs = _mkdirs.mkdirs;
@@ -25940,7 +26004,7 @@ var jsonfile = {
 };
 const u$2 = universalify$1.fromCallback;
 const fs$2 = gracefulFs;
-const path$b = require$$1$1;
+const path$b = path$n;
 const mkdir = mkdirs$2;
 const pathExists$1 = pathExists_1.pathExists;
 function outputFile$1(file2, data, encoding, callback) {
@@ -25996,7 +26060,7 @@ jsonFile.readJSON = jsonFile.readJson;
 jsonFile.readJSONSync = jsonFile.readJsonSync;
 var json$1 = jsonFile;
 const fs$1 = gracefulFs;
-const path$a = require$$1$1;
+const path$a = path$n;
 const copy = copy$1.copy;
 const remove = remove_1.remove;
 const mkdirp = mkdirs$2.mkdirp;
@@ -26060,7 +26124,7 @@ function moveAcrossDevice$1(src2, dest, overwrite, cb) {
 }
 var move_1 = move$1;
 const fs = gracefulFs;
-const path$9 = require$$1$1;
+const path$9 = path$n;
 const copySync = copy$1.copySync;
 const removeSync = remove_1.removeSync;
 const mkdirpSync = mkdirs$2.mkdirpSync;
@@ -33783,7 +33847,7 @@ const crypto_1$2 = require$$0$4;
 const fs_1$4 = fs$k;
 const isEqual = lodash_isequalExports;
 const fs_extra_1$6 = lib;
-const path$8 = require$$1$1;
+const path$8 = path$n;
 class DownloadedUpdateHelper {
   constructor(cacheDir) {
     this.cacheDir = cacheDir;
@@ -33936,8 +34000,8 @@ var ElectronAppAdapter$1 = {};
 var AppAdapter = {};
 Object.defineProperty(AppAdapter, "__esModule", { value: true });
 AppAdapter.getAppCacheDir = getAppCacheDir;
-const path$7 = require$$1$1;
-const os_1$1 = require$$1$2;
+const path$7 = path$n;
+const os_1$1 = require$$1$1;
 function getAppCacheDir() {
   const homedir = (0, os_1$1.homedir)();
   let result;
@@ -33952,7 +34016,7 @@ function getAppCacheDir() {
 }
 Object.defineProperty(ElectronAppAdapter$1, "__esModule", { value: true });
 ElectronAppAdapter$1.ElectronAppAdapter = void 0;
-const path$6 = require$$1$1;
+const path$6 = path$n;
 const AppAdapter_1 = AppAdapter;
 class ElectronAppAdapter {
   constructor(app = require$$1.app) {
@@ -34808,7 +34872,7 @@ Object.defineProperty(PrivateGitHubProvider$1, "__esModule", { value: true });
 PrivateGitHubProvider$1.PrivateGitHubProvider = void 0;
 const builder_util_runtime_1$9 = out;
 const js_yaml_1$1 = jsYaml;
-const path$5 = require$$1$1;
+const path$5 = path$n;
 const url_1$2 = require$$2;
 const util_1 = util;
 const GitHubProvider_1$1 = GitHubProvider$1;
@@ -35762,12 +35826,12 @@ Object.defineProperty(AppUpdater$1, "__esModule", { value: true });
 AppUpdater$1.NoOpLogger = AppUpdater$1.AppUpdater = void 0;
 const builder_util_runtime_1$4 = out;
 const crypto_1$1 = require$$0$4;
-const os_1 = require$$1$2;
+const os_1 = require$$1$1;
 const events_1 = require$$0$2;
 const fs_extra_1$4 = lib;
 const js_yaml_1 = jsYaml;
 const lazy_val_1 = main;
-const path$4 = require$$1$1;
+const path$4 = path$n;
 const semver_1 = semver$1;
 const DownloadedUpdateHelper_1 = DownloadedUpdateHelper$1;
 const ElectronAppAdapter_1 = ElectronAppAdapter$1;
@@ -36547,7 +36611,7 @@ const builder_util_runtime_1$3 = out;
 const child_process_1$2 = require$$0$1;
 const fs_extra_1$2 = lib;
 const fs_1$1 = fs$k;
-const path$3 = require$$1$1;
+const path$3 = path$n;
 const BaseUpdater_1$2 = BaseUpdater$1;
 const FileWithEmbeddedBlockMapDifferentialDownloader_1$1 = FileWithEmbeddedBlockMapDifferentialDownloader$1;
 const Provider_1$5 = Provider$1;
@@ -36943,7 +37007,7 @@ MacUpdater$1.MacUpdater = void 0;
 const builder_util_runtime_1$2 = out;
 const fs_extra_1$1 = lib;
 const fs_1 = fs$k;
-const path$2 = require$$1$1;
+const path$2 = path$n;
 const http_1 = require$$0$3;
 const AppUpdater_1 = AppUpdater$1;
 const Provider_1$1 = Provider$1;
@@ -37178,8 +37242,8 @@ Object.defineProperty(windowsExecutableCodeSignatureVerifier, "__esModule", { va
 windowsExecutableCodeSignatureVerifier.verifySignature = verifySignature;
 const builder_util_runtime_1$1 = out;
 const child_process_1 = require$$0$1;
-const os = require$$1$2;
-const path$1 = require$$1$1;
+const os = require$$1$1;
+const path$1 = path$n;
 function preparePowerShellExec(command, timeout) {
   const executable = `set "PSModulePath=" & chcp 65001 >NUL & powershell.exe`;
   const args = ["-NoProfile", "-NonInteractive", "-InputFormat", "None", "-Command", command];
@@ -37285,7 +37349,7 @@ function isOldWin6() {
 Object.defineProperty(NsisUpdater$1, "__esModule", { value: true });
 NsisUpdater$1.NsisUpdater = void 0;
 const builder_util_runtime_1 = out;
-const path = require$$1$1;
+const path = path$n;
 const BaseUpdater_1 = BaseUpdater$1;
 const FileWithEmbeddedBlockMapDifferentialDownloader_1 = FileWithEmbeddedBlockMapDifferentialDownloader$1;
 const types_1 = types;
@@ -37460,7 +37524,7 @@ NsisUpdater$1.NsisUpdater = NsisUpdater;
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.NsisUpdater = exports.MacUpdater = exports.RpmUpdater = exports.PacmanUpdater = exports.DebUpdater = exports.AppImageUpdater = exports.Provider = exports.NoOpLogger = exports.AppUpdater = exports.BaseUpdater = void 0;
   const fs_extra_12 = lib;
-  const path2 = require$$1$1;
+  const path2 = path$n;
   var BaseUpdater_12 = BaseUpdater$1;
   Object.defineProperty(exports, "BaseUpdater", { enumerable: true, get: function() {
     return BaseUpdater_12.BaseUpdater;
@@ -37577,7 +37641,7 @@ function initAutoUpdater(mainWindow2) {
     1e3 * 60 * 60
   );
 }
-log.transports.file.resolvePathFn = () => require$$1$1.join(require$$1.app.getPath("userData"), "logs/launcher.log");
+log.transports.file.resolvePathFn = () => path$n.join(require$$1.app.getPath("userData"), "logs/launcher.log");
 log.transports.console.level = "info";
 log.info("Starting LazPlay Launcher...");
 process.on("uncaughtException", (err) => {
@@ -37595,7 +37659,7 @@ function createWindow() {
     minHeight: 768,
     title: "LazPlay Launcher",
     webPreferences: {
-      preload: require$$1$1.join(__dirname, "../preload/index.js"),
+      preload: path$n.join(__dirname, "../preload/index.js"),
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
@@ -37621,11 +37685,11 @@ function createWindow() {
   if (process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
   } else {
-    mainWindow.loadFile(require$$1$1.join(__dirname, "../../dist/index.html"));
+    mainWindow.loadFile(path$n.join(__dirname, "../../dist/index.html"));
   }
   storeView = new require$$1.WebContentsView({
     webPreferences: {
-      preload: require$$1$1.join(__dirname, "../preload/store-preload.js"),
+      preload: path$n.join(__dirname, "../preload/store-preload.js"),
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
@@ -37669,7 +37733,7 @@ require$$1.app.whenReady().then(() => {
   if (process.defaultApp) {
     if (process.argv.length >= 2) {
       require$$1.app.setAsDefaultProtocolClient("lazplay", process.execPath, [
-        require$$1$1.resolve(process.argv[1])
+        path$n.resolve(process.argv[1])
       ]);
     }
   } else {

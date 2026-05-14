@@ -59,11 +59,15 @@ class ProcessManager {
     }
 
     const startTime = Date.now();
-    const child = spawn(exePath, [], {
-      cwd: game.installPath,
+    const exeDir = path.dirname(exePath);
+    const isExe = exePath.toLowerCase().endsWith(".exe");
+    log.info(`Launching game ${gameId} from ${exePath} (CWD: ${exeDir}, shell: ${!isExe})`);
+
+    const child = spawn(isExe ? exePath : `"${exePath}"`, [], {
+      cwd: exeDir,
       detached: true,
       stdio: "ignore",
-      shell: true, // Crucial for some Windows executables and paths with spaces
+      shell: !isExe,
     });
 
     child.unref(); 

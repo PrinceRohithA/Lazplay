@@ -49,7 +49,7 @@ function App() {
         console.log("Deep link received:", url);
       });
     }
-  }, [loadInstalledGames, updateDownloadProgress, setRunningState]);
+  }, [loadInstalledGames, syncRemoteLibrary, updateDownloadProgress, setRunningState]);
 
   const handleSelectEntrypoint = async (entrypoint: string) => {
     if (setupPrompt && window.lazplayAPI) {

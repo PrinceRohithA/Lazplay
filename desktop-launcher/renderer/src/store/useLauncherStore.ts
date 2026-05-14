@@ -11,13 +11,21 @@ interface GameState {
   isOwned?: boolean;
   downloadUrl?: string;
   entrypoint?: string;
+  coverUrl?: string;
+  bannerUrl?: string;
   statusText?: string;
+  platforms?: string[];
+  playtime?: number;
+  size?: number;
+  lastPlayed?: number;
 }
 
 interface LauncherStore {
   games: Record<string, GameState>;
+  selectedGameId: string | null;
   activePage: "library" | "store";
   setGameState: (id: string, state: Partial<GameState>) => void;
+  setSelectedGame: (id: string | null) => void;
   loadInstalledGames: () => Promise<void>;
   updateDownloadProgress: (data: any) => void;
   setRunningState: (id: string, isRunning: boolean) => void;
@@ -35,7 +43,10 @@ declare global {
 
 export const useLauncherStore = create<LauncherStore>((set, get) => ({
   games: {},
+  selectedGameId: null,
   activePage: "store",
+
+  setSelectedGame: (id) => set({ selectedGameId: id }),
 
   setGameState: (id, state) =>
     set((prev) => ({
@@ -97,36 +108,44 @@ export const useLauncherStore = create<LauncherStore>((set, get) => ({
   syncRemoteLibrary: async () => {
     if (window.lazplayAPI) {
       const result = await window.lazplayAPI.syncRemoteLibrary();
-      if (result.success) {
-        set((prev) => {
-          const newGames = { ...prev.games };
-          const ownedSet = new Set(result.ownedIds);
+      console.log("[LauncherStore] syncRemoteLibrary result:", result);
 
-          result.allGames.forEach((item: any) => {
-            const itemId = String(item.id);
-            const isOwned = ownedSet.has(itemId);
-            if (!newGames[itemId]) {
-              newGames[itemId] = {
-                id: itemId,
-                title: item.title,
-                status: "uninstalled",
-                isOwned,
-                downloadUrl: item.downloadUrl,
-                entrypoint: item.entrypoint,
-              };
-            } else {
-              newGames[itemId] = {
-                ...newGames[itemId],
-                title: item.title,
-                isOwned,
-                downloadUrl: item.downloadUrl,
-                entrypoint: item.entrypoint,
-              };
-            }
-          });
-          return { games: newGames };
-        });
+      if (!result.success) {
+        throw new Error(result.error || "Library sync failed");
       }
+
+      set((prev) => {
+        const newGames = { ...prev.games };
+        const ownedSet = new Set(result.ownedIds as string[]);
+
+        result.allGames.forEach((item: any) => {
+          const itemId = String(item.id);
+          const isOwned = ownedSet.has(itemId);
+          if (!newGames[itemId]) {
+            newGames[itemId] = {
+              id: itemId,
+              title: item.title,
+              status: "uninstalled",
+              isOwned,
+              downloadUrl: item.downloadUrl,
+              entrypoint: item.entrypoint,
+              coverUrl: item.coverUrl,
+              bannerUrl: item.bannerUrl,
+            };
+          } else {
+            newGames[itemId] = {
+              ...newGames[itemId],
+              title: item.title,
+              isOwned,
+              downloadUrl: item.downloadUrl,
+              entrypoint: item.entrypoint,
+              coverUrl: item.coverUrl,
+              bannerUrl: item.bannerUrl,
+            };
+          }
+        });
+        return { games: newGames };
+      });
     }
   },
 

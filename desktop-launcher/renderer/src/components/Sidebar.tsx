@@ -80,69 +80,8 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* Installed Games List */}
+      {/* Content Area */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        <div>
-          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 px-2">
-            Installed
-          </h3>
-          <div className="space-y-1">
-            {installedGames.map((game) => (
-              <div
-                key={game.id}
-                className="group relative flex flex-col p-2 rounded-lg hover:bg-slate-800/50 transition-all border border-transparent hover:border-slate-700/50"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded bg-slate-800 flex items-center justify-center flex-shrink-0">
-                    <Gamepad2 size={16} className="text-slate-400" />
-                  </div>
-                  <div className="flex-1 truncate">
-                    <div className="text-sm font-medium text-slate-200 truncate">
-                      {game.title}
-                    </div>
-                    <div className="text-[10px] text-slate-500">
-                      {game.isRunning ? (
-                        <span className="text-emerald-500">Running</span>
-                      ) : (
-                        "Installed"
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Hover Actions */}
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => handleLaunch(game.id)}
-                    className="p-1.5 bg-brand-500 text-white rounded-md hover:bg-brand-400 shadow-lg"
-                    title="Launch Game"
-                  >
-                    <Play size={14} fill="currentColor" />
-                  </button>
-                  <button
-                    onClick={() => handleOpenFolder(game.id)}
-                    className="p-1.5 bg-slate-700 text-slate-200 rounded-md hover:bg-slate-600 shadow-lg"
-                    title="Open Install Folder"
-                  >
-                    <FolderOpen size={14} />
-                  </button>
-                  <button
-                    onClick={() => handleUninstall(game.id)}
-                    className="p-1.5 bg-red-500/20 text-red-400 rounded-md hover:bg-red-500 hover:text-white shadow-lg transition-colors"
-                    title="Uninstall"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            ))}
-            {installedGames.length === 0 && (
-              <div className="text-sm text-slate-600 px-2 py-1">
-                No games installed
-              </div>
-            )}
-          </div>
-        </div>
 
         {/* Active Downloads */}
         {activeDownloads.length > 0 && (
