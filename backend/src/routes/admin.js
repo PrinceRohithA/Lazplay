@@ -444,7 +444,7 @@ router.add('GET', '/admin/analytics', async (req) => {
         _sum: { amount: true }
       }),
       prisma.gamePlaySession.count({ where: { endedAt: null } }),
-      prisma.gamePlaySession.count({ distinct: ['userId'] }),
+      prisma.gamePlaySession.groupBy({ by: ['userId'] }),
       prisma.order.groupBy({
         by: ['gameId'],
         where: { status: { in: ['PAID', 'COMPLETED'] } },
@@ -481,7 +481,7 @@ router.add('GET', '/admin/analytics', async (req) => {
         instances: instanceCount,
         totalRevenue: revenue._sum.amount || 0,
         currentPlayers,
-        totalPlayers
+        totalPlayers: totalPlayers.length
       },
       topGames: enrichedGames,
       topUsers: enrichedUsers

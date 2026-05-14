@@ -776,7 +776,7 @@ router.add('GET', '/developer/dashboard', async (req) => {
     const games = await prisma.game.findMany({ where: { developerId: profile.id } });
     const gameIds = games.map(g => g.id);
 
-    const [orderStats, instanceCount, currentPlayers, totalPlayers, gameStats] = await Promise.all([
+    const [orderStats, instanceCount, currentPlayers, allSessions, gameStatsRaw] = await Promise.all([
       prisma.order.aggregate({
         where: { gameId: { in: gameIds }, status: { in: ['PAID', 'COMPLETED'] } },
         _sum: { amount: true },
@@ -788,12 +788,12 @@ router.add('GET', '/developer/dashboard', async (req) => {
       prisma.gamePlaySession.count({
         where: { gameId: { in: gameIds }, endedAt: null }
       }),
-      prisma.gamePlaySession.count({
+      prisma.gamePlaySession.findMany({
         where: { gameId: { in: gameIds } },
-        distinct: ['userId']
+        select: { gameId: true, userId: true }
       }),
       Promise.all(games.map(async (g) => {
-        const [gOrders, gCurrent, gTotal] = await Promise.all([
+        const [gOrders, gCurrent] = await Promise.all([
           prisma.order.aggregate({
             where: { gameId: g.id, status: { in: ['PAID', 'COMPLETED'] } },
             _sum: { amount: true },
@@ -801,22 +801,28 @@ router.add('GET', '/developer/dashboard', async (req) => {
           }),
           prisma.gamePlaySession.count({
             where: { gameId: g.id, endedAt: null }
-          }),
-          prisma.gamePlaySession.count({
-            where: { gameId: g.id },
-            distinct: ['userId']
           })
         ]);
-        return {
-          id: g.id,
-          title: g.title,
-          currentPlayers: gCurrent,
-          totalPlayers: gTotal,
-          sales: gOrders._count || 0,
-          revenue: gOrders._sum.amount || 0
-        };
+        return { g, gOrders, gCurrent };
       }))
     ]);
+
+    // Calculate unique players per game and total from the fetched sessions
+    const totalPlayers = new Set(allSessions.map(s => s.userId)).size;
+    const gameUniquePlayers = {};
+    allSessions.forEach(s => {
+      if (!gameUniquePlayers[s.gameId]) gameUniquePlayers[s.gameId] = new Set();
+      gameUniquePlayers[s.gameId].add(s.userId);
+    });
+
+    const gameStats = gameStatsRaw.map(({ g, gOrders, gCurrent }) => ({
+      id: g.id,
+      title: g.title,
+      currentPlayers: gCurrent,
+      totalPlayers: gameUniquePlayers[g.id]?.size || 0,
+      sales: gOrders._count || 0,
+      revenue: gOrders._sum.amount || 0
+    }));
 
     return ok({
       stats: {
