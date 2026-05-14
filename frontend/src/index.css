@@ -162,3 +162,23 @@ input:-webkit-autofill:active {
 .quill-content a { color: var(--primary); text-decoration: underline; }
 .quill-content strong { font-weight: bold; color: var(--primary); }
 .quill-content em { font-style: italic; }
+
+/* Global Layout Fixes */
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+img,
+video,
+iframe {
+  max-width: 100%;
+  display: block;
+}

@@ -334,35 +334,95 @@ export default function GameDetailsSteamStyleLayout() {
             </div>
           </section>
 
-          {(screenshots.length > 0 || videos.length > 1) && (
-            <section id="screenshots" className="bg-surface-container pixel-border p-gutter">
-              <div className="bg-surface-variant text-on-surface border-b-2 border-outline-variant -mx-gutter -mt-gutter mb-gutter px-gutter py-2 font-label-mono text-label-mono uppercase">
-                &gt;_ MEDIA_ARCHIVE
-              </div>
+          {/* SCREENSHOTS SECTION */}
+          <section
+            id="screenshots"
+            className="bg-surface-container pixel-border p-4 md:p-6 overflow-hidden"
+          >
+            <div className="bg-surface-variant text-on-surface border-b-2 border-outline-variant -mx-4 md:-mx-6 -mt-4 md:-mt-6 mb-4 md:mb-6 px-4 md:px-6 py-3 font-label-mono text-[12px] uppercase tracking-wider">
+              &gt;_ MEDIA_ARCHIVE
+            </div>
 
-              {videos.length > 1 && (
-                <div className="mb-4 space-y-4">
-                  {videos.slice(1).map(v => (
-                    <video key={v.id} controls className="w-full aspect-video max-h-[400px] pixel-border bg-black object-cover">
+            {/* VIDEOS */}
+            {videos.length > 1 && (
+              <div className="space-y-6 mb-6">
+                {videos.slice(1).map((v) => (
+                  <div
+                    key={v.id}
+                    className="w-full aspect-video overflow-hidden rounded-lg bg-black border border-outline-variant"
+                  >
+                    <video
+                      controls
+                      preload="metadata"
+                      className="w-full h-full object-cover"
+                    >
                       <source src={v.url} />
                       Your browser does not support the video tag.
                     </video>
-                  ))}
-                </div>
-              )}
+                  </div>
+                ))}
+              </div>
+            )}
 
-              {screenshots.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-[5px]">
-                  {screenshots.map(s => (
-                    <div key={s.id} className="pixel-border overflow-hidden bg-black aspect-video max-h-[300px] relative group/item">
-                      <img src={s.url} alt="Screenshot" className="w-full h-full object-cover group-hover/item:scale-105 transition-transform duration-500" />
-                      <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover/item:opacity-100 transition-opacity pointer-events-none" />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-          )}
+            {/* SCREENSHOTS */}
+            {screenshots.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 w-full min-w-0">
+                {screenshots.map((s) => (
+                  <div
+                    key={s.id}
+                    className="group relative aspect-video overflow-hidden rounded-lg bg-black border border-outline-variant"
+                  >
+                    <img
+                      src={s.url}
+                      alt="Screenshot"
+                      loading="lazy"
+                      className="
+                        w-full
+                        h-full
+                        object-cover
+                        transition-transform
+                        duration-500
+                        group-hover:scale-105
+                      "
+                    />
+
+                    {/* Overlay */}
+                    <div
+                      className="
+                        absolute
+                        inset-0
+                        bg-black/0
+                        group-hover:bg-black/10
+                        transition-colors
+                        duration-300
+                      "
+                    />
+
+                    {/* Glow Border */}
+                    <div
+                      className="
+                        absolute
+                        inset-0
+                        ring-0
+                        ring-primary/40
+                        group-hover:ring-2
+                        transition-all
+                        duration-300
+                        pointer-events-none
+                      "
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* EMPTY STATE */}
+            {screenshots.length === 0 && videos.length <= 1 && (
+              <div className="text-center py-10 font-label-mono text-on-surface-variant uppercase text-sm">
+                NO_MEDIA_FOUND
+              </div>
+            )}
+          </section>
           <section className="bg-surface-container pixel-border p-gutter font-label-mono">
             <div className="text-on-surface-variant border-b border-outline-variant pb-2 mb-4 text-[12px] uppercase">System Requirements</div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-[11px]">
