@@ -7,7 +7,7 @@ export default function LauncherDownloadPage() {
       {/* Background Decorative Elements */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary-container/10 rounded-full blur-[120px] animate-pulse"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary-container/10 rounded-full blur-[120px] animate-pulse delay-700"></div>
-      
+
       <div className="max-w-4xl w-full z-10">
         <div className="bg-surface-container border-2 border-outline-variant p-8 md:p-12 shadow-[20px_20px_0_0_rgba(var(--primary-container-rgb),0.2)] relative">
           <div className="absolute top-0 right-0 p-4 font-label-mono text-[10px] text-outline-variant opacity-50 tracking-widest uppercase">
@@ -20,20 +20,20 @@ export default function LauncherDownloadPage() {
                 LAZPLAY_DESKTOP
               </h1>
               <p className="font-body-lg text-on-surface-variant mb-8 leading-relaxed">
-                Experience the Grid at its full potential. The LazPlay Desktop Launcher is required for high-fidelity native titles on Windows and Linux systems. 
+                Experience the Grid at its full potential. The LazPlay Desktop Launcher is required for high-fidelity native titles on Windows and Linux systems.
                 Enjoy faster downloads, cloud saves, and direct hardware access for a seamless gaming experience.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                <a 
-                  href="https://media.lazplay.tech/launcher_builds/windows_launcher_v1.0.0/LazPlay-Windows-1.0.0-Setup.exe" 
+                <a
+                  href="https://media.lazplay.tech/launcher_builds/windows_launcher_v1.0.0/LazPlay-Windows-1.0.0-Setup.zip"
                   className="bg-primary-container text-on-primary-fixed-variant px-8 py-4 font-label-mono font-bold uppercase tracking-widest hover:brightness-110 transition-all flex items-center justify-center gap-3 shadow-[8px_8px_0_0_rgba(0,0,0,0.5)] active:translate-x-1 active:translate-y-1 active:shadow-none"
                 >
                   <span className="material-symbols-outlined">download</span>
                   DOWNLOAD_WINDOWS
                 </a>
-                <a 
-                  href="https://github.com/PrinceRohithA/Lazplay/releases/latest/download/LazPlay-Linux.AppImage" 
+                <a
+                  href="https://github.com/PrinceRohithA/Lazplay/releases/latest/download/LazPlay-Linux.AppImage"
                   className="bg-surface border-2 border-primary-container text-primary-container px-8 py-4 font-label-mono font-bold uppercase tracking-widest hover:bg-primary-container/10 transition-all flex items-center justify-center gap-3"
                 >
                   <span className="material-symbols-outlined">terminal</span>
@@ -47,11 +47,11 @@ export default function LauncherDownloadPage() {
             </div>
 
             <div className="w-full md:w-64 aspect-square bg-surface border-2 border-outline-variant relative overflow-hidden group flex items-center justify-center">
-               <div className="absolute inset-0 bg-primary-container/5 animate-pulse"></div>
-               <span className="material-symbols-outlined text-[120px] text-primary-container/30 group-hover:scale-110 transition-transform duration-700">rocket_launch</span>
-               <div className="absolute bottom-4 left-0 right-0 text-center font-label-mono text-[10px] text-primary-container/50 tracking-tighter">
-                 READY_FOR_ORBIT
-               </div>
+              <div className="absolute inset-0 bg-primary-container/5 animate-pulse"></div>
+              <span className="material-symbols-outlined text-[120px] text-primary-container/30 group-hover:scale-110 transition-transform duration-700">rocket_launch</span>
+              <div className="absolute bottom-4 left-0 right-0 text-center font-label-mono text-[10px] text-primary-container/50 tracking-tighter">
+                READY_FOR_ORBIT
+              </div>
             </div>
           </div>
         </div>
