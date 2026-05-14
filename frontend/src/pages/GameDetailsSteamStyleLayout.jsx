@@ -242,6 +242,13 @@ export default function GameDetailsSteamStyleLayout() {
         </div>
         {/*  Right: Game Info Box  */}
         <div className="flex flex-col gap-4 p-4 font-label-mono text-label-mono min-w-0">
+          <div className="w-full aspect-[2/3] bg-black pixel-border overflow-hidden mb-2 hidden lg:block shadow-[0_0_15px_rgba(0,0,0,0.3)]">
+            <img 
+              src={game.coverUrl || game.heroImageUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuC9KrQ5YpZIImJ1Kd2RBfr-IeRwo5ttSkse1x9Q71QkonTieCCBK-ZICf1E_3LD5-X4q63if0DYzWnYTFcwoRStnzJtmrdqfhsIouTLhtzkMmCzw0y_69VlGf5INbG4nK77O9oKMw9FDOaqKgWuh-yDPS9BKfJsFzcuP9Ueuv1CFIMfot1RHyyIqegrc4toawTb6VxlS0VnqAc-XiUBOixMQ6hvHARoZbpH1Dlt9IHWrRbvaJaqI_mte6dOhR4-5vmnF9sG75TI6lXu"} 
+              alt="Project Cover" 
+              className="w-full h-full object-cover"
+            />
+          </div>
           <h1 className="font-headline-lg text-headline-lg text-primary-container uppercase tracking-tighter drop-shadow-[0_0_8px_rgba(57,255,20,0.6)] truncate">{game.title}</h1>
           <div className="flex-1 overflow-y-auto space-y-4">
             <div className="grid grid-cols-[100px_1fr] gap-y-2 text-[11px] uppercase">
@@ -340,8 +347,9 @@ export default function GameDetailsSteamStyleLayout() {
               {screenshots.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {screenshots.map(s => (
-                    <div key={s.id} className="pixel-border overflow-hidden bg-black aspect-video">
-                      <img src={s.url} alt="Screenshot" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                    <div key={s.id} className="pixel-border overflow-hidden bg-black aspect-video relative group/item">
+                      <img src={s.url} alt="Screenshot" className="w-full h-full object-cover group-hover/item:scale-105 transition-transform duration-500" />
+                      <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover/item:opacity-100 transition-opacity pointer-events-none" />
                     </div>
                   ))}
                 </div>
