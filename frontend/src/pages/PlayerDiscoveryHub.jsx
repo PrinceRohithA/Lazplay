@@ -10,7 +10,7 @@ export default function PlayerDiscoveryHub() {
 
   useEffect(() => {
     Promise.all([
-      gamesApi.featured({ limit: 5 }).then(r => r.data).catch(() => []),
+      gamesApi.featured({ limit: 12 }).then(r => r.data).catch(() => []),
       libraryApi.list({ limit: 6 }).then(r => r.data).catch(() => []),
     ]).then(([feat, lib]) => { setFeatured(feat); setRecentGames(lib); setLoading(false); });
   }, []);
@@ -51,6 +51,38 @@ export default function PlayerDiscoveryHub() {
           )}
         </div>
       </section>
+      
+      {/* Trending Now Section (The "Wired" Calculation) */}
+      {!loading && featured.length > 5 && (
+        <section className="space-y-4">
+          <div className="flex justify-between items-end border-b-2 border-outline-variant pb-2">
+            <h2 className="font-headline-md text-headline-md text-on-surface uppercase tracking-wide flex items-center gap-2">
+              <span className="text-primary-container">&gt;</span> TRENDING_PERFORMANCE_MATRIX
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            {featured.slice(5).map((game, i) => (
+              <Link 
+                key={game.id} 
+                to={`/game?id=${game.id}`}
+                className="group relative aspect-[3/4] bg-surface-container border border-outline-variant hover:border-primary-container transition-all overflow-hidden pixel-border"
+              >
+                <img 
+                  src={game.heroImageUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCekcLG1R4SPSVFiOQxJ1zoNzQ9hrbKDAiiYqBAeLqrLKCe_hFKR7NQ6QI_WlQHU8mWEsb-PN9p4qJydIeJrkybfFyNewcxuYsq9lrkU4QHMrVXWy7tqEYSjlwaXcvaqjHceNI8yTD15ng1V985MpmirSstKeXb1qNcl-auZLfMscpTK0UIE5icpoufxSRg1IjEHpHvNFFlS_nSBeGkIcSpscgQMmO7KTndk9Hj-yiqimxsjd1VLpKfCRSPY_VMPqKfQq8LxefHchno'} 
+                  className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all"
+                  alt={game.title}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2">
+                  <span className="font-label-mono text-[9px] text-primary-container truncate">{game.title}</span>
+                </div>
+                <div className="absolute top-1 left-1 bg-surface-container-highest/90 border border-outline-variant px-1 text-[8px] font-label-mono text-on-surface-variant">
+                  RANK_0{i+6}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-margin">
         <div className="lg:col-span-9 space-y-4">

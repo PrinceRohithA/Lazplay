@@ -19,19 +19,82 @@ export function registerGamesRoutes(router, ctx) {
 router.add('GET', '/games/featured', async (req) => {
     const user = await getOptionalUser(req);
     const limit = validateQueryInt(req.query, 'limit', { required: false, defaultValue: 6, min: 1, max: 20 });
-    const games = await prisma.game.findMany({
-      where: { status: 'PUBLISHED', featured: true },
-      take: limit,
-      orderBy: { publishedAt: 'desc' }
+    
+    // 1. Get all published games
+    const allPublished = await prisma.game.findMany({
+      where: { status: 'PUBLISHED' }
     });
-    const results = await Promise.all(games.map(async (game) => ({
+
+    if (allPublished.length === 0) return ok([]);
+
+    const firstOfMonth = new Date();
+    firstOfMonth.setDate(1);
+    firstOfMonth.setHours(0, 0, 0, 0);
+
+    // 2. Fetch metrics in parallel
+    const [activeCounts, totalCounts, recentCounts, revenueStats] = await Promise.all([
+      prisma.gamePlaySession.groupBy({
+        by: ['gameId'],
+        where: { endedAt: null },
+        _count: true
+      }),
+      prisma.gamePlaySession.groupBy({
+        by: ['gameId'],
+        _count: true
+      }),
+      prisma.gamePlaySession.groupBy({
+        by: ['gameId'],
+        where: { startedAt: { gte: firstOfMonth } },
+        _count: true
+      }),
+      prisma.order.groupBy({
+        by: ['gameId'],
+        where: { status: { in: ['PAID', 'COMPLETED'] } },
+        _sum: { amount: true }
+      })
+    ]);
+
+    // 3. Map metrics for easy lookup
+    const metricMap = {};
+    activeCounts.forEach(c => { metricMap[c.gameId] = { ...metricMap[c.gameId], active: c._count }; });
+    totalCounts.forEach(c => { metricMap[c.gameId] = { ...metricMap[c.gameId], total: c._count }; });
+    recentCounts.forEach(c => { metricMap[c.gameId] = { ...metricMap[c.gameId], recent: c._count }; });
+    revenueStats.forEach(s => { metricMap[s.gameId] = { ...metricMap[s.gameId], revenue: s._sum.amount || 0 }; });
+
+    // 4. Calculate scores
+    const scoredGames = allPublished.map(game => {
+      const stats = metricMap[game.id] || {};
+      const active = stats.active || 0;
+      const total = stats.total || 0;
+      const recent = stats.recent || 0;
+      const revenue = stats.revenue || 0;
+
+      // Score = (Active * 1000) + (Recent * 100) + (Total * 10) + (Revenue / 100)
+      // Note: Revenue/100 converts Paise to INR
+      let score = (active * 1000) + (recent * 100) + (total * 10) + (revenue / 100);
+      
+      // Manual featured flag gives a legacy boost if still present
+      if (game.featured) score += 5000;
+
+      return { game, score };
+    });
+
+    // 5. Sort and take top N
+    const topScored = scoredGames
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map(s => s.game);
+
+    const results = await Promise.all(topScored.map(async (game) => ({
       id: game.id,
       slug: game.slug,
       title: game.title,
       heroImageUrl: game.heroImageUrl,
       tagline: game.tagline,
-      isOwned: user ? await userOwnsGame(user.id, game.id) : false
+      isOwned: user ? await userOwnsGame(user.id, game.id) : false,
+      // Debug info (optional, removed for clean API)
     })));
+
     return ok(results);
   });
 
