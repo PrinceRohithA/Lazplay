@@ -2,36 +2,52 @@
   "name": "lazplay-launcher",
   "version": "1.0.0",
   "description": "LazPlay Desktop Launcher",
+  "private": true,
+  "author": "LazPlay",
+  "license": "UNLICENSED",
   "main": "dist-electron/main/index.js",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && electron-builder",
+    "electron:dev": "vite",
+    "typecheck": "tsc --noEmit",
+    "build": "npm run typecheck && vite build && npm run build:electron && electron-builder",
     "build:electron": "tsc -p electron/tsconfig.json",
-    "preview": "vite preview"
+    "build:win": "npm run build && electron-builder --win",
+    "build:linux": "npm run build && electron-builder --linux",
+    "preview": "vite preview",
+    "rebuild": "electron-rebuild -f -w better-sqlite3",
+    "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
-    "better-sqlite3": "^11.0.0",
-    "electron-log": "^5.0.0",
-    "electron-updater": "^6.1.7",
-    "lucide-react": "^0.378.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "zustand": "^4.5.2"
+    "@electron-toolkit/utils": "^3.0.0",
+    "axios": "^1.7.7",
+    "better-sqlite3": "^11.7.0",
+    "electron-log": "^5.2.4",
+    "electron-updater": "^6.3.9",
+    "fs-extra": "^11.2.0",
+    "lucide-react": "^0.453.0",
+    "p-limit": "^6.1.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "^3.23.8",
+    "zustand": "^4.5.5"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.10",
-    "@types/node": "^20.12.7",
-    "@types/react": "^18.2.66",
-    "@types/react-dom": "^18.2.22",
-    "@vitejs/plugin-react": "^4.3.4",
-    "autoprefixer": "^10.4.19",
-    "electron": "^33.2.1",
-    "electron-builder": "^25.1.8",
-    "postcss": "^8.4.38",
-    "tailwindcss": "^3.4.3",
-    "typescript": "^5.6.3",
-    "vite": "^6.0.1",
-    "vite-plugin-electron": "^0.29.0",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^22.7.4",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.3",
+    "autoprefixer": "^10.4.20",
+    "electron": "^30.5.1",
+    "electron-builder": "^24.13.3",
+    "electron-rebuild": "^3.2.9",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.13",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.10",
+    "vite-plugin-electron": "^0.28.8",
     "vite-plugin-electron-renderer": "^0.14.6"
   },
   "build": {
@@ -41,14 +57,32 @@
       "output": "release/${version}"
     },
     "files": [
-      "dist",
-      "dist-electron"
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "compression": "maximum",
+    "npmRebuild": true,
+    "nodeGypRebuild": false,
+    "buildDependenciesFromSource": false,
+    "extraMetadata": {
+      "main": "dist-electron/main/index.js"
+    },
+    "protocols": [
+      {
+        "name": "LazPlay Protocol",
+        "schemes": [
+          "lazplay"
+        ]
+      }
     ],
     "mac": {
       "target": [
         "dmg"
       ],
-      "artifactName": "${productName}-Mac-${version}-Installer.${ext}"
+      "artifactName": "${productName}-Mac-${version}-Installer.${ext}",
+      "category": "public.app-category.games"
     },
     "win": {
       "target": [
@@ -61,11 +95,28 @@
       ],
       "artifactName": "${productName}-Windows-${version}-Setup.${ext}"
     },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Game",
+      "artifactName": "${productName}-Linux-${version}.${ext}"
+    },
     "nsis": {
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "deleteAppDataOnUninstall": false
-    }
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true
+    },
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://launcher-updates.lazplay.tech/"
+      }
+    ]
   }
 }

@@ -163,7 +163,7 @@ export default function GameDetailsSteamStyleLayout() {
       {!loading && game && (
         <>
         {/*  Hero Section (Steam Style)  */}
-        <section className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-gutter bg-surface-container-low pixel-border p-2">
+        <section className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-gutter bg-surface-container-low pixel-border p-2">
         {/*  Left: Main Media  */}
         <div className="relative aspect-video xl:h-[450px] overflow-hidden bg-black pixel-border group">
           {playingGame && launchData ? (
@@ -277,7 +277,7 @@ export default function GameDetailsSteamStyleLayout() {
       </section>
 
       {/*  Horizontal Navigation Bar  */}
-      <nav className="flex bg-surface-container-high pixel-border font-label-mono text-[11px] uppercase">
+      <nav className="flex flex-wrap bg-surface-container-high pixel-border font-label-mono text-[11px] uppercase">
         <a className="px-6 py-2 bg-primary-container text-on-primary-container font-bold" href="#overview">Overview</a>
         <a className="px-6 py-2 text-on-surface-variant hover:text-primary transition-colors" href="#screenshots">Screenshots</a>
         <a className="px-6 py-2 text-on-surface-variant hover:text-primary transition-colors" href="#reviews">Reviews</a>
@@ -314,7 +314,7 @@ export default function GameDetailsSteamStyleLayout() {
               )}
 
               {screenshots.length > 0 && (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {screenshots.map(s => (
                     <div key={s.id} className="pixel-border overflow-hidden bg-black aspect-video">
                       <img src={s.url} alt="Screenshot" className="w-full h-full object-cover hover:scale-105 transition-transform" />
@@ -354,7 +354,7 @@ export default function GameDetailsSteamStyleLayout() {
               COMM_LINK_ESTABLISHED // USER_FEEDBACK
             </div>
             
-            <div className="mb-6 flex gap-4">
+            <div className="mb-6 flex flex-wrap gap-4">
               <div className="w-10 h-10 bg-surface pixel-border flex items-center justify-center shrink-0">
                 <span className="material-symbols-outlined text-on-surface-variant">face</span>
               </div>
@@ -416,8 +416,8 @@ export default function GameDetailsSteamStyleLayout() {
             </div>
           </section>
         </div>
-        <div className="space-y-6 font-label-mono">
-          <div className="terminal-bg pixel-border p-4">
+        <div className="flex flex-col md:flex-row lg:flex-col gap-6 font-label-mono">
+          <div className="terminal-bg pixel-border p-4 flex-1 min-w-[240px]">
             <div className="text-[11px] text-on-surface-variant mb-4 uppercase">Friend Activity</div>
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-surface-variant pixel-border flex items-center justify-center">
@@ -429,7 +429,7 @@ export default function GameDetailsSteamStyleLayout() {
               </div>
             </div>
           </div>
-          <div className="terminal-bg pixel-border p-4 space-y-4">
+          <div className="terminal-bg pixel-border p-4 space-y-4 flex-1 min-w-[240px]">
             <div className="border-t border-outline-variant pt-4">
               <div className="text-[11px] text-on-surface-variant mb-2 uppercase">Tags</div>
               <div className="flex flex-wrap gap-2">
