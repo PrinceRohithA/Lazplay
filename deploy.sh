@@ -7,9 +7,11 @@ cd /home/rohith/lazplay || exit
 echo "Pulling latest code..."
 git pull origin main
 
-echo "Installing backend dependencies..."
+echo "Installing backend dependencies & generating client..."
 cd backend || exit
 npm install
+npx prisma generate
+npm run db:sync
 
 echo "Restarting backend..."
 pm2 restart lazplay-backend || pm2 start src/server.js --name lazplay-backend

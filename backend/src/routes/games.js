@@ -17,6 +17,7 @@ export function registerGamesRoutes(router, ctx) {
   } = ctx;
 
 router.add('GET', '/games/featured', async (req) => {
+  try {
     const user = await getOptionalUser(req);
     const limit = validateQueryInt(req.query, 'limit', { required: false, defaultValue: 6, min: 1, max: 20 });
     
@@ -36,16 +37,16 @@ router.add('GET', '/games/featured', async (req) => {
       prisma.gamePlaySession.groupBy({
         by: ['gameId'],
         where: { endedAt: null },
-        _count: true
+        _count: { _all: true }
       }),
       prisma.gamePlaySession.groupBy({
         by: ['gameId'],
-        _count: true
+        _count: { _all: true }
       }),
       prisma.gamePlaySession.groupBy({
         by: ['gameId'],
         where: { startedAt: { gte: firstOfMonth } },
-        _count: true
+        _count: { _all: true }
       }),
       prisma.order.groupBy({
         by: ['gameId'],
@@ -56,24 +57,23 @@ router.add('GET', '/games/featured', async (req) => {
 
     // 3. Map metrics for easy lookup
     const metricMap = {};
-    activeCounts.forEach(c => { metricMap[c.gameId] = { ...metricMap[c.gameId], active: c._count }; });
-    totalCounts.forEach(c => { metricMap[c.gameId] = { ...metricMap[c.gameId], total: c._count }; });
-    recentCounts.forEach(c => { metricMap[c.gameId] = { ...metricMap[c.gameId], recent: c._count }; });
-    revenueStats.forEach(s => { metricMap[s.gameId] = { ...metricMap[s.gameId], revenue: s._sum.amount || 0 }; });
+    const getCount = (c) => typeof c._count === 'number' ? c._count : (c._count?._all || 0);
+
+    activeCounts.forEach(c => { metricMap[c.gameId] = { ...metricMap[c.gameId], active: getCount(c) }; });
+    totalCounts.forEach(c => { metricMap[c.gameId] = { ...metricMap[c.gameId], total: getCount(c) }; });
+    recentCounts.forEach(c => { metricMap[c.gameId] = { ...metricMap[c.gameId], recent: getCount(c) }; });
+    revenueStats.forEach(s => { metricMap[s.gameId] = { ...metricMap[s.gameId], revenue: s._sum?.amount || 0 }; });
 
     // 4. Calculate scores
     const scoredGames = allPublished.map(game => {
       const stats = metricMap[game.id] || {};
-      const active = stats.active || 0;
-      const total = stats.total || 0;
-      const recent = stats.recent || 0;
-      const revenue = stats.revenue || 0;
+      const active = Number(stats.active || 0);
+      const total = Number(stats.total || 0);
+      const recent = Number(stats.recent || 0);
+      const revenue = Number(stats.revenue || 0);
 
       // Score = (Active * 1000) + (Recent * 100) + (Total * 10) + (Revenue / 100)
-      // Note: Revenue/100 converts Paise to INR
       let score = (active * 1000) + (recent * 100) + (total * 10) + (revenue / 100);
-      
-      // Manual featured flag gives a legacy boost if still present
       if (game.featured) score += 5000;
 
       return { game, score };
@@ -92,11 +92,22 @@ router.add('GET', '/games/featured', async (req) => {
       heroImageUrl: game.heroImageUrl,
       tagline: game.tagline,
       isOwned: user ? await userOwnsGame(user.id, game.id) : false,
-      // Debug info (optional, removed for clean API)
     })));
 
     return ok(results);
-  });
+  } catch (error) {
+    console.error('[featured-games-error]', error);
+    // If the ranking fails, fall back to simple featured list to avoid 500
+    const fallback = await prisma.game.findMany({
+      where: { status: 'PUBLISHED' },
+      orderBy: { createdAt: 'desc' },
+      take: 6
+    });
+    return ok(fallback.map(g => ({
+      id: g.id, slug: g.slug, title: g.title, heroImageUrl: g.heroImageUrl, tagline: g.tagline
+    })));
+  }
+});
 
 router.add('GET', '/games', async (req) => {
     const user = await getOptionalUser(req);
