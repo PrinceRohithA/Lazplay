@@ -6,11 +6,14 @@ export default function Library() {
   const { games } = useLauncherStore();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
+  const [libraryFilter, setLibraryFilter] = useState<"all" | "installed">("all");
 
   const gameList = Object.values(games);
-  const filteredGames = gameList.filter(game => 
-    game.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredGames = gameList.filter(game => {
+    const matchesSearch = game.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = libraryFilter === "all" || game.status === "installed";
+    return matchesSearch && matchesFilter;
+  });
 
   const handleAction = (game: any) => {
     if (!window.lazplayAPI) return;
@@ -57,10 +60,18 @@ export default function Library() {
 
         {/* Filters/Tabs */}
         <div className="flex gap-8 border-b border-slate-800 text-sm font-medium text-slate-400">
-          <button className="pb-3 border-b-2 border-brand-500 text-white">All Games</button>
-          <button className="pb-3 border-b-2 border-transparent hover:text-slate-200">Installed</button>
-          <button className="pb-3 border-b-2 border-transparent hover:text-slate-200">Recent</button>
-          <button className="pb-3 border-b-2 border-transparent hover:text-slate-200">Collections</button>
+          <button 
+            onClick={() => setLibraryFilter("all")}
+            className={`pb-3 border-b-2 transition-colors ${libraryFilter === "all" ? "border-brand-500 text-white" : "border-transparent hover:text-slate-200"}`}
+          >
+            All Games
+          </button>
+          <button 
+            onClick={() => setLibraryFilter("installed")}
+            className={`pb-3 border-b-2 transition-colors ${libraryFilter === "installed" ? "border-brand-500 text-white" : "border-transparent hover:text-slate-200"}`}
+          >
+            Installed
+          </button>
         </div>
       </div>
 
