@@ -88,7 +88,8 @@ router.add('GET', '/developer/games', async (req) => {
 
     if (!profile) throw new HttpError(404, 'PROFILE_NOT_FOUND', 'Developer profile not found');
     const games = await prisma.game.findMany({ where: { developerId: profile.id }, orderBy: { createdAt: 'desc' } });
-    return ok(games);
+    const mapped = await Promise.all(games.map(g => publicGame(g, user)));
+    return ok(mapped);
   });
 
 router.add('POST', '/developer/games', async (req) => {
@@ -143,12 +144,13 @@ router.add('GET', '/developer/games/:gameId', async (req) => {
     await assertDeveloperOwnsGame(user, game);
 
     // Fetch media and builds separately to avoid complex join hangs
-    const [media, builds] = await Promise.all([
+    const [media, builds, mapped] = await Promise.all([
       prisma.gameMedia.findMany({ where: { gameId: game.id } }),
-      prisma.gameBuild.findMany({ where: { gameId: game.id }, orderBy: { createdAt: 'desc' }, take: 5 })
+      prisma.gameBuild.findMany({ where: { gameId: game.id }, orderBy: { createdAt: 'desc' }, take: 5 }),
+      publicGame(game, user)
     ]);
 
-    return ok({ ...game, media, builds });
+    return ok({ ...mapped, media, builds });
   });
 
 router.add('PATCH', '/developer/games/:gameId', async (req) => {

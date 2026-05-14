@@ -496,18 +496,32 @@ async function publicGame(game, user = null) {
   const developer = await gameDeveloper(game);
   const reviews = await prisma.gameReview.findMany({ where: { gameId: game.id } });
   const rating = reviews.length === 0 ? 0 : Math.round((reviews.reduce((t, r) => t + r.rating, 0) / reviews.length) * 10) / 10;
-  const screenshots = await prisma.gameMedia.findMany({ where: { gameId: game.id, type: 'IMAGE' } });
+  
+  const resolveUrl = (url, keyHint = null) => {
+    if (url && (url.startsWith('http') || url.startsWith('https'))) return url;
+    const key = keyHint || url; // Fallback to using url field as key if no keyHint provided
+    if (key && key.includes('/')) return publicObjectUrl(key, resolveBucketForKey(key));
+    return url || null;
+  };
+
+  const screenshots = await prisma.gameMedia.findMany({ where: { gameId: game.id, type: 'IMAGE' }, orderBy: { sortOrder: 'asc' } });
   const isOwned = user ? await userOwnsGame(user.id, game.id) : false;
   const isWishlisted = user ? !!(await prisma.wishlistItem.findFirst({ where: { userId: user.id, gameId: game.id } })) : false;
+
   return {
     id: game.id, slug: game.slug, title: game.title,
-    description: game.description, price: game.price, currency: game.currency, priceType: game.priceType,
+    description: game.description, tagline: game.tagline,
+    price: game.price, currency: game.currency, priceType: game.priceType,
     releaseDate: game.releaseDate,
     developer: developer ? { id: developer.id, displayName: developer.displayName } : null,
     publisher: game.publisher, genres: game.genres, tags: game.tags, platforms: game.platforms,
-    coverUrl: game.coverUrl, heroImageUrl: game.heroImageUrl, trailerUrl: game.trailerUrl,
-    screenshots: screenshots.map((m) => m.url),
+    coverUrl: resolveUrl(game.coverUrl, game.coverObjectKey),
+    heroImageUrl: resolveUrl(game.heroImageUrl),
+    heroBannerUrl: resolveUrl(game.heroBannerUrl),
+    trailerUrl: resolveUrl(game.trailerUrl, game.trailerObjectKey),
+    screenshots: screenshots.map((m) => resolveUrl(m.url)).filter(Boolean),
     version: game.version || null,
+    hardwareSpecs: game.hardwareSpecs,
     systemRequirements: game.systemRequirements,
     isOwned, isWishlisted, rating, reviewCount: reviews.length,
     status: game.status, publishedAt: game.publishedAt, createdAt: game.createdAt, updatedAt: game.updatedAt,
