@@ -179,7 +179,7 @@ export default function GameDetailsSteamStyleLayout() {
   const recSpecs = sysReqs.recommended || {};
 
   return (
-    <div className="flex flex-col min-w-0 p-gutter md:p-margin gap-6">
+    <div className="flex flex-col min-w-0 p-4 md:p-margin gap-4 md:gap-6">
       {loading && <div className="text-center py-24 font-label-mono text-primary-container animate-pulse">LOADING_GAME_DATA...</div>}
       {error && <div className="p-4 border border-error text-error font-label-mono bg-error/10 pixel-border">&gt; ERROR: {error}</div>}
       {successMsg && <div className="p-4 border border-primary-container text-primary-container font-label-mono bg-primary-container/10 pixel-border">&gt; SUCCESS: {successMsg}</div>}
@@ -241,7 +241,7 @@ export default function GameDetailsSteamStyleLayout() {
           )}
         </div>
         {/*  Right: Game Info Box  */}
-        <div className="flex flex-col gap-4 p-4 font-label-mono text-label-mono min-w-0">
+        <div className="flex flex-col gap-4 p-2 md:p-4 font-label-mono text-label-mono min-w-0">
           <div className="w-full aspect-[2/3] bg-black pixel-border overflow-hidden mb-2 hidden lg:block shadow-[0_0_15px_rgba(0,0,0,0.3)]">
             <img 
               src={game.coverUrl || game.heroImageUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuC9KrQ5YpZIImJ1Kd2RBfr-IeRwo5ttSkse1x9Q71QkonTieCCBK-ZICf1E_3LD5-X4q63if0DYzWnYTFcwoRStnzJtmrdqfhsIouTLhtzkMmCzw0y_69VlGf5INbG4nK77O9oKMw9FDOaqKgWuh-yDPS9BKfJsFzcuP9Ueuv1CFIMfot1RHyyIqegrc4toawTb6VxlS0VnqAc-XiUBOixMQ6hvHARoZbpH1Dlt9IHWrRbvaJaqI_mte6dOhR4-5vmnF9sG75TI6lXu"} 
@@ -249,7 +249,7 @@ export default function GameDetailsSteamStyleLayout() {
               className="w-full h-full object-cover"
             />
           </div>
-          <h1 className="font-headline-lg text-headline-lg text-primary-container uppercase tracking-tighter drop-shadow-[0_0_8px_rgba(57,255,20,0.6)] truncate">{game.title}</h1>
+          <h1 className="font-headline-md md:font-headline-lg text-headline-sm md:text-headline-lg text-primary-container uppercase tracking-tighter drop-shadow-[0_0_8px_rgba(57,255,20,0.6)] truncate">{game.title}</h1>
           <div className="flex-1 overflow-y-auto space-y-4">
             <div className="grid grid-cols-[100px_1fr] gap-y-2 text-[11px] uppercase">
               <span className="text-on-surface-variant">RECENT_REVIEWS:</span>
@@ -308,10 +308,10 @@ export default function GameDetailsSteamStyleLayout() {
       </section>
 
       {/*  Horizontal Navigation Bar  */}
-      <nav className="flex flex-wrap bg-surface-container-high pixel-border font-label-mono text-[11px] uppercase">
-        <a className="px-6 py-2 bg-primary-container text-on-primary-container font-bold" href="#overview">Overview</a>
-        <a className="px-6 py-2 text-on-surface-variant hover:text-primary transition-colors" href="#screenshots">Screenshots</a>
-        <a className="px-6 py-2 text-on-surface-variant hover:text-primary transition-colors" href="#reviews">Reviews</a>
+      <nav className="flex overflow-x-auto no-scrollbar bg-surface-container-high pixel-border font-label-mono text-[11px] uppercase sticky top-16 z-30">
+        <a className="px-6 py-3 bg-primary-container text-on-primary-container font-bold whitespace-nowrap" href="#overview">Overview</a>
+        <a className="px-6 py-3 text-on-surface-variant hover:text-primary transition-colors border-l border-outline-variant/30 whitespace-nowrap" href="#screenshots">Screenshots</a>
+        <a className="px-6 py-3 text-on-surface-variant hover:text-primary transition-colors border-l border-outline-variant/30 whitespace-nowrap" href="#reviews">Reviews</a>
       </nav>
 
       {/*  Main Content Area: Two Column  */}
