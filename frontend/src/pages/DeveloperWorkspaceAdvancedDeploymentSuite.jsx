@@ -433,6 +433,51 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
       );
   }
 
+  // If not logged in, show login prompt
+  if (!user) {
+    return (
+      <div className="max-w-container-max mx-auto p-gutter md:p-margin flex flex-col items-center justify-center min-h-[70vh] gap-8 bg-background">
+        <div className="text-center max-w-2xl">
+          <h1 className="font-headline-lg text-headline-lg text-secondary-container uppercase mb-4 animate-pulse glow-primary-text">
+            ACCESS_DENIED
+          </h1>
+          <p className="font-body-md text-on-surface-variant mb-8 leading-relaxed">
+            Developer protocols require active authentication. 
+            Initialize your profile to access the LazPlay deployment suite.
+          </p>
+          <Link 
+            to="/login"
+            className="bg-secondary-container text-on-secondary px-8 py-4 font-label-mono font-bold uppercase tracking-widest hover:bg-transparent hover:text-secondary-container border-2 border-secondary-container transition-all shadow-[8px_8px_0_0_#5b005b]"
+          >
+            INITIALIZE_AUTH_SEQUENCE
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // If not a developer, redirect to workspace to register
+  if (!user.roles.includes('DEVELOPER') && !user.roles.includes('ADMIN')) {
+    return (
+      <div className="max-w-container-max mx-auto p-gutter md:p-margin flex flex-col items-center justify-center min-h-[70vh] gap-8 bg-background">
+        <div className="text-center max-w-2xl">
+          <h1 className="font-headline-lg text-headline-lg text-secondary-container uppercase mb-4 animate-pulse glow-primary-text">
+            PROFILE_REQUIRED
+          </h1>
+          <p className="font-body-md text-on-surface-variant mb-8 leading-relaxed">
+            You must initialize a developer profile before accessing the deployment suite.
+          </p>
+          <Link 
+            to="/developer"
+            className="bg-secondary-container text-on-secondary px-8 py-4 font-label-mono font-bold uppercase tracking-widest hover:bg-transparent hover:text-secondary-container border-2 border-secondary-container transition-all shadow-[8px_8px_0_0_#5b005b]"
+          >
+            RETURN_TO_WORKSPACE
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-gutter min-h-screen flex flex-col gap-gutter bg-background pb-12">
       <style>{`

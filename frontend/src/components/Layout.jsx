@@ -17,7 +17,7 @@ export default function Layout() {
       { name: 'START', path: '/', icon: 'play_arrow' },
       { name: 'GAMES', path: '/games', icon: 'sports_esports' },
       { name: 'LIBRARY', path: '/library', icon: 'inventory_2' },
-      { name: 'DEV_CONSOLE', path: '/developer', icon: 'terminal', roles: ['DEVELOPER', 'ADMIN'] },
+      { name: 'DEV_CONSOLE', path: '/developer', icon: 'terminal' },
       { name: 'ADMIN', path: '/admin', icon: 'shield_person', roles: ['ADMIN'] },
       { name: 'OPTIONS', path: '/options', icon: 'settings' },
     ];

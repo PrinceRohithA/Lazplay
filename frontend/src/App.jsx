@@ -10,6 +10,7 @@ import GameLibraryCyberEdition from './pages/GameLibraryCyberEdition';
 import GamesDiscoveryRetroEdition from './pages/GamesDiscoveryRetroEdition';
 import DeveloperWorkspaceAdvancedDeploymentSuite from './pages/DeveloperWorkspaceAdvancedDeploymentSuite';
 import Options from './pages/Options';
+import LauncherDownloadPage from './pages/LauncherDownloadPage';
 import Layout from './components/Layout';
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
           <Route path="games" element={<GamesDiscoveryRetroEdition />} />
           <Route path="options" element={<Options />} />
           <Route path="deployment" element={<DeveloperWorkspaceAdvancedDeploymentSuite />} />
+          <Route path="download-launcher" element={<LauncherDownloadPage />} />
         </Route>
       </Routes>
     </Router>
