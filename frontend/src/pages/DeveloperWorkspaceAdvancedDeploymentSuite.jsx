@@ -12,11 +12,9 @@ const GENRES = [
 
 const PLATFORMS = [
   { id: 'WINDOWS', label: 'WINDOWS' },
-  { id: 'VR', label: 'VR' },
-  { id: 'WEB', label: 'WEB' },
   { id: 'LINUX', label: 'LINUX' },
   { id: 'ANDROID', label: 'ANDROID' },
-  { id: 'IOS', label: 'IOS' }
+  { id: 'WEB', label: 'WEB' }
 ];
 
 export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
@@ -65,6 +63,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
   const [existingMedia, setExistingMedia] = useState([]);
   const [existingBuilds, setExistingBuilds] = useState([]);
   const [files, setFiles] = useState({
+    COVER_IMAGE: null,
     HERO_BANNER: null,
     SCREENSHOTS: [],
     VIDEO_TRAILER: null,
@@ -72,6 +71,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
   });
 
   const fileInputRefs = {
+    COVER_IMAGE: useRef(null),
     HERO_BANNER: useRef(null),
     SCREENSHOTS: useRef(null),
     VIDEO_TRAILER: useRef(null),
@@ -149,6 +149,13 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     const selectedFiles = Array.from(e.target.files);
     if (!selectedFiles.length) return;
 
+    if (type === 'COVER_IMAGE') {
+      const existingCover = existingMedia.filter((m) => m.alt === 'COVER_IMAGE');
+      if (existingCover.length > 0 && !window.confirm('COVER_IMAGE_ALREADY_EXISTS. REPLACE_IT? THIS WILL DELETE THE CURRENT ONE.')) {
+        return;
+      }
+    }
+
     if (type === 'HERO_BANNER') {
       const existingHero = existingMedia.filter((m) => m.alt === 'HERO_BANNER');
       if (existingHero.length > 0 && !window.confirm('HERO_BANNER_ALREADY_EXISTS. REPLACE_IT? THIS WILL DELETE THE CURRENT ONE.')) {
@@ -213,6 +220,14 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     const publicUrl = presign.data.publicUrl || presign.data.uploadUrl.split('?')[0];
     return { url: publicUrl, objectKey: presign.data.objectKey };
   }, [uploadBuildArtifact]);
+
+  const replaceCoverImageIfNeeded = useCallback(async () => {
+    const existingCover = existingMedia.filter((m) => m.alt === 'COVER_IMAGE');
+    if (existingCover.length === 0) return;
+    for (const media of existingCover) {
+      await devApi.deleteMedia(gameIdParam, media.id);
+    }
+  }, [existingMedia, gameIdParam]);
 
   const replaceHeroBannerIfNeeded = useCallback(async () => {
     const existingHero = existingMedia.filter((m) => m.alt === 'HERO_BANNER');
@@ -339,6 +354,15 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
       }
 
       // 2. Upload Assets
+      if (files.COVER_IMAGE) {
+        await replaceCoverImageIfNeeded();
+        addLog('STEP_01A: TRANSMITTING_COVER_IMAGE...');
+        const cover = await uploadMediaFile(files.COVER_IMAGE, 'GAME_MEDIA', files.COVER_IMAGE.name);
+        await devApi.updateGame(gameId, { coverUrl: cover.url });
+        await devApi.addMedia(gameId, { type: 'IMAGE', url: cover.url, alt: 'COVER_IMAGE' });
+        addLog('SUCCESS: COVER_IMAGE_UPLOADED');
+      }
+
       if (files.HERO_BANNER) {
         addLog('STEP_02: TRANSMITTING_HERO_ASSETS...');
         const hero = await uploadMediaFile(files.HERO_BANNER, 'GAME_MEDIA', files.HERO_BANNER.name);

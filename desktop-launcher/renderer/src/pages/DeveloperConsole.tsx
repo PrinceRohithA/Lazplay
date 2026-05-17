@@ -57,7 +57,7 @@ const INITIAL_FORM: GameForm = {
 };
 
 const GENRES = ["ACTION", "ADVENTURE", "RPG", "STRATEGY", "CASUAL", "ARCADE", "SHOOTER", "RACING"];
-const HARDWARE_OPTIONS = ["WINDOWS", "MACOS", "LINUX", "STEAMDECK"];
+const HARDWARE_OPTIONS = ["WINDOWS", "LINUX", "ANDROID", "WEB"];
 
 export default function DeveloperConsole() {
   const [token, setToken] = useState<string | null>(null);
@@ -359,6 +359,14 @@ export default function DeveloperConsole() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         addLog("COVER_ASSET_REGISTERED ✓");
+
+        addLog("SYNCHRONIZING_DIRECT_COVER_URL_FIELD...");
+        await axios.patch(`https://play.lazplay.tech/api/v1/developer/games/${gameId}`, {
+          coverUrl: publicUrl
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        addLog("DIRECT_COVER_URL_SYNCHRONIZED ✓");
         setUploadProgress(0);
       }
 

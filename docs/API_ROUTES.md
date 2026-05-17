@@ -9,7 +9,7 @@ This document is the backend route contract for LazPlay, a web-based game hostin
 - Razorpay payments
 - Realtime deployment and game instance logs
 
-Recommended backend framework: **NestJS with TypeScript**.
+Recommended backend framework: **NestJS with JavaScript**.
 
 Recommended backend stack:
 
