@@ -161,7 +161,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     const selectedFiles = Array.from(e.target.files);
     if (!selectedFiles.length) return;
 
-    if (type.startsWith('GAME_BINARIES_')) {
+    if (type === 'GAME_BINARIES' || type.startsWith('GAME_BINARIES_')) {
       const file = selectedFiles[0];
       const maxSizeBytes = 500 * 1024 * 1024; // 500MB
       if (file.size > maxSizeBytes) {

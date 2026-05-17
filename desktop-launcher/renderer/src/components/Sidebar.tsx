@@ -29,95 +29,102 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[999] flex items-center bg-slate-950/80 backdrop-blur-md px-3 py-1.5 border border-slate-800/80 rounded-full shadow-[0_12px_24px_-6px_rgba(0,0,0,0.9),0_0_20px_rgba(var(--brand-rgb),0.02)] gap-2.5 select-none animate-in fade-in slide-in-from-bottom-5 duration-300">
+    <div className="fixed top-0 left-0 right-0 w-full h-16 z-[999] flex items-center justify-between bg-slate-950/90 backdrop-blur-md px-6 border-b border-slate-800/80 shadow-[0_4px_20px_rgba(0,0,0,0.4)] select-none animate-in fade-in slide-in-from-top duration-300">
       
-      {/* Brand Icon */}
-      <div className="flex items-center justify-center pr-2 border-r border-slate-850">
-        <Gamepad2
-          size={15}
-          className="text-brand-500 drop-shadow-[0_0_6px_rgba(var(--brand-rgb),0.4)] animate-pulse"
-        />
+      {/* Left Section: Brand Logo + Navigation Tabs */}
+      <div className="flex items-center gap-6">
+        {/* Brand Icon */}
+        <div className="flex items-center justify-center pr-5 border-r border-slate-800/80 h-8">
+          <Gamepad2
+            size={18}
+            className="text-brand-500 drop-shadow-[0_0_6px_rgba(var(--brand-rgb),0.4)] animate-pulse"
+          />
+          <span className="ml-2.5 text-xs font-black tracking-widest text-slate-200">
+            LAZPLAY OS
+          </span>
+        </div>
+
+        {/* Navigation Tabs (Sleek Steam-Style Upper-Case Text Tabs) */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              setActivePage("library");
+              setShowDownloads(false);
+            }}
+            className={`px-3 py-1.5 rounded-md text-[10px] font-black tracking-widest uppercase transition-all duration-200 flex items-center gap-2 ${
+              activePage === "library"
+                ? "bg-brand-500/10 text-brand-500 border border-brand-500/30 shadow-[0_0_12px_rgba(var(--brand-rgb),0.15)]"
+                : "border border-transparent text-slate-400 hover:text-slate-100 hover:bg-slate-800/40"
+            }`}
+          >
+            <Library size={13} />
+            LIBRARY
+          </button>
+
+          <button
+            onClick={() => {
+              setActivePage("store");
+              setShowDownloads(false);
+            }}
+            className={`px-3 py-1.5 rounded-md text-[10px] font-black tracking-widest uppercase transition-all duration-200 flex items-center gap-2 ${
+              activePage === "store"
+                ? "bg-brand-500/10 text-brand-500 border border-brand-500/30 shadow-[0_0_12px_rgba(var(--brand-rgb),0.15)]"
+                : "border border-transparent text-slate-400 hover:text-slate-100 hover:bg-slate-800/40"
+            }`}
+          >
+            <LayoutGrid size={13} />
+            STOREFRONT
+          </button>
+
+          <button
+            onClick={() => {
+              setActivePage("developer");
+              setShowDownloads(false);
+            }}
+            className={`px-3 py-1.5 rounded-md text-[10px] font-black tracking-widest uppercase transition-all duration-200 flex items-center gap-2 ${
+              activePage === "developer"
+                ? "bg-brand-500/10 text-brand-500 border border-brand-500/30 shadow-[0_0_12px_rgba(var(--brand-rgb),0.15)]"
+                : "border border-transparent text-slate-400 hover:text-slate-100 hover:bg-slate-800/40"
+            }`}
+          >
+            <Terminal size={13} />
+            CREATOR
+          </button>
+
+          <button
+            onClick={() => {
+              setActivePage("settings");
+              setShowDownloads(false);
+            }}
+            className={`px-3 py-1.5 rounded-md text-[10px] font-black tracking-widest uppercase transition-all duration-200 flex items-center gap-2 ${
+              activePage === "settings"
+                ? "bg-brand-500/10 text-brand-500 border border-brand-500/30 shadow-[0_0_12px_rgba(var(--brand-rgb),0.15)]"
+                : "border border-transparent text-slate-400 hover:text-slate-100 hover:bg-slate-800/40"
+            }`}
+          >
+            <Settings size={13} />
+            SETTINGS
+          </button>
+        </div>
       </div>
 
-      {/* Navigation Tabs (Sleek Ultra-Compact Icons with Tooltips) */}
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => {
-            setActivePage("library");
-            setShowDownloads(false);
-          }}
-          title="Library"
-          className={`p-1.5 rounded-full transition-all duration-200 active:scale-90 hover:scale-110 ${
-            activePage === "library"
-              ? "bg-brand-500/10 text-brand-500 border border-brand-500/30 shadow-[0_0_10px_rgba(var(--brand-rgb),0.2)]"
-              : "border border-transparent text-slate-400 hover:text-slate-100 hover:bg-slate-800/40"
-          }`}
-        >
-          <Library size={15} />
-        </button>
-
-        <button
-          onClick={() => {
-            setActivePage("store");
-            setShowDownloads(false);
-          }}
-          title="Storefront"
-          className={`p-1.5 rounded-full transition-all duration-200 active:scale-90 hover:scale-110 ${
-            activePage === "store"
-              ? "bg-brand-500/10 text-brand-500 border border-brand-500/30 shadow-[0_0_10px_rgba(var(--brand-rgb),0.2)]"
-              : "border border-transparent text-slate-400 hover:text-slate-100 hover:bg-slate-800/40"
-          }`}
-        >
-          <LayoutGrid size={15} />
-        </button>
-
-        <button
-          onClick={() => {
-            setActivePage("developer");
-            setShowDownloads(false);
-          }}
-          title="Developer Console"
-          className={`p-1.5 rounded-full transition-all duration-200 active:scale-90 hover:scale-110 ${
-            activePage === "developer"
-              ? "bg-brand-500/10 text-brand-500 border border-brand-500/30 shadow-[0_0_10px_rgba(var(--brand-rgb),0.2)]"
-              : "border border-transparent text-slate-400 hover:text-slate-100 hover:bg-slate-800/40"
-          }`}
-        >
-          <Terminal size={15} />
-        </button>
-
-        <button
-          onClick={() => {
-            setActivePage("settings");
-            setShowDownloads(false);
-          }}
-          title="Settings"
-          className={`p-1.5 rounded-full transition-all duration-200 active:scale-90 hover:scale-110 ${
-            activePage === "settings"
-              ? "bg-brand-500/10 text-brand-500 border border-brand-500/30 shadow-[0_0_10px_rgba(var(--brand-rgb),0.2)]"
-              : "border border-transparent text-slate-400 hover:text-slate-100 hover:bg-slate-800/40"
-          }`}
-        >
-          <Settings size={15} />
-        </button>
-      </div>
-
-      {/* Extra Utilities */}
-      <div className="flex items-center gap-2 pl-2 border-l border-slate-850 relative">
+      {/* Right Section: Downloads Queue & Profile Actions */}
+      <div className="flex items-center gap-3 relative">
         
         {/* Active Downloads Toggle Button */}
         {activeDownloads.length > 0 && (
           <button
             onClick={() => setShowDownloads(!showDownloads)}
             title="Download Queue"
-            className={`relative p-1.5 rounded-full border transition-all hover:scale-110 active:scale-90 ${
+            className={`relative px-3 py-1.5 rounded-md border text-[10px] font-black tracking-widest transition-all flex items-center gap-2 hover:scale-105 active:scale-95 ${
               showDownloads
                 ? "bg-brand-500/10 border-brand-500 text-brand-500"
                 : "bg-slate-900 border-slate-800 text-slate-400 hover:text-white"
             }`}
           >
-            <Download size={14} className={activeDownloads.some(d => d.status === "downloading") ? "animate-bounce" : ""} />
-            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-brand-500 text-slate-950 font-black text-[8px] flex items-center justify-center animate-pulse">
+            <Download size={13} className={activeDownloads.some(d => d.status === "downloading") ? "animate-bounce" : ""} />
+            DOWNLOADING
+            <span className="w-3.5 h-3.5 rounded bg-brand-500 text-slate-950 font-black text-[9px] flex items-center justify-center animate-pulse">
               {activeDownloads.length}
             </span>
           </button>
@@ -125,7 +132,7 @@ export default function Sidebar() {
 
         {/* Downloads Floating Popover Panel */}
         {showDownloads && activeDownloads.length > 0 && (
-          <div className="absolute bottom-12 right-0 w-80 bg-slate-950/95 border border-slate-800/80 rounded-xl p-4 shadow-2xl space-y-3 z-[100] animate-in fade-in slide-in-from-bottom-2 duration-200 backdrop-blur">
+          <div className="absolute top-12 right-0 w-80 bg-slate-950/95 border border-slate-800/80 rounded-xl p-4 shadow-2xl space-y-3 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 backdrop-blur">
             <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 pb-1 border-b border-slate-800/80">
               <Download size={12} />
               _ACTIVE_DOWNLOADS_QUEUE
@@ -175,9 +182,10 @@ export default function Sidebar() {
         <button
           onClick={logout}
           title="Logout"
-          className="p-1.5 bg-red-950/20 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 text-red-400 hover:text-white rounded-full transition-all duration-200 active:scale-90 hover:scale-110"
+          className="p-1.5 bg-red-950/20 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 text-red-400 hover:text-white rounded-md transition-all duration-200 active:scale-95 hover:scale-105 flex items-center gap-1.5 text-[9px] font-black tracking-widest"
         >
-          <LogOut size={14} />
+          <LogOut size={13} />
+          LOGOUT
         </button>
       </div>
 
