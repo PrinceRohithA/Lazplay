@@ -1,11 +1,15 @@
 import crypto from 'node:crypto';
 import path from 'node:path';
+import fs from 'node:fs';
+import os from 'node:os';
 import Razorpay from 'razorpay';
 import AdmZip from 'adm-zip';
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, CopyObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { prisma } from './prisma.js';
 import { ValidationError, validateBody, validateQueryInt, validationFailure, validators } from './validation.js';
+import { processBuildDirectory } from '@lazplay/distribution';
+import { publishBuildManifest } from './services/distribution.js';
 
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerGamesRoutes } from './routes/games.js';
@@ -787,6 +791,100 @@ async function uploadRuntimeObject(objectKey, data, contentType, bucket = getPri
 async function scanAndPrepareBuild(build, game) {
   const objectKey = build.artifactObjectKey;
   if (!objectKey) throw new HttpError(409, 'BUILD_ARTIFACT_MISSING', 'Build artifact is missing');
+
+  // If the build was already chunked client-side, we bypass zip extraction and server chunking
+  if (build.distributionType === 'CHUNKED') {
+    return prisma.gameBuild.update({
+      where: { id: build.id },
+      data: {
+        status: 'READY',
+        scanStatus: 'PASSED',
+        scanMessage: 'Chunked build verified and passed.'
+      }
+    });
+  }
+
+  // Server-Side Native Chunking Pipeline for Windows/Linux uploads on web
+  const isNative = ['WINDOWS', 'LINUX'].includes(build.platform?.toUpperCase());
+  if (isNative && objectKey.endsWith('.zip')) {
+    console.log('[backend-chunking-pipeline-triggered]', {
+      buildId: build.id,
+      platform: build.platform,
+      objectKey
+    });
+
+    const bucket = getPrivateGameBucket();
+    assertR2Config(bucket);
+
+    // 1. Download ZIP from Cloudflare R2
+    let archiveBuffer;
+    try {
+      const response = await r2.send(new GetObjectCommand({ Bucket: bucket, Key: objectKey }));
+      const bodyStream = response.Body;
+      const chunks = [];
+      for await (const chunk of bodyStream) {
+        chunks.push(Buffer.from(chunk));
+      }
+      archiveBuffer = Buffer.concat(chunks);
+    } catch (error) {
+      console.error('[backend-chunk-download-failed]', { buildId: build.id, objectKey, message: error?.message });
+      throw new HttpError(502, 'BUILD_DOWNLOAD_FAILED', 'Failed to download build artifact for backend chunking');
+    }
+
+    // 2. Open ZIP archive
+    let zip;
+    try {
+      zip = new AdmZip(archiveBuffer);
+    } catch {
+      throw new HttpError(400, 'BUILD_ARCHIVE_INVALID', 'Build archive is invalid or not a zip file');
+    }
+
+    // 3. Create a unique temp folder inside the standard OS tmpdir
+    const randomId = crypto.randomBytes(16).toString('hex');
+    const tempDir = path.join(os.tmpdir(), `lazplay_build_${build.id}_${randomId}`);
+    await fs.promises.mkdir(tempDir, { recursive: true });
+
+    try {
+      // 4. Extract all files to tempDir
+      zip.extractAllTo(tempDir, true);
+
+      // 5. Run the high-performance local chunking, ZSTD compression & BLAKE3 hashing pipeline
+      const { manifest, chunks: chunkMap } = await processBuildDirectory(tempDir, {
+        version: build.version || '1.0.0',
+        entrypoint: build.entrypoint || 'game.exe',
+        platform: build.platform
+      });
+
+      // 6. Upload generated chunks to Cloudflare R2
+      for (const [hash, chunkInfo] of chunkMap.entries()) {
+        const chunkKey = `chunks/${hash}`;
+        // Delta Deduplication: Check if chunk already exists to prevent duplicate S3 puts
+        const chunkExists = await prisma.contentChunk.findUnique({ where: { hash } });
+        if (!chunkExists) {
+          console.log('[backend-chunking-uploading]', { hash, size: chunkInfo.size });
+          await uploadRuntimeObject(chunkKey, chunkInfo.data, 'application/octet-stream', bucket);
+        }
+      }
+
+      // 7. Publish build manifest (registers chunks, links build, updates status to READY and distributionType to CHUNKED)
+      const record = await publishBuildManifest(build.id, build.version || '1.0.0', manifest, (prefix) => `${prefix}_${crypto.randomUUID().replace(/-/g, '')}`);
+
+      console.log('[backend-chunking-pipeline-success]', {
+        buildId: build.id,
+        chunkCount: record.chunkCount,
+        totalBytes: record.totalBytes.toString()
+      });
+
+      return prisma.gameBuild.findUnique({ where: { id: build.id } });
+    } finally {
+      // 8. Clean up tempDir completely
+      try {
+        await fs.promises.rm(tempDir, { recursive: true, force: true });
+      } catch (err) {
+        console.error('[backend-chunk-temp-cleanup-failed]', { tempDir, error: err.message });
+      }
+    }
+  }
 
   const isWeb = isWebRuntime(build.runtime || build.platform);
 
