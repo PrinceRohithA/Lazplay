@@ -1010,41 +1010,7 @@ export default function DeveloperConsole() {
                     )}
                   </div>
 
-                  {form.hardwareSpecs.length > 0 && (
-                    <div className="space-y-3 p-3 bg-slate-900/60 border border-slate-800/80 rounded-lg animate-in fade-in duration-200">
-                      <label className="block text-[9px] font-mono uppercase text-slate-500 tracking-wider">
-                        _PLATFORM_ENTRYPOINTS
-                      </label>
-                      <div className="grid grid-cols-1 gap-2.5">
-                        {form.hardwareSpecs.map((platform) => (
-                          <div key={platform} className="space-y-1">
-                            <span className="block text-[8px] font-mono text-slate-400 uppercase">
-                              {platform} FILE PATH (E.G. {platform === "WEB" ? "INDEX.HTML" : "GAME.EXE"})
-                            </span>
-                            <div className="flex items-center bg-slate-950 border border-slate-800 focus-within:border-brand-500 transition-colors p-2 rounded">
-                              <span className="text-slate-600 font-mono text-[10px] mr-2">&gt;</span>
-                              <input
-                                className="bg-transparent border-none p-0 focus:ring-0 w-full text-[10px] font-mono text-slate-300 placeholder:text-slate-700 outline-none"
-                                placeholder={platform === "WEB" ? "index.html" : "game.exe"}
-                                type="text"
-                                value={form.platformEntrypoints?.[platform] || ""}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  setForm({
-                                    ...form,
-                                    platformEntrypoints: {
-                                      ...(form.platformEntrypoints || {}),
-                                      [platform]: val
-                                    }
-                                  });
-                                }}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+
 
                   {/* Genres Supported */}
                   <div className="space-y-2">
@@ -1198,48 +1164,97 @@ export default function DeveloperConsole() {
                     </div>
                   </div>
 
-                  {/* Binary folder pickers for each selected platform */}
-                  {form.hardwareSpecs.map((platform) => (
-                    <div key={platform} className="space-y-1.5 pt-2 border-t border-slate-800/40 animate-in fade-in duration-200">
-                      <label className="block text-[9px] font-mono uppercase text-emerald-400 font-bold">
-                        _GAME_BINARY_DIRECTORY_{platform} (LOCAL_FOLDER)
-                      </label>
-                      <div className="flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            if (window.lazplayAPI?.selectFolder) {
-                              const path = await window.lazplayAPI.selectFolder();
-                              if (path) {
-                                setBinaryFiles((prev) => ({
-                                  ...prev,
-                                  [platform]: path
-                                }));
-                              }
-                            }
-                          }}
-                          className="flex-1 bg-slate-900 border border-emerald-500/20 hover:border-emerald-500 cursor-pointer p-3 rounded-lg flex items-center justify-between text-xs font-mono transition-all text-emerald-500/70 text-left"
-                        >
-                          <span className="truncate font-bold text-emerald-500/90">
-                            {binaryFiles[platform] ? binaryFiles[platform] : `CHOOSE_${platform}_BUILD_DIRECTORY...`}
-                          </span>
-                        </button>
-                        {binaryFiles[platform] && (
-                          <button
-                            onClick={() =>
-                              setBinaryFiles((prev) => ({
-                                ...prev,
-                                [platform]: null
-                              }))
-                            }
-                            className="text-slate-500 hover:text-red-400 p-2"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        )}
+                  {/* Platform Specific Build and Launch Configuration Grid */}
+                  {form.hardwareSpecs.length > 0 && (
+                    <div className="space-y-4 pt-4 mt-4 border-t border-slate-800/60">
+                      <h4 className="text-[10px] font-mono uppercase text-brand-500 font-bold tracking-widest flex items-center gap-2">
+                        <TerminalIcon size={12} className="animate-pulse" />
+                        _TARGET_PLATFORMS_BUILDS_AND_ENTRYPOINTS
+                      </h4>
+                      <div className="space-y-3.5">
+                        {form.hardwareSpecs.map((platform) => {
+                          const binaryPath = binaryFiles[platform];
+                          return (
+                            <div key={platform} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3 bg-slate-900/40 border border-slate-800/60 rounded-xl items-center animate-in fade-in duration-200">
+                              
+                              {/* Left Column: Platform Entry Point Input */}
+                              <div className="space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[9px] font-mono font-black px-1.5 py-0.5 rounded bg-brand-500/10 text-brand-500 uppercase">
+                                    {platform}
+                                  </span>
+                                  <span className="text-[8px] font-mono text-slate-400 uppercase tracking-wide">
+                                    ENTRYPOINT (E.G. {platform === "WEB" ? "INDEX.HTML" : "GAME.EXE"})
+                                  </span>
+                                </div>
+                                <div className="flex items-center bg-slate-950 border border-slate-800 focus-within:border-brand-500 transition-all p-2.5 rounded-lg">
+                                  <span className="text-slate-600 font-mono text-[10px] mr-2">&gt;</span>
+                                  <input
+                                    className="bg-transparent border-none p-0 focus:ring-0 w-full text-[10px] font-mono text-slate-300 placeholder:text-slate-700 outline-none"
+                                    placeholder={platform === "WEB" ? "index.html" : "game.exe"}
+                                    type="text"
+                                    value={form.platformEntrypoints?.[platform] || ""}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setForm({
+                                        ...form,
+                                        platformEntrypoints: {
+                                          ...(form.platformEntrypoints || {}),
+                                          [platform]: val
+                                        }
+                                      });
+                                    }}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Right Column: Platform Directory Picker */}
+                              <div className="space-y-1.5">
+                                <span className="block text-[8px] font-mono text-slate-400 uppercase tracking-wide">
+                                  {platform} BINARY FOLDER DIRECTORY
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      if (window.lazplayAPI?.selectFolder) {
+                                        const path = await window.lazplayAPI.selectFolder();
+                                        if (path) {
+                                          setBinaryFiles((prev) => ({
+                                            ...prev,
+                                            [platform]: path
+                                          }));
+                                        }
+                                      }
+                                    }}
+                                    className="flex-1 bg-slate-950 border border-emerald-500/20 hover:border-emerald-500 cursor-pointer p-2.5 rounded-lg flex items-center justify-between text-[10px] font-mono transition-all text-emerald-500/70 text-left"
+                                  >
+                                    <span className="truncate font-bold text-emerald-500/90 max-w-[85%]">
+                                      {binaryPath ? binaryPath : `CHOOSE_${platform}_DIRECTORY...`}
+                                    </span>
+                                  </button>
+                                  {binaryPath && (
+                                    <button
+                                      onClick={() =>
+                                        setBinaryFiles((prev) => ({
+                                          ...prev,
+                                          [platform]: null
+                                        }))
+                                      }
+                                      className="text-slate-500 hover:text-red-400 p-2"
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
 
                 {/* Big Deploy action button */}
