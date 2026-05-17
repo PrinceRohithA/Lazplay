@@ -462,3 +462,5 @@ The system should help transform Lazplay from:
 simple upload platform
 ↓
 active social indie ecosystem
+
+IMPORTANT: Make the platform itself competative.
