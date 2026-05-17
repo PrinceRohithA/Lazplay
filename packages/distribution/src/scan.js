@@ -11,7 +11,7 @@ import {
  * @param {string} rootDir
  * @returns {Promise<{ files: Array<{ relativePath: string, absolutePath: string, size: number }>, totalSize: number, fileCount: number, unsupported: string[], duplicates: string[] }>}
  */
-export async function scanBuildDirectory(rootDir) {
+export async function scanBuildDirectory(rootDir, { platform } = {}) {
   const files = [];
   const seenSizes = new Map();
   const duplicates = [];
@@ -55,8 +55,11 @@ export async function scanBuildDirectory(rootDir) {
 
   await walk(rootDir);
 
-  if (totalSize > MAX_GAME_SIZE_BYTES) {
-    throw new Error(`Build exceeds maximum size of ${MAX_GAME_SIZE_BYTES} bytes (${totalSize} bytes)`);
+  const isAndroid = platform?.toUpperCase() === 'ANDROID';
+  const limit = isAndroid ? 500 * 1024 * 1024 : MAX_GAME_SIZE_BYTES;
+  if (totalSize > limit) {
+    const limitLabel = isAndroid ? '500MB' : '10GB';
+    throw new Error(`Build exceeds maximum size of ${limitLabel} for ${platform || 'NATIVE'} (${totalSize} bytes)`);
   }
 
   return { files, totalSize, fileCount: files.length, unsupported, duplicates };

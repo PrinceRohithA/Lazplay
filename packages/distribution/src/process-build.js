@@ -14,7 +14,7 @@ import { buildManifest, collectUniqueChunks } from './manifest.js';
  * @returns {Promise<{ manifest: object, chunks: Map<string, { hash: string, size: number, data: Buffer }>, scan: object }>}
  */
 export async function processBuildDirectory(buildDir, { version, entrypoint, platform }) {
-  const scan = await scanBuildDirectory(buildDir);
+  const scan = await scanBuildDirectory(buildDir, { platform });
   const bundleGroups = groupIntoBundles(scan.files);
 
   const processedBundles = [];
