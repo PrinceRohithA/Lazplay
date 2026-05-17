@@ -114,7 +114,7 @@ export default function GameDetailsSteamStyleLayout() {
 
     // Check if we are in Electron and it's a native game
     const platforms = (game.platforms || []).map(p => p.toUpperCase());
-    const isWeb = platforms.includes('WEB') || platforms.includes('BROWSER');
+    const isWeb = platforms.includes('WEB') || platforms.includes('BROWSER') || (game.hardwareSpecs || []).map(h => h.toUpperCase()).includes('WEB');
 
     if (window.electron && !isWeb) {
       try {
@@ -157,7 +157,9 @@ export default function GameDetailsSteamStyleLayout() {
   // Ensure tracking stops on unmount and handle autoPlay
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('autoPlay') === 'true' && game && game.isOwned && !playingGame && !loading) {
+    const platforms = (game?.platforms || []).map(p => p.toUpperCase());
+    const isWebGame = platforms.includes('WEB') || platforms.includes('BROWSER') || (game?.hardwareSpecs || []).map(h => h.toUpperCase()).includes('WEB');
+    if (params.get('autoPlay') === 'true' && game && (game.isOwned || isWebGame) && !playingGame && !loading) {
         handlePlay();
         // Clear param so it doesn't re-trigger on refresh
         const newUrl = window.location.pathname + '?id=' + gameId;
@@ -170,6 +172,9 @@ export default function GameDetailsSteamStyleLayout() {
       }
     };
   }, [playSessionId, gameId, game, loading]);
+
+  const platformsList = (game?.platforms || []).map(p => p.toUpperCase());
+  const isWebGame = platformsList.includes('WEB') || platformsList.includes('BROWSER') || (game?.hardwareSpecs || []).map(h => h.toUpperCase()).includes('WEB');
 
   const screenshots = media.filter((m) => m.type === 'IMAGE' && (m.alt === 'SCREENSHOT' || !m.alt));
   const videos = media.filter((m) => m.type === 'VIDEO');
@@ -270,11 +275,38 @@ export default function GameDetailsSteamStyleLayout() {
             {/* Right Side: Actions */}
             <div className="flex flex-col justify-center items-center lg:items-end gap-4 min-w-[280px]">
               <div className="text-3xl font-bold text-primary mb-2">
-                {game.priceType === 'FREE' ? 'FREE_TO_PLAY' : `₹${(game.price / 100).toFixed(2)}`}
+                {isWebGame ? 'DEMO / FREE' : (game.priceType === 'FREE' ? 'FREE_TO_PLAY' : `₹${(game.price / 100).toFixed(2)}`)}
               </div>
               
               <div className="w-full flex flex-col gap-3">
-                {game.isOwned ? (
+                {isWebGame ? (
+                  <>
+                    <div className="p-3 border border-error/30 text-error bg-error/10 font-label-mono text-[9px] uppercase tracking-wider text-center pixel-border leading-normal animate-in fade-in duration-200">
+                      ⚠ SYSTEM NOTICE: WEB BUILDS ARE STRICTLY FOR FREE PLAY & DEMO PURPOSES. NOT FOR SALE.
+                    </div>
+                    <button 
+                      onClick={handlePlay}
+                      className="w-full bg-primary-container text-primary py-4 pixel-border neon-glow hover:bg-primary-fixed hover:text-black transition-all uppercase flex justify-center items-center gap-3 font-bold text-lg animate-in slide-in-from-bottom duration-300"
+                    >
+                      <span className="material-symbols-outlined text-2xl">play_circle</span>
+                      PLAY_NOW
+                    </button>
+                    {game.isOwned ? (
+                      <div className="w-full bg-surface-container/50 border border-outline-variant/30 text-on-surface-variant py-2 uppercase flex justify-center items-center gap-2 text-xs font-mono select-none">
+                        <span className="material-symbols-outlined text-[16px] text-primary">check_circle</span>
+                        IN_LIBRARY
+                      </div>
+                    ) : (
+                      <button 
+                        onClick={handleClaim}
+                        className="w-full bg-surface text-primary py-2 border border-primary/30 hover:border-primary-container hover:bg-primary-container/10 transition-all uppercase flex justify-center items-center gap-2 font-bold text-sm"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">add_circle</span>
+                        ADD_TO_LIBRARY
+                      </button>
+                    )}
+                  </>
+                ) : game.isOwned ? (
                   <>
                     <button 
                       onClick={handlePlay}

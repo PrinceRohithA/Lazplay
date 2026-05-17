@@ -41,29 +41,33 @@ export default function UserRegistrationCyberEdition() {
 
   return (
     <>
-      <div className="scanline-overlay"></div>
-      <main className="flex-grow flex items-center justify-center p-gutter relative overflow-hidden grid-glow-bg">
-        <div className="absolute inset-0 z-0 opacity-20">
-          <div className="absolute top-10 left-10 font-label-caps text-primary text-[10px]">SYSTEM_LOAD: 14.2%<br/>UPTIME: 42:12:09</div>
-          <div className="absolute bottom-10 right-10 font-label-caps text-secondary text-[10px] text-right">ENCRYPTION: AES_256_ACTIVE<br/>NODE_ID: CH_8832_X</div>
+      <div className="fixed inset-0 scanlines opacity-30"></div>
+      <header className="flex justify-between items-center px-gutter py-4 w-full z-50 docked full-width top-0 border-b border-outline-variant bg-surface/80 backdrop-blur-md">
+        <div className="flex items-center gap-4">
+          <Link to="/" className="font-headline-md text-headline-md font-bold text-primary-container drop-shadow-[0_0_8px_rgba(57,255,20,0.6)] uppercase tracking-[0.2em]">
+            LAZPLAY
+          </Link>
         </div>
+        <div className="flex items-center gap-6">
+          <div className="hidden md:flex gap-4 font-label-caps text-label-caps uppercase tracking-widest text-on-surface-variant">
+            <span className="text-primary-fixed px-2 py-1">V_1.0.4</span>
+            <span className="text-primary-fixed px-2 py-1">STATUS: ONLINE</span>
+          </div>
+        </div>
+      </header>
+      <main className="flex-grow flex items-center justify-center p-gutter relative overflow-hidden grid-glow-bg min-h-screen pt-24 pb-12">
         <div className="relative z-10 w-full max-w-lg">
-          <div className="bg-surface-container border-2 border-primary-container p-1 shadow-[0_0_20px_rgba(0,240,255,0.2)] rounded-lg">
+          <div className="bg-surface-container border border-primary-container p-1 shadow-[0_0_20px_rgba(0,240,255,0.2)] rounded-lg">
             <div className="bg-surface-container-high px-4 py-2 flex justify-between items-center mb-6 rounded-t-md">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px] text-primary-container" style={{fontVariationSettings: "'FILL' 1"}}>terminal</span>
-                <h1 className="font-label-caps text-on-surface">LAZPLAY // SECURE_ENTRY</h1>
-              </div>
-              <div className="flex gap-1">
-                <div className="w-3 h-3 bg-error rounded-full"></div>
-                <div className="w-3 h-3 bg-secondary-container rounded-full"></div>
-                <div className="w-3 h-3 bg-primary-container rounded-full"></div>
+                <span className="material-symbols-outlined text-[18px] text-primary-container" style={{fontVariationSettings: "'FILL' 1"}}>account_circle</span>
+                <h1 className="font-label-caps text-on-surface">LAZPLAY // CREATE_ACCOUNT</h1>
               </div>
             </div>
             <div className="px-6 pb-8">
-              <div className="mb-10 text-center">
-                <h2 className="font-headline-lg text-primary-container mb-2 glow-text-primary uppercase tracking-tight">USER_REGISTRATION // PROTOCOL</h2>
-                <p className="font-label-caps text-on-surface-variant opacity-70">ESTABLISHING NEW IDENTITY IN THE GRID...</p>
+              <div className="mb-8 text-center">
+                <h2 className="font-headline-lg text-primary-container mb-2 glow-text-primary uppercase tracking-tight">Create Account</h2>
+                <p className="font-label-caps text-[10px] text-on-surface-variant opacity-70">Sign up to get started</p>
               </div>
 
               {error && (
@@ -72,20 +76,20 @@ export default function UserRegistrationCyberEdition() {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/*  CODENAME Input (username)  */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/*  Username Input  */}
                 <div className="group">
-                  <label className="block font-label-caps text-primary-fixed-dim mb-2 flex items-center gap-2" htmlFor="username">
+                  <label className="block font-label-caps text-primary-fixed-dim text-[10px] mb-1.5 flex items-center gap-2" htmlFor="username">
                     <span className="material-symbols-outlined text-[14px]">person</span>
-                    [01] CODENAME (USERNAME)
+                    Username
                   </label>
-                  <div className="relative neon-glow-primary transition-all rounded">
+                  <div className="relative rounded">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-primary-container font-label-caps opacity-60">&gt;</span>
                     <input 
-                      className="w-full bg-surface-container-low border border-outline-variant focus:border-primary-container text-on-surface font-body-md pl-10 py-3 outline-none transition-colors placeholder:text-outline-variant rounded" 
+                      className="w-full bg-surface-container-low border border-outline-variant focus:border-primary-container text-on-surface font-body-md pl-10 py-2.5 outline-none transition-colors placeholder:text-outline-variant rounded" 
                       id="username" 
                       name="username" 
-                      placeholder="ENTER_ALIAS" 
+                      placeholder="e.g. cyberninja" 
                       type="text"
                       value={form.username}
                       onChange={handleChange('username')}
@@ -94,19 +98,19 @@ export default function UserRegistrationCyberEdition() {
                   </div>
                 </div>
 
-                {/*  DISPLAY_NAME Input  */}
+                {/*  Display Name Input  */}
                 <div className="group">
-                  <label className="block font-label-caps text-primary-fixed-dim mb-2 flex items-center gap-2" htmlFor="displayName">
+                  <label className="block font-label-caps text-primary-fixed-dim text-[10px] mb-1.5 flex items-center gap-2" htmlFor="displayName">
                     <span className="material-symbols-outlined text-[14px]">badge</span>
-                    [02] PUBLIC_HANDLE (DISPLAY_NAME)
+                    Display Name
                   </label>
-                  <div className="relative neon-glow-primary transition-all rounded">
+                  <div className="relative rounded">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-primary-container font-label-caps opacity-60">&gt;</span>
                     <input 
-                      className="w-full bg-surface-container-low border border-outline-variant focus:border-primary-container text-on-surface font-body-md pl-10 py-3 outline-none transition-colors placeholder:text-outline-variant rounded" 
+                      className="w-full bg-surface-container-low border border-outline-variant focus:border-primary-container text-on-surface font-body-md pl-10 py-2.5 outline-none transition-colors placeholder:text-outline-variant rounded" 
                       id="displayName" 
                       name="displayName" 
-                      placeholder="ENTER_DISPLAY_NAME" 
+                      placeholder="e.g. Cyber Ninja" 
                       type="text"
                       value={form.displayName}
                       onChange={handleChange('displayName')}
@@ -115,19 +119,19 @@ export default function UserRegistrationCyberEdition() {
                   </div>
                 </div>
 
-                {/*  NET_ADDRESS Input (email)  */}
+                {/*  Email Address Input  */}
                 <div className="group">
-                  <label className="block font-label-caps text-primary-fixed-dim mb-2 flex items-center gap-2" htmlFor="email">
+                  <label className="block font-label-caps text-primary-fixed-dim text-[10px] mb-1.5 flex items-center gap-2" htmlFor="email">
                     <span className="material-symbols-outlined text-[14px]">alternate_email</span>
-                    [03] NET_ADDRESS (EMAIL)
+                    Email Address
                   </label>
-                  <div className="relative neon-glow-primary transition-all rounded">
+                  <div className="relative rounded">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-primary-container font-label-caps opacity-60">&gt;</span>
                     <input 
-                      className="w-full bg-surface-container-low border border-outline-variant focus:border-primary-container text-on-surface font-body-md pl-10 py-3 outline-none transition-colors placeholder:text-outline-variant rounded" 
+                      className="w-full bg-surface-container-low border border-outline-variant focus:border-primary-container text-on-surface font-body-md pl-10 py-2.5 outline-none transition-colors placeholder:text-outline-variant rounded" 
                       id="email" 
                       name="email" 
-                      placeholder="IDENTITY@NETWORK.SYS" 
+                      placeholder="yourname@example.com" 
                       type="email"
                       value={form.email}
                       onChange={handleChange('email')}
@@ -136,19 +140,19 @@ export default function UserRegistrationCyberEdition() {
                   </div>
                 </div>
 
-                {/*  SECURITY_PHRASE Input (password)  */}
+                {/*  Password Input  */}
                 <div className="group">
-                  <label className="block font-label-caps text-primary-fixed-dim mb-2 flex items-center gap-2" htmlFor="password">
+                  <label className="block font-label-caps text-primary-fixed-dim text-[10px] mb-1.5 flex items-center gap-2" htmlFor="password">
                     <span className="material-symbols-outlined text-[14px]">lock</span>
-                    [04] SECURITY_PHRASE (PASSWORD)
+                    Password
                   </label>
-                  <div className="relative neon-glow-primary transition-all rounded">
+                  <div className="relative rounded">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-primary-container font-label-caps opacity-60">&gt;</span>
                     <input 
-                      className="w-full bg-surface-container-low border border-outline-variant focus:border-primary-container text-on-surface font-body-md pl-10 py-3 outline-none transition-colors placeholder:text-outline-variant rounded" 
+                      className="w-full bg-surface-container-low border border-outline-variant focus:border-primary-container text-on-surface font-body-md pl-10 py-2.5 outline-none transition-colors placeholder:text-outline-variant rounded" 
                       id="password" 
                       name="password" 
-                      placeholder="********" 
+                      placeholder="Enter a secure password" 
                       type="password"
                       value={form.password}
                       onChange={handleChange('password')}
@@ -157,41 +161,26 @@ export default function UserRegistrationCyberEdition() {
                   </div>
                 </div>
 
-                {/*  EXECUTE Button  */}
+                {/*  Register Button  */}
                 <div className="pt-4">
                   <button 
-                    className="w-full cyber-btn py-4 pixel-border uppercase font-bold tracking-widest flex items-center justify-center gap-2 disabled:opacity-50" 
+                    className="w-full bg-primary-container/20 border border-primary text-primary hover:bg-primary-container hover:text-black py-3.5 pixel-border uppercase font-bold tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 transition-colors" 
                     type="submit"
                     disabled={loading}
                   >
-                    {loading ? 'SYNCHRONIZING...' : 'REGISTER_IDENTITY'}
+                    {loading ? 'Creating Account...' : 'Create Account'}
                   </button>
                 </div>
               </form>
-              <div className="mt-8 text-center">
-                <Link className="font-label-caps text-[10px] text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center gap-1" to="/login">
-                  ALREADY_MEMBER? [ ACCESS_TERMINAL ]
+              <div className="mt-6 text-center">
+                <Link className="font-label-caps text-[10px] text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center gap-1 underline underline-offset-4" to="/login">
+                  Already have an account? Sign In
                 </Link>
               </div>
             </div>
           </div>
         </div>
       </main>
-      <footer className="w-full py-4 px-gutter flex flex-col md:flex-row justify-between items-center gap-4 mt-auto bg-surface-container-lowest border-t border-outline-variant">
-        <div className="flex flex-col md:flex-row items-center gap-6">
-          <Link to="/" className="font-display-xl text-primary opacity-20 select-none tracking-tighter">LAZPLAY</Link>
-          <p className="font-label-caps text-[10px] text-on-surface-variant">© 198X NEON_LABS_INC // ALL RIGHTS RESERVED</p>
-        </div>
-        <div className="flex gap-4">
-          <a className="font-label-caps text-[10px] text-on-surface-variant hover:text-primary-container transition-colors" href="#">TERMINAL_DOCS</a>
-          <a className="font-label-caps text-[10px] text-on-surface-variant hover:text-primary-container transition-colors" href="#">DISCORD_RELAY</a>
-          <a className="font-label-caps text-[10px] text-on-surface-variant hover:text-primary-container transition-colors" href="#">GITHUB_REPOS</a>
-        </div>
-      </footer>
-      {/*  Aesthetic Image Mosaic (Background)  */}
-      <div className="fixed inset-0 -z-10 opacity-10 pointer-events-none grayscale">
-        <img className="w-full h-full object-cover" alt="Cybernetic circuit board background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqaBJBC8csXu20mK7Q2_6_vfW_ZdEGr0-Au4yAK6t9ZsIHfPeneH5OtCaAvd5mAaXGMTMFXrQ3R7Mbx76tJvouQJgy6yfnBRt6e5Enr6Rtlas171WiFpwzryozEUqx3ht19jENgow4nuyjVou_mizE-o8CNsXR9mkwtkCYTJ1QAB9WPa15oj-O5W3ONC4Zq6VVAT9pzyKYyqYQIHFk4WQgq9oMO6U0XASjZIWREbW2ZBsaBqdQhF_yw2VQM6YREKJubmIZ5HhxRsjb"/>
-      </div>
     </>
   );
 }

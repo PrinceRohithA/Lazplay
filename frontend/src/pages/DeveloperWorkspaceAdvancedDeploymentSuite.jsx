@@ -49,6 +49,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     title: '',
     version: 'v1.0.0',
     entrypoint: '',
+    platformEntrypoints: { WINDOWS: 'game.exe' },
     description: '',
     hardwareSpecs: ['WINDOWS'],
     genres: ['ACTION'],
@@ -67,7 +68,10 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     HERO_BANNER: null,
     SCREENSHOTS: [],
     VIDEO_TRAILER: null,
-    GAME_BINARIES: null
+    GAME_BINARIES_WINDOWS: null,
+    GAME_BINARIES_LINUX: null,
+    GAME_BINARIES_ANDROID: null,
+    GAME_BINARIES_WEB: null
   });
 
   const fileInputRefs = {
@@ -75,7 +79,10 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     HERO_BANNER: useRef(null),
     SCREENSHOTS: useRef(null),
     VIDEO_TRAILER: useRef(null),
-    GAME_BINARIES: useRef(null)
+    GAME_BINARIES_WINDOWS: useRef(null),
+    GAME_BINARIES_LINUX: useRef(null),
+    GAME_BINARIES_ANDROID: useRef(null),
+    GAME_BINARIES_WEB: useRef(null)
   };
 
   const addLog = useCallback((msg) => {
@@ -88,10 +95,15 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
       const res = await devApi.getGame(gameIdParam);
       const game = res.data;
       const builds = Array.isArray(game.builds) ? game.builds : [];
+      const platformEntrypoints = {};
+      builds.forEach(b => {
+        platformEntrypoints[b.platform] = b.entrypoint || '';
+      });
       setForm({
         title: game.title,
         version: game.version || builds[0]?.version || 'v1.0.0',
         entrypoint: game.entrypoint || builds[0]?.entrypoint || '',
+        platformEntrypoints: Object.keys(platformEntrypoints).length > 0 ? platformEntrypoints : { WINDOWS: 'game.exe' },
         description: game.description || '',
         hardwareSpecs: game.platforms || ['WINDOWS'],
         genres: game.genres || ['ACTION'],
@@ -245,13 +257,14 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     }
   }, [existingMedia, gameIdParam]);
 
-  const replaceBuildsIfNeeded = useCallback(async () => {
-    if (existingBuilds.length === 0) return;
-    for (const build of existingBuilds) {
+  const replaceBuildsIfNeeded = useCallback(async (platform) => {
+    const targets = platform ? existingBuilds.filter(b => b.platform === platform) : existingBuilds;
+    if (targets.length === 0) return;
+    for (const build of targets) {
       try {
         await devApi.deleteBuild(build.id);
       } catch (err) {
-        addLog(`WARN: BUILD_DELETE_FAILED (${build.id})`);
+        addLog(`WARN: BUILD_DELETE_FAILED (${build.id}) for ${build.platform}`);
       }
     }
   }, [existingBuilds, addLog]);
@@ -389,47 +402,56 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         addLog('SUCCESS: VIDEO_TRAILER_UPLOADED');
       }
 
-      // 3. Create Build + Upload Binary
-      if (files.GAME_BINARIES) {
-        await replaceBuildsIfNeeded();
-        addLog('STEP_03: INITIALIZING_BUILD_NODE...');
-        const buildRes = await devApi.createBuild(gameId, {
-          version: form.version,
-          platform: form.hardwareSpecs[0] || 'WINDOWS',
-          runtime: form.hardwareSpecs.includes('WEB') ? 'WEB' : 'NATIVE',
-          entrypoint: form.entrypoint || (form.hardwareSpecs.includes('WEB') ? 'index.html' : 'game.exe')
-        });
-        const buildId = buildRes.data.id;
-        addLog(`SUCCESS: BUILD_READY (ID: ${buildId})`);
+      // 3. Create Builds + Upload Binaries for each selected platform
+      let binariesUploadedCount = 0;
+      for (const platform of form.hardwareSpecs) {
+        const fileKey = `GAME_BINARIES_${platform}`;
+        const binaryFile = files[fileKey];
 
-        addLog('STEP_04: STAGING_BINARIES...');
-        const uploadInfo = await devApi.getBuildUploadUrl(buildId, {
-          fileName: files.GAME_BINARIES.name || 'build.zip',
-          contentType: files.GAME_BINARIES.type || 'application/octet-stream',
-          sizeBytes: Number(files.GAME_BINARIES.size || 0)
-        });
+        if (binaryFile) {
+          binariesUploadedCount++;
+          await replaceBuildsIfNeeded(platform);
+          addLog(`STEP_03: INITIALIZING_${platform}_BUILD_NODE...`);
+          const buildRes = await devApi.createBuild(gameId, {
+            version: form.version,
+            platform: platform,
+            runtime: platform === 'WEB' ? 'WEB' : 'NATIVE',
+            entrypoint: form.platformEntrypoints?.[platform] || form.entrypoint || (platform === 'WEB' ? 'index.html' : 'game.exe')
+          });
+          const buildId = buildRes.data.id;
+          addLog(`SUCCESS: ${platform} BUILD_READY (ID: ${buildId})`);
 
-        addLog(`STEP_05: STREAMING_PAYLOAD (${(files.GAME_BINARIES.size / 1024 / 1024).toFixed(2)} MB)...`);
-        setUploadLabel(files.GAME_BINARIES.name);
-        setUploadProgress(0);
-        await uploadBuildArtifact(files.GAME_BINARIES, uploadInfo.data.uploadUrl);
-        setUploadProgress(100);
+          addLog(`STEP_04: STAGING_${platform}_BINARIES...`);
+          const uploadInfo = await devApi.getBuildUploadUrl(buildId, {
+            fileName: binaryFile.name || 'build.zip',
+            contentType: binaryFile.type || 'application/octet-stream',
+            sizeBytes: Number(binaryFile.size || 0)
+          });
 
-        await devApi.completeBuildUpload(buildId, {
-          objectKey: uploadInfo.data.objectKey,
-          sizeBytes: Number(files.GAME_BINARIES.size || 0)
-        });
-        addLog('SUCCESS: PAYLOAD_STATIONED');
+          addLog(`STEP_05: STREAMING_${platform}_PAYLOAD (${(binaryFile.size / 1024 / 1024).toFixed(2)} MB)...`);
+          setUploadLabel(`${platform}: ${binaryFile.name}`);
+          setUploadProgress(0);
+          await uploadBuildArtifact(binaryFile, uploadInfo.data.uploadUrl);
+          setUploadProgress(100);
 
-        addLog('STEP_06: GRID_SECURITY_SCAN...');
-        await devApi.scanBuild(buildId);
-        addLog('SUCCESS: SCAN_PASSED');
+          await devApi.completeBuildUpload(buildId, {
+            objectKey: uploadInfo.data.objectKey,
+            sizeBytes: Number(binaryFile.size || 0)
+          });
+          addLog(`SUCCESS: ${platform} PAYLOAD_STATIONED`);
 
-        addLog('STEP_07: TRIGGERING_LIVE_DEPLOYMENT...');
-        await devApi.deployBuild(buildId, { environment: 'PRODUCTION', makeLatest: true });
-        addLog('DEPLOYMENT_SYNC_SUCCESSFUL!');
-      } else {
-        addLog('WARN: NO_BUILD_SELECTED. SKIPPING_BINARY_UPLOAD.');
+          addLog(`STEP_06: ${platform} GRID_SECURITY_SCAN...`);
+          await devApi.scanBuild(buildId);
+          addLog(`SUCCESS: ${platform} SCAN_PASSED`);
+
+          addLog(`STEP_07: TRIGGERING_${platform}_LIVE_DEPLOYMENT...`);
+          await devApi.deployBuild(buildId, { environment: 'PRODUCTION', makeLatest: true });
+          addLog(`SUCCESS: ${platform} DEPLOYMENT_SYNC_COMPLETE!`);
+        }
+      }
+
+      if (binariesUploadedCount === 0) {
+        addLog('WARN: NO_NEW_BUILDS_STAGED. SKIPPING_BINARY_UPLOAD.');
       }
 
       if (!gameIdParam) {
@@ -619,24 +641,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
                 />
               </div>
             </div>
-            <div className="col-span-full space-y-2">
-              <label className="block font-label-mono text-[10px] text-on-surface-variant">_TARGET_ENTRYPOINT (E.G. GAME.EXE / INDEX.HTML)</label>
-              <div className="flex items-center bg-surface-container text-secondary-container p-3 border border-outline-variant focus-within:border-secondary-container group">
-                <span className="mr-2 group-focus-within:animate-pulse text-secondary-container">&gt;</span>
-                <input
-                  className="bg-transparent border-none focus:ring-0 p-0 w-full font-label-mono placeholder:opacity-30"
-                  placeholder="DEFAULTS_TO_PLATFORM_STANDARD"
-                  type="text"
-                  name="entrypoint"
-                  value={form.entrypoint}
-                  onChange={handleInputChange}
-                  autoComplete="off"
-                />
-              </div>
-              <p className="text-[9px] font-label-mono text-on-surface-variant opacity-60">
-                NOTE: THIS IS THE FILE THE LAUNCHER WILL ATTEMPT TO EXECUTE. LEAVE BLANK TO AUTO-DETECT.
-              </p>
-            </div>
+
             <div className="col-span-full space-y-2">
               <label className="block font-label-mono text-[10px] text-on-surface-variant">_DESCRIPTION_MANIFEST</label>
               <div className="bg-surface-container border border-outline-variant">
@@ -680,6 +685,12 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
               </label>
             ))}
           </div>
+
+          {form.hardwareSpecs.includes('WEB') && (
+            <div className="p-3 border border-amber-500/30 bg-amber-500/10 text-amber-400 font-label-mono text-[9px] uppercase tracking-wider text-center pixel-border leading-normal animate-in fade-in duration-200">
+              ⚠️ WARNING: WEB BUILDS ARE STRICTLY FOR FREE PLAY & DEMO PURPOSES ONLY. THEY CANNOT BE SOLD FOR A PRICE.
+            </div>
+          )}
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -826,13 +837,24 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
             </h3>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-            {[
-              { id: 'COVER_IMAGE', icon: 'auto_stories', label: 'PROJECT_COVER', sub: '600x900 (2:3 RATIO)', accept: 'image/*' },
-              { id: 'HERO_BANNER', icon: 'image', label: 'HERO_BANNER', sub: '1920x1080 (16:9)', accept: 'image/*' },
-              { id: 'SCREENSHOTS', icon: 'collections', label: 'SCREENSHOTS', sub: '1920x1080 (MAX 10)', accept: 'image/*', multiple: true },
-              { id: 'VIDEO_TRAILER', icon: 'movie', label: 'VIDEO_TRAILER', sub: '.MP4 (MAX 1GB)', accept: 'video/*' },
-              { id: 'GAME_BINARIES', icon: 'folder_zip', label: 'GAME_BINARIES', sub: '.ZIP / .EXE / .PKG', accept: '*' }
-            ].map(slot => (
+            {(() => {
+              const slots = [
+                { id: 'COVER_IMAGE', icon: 'auto_stories', label: 'PROJECT_COVER', sub: '600x900 (2:3 RATIO)', accept: 'image/*' },
+                { id: 'HERO_BANNER', icon: 'image', label: 'HERO_BANNER', sub: '1920x1080 (16:9)', accept: 'image/*' },
+                { id: 'SCREENSHOTS', icon: 'collections', label: 'SCREENSHOTS', sub: '1920x1080 (MAX 10)', accept: 'image/*', multiple: true },
+                { id: 'VIDEO_TRAILER', icon: 'movie', label: 'VIDEO_TRAILER', sub: '.MP4 (MAX 1GB)', accept: 'video/*' }
+              ];
+              form.hardwareSpecs.forEach(platform => {
+                slots.push({
+                  id: `GAME_BINARIES_${platform}`,
+                  icon: 'folder_zip',
+                  label: `BUILD_ZIP (${platform})`,
+                  sub: '.ZIP / .EXE / .APK / .PKG',
+                  accept: '*'
+                });
+              });
+              return slots;
+            })().map(slot => (
               <div
                 key={slot.id}
                 onClick={() => fileInputRefs[slot.id].current?.click()}
@@ -852,6 +874,43 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
               </div>
             ))}
           </div>
+
+          {form.hardwareSpecs.length > 0 && (
+            <div className="space-y-4 mt-8 pt-8 border-t border-outline-variant/30">
+              <h4 className="font-label-mono text-[10px] text-primary-fixed uppercase tracking-widest flex items-center gap-2">
+                <span className="material-symbols-outlined text-[14px]">terminal</span> TARGET_PLATFORM_ENTRYPOINTS
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {form.hardwareSpecs.map(platform => (
+                  <div key={platform} className="space-y-1 bg-surface-container/30 p-3 border border-outline-variant/20 rounded">
+                    <label className="block font-label-mono text-[9px] text-on-surface-variant uppercase">
+                      {platform} ENTRYPOINT (E.G. {platform === 'WEB' ? 'INDEX.HTML' : 'GAME.EXE'})
+                    </label>
+                    <div className="flex items-center bg-surface-container text-secondary-container p-2 border border-outline-variant focus-within:border-secondary-container group">
+                      <span className="mr-2 group-focus-within:animate-pulse text-secondary-container font-mono text-[10px]">&gt;</span>
+                      <input
+                        className="bg-transparent border-none focus:ring-0 p-0 w-full font-label-mono text-[11px] placeholder:opacity-30 text-on-surface"
+                        placeholder={platform === 'WEB' ? 'index.html' : 'game.exe'}
+                        type="text"
+                        value={form.platformEntrypoints?.[platform] || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setForm(prev => ({
+                            ...prev,
+                            platformEntrypoints: {
+                              ...(prev.platformEntrypoints || {}),
+                              [platform]: val
+                            }
+                          }));
+                        }}
+                        autoComplete="off"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {gameIdParam && existingMedia.length > 0 && (
             <div className="space-y-4 mt-8 pt-8 border-t border-outline-variant">

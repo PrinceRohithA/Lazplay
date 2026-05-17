@@ -20,6 +20,7 @@ interface GameForm {
   title: string;
   version: string;
   entrypoint: string;
+  platformEntrypoints: Record<string, string>;
   description: string;
   hardwareSpecs: string[];
   genres: string[];
@@ -46,6 +47,7 @@ const INITIAL_FORM: GameForm = {
   title: "",
   version: "1.0.0",
   entrypoint: "",
+  platformEntrypoints: { WINDOWS: "game.exe" },
   description: "",
   hardwareSpecs: ["WINDOWS"],
   genres: ["ACTION"],
@@ -75,7 +77,7 @@ export default function DeveloperConsole() {
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [trailerFile, setTrailerFile] = useState<File | null>(null);
-  const [binaryFile, setBinaryFile] = useState<File | null>(null);
+  const [binaryFiles, setBinaryFiles] = useState<Record<string, File | null>>({});
 
   // Logging & Deployment Terminal State
   const [logs, setLogs] = useState<string[]>([]);
@@ -181,10 +183,15 @@ export default function DeveloperConsole() {
 
   const enterDeployMode = (game: any) => {
     setSelectedGame(game);
+    const platformEntrypoints: Record<string, string> = game.platformEntrypoints || {};
+    if (game.entrypoint && !platformEntrypoints.WINDOWS) {
+      platformEntrypoints.WINDOWS = game.entrypoint;
+    }
     setForm({
       title: game.title || "",
       version: game.version || "1.0.0",
       entrypoint: game.entrypoint || "",
+      platformEntrypoints: Object.keys(platformEntrypoints).length > 0 ? platformEntrypoints : { WINDOWS: "game.exe" },
       description: game.description || "",
       hardwareSpecs: game.hardwareSpecs || ["WINDOWS"],
       genres: game.genres || ["ACTION"],
@@ -197,7 +204,7 @@ export default function DeveloperConsole() {
     setCoverFile(null);
     setBannerFile(null);
     setTrailerFile(null);
-    setBinaryFile(null);
+    setBinaryFiles({});
     setLogs([]);
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -210,7 +217,7 @@ export default function DeveloperConsole() {
     setCoverFile(null);
     setBannerFile(null);
     setTrailerFile(null);
-    setBinaryFile(null);
+    setBinaryFiles({});
     setLogs([]);
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -304,6 +311,7 @@ export default function DeveloperConsole() {
         title: form.title,
         version: form.version,
         entrypoint: form.entrypoint || undefined,
+        platformEntrypoints: form.platformEntrypoints || undefined,
         description: form.description,
         hardwareSpecs: form.hardwareSpecs,
         genres: form.genres,
@@ -438,66 +446,75 @@ export default function DeveloperConsole() {
         setUploadProgress(0);
       }
 
-      // Step 5: Native Binary zip upload pipeline
-      if (binaryFile) {
-        setDeployStep(5);
-        addLog("CREATING_NEW_DEVELOPER_BUILD_RECORD...");
-        const buildRes = await axios.post(
-          `https://play.lazplay.tech/api/v1/developer/games/${gameId}/builds`,
-          {
-            version: form.version,
-            platform: "WINDOWS",
-            runtime: "NATIVE"
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const build = buildRes.data.data || buildRes.data;
-        const buildId = build.id;
-        addLog(`BUILD_RECORD_INITIALIZED_ID: ${buildId} ✓`);
+      // Step 5: Native Binary zip upload pipeline for each selected platform
+      for (const platform of form.hardwareSpecs) {
+        const file = binaryFiles[platform];
+        if (file) {
+          setDeployStep(5);
+          addLog(`CREATING_NEW_DEVELOPER_BUILD_RECORD_FOR_${platform}...`);
+          const buildRes = await axios.post(
+            `https://play.lazplay.tech/api/v1/developer/games/${gameId}/builds`,
+            {
+              version: form.version,
+              platform: platform,
+              runtime: platform === "WEB" ? "WEB" : "NATIVE",
+              entrypoint: form.platformEntrypoints?.[platform] || form.entrypoint || (platform === "WEB" ? "index.html" : "game.exe")
+            },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          const build = buildRes.data.data || buildRes.data;
+          const buildId = build.id;
+          addLog(`${platform}_BUILD_RECORD_INITIALIZED_ID: ${buildId} ✓`);
 
-        addLog("REQUESTING_PRESIGNED_UPLOAD_URL_FOR_GAME_BINARY...");
-        const binaryUrlRes = await axios.post(
-          `https://play.lazplay.tech/api/v1/developer/builds/${buildId}/upload-url`,
-          {
-            fileName: binaryFile.name,
-            contentType: "application/zip"
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const { uploadUrl } = binaryUrlRes.data.data || binaryUrlRes.data;
+          addLog(`REQUESTING_PRESIGNED_UPLOAD_URL_FOR_${platform}_BINARY...`);
+          const binaryUrlRes = await axios.post(
+            `https://play.lazplay.tech/api/v1/developer/builds/${buildId}/upload-url`,
+            {
+              fileName: file.name,
+              contentType: "application/zip",
+              sizeBytes: Number(file.size || 0)
+            },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          const { uploadUrl } = binaryUrlRes.data.data || binaryUrlRes.data;
 
-        addLog(`UPLOADING_GAME_BINARY_ZIP: ${binaryFile.name} (${Math.round(binaryFile.size / (1024 * 1024))} MB) TO DEPLOYMENT_R2_CELL...`);
-        await uploadToR2(uploadUrl, binaryFile, (pct) => setUploadProgress(pct));
-        addLog("BINARY_ZIP_UPLOADED_SUCCESSFULLY ✓");
+          addLog(`UPLOADING_${platform}_BINARY_ZIP: ${file.name} (${Math.round(file.size / (1024 * 1024))} MB) TO DEPLOYMENT_R2_CELL...`);
+          setUploadProgress(0);
+          await uploadToR2(uploadUrl, file, (pct) => setUploadProgress(pct));
+          setUploadProgress(100);
+          addLog(`${platform}_BINARY_ZIP_UPLOADED_SUCCESSFULLY ✓`);
 
-        addLog("MARKING_BUILD_UPLOAD_AS_COMPLETED...");
-        await axios.post(
-          `https://play.lazplay.tech/api/v1/developer/builds/${buildId}/uploads/complete`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        addLog("BUILD_UPLOAD_COMPLETED ✓");
-        setUploadProgress(0);
+          addLog(`MARKING_${platform}_BUILD_UPLOAD_AS_COMPLETED...`);
+          await axios.post(
+            `https://play.lazplay.tech/api/v1/developer/builds/${buildId}/uploads/complete`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          addLog(`${platform}_BUILD_UPLOAD_COMPLETED ✓`);
+          setUploadProgress(0);
 
-        // Step 6: Antivirus & validation sandbox scanning
-        setDeployStep(6);
-        addLog("TRIGGERING_ANTI_MALWARE_SANDBOX_SCAN...");
-        await axios.post(
-          `https://play.lazplay.tech/api/v1/developer/builds/${buildId}/scan`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        addLog("SCAN_TRIGGERED: CONTAINER_VERIFIED_SECURE ✓");
+          // Step 6: Antivirus & validation sandbox scanning
+          setDeployStep(6);
+          addLog(`TRIGGERING_${platform}_ANTI_MALWARE_SANDBOX_SCAN...`);
+          await axios.post(
+            `https://play.lazplay.tech/api/v1/developer/builds/${buildId}/scan`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          addLog(`${platform}_SCAN_TRIGGERED: CONTAINER_VERIFIED_SECURE ✓`);
 
-        // Step 7: Publishing/Deploying build
-        setDeployStep(7);
-        addLog("DEPLOYING_BUILD_TO_PRODUCTION_GATEWAY...");
-        await axios.post(
-          `https://play.lazplay.tech/api/v1/developer/builds/${buildId}/deploy`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        addLog("PRODUCTION_DEPLOYMENT_COMPLETE ✓");
+          // Step 7: Publishing/Deploying build
+          setDeployStep(7);
+          addLog(`DEPLOYING_${platform}_BUILD_TO_PRODUCTION_GATEWAY...`);
+          await axios.post(
+            `https://play.lazplay.tech/api/v1/developer/builds/${buildId}/deploy`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          addLog(`${platform}_PRODUCTION_DEPLOYMENT_COMPLETE ✓`);
+        } else {
+          addLog(`WARN: NO_BUILD_STAGED_FOR_${platform}. SKIPPING.`);
+        }
       }
 
       setDeployStep(8);
@@ -886,17 +903,7 @@ export default function DeveloperConsole() {
                     />
                   </div>
 
-                  <div className="space-y-2 col-span-full">
-                    <label className="block text-[10px] font-mono uppercase text-slate-500">
-                      _NATIVE_ENTRYPOINT_EXECUTABLE
-                    </label>
-                    <input
-                      placeholder="e.g. CyberRun.exe (Leave blank to auto-detect)"
-                      value={form.entrypoint}
-                      onChange={(e) => setForm({ ...form, entrypoint: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-800 focus:border-brand-500 p-3 rounded-lg text-sm text-slate-200 outline-none transition-all font-mono"
-                    />
-                  </div>
+
 
                   <div className="space-y-2 col-span-full">
                     <label className="block text-[10px] font-mono uppercase text-slate-500">_DESCRIPTION_SYNOPSIS</label>
@@ -989,7 +996,48 @@ export default function DeveloperConsole() {
                         </button>
                       ))}
                     </div>
+                    {form.hardwareSpecs.includes("WEB") && (
+                      <div className="p-3 border border-amber-500/20 bg-amber-500/5 text-amber-500 font-mono text-[9px] uppercase animate-in fade-in duration-200 rounded-lg">
+                        ⚠️ WARNING: WEB BUILDS ARE STRICTLY FOR FREE PLAY & DEMO PURPOSES ONLY. THEY CANNOT BE SOLD FOR A PRICE.
+                      </div>
+                    )}
                   </div>
+
+                  {form.hardwareSpecs.length > 0 && (
+                    <div className="space-y-3 p-3 bg-slate-900/60 border border-slate-800/80 rounded-lg animate-in fade-in duration-200">
+                      <label className="block text-[9px] font-mono uppercase text-slate-500 tracking-wider">
+                        _PLATFORM_ENTRYPOINTS
+                      </label>
+                      <div className="grid grid-cols-1 gap-2.5">
+                        {form.hardwareSpecs.map((platform) => (
+                          <div key={platform} className="space-y-1">
+                            <span className="block text-[8px] font-mono text-slate-400 uppercase">
+                              {platform} FILE PATH (E.G. {platform === "WEB" ? "INDEX.HTML" : "GAME.EXE"})
+                            </span>
+                            <div className="flex items-center bg-slate-950 border border-slate-800 focus-within:border-brand-500 transition-colors p-2 rounded">
+                              <span className="text-slate-600 font-mono text-[10px] mr-2">&gt;</span>
+                              <input
+                                className="bg-transparent border-none p-0 focus:ring-0 w-full text-[10px] font-mono text-slate-300 placeholder:text-slate-700 outline-none"
+                                placeholder={platform === "WEB" ? "index.html" : "game.exe"}
+                                type="text"
+                                value={form.platformEntrypoints?.[platform] || ""}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setForm({
+                                    ...form,
+                                    platformEntrypoints: {
+                                      ...(form.platformEntrypoints || {}),
+                                      [platform]: val
+                                    }
+                                  });
+                                }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Genres Supported */}
                   <div className="space-y-2">
@@ -1143,26 +1191,45 @@ export default function DeveloperConsole() {
                     </div>
                   </div>
 
-                  {/* Binary ZIP file picker */}
-                  <div className="space-y-1.5 pt-2 border-t border-slate-800/40">
-                    <label className="block text-[9px] font-mono uppercase text-emerald-400 font-bold">_NATIVE_GAME_BINARY (.ZIP)</label>
-                    <div className="flex items-center gap-3">
-                      <label className="flex-1 bg-slate-900 border border-emerald-500/20 hover:border-emerald-500 cursor-pointer p-3 rounded-lg flex items-center justify-between text-xs font-mono transition-all text-emerald-500/70">
-                        <span className="truncate font-bold">{binaryFile ? binaryFile.name : "CHOOSE_BINARY_ZIP..."}</span>
-                        <input
-                          type="file"
-                          accept=".zip"
-                          className="hidden"
-                          onChange={(e) => setBinaryFile(e.target.files?.[0] || null)}
-                        />
+                  {/* Binary ZIP file pickers for each selected platform */}
+                  {form.hardwareSpecs.map((platform) => (
+                    <div key={platform} className="space-y-1.5 pt-2 border-t border-slate-800/40 animate-in fade-in duration-200">
+                      <label className="block text-[9px] font-mono uppercase text-emerald-400 font-bold">
+                        _GAME_BINARY_{platform} (.ZIP)
                       </label>
-                      {binaryFile && (
-                        <button onClick={() => setBinaryFile(null)} className="text-slate-500 hover:text-red-400 p-2">
-                          <Trash2 size={16} />
-                        </button>
-                      )}
+                      <div className="flex items-center gap-3">
+                        <label className="flex-1 bg-slate-900 border border-emerald-500/20 hover:border-emerald-500 cursor-pointer p-3 rounded-lg flex items-center justify-between text-xs font-mono transition-all text-emerald-500/70">
+                          <span className="truncate font-bold text-emerald-500/90">
+                            {binaryFiles[platform] ? binaryFiles[platform]?.name : `CHOOSE_${platform}_BINARY_ZIP...`}
+                          </span>
+                          <input
+                            type="file"
+                            accept=".zip"
+                            className="hidden"
+                            onChange={(e) =>
+                              setBinaryFiles((prev) => ({
+                                ...prev,
+                                [platform]: e.target.files?.[0] || null
+                              }))
+                            }
+                          />
+                        </label>
+                        {binaryFiles[platform] && (
+                          <button
+                            onClick={() =>
+                              setBinaryFiles((prev) => ({
+                                ...prev,
+                                [platform]: null
+                              }))
+                            }
+                            className="text-slate-500 hover:text-red-400 p-2"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
 
                 {/* Big Deploy action button */}
