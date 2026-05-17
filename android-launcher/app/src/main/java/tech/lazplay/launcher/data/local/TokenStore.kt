@@ -24,8 +24,16 @@ class TokenStore(context: Context) {
 
     fun getRefreshToken(): String? = prefs.getString(KEY_REFRESH, null)?.takeIf { it.isNotBlank() }
 
+    fun getThemeColor(): String = prefs.getString(KEY_THEME_COLOR, "#00F6F6") ?: "#00F6F6"
+
+    fun saveThemeColor(colorHex: String) {
+        prefs.edit().putString(KEY_THEME_COLOR, colorHex).apply()
+    }
+
     fun clear() {
-        prefs.edit().clear().apply()
+        // Retain the theme when logging out to keep preferred branding
+        val currentTheme = getThemeColor()
+        prefs.edit().clear().putString(KEY_THEME_COLOR, currentTheme).apply()
     }
 
     fun hasSession(): Boolean = getAccessToken() != null
@@ -34,5 +42,6 @@ class TokenStore(context: Context) {
         private const val FILE_NAME = "lazplay_secure_session"
         private const val KEY_ACCESS = "access_token"
         private const val KEY_REFRESH = "refresh_token"
+        private const val KEY_THEME_COLOR = "theme_color"
     }
 }

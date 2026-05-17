@@ -18,6 +18,8 @@ import tech.lazplay.launcher.bridge.LazPlayJsBridge
 import tech.lazplay.launcher.databinding.FragmentStoreBinding
 import tech.lazplay.launcher.ui.main.MainActivity
 
+import tech.lazplay.launcher.ui.theme.ThemeManager
+
 class StoreFragment : Fragment() {
     private var _binding: FragmentStoreBinding? = null
     private val binding get() = _binding!!
@@ -35,6 +37,9 @@ class StoreFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Dynamically style the horizontal WebView progress bar
+        binding.storeProgress.indeterminateTintList = ThemeManager.getThemeColorStateList()
 
         bridge = LazPlayJsBridge(
             fragment = this,

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background"
@@ -10,36 +11,173 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+        <!-- Cyberpunk OS Header -->
         <TextView
+            android:id="@+id/settingsHeader"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="monospace"
-            android:text="@string/settings_title"
+            android:text="SYSTEM_SETTINGS // LAZPLAY_OS"
             android:textColor="@color/primary"
-            android:textSize="22sp"
+            android:textSize="20sp"
             android:textStyle="bold" />
 
         <TextView
-            android:id="@+id/profileName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:fontFamily="monospace"
+            android:text="HARDWARE: OPTIMAL // CALIBRATION: ONLINE"
+            android:textColor="@color/on_surface_variant"
+            android:textSize="9sp"
+            android:alpha="0.7" />
+
+        <!-- Profile Calibration Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/profileCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:textColor="@color/on_surface"
-            android:textSize="18sp" />
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="@color/surface"
+            app:strokeColor="@color/outline"
+            app:strokeWidth="1dp"
+            app:cardElevation="2dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:text="USER_PROFILE_BEACON"
+                    android:textColor="@color/on_surface_variant"
+                    android:textSize="9sp" />
+
+                <TextView
+                    android:id="@+id/profileName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="@color/on_surface"
+                    android:textSize="18sp"
+                    android:fontFamily="monospace"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/profileEmail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@color/on_surface_variant"
+                    android:fontFamily="monospace"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Color Accent Calibration -->
+        <TextView
+            android:id="@+id/colorCalibrationLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:fontFamily="monospace"
+            android:text="PRIMARY_COLOR_CALIBRATION"
+            android:textColor="@color/primary"
+            android:textSize="13sp"
+            android:textStyle="bold" />
 
         <TextView
-            android:id="@+id/profileEmail"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:fontFamily="monospace"
+            android:text="PRESET_VECTOR_BEAMS // CHOOSE THEME"
+            android:textColor="@color/on_surface_variant"
+            android:textSize="9sp"
+            android:alpha="0.7" />
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textColor="@color/on_surface_variant" />
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="12dp">
 
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/colorNeonGreen"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_margin="6dp"
+                app:cardCornerRadius="20dp"
+                app:cardBackgroundColor="#39ff14"
+                app:strokeColor="#FFFFFF"
+                app:strokeWidth="0dp" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/colorCyberPink"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_margin="6dp"
+                app:cardCornerRadius="20dp"
+                app:cardBackgroundColor="#fe00fe"
+                app:strokeColor="#FFFFFF"
+                app:strokeWidth="0dp" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/colorRetroCyan"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_margin="6dp"
+                app:cardCornerRadius="20dp"
+                app:cardBackgroundColor="#00f6f6"
+                app:strokeColor="#FFFFFF"
+                app:strokeWidth="0dp" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/colorPlasmaPurple"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_margin="6dp"
+                app:cardCornerRadius="20dp"
+                app:cardBackgroundColor="#9d00ff"
+                app:strokeColor="#FFFFFF"
+                app:strokeWidth="0dp" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/colorLaserRed"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_margin="6dp"
+                app:cardCornerRadius="20dp"
+                app:cardBackgroundColor="#ff0000"
+                app:strokeColor="#FFFFFF"
+                app:strokeWidth="0dp" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/colorGoldenEye"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_margin="6dp"
+                app:cardCornerRadius="20dp"
+                app:cardBackgroundColor="#ffcc00"
+                app:strokeColor="#FFFFFF"
+                app:strokeWidth="0dp" />
+        </LinearLayout>
+
+        <!-- System Controls -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/clearCacheButton"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="28dp"
+            android:fontFamily="monospace"
+            android:textSize="12sp"
+            android:textStyle="bold"
             android:text="@string/clear_cache" />
 
         <com.google.android.material.button.MaterialButton
@@ -47,6 +185,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
+            android:fontFamily="monospace"
+            android:textSize="12sp"
+            android:textStyle="bold"
             android:text="@string/logout" />
     </LinearLayout>
 </ScrollView>

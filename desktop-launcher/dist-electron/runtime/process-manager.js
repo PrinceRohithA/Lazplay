@@ -8,6 +8,7 @@ const child_process_1 = require("child_process");
 const electron_1 = require("electron");
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
+const os_1 = __importDefault(require("os"));
 const db_1 = require("../storage/db");
 const electron_log_1 = __importDefault(require("electron-log"));
 const manager_1 = require("../downloads/manager");
@@ -91,18 +92,55 @@ class ProcessManager {
         const exeDir = path_1.default.dirname(launchPath);
         const isExe = launchPath.toLowerCase().endsWith(".exe");
         electron_log_1.default.info(`Launching game ${gameId} from ${launchPath} (CWD: ${exeDir}, shell: ${!isExe})`);
-        const child = (0, child_process_1.spawn)(isExe ? launchPath : `"${launchPath}"`, [], {
-            cwd: exeDir,
-            detached: true,
-            stdio: "ignore",
-            shell: !isExe,
-            env: {
-                ...process.env,
-                LAZPLAY_SECURE_MODE: "true",
-                LAZPLAY_LAUNCH_TOKEN: Buffer.from(`${gameId}-${Date.now()}`).toString('base64'),
-                LAZPLAY_INTERNAL_ID: gameId
+        let child;
+        if (process.platform === "linux" && isExe) {
+            const protonPath = this.findProtonPath();
+            if (!protonPath) {
+                throw new Error("Steam Proton compatibility layer not found. Please install Steam or a Proton runtime to play Windows games on Linux.");
             }
-        });
+            const compatDataPath = path_1.default.join(os_1.default.homedir(), "Games/Lazplay/compatdata", gameId);
+            if (!fs_1.default.existsSync(compatDataPath)) {
+                fs_1.default.mkdirSync(compatDataPath, { recursive: true });
+            }
+            const steamInstallPath = path_1.default.join(os_1.default.homedir(), ".steam/steam");
+            electron_log_1.default.info(`[Linux-Proton] Spawning Windows build via Proton: ${protonPath} run ${launchPath}`);
+            child = (0, child_process_1.spawn)(protonPath, ["run", launchPath], {
+                cwd: exeDir,
+                detached: true,
+                stdio: "ignore",
+                env: {
+                    ...process.env,
+                    STEAM_COMPAT_CLIENT_INSTALL_PATH: steamInstallPath,
+                    STEAM_COMPAT_DATA_PATH: compatDataPath,
+                    LAZPLAY_SECURE_MODE: "true",
+                    LAZPLAY_LAUNCH_TOKEN: Buffer.from(`${gameId}-${Date.now()}`).toString("base64"),
+                    LAZPLAY_INTERNAL_ID: gameId
+                }
+            });
+        }
+        else {
+            if (process.platform === "linux") {
+                try {
+                    fs_1.default.chmodSync(launchPath, "755");
+                    electron_log_1.default.info(`[Linux-Native] Set executable permissions (chmod +x) for ${launchPath}`);
+                }
+                catch (err) {
+                    electron_log_1.default.error(`[Linux-Native] Failed to set permissions on ${launchPath}:`, err);
+                }
+            }
+            child = (0, child_process_1.spawn)(isExe ? launchPath : `"${launchPath}"`, [], {
+                cwd: exeDir,
+                detached: true,
+                stdio: "ignore",
+                shell: !isExe,
+                env: {
+                    ...process.env,
+                    LAZPLAY_SECURE_MODE: "true",
+                    LAZPLAY_LAUNCH_TOKEN: Buffer.from(`${gameId}-${Date.now()}`).toString("base64"),
+                    LAZPLAY_INTERNAL_ID: gameId
+                }
+            });
+        }
         child.unref();
         this.runningGames.set(gameId, { process: child, startTime, runtimePath, originalPath });
         this.broadcastState(gameId, "running");
@@ -190,6 +228,43 @@ class ProcessManager {
             win.webContents.send("game-state-change", { gameId, state });
             win.webContents.send("store-game-state", { gameId, state });
         });
+    }
+    findProtonPath() {
+        const home = os_1.default.homedir();
+        const searchDirs = [
+            path_1.default.join(home, ".local/share/Steam/steamapps/common"),
+            path_1.default.join(home, ".steam/steam/steamapps/common"),
+            path_1.default.join(home, ".steam/root/compatibilitytools.d"),
+            path_1.default.join(home, ".var/app/com.valvesoftware.Steam/data/Steam/steamapps/common"),
+            "/var/lib/flatpak/runtime/org.valvesoftware.Steam.CompatibilityTool.Proton",
+            "/var/lib/flatpak/app/com.valvesoftware.Steam"
+        ];
+        for (const dir of searchDirs) {
+            if (!fs_1.default.existsSync(dir))
+                continue;
+            try {
+                const files = fs_1.default.readdirSync(dir);
+                for (const file of files) {
+                    if (file.toLowerCase().includes("proton")) {
+                        const protonPath = path_1.default.join(dir, file, "proton");
+                        if (fs_1.default.existsSync(protonPath)) {
+                            return protonPath;
+                        }
+                    }
+                }
+            }
+            catch (e) {
+                electron_log_1.default.error(`Error scanning compatibility path ${dir}:`, e);
+            }
+        }
+        try {
+            const whichProton = require("child_process").execSync("which proton", { encoding: "utf8" }).trim();
+            if (whichProton && fs_1.default.existsSync(whichProton)) {
+                return whichProton;
+            }
+        }
+        catch (_) { }
+        return null;
     }
 }
 exports.processManager = new ProcessManager();

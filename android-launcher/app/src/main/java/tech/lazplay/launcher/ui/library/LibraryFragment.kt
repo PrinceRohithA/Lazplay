@@ -9,9 +9,10 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.GridLayoutManager
 import kotlinx.coroutines.launch
 import tech.lazplay.launcher.databinding.FragmentLibraryBinding
+import tech.lazplay.launcher.ui.theme.ThemeManager
 
 class LibraryFragment : Fragment() {
     private var _binding: FragmentLibraryBinding? = null
@@ -34,8 +35,11 @@ class LibraryFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        binding.libraryList.layoutManager = LinearLayoutManager(requireContext())
+        binding.libraryList.layoutManager = GridLayoutManager(requireContext(), 2)
         binding.libraryList.adapter = adapter
+
+        // Tint swipe refresh loader ring
+        binding.libraryRefresh.setColorSchemeColors(ThemeManager.getThemeColor())
 
         binding.libraryRefresh.setOnRefreshListener {
             viewModel.refresh()

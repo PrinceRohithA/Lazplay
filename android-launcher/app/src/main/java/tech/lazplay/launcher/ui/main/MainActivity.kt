@@ -4,8 +4,10 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
+import android.graphics.Color
 import tech.lazplay.launcher.R
 import tech.lazplay.launcher.databinding.ActivityMainBinding
+import tech.lazplay.launcher.ui.theme.ThemeManager
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -19,6 +21,19 @@ class MainActivity : AppCompatActivity() {
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         val navController = navHost.navController
         binding.bottomNav.setupWithNavController(navController)
+        updateBottomNavColors()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateBottomNavColors()
+    }
+
+    fun updateBottomNavColors() {
+        val uncheckedColor = Color.parseColor("#9A9898")
+        val stateList = ThemeManager.getBottomNavColorStateList(uncheckedColor)
+        binding.bottomNav.itemIconTintList = stateList
+        binding.bottomNav.itemTextColor = stateList
     }
 
     fun selectTab(destinationId: Int) {

@@ -5,9 +5,11 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import coil.load
 import tech.lazplay.launcher.data.local.GameInstallStatus
 import tech.lazplay.launcher.data.local.InstalledGameEntity
 import tech.lazplay.launcher.databinding.ItemLibraryGameBinding
+import tech.lazplay.launcher.ui.theme.ThemeManager
 
 class LibraryAdapter(
     private val onDownload: (InstalledGameEntity) -> Unit,
@@ -36,6 +38,17 @@ class LibraryAdapter(
             binding.gameStatus.text = game.status
             binding.progressBar.progress = game.progress
 
+            // Dynamic outline color based on theme selection
+            binding.cardRoot.strokeColor = ThemeManager.getThemeColor()
+
+            // Dynamic progress bar tint
+            binding.progressBar.progressTintList = ThemeManager.getThemeColorStateList()
+
+            // Load Game Cover Cover URL
+            binding.gameCover.load(game.coverUrl) {
+                crossfade(true)
+            }
+
             val status = GameInstallStatus.from(game.status)
             binding.progressBar.visibility =
                 if (status == GameInstallStatus.DOWNLOADING) android.view.View.VISIBLE
@@ -52,6 +65,10 @@ class LibraryAdapter(
             binding.actionButton.isEnabled =
                 status != GameInstallStatus.DOWNLOADING &&
                     !game.downloadUrl.isNullOrBlank()
+
+            // Dynamic theme styling on action button and status text
+            ThemeManager.applyTheme(binding.actionButton)
+            binding.gameStatus.setTextColor(ThemeManager.getThemeColor())
 
             binding.actionButton.setOnClickListener {
                 when (GameInstallStatus.from(game.status)) {

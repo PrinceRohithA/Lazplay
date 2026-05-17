@@ -606,6 +606,11 @@ router.add('POST', '/developer/builds/:buildId/upload-url', async (req) => {
       throw new HttpError(400, 'BUILD_LIMIT_EXCEEDED', 'Android game builds are strictly limited to 5GB (5,368,709,120 bytes)');
     }
 
+    const isWeb = build.platform?.toUpperCase() === 'WEB' || build.runtime?.toUpperCase() === 'WEB';
+    if (isWeb && body.sizeBytes > 500n * 1024n * 1024n) {
+      throw new HttpError(400, 'BUILD_LIMIT_EXCEEDED', 'Web game builds are strictly limited to a maximum size of 500MB (524,288,000 bytes)');
+    }
+
     const objectKey = `games/${build.gameId}/builds/${build.id}/${body.fileName}`;
     console.log('[build-upload-url]', { buildId: build.id, gameId: build.gameId, objectKey, sizeBytes: body.sizeBytes.toString() });
     const upload = await signedStorageUrl(objectKey, 'PUT', 3600, getPrivateGameBucket(), { contentType: body.contentType });

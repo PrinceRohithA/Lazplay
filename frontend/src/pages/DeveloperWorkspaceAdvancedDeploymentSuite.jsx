@@ -970,7 +970,17 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
                                 </p>
                               </div>
                               <p className="font-label-mono text-[8px] text-on-surface-variant opacity-70 mt-1 max-w-[90%] truncate">
-                                {isWindows ? 'UPLOAD_VIA_DESKTOP_LAUNCHER_ONLY' : isStaged ? isStaged.name : '.ZIP / .EXE / .APK / .PKG (MAX 500MB)'}
+                                {isWindows
+                                  ? 'UPLOAD_VIA_DESKTOP_LAUNCHER_ONLY'
+                                  : isStaged
+                                  ? isStaged.name
+                                  : platform === 'WEB'
+                                  ? '.ZIP ONLY (MAX 500MB, < 2,000 FILES)'
+                                  : platform === 'ANDROID'
+                                  ? '.APK ONLY (MAX 5GB)'
+                                  : platform === 'LINUX'
+                                  ? '.ZIP ONLY (MAX 500MB)'
+                                  : '.ZIP / .EXE / .APK / .PKG (MAX 500MB)'}
                               </p>
                               {isStaged && !isWindows && (
                                 <div className="absolute top-2 right-2 p-1 bg-surface-container-highest hover:bg-error/20 transition-colors cursor-pointer group/close" onClick={(e) => { e.stopPropagation(); setFiles(prev => ({ ...prev, [slotId]: null })); }}>

@@ -55,11 +55,27 @@ export async function scanBuildDirectory(rootDir, { platform } = {}) {
 
   await walk(rootDir);
 
-  const isAndroid = platform?.toUpperCase() === 'ANDROID';
-  const limit = isAndroid ? 5 * 1024 * 1024 * 1024 : MAX_GAME_SIZE_BYTES;
-  if (totalSize > limit) {
-    const limitLabel = isAndroid ? '5GB' : '10GB';
-    throw new Error(`Build exceeds maximum size of ${limitLabel} for ${platform || 'NATIVE'} (${totalSize} bytes)`);
+  const platformUpper = platform?.toUpperCase();
+  const isAndroid = platformUpper === 'ANDROID';
+  const isWeb = platformUpper === 'WEB' || platformUpper === 'HTML5';
+
+  if (isWeb) {
+    if (files.length > 2000) {
+      throw new Error(`Web game builds are strictly limited to a maximum of 2,000 files/items to ensure optimal browser execution performance. Your build contains ${files.length} items. Please compress, pack textures, or bundle assets.`);
+    }
+    if (totalSize > 500 * 1024 * 1024) {
+      throw new Error(`Web game builds are strictly limited to a maximum size of 500MB. Your build is ${(totalSize / 1024 / 1024).toFixed(2)}MB.`);
+    }
+    const hasIndexHtml = files.some(f => f.relativePath.toLowerCase() === 'index.html' || f.relativePath.toLowerCase().endsWith('/index.html'));
+    if (!hasIndexHtml) {
+      throw new Error(`index.html was not found in the build directory. Web game builds must contain a valid index.html entrypoint at the root or within subdirectories.`);
+    }
+  } else {
+    const limit = isAndroid ? 5 * 1024 * 1024 * 1024 : MAX_GAME_SIZE_BYTES;
+    if (totalSize > limit) {
+      const limitLabel = isAndroid ? '5GB' : '10GB';
+      throw new Error(`Build exceeds maximum size of ${limitLabel} for ${platform || 'NATIVE'} (${totalSize} bytes)`);
+    }
   }
 
   return { files, totalSize, fileCount: files.length, unsupported, duplicates };
