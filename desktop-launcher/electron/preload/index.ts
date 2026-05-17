@@ -54,4 +54,14 @@ contextBridge.exposeInMainWorld("lazplayAPI", {
   onSessionUpdated: (callback: (data: any) => void) => {
     ipcRenderer.on("session-updated", (_event, data) => callback(data));
   },
+
+  // Creator Workspace Chunked Upload pipeline
+  selectFolder: () => ipcRenderer.invoke("select-folder"),
+  uploadBuildDirectory: (params: { gameId: string; buildId: string; folderPath: string; platform: string; version: string }) =>
+    ipcRenderer.invoke("upload-build-directory", params),
+  onUploadProgress: (callback: (data: any) => void) => {
+    const handler = (_event: any, data: any) => callback(data);
+    ipcRenderer.on("upload-progress", handler);
+    return () => ipcRenderer.removeListener("upload-progress", handler);
+  },
 });

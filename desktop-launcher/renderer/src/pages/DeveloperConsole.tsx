@@ -77,7 +77,7 @@ export default function DeveloperConsole() {
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [trailerFile, setTrailerFile] = useState<File | null>(null);
-  const [binaryFiles, setBinaryFiles] = useState<Record<string, File | null>>({});
+  const [binaryFiles, setBinaryFiles] = useState<Record<string, string | null>>({});
 
   // Logging & Deployment Terminal State
   const [logs, setLogs] = useState<string[]>([]);
@@ -446,10 +446,10 @@ export default function DeveloperConsole() {
         setUploadProgress(0);
       }
 
-      // Step 5: Native Binary zip upload pipeline for each selected platform
+      // Step 5: High-performance Client-side Chunked & ZSTD Compression pipeline
       for (const platform of form.hardwareSpecs) {
-        const file = binaryFiles[platform];
-        if (file) {
+        const folderPath = binaryFiles[platform];
+        if (folderPath) {
           setDeployStep(5);
           addLog(`CREATING_NEW_DEVELOPER_BUILD_RECORD_FOR_${platform}...`);
           const buildRes = await axios.post(
@@ -466,31 +466,38 @@ export default function DeveloperConsole() {
           const buildId = build.id;
           addLog(`${platform}_BUILD_RECORD_INITIALIZED_ID: ${buildId} ✓`);
 
-          addLog(`REQUESTING_PRESIGNED_UPLOAD_URL_FOR_${platform}_BINARY...`);
-          const binaryUrlRes = await axios.post(
-            `https://play.lazplay.tech/api/v1/developer/builds/${buildId}/upload-url`,
-            {
-              fileName: file.name,
-              contentType: "application/zip",
-              sizeBytes: Number(file.size || 0)
-            },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          const { uploadUrl } = binaryUrlRes.data.data || binaryUrlRes.data;
-
-          addLog(`UPLOADING_${platform}_BINARY_ZIP: ${file.name} (${Math.round(file.size / (1024 * 1024))} MB) TO DEPLOYMENT_R2_CELL...`);
+          addLog(`LAUNCHING_HIGH_PERFORMANCE_CLIENT_SIDE_CHUNKED_UPLOADER_FOR_${platform}...`);
+          addLog(`[UPLOADER] SCANNING_DIRECTORY_AND_CREATING_BUNDLES...`);
+          
           setUploadProgress(0);
-          await uploadToR2(uploadUrl, file, (pct) => setUploadProgress(pct));
-          setUploadProgress(100);
-          addLog(`${platform}_BINARY_ZIP_UPLOADED_SUCCESSFULLY ✓`);
 
-          addLog(`MARKING_${platform}_BUILD_UPLOAD_AS_COMPLETED...`);
-          await axios.post(
-            `https://play.lazplay.tech/api/v1/developer/builds/${buildId}/uploads/complete`,
-            {},
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          addLog(`${platform}_BUILD_UPLOAD_COMPLETED ✓`);
+          let removeProgress = () => {};
+          if (window.lazplayAPI?.onUploadProgress) {
+            removeProgress = window.lazplayAPI.onUploadProgress((data: any) => {
+              if (data.buildId === buildId) {
+                setUploadProgress(data.progress);
+                addLog(`[UPLOADER] ${data.status}`);
+              }
+            });
+          }
+
+          const uploadResult = await window.lazplayAPI.uploadBuildDirectory({
+            gameId,
+            buildId,
+            folderPath,
+            platform,
+            version: form.version
+          });
+
+          removeProgress();
+
+          if (!uploadResult || !uploadResult.success) {
+            throw new Error(uploadResult?.error || `Chunked upload failed for ${platform}`);
+          }
+
+          setUploadProgress(100);
+          addLog(`${platform}_LOCAL_CHUNKING_AND_COMPRESSION_COMPLETED_SUCCESSFULLY ✓`);
+          addLog(`${platform}_MANIFEST_PUBLISHED: ${uploadResult.manifestObjectKey} ✓`);
           setUploadProgress(0);
 
           // Step 6: Antivirus & validation sandbox scanning
@@ -1191,29 +1198,32 @@ export default function DeveloperConsole() {
                     </div>
                   </div>
 
-                  {/* Binary ZIP file pickers for each selected platform */}
+                  {/* Binary folder pickers for each selected platform */}
                   {form.hardwareSpecs.map((platform) => (
                     <div key={platform} className="space-y-1.5 pt-2 border-t border-slate-800/40 animate-in fade-in duration-200">
                       <label className="block text-[9px] font-mono uppercase text-emerald-400 font-bold">
-                        _GAME_BINARY_{platform} (.ZIP)
+                        _GAME_BINARY_DIRECTORY_{platform} (LOCAL_FOLDER)
                       </label>
                       <div className="flex items-center gap-3">
-                        <label className="flex-1 bg-slate-900 border border-emerald-500/20 hover:border-emerald-500 cursor-pointer p-3 rounded-lg flex items-center justify-between text-xs font-mono transition-all text-emerald-500/70">
-                          <span className="truncate font-bold text-emerald-500/90">
-                            {binaryFiles[platform] ? binaryFiles[platform]?.name : `CHOOSE_${platform}_BINARY_ZIP...`}
-                          </span>
-                          <input
-                            type="file"
-                            accept=".zip"
-                            className="hidden"
-                            onChange={(e) =>
-                              setBinaryFiles((prev) => ({
-                                ...prev,
-                                [platform]: e.target.files?.[0] || null
-                              }))
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (window.lazplayAPI?.selectFolder) {
+                              const path = await window.lazplayAPI.selectFolder();
+                              if (path) {
+                                setBinaryFiles((prev) => ({
+                                  ...prev,
+                                  [platform]: path
+                                }));
+                              }
                             }
-                          />
-                        </label>
+                          }}
+                          className="flex-1 bg-slate-900 border border-emerald-500/20 hover:border-emerald-500 cursor-pointer p-3 rounded-lg flex items-center justify-between text-xs font-mono transition-all text-emerald-500/70 text-left"
+                        >
+                          <span className="truncate font-bold text-emerald-500/90">
+                            {binaryFiles[platform] ? binaryFiles[platform] : `CHOOSE_${platform}_BUILD_DIRECTORY...`}
+                          </span>
+                        </button>
                         {binaryFiles[platform] && (
                           <button
                             onClick={() =>

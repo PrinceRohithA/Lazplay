@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow, WebContentsView, shell } from "electron";
+import { ipcMain, BrowserWindow, WebContentsView, shell, dialog } from "electron";
 import { downloadManager } from "../downloads/manager";
 import { processManager } from "../runtime/process-manager";
 import { db } from "../storage/db";
@@ -346,6 +346,118 @@ export function setupIpcHandlers(
     } catch (error: any) {
       log.error("Claim failed:", error);
       return { success: false, error: error.message };
+    }
+  });
+
+  // Select Folder dialog for Creator Workspace (chunked uploads)
+  ipcMain.handle("select-folder", async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ["openDirectory", "createDirectory"],
+      title: "Select Build Directory"
+    });
+    if (result.canceled) return null;
+    return result.filePaths[0];
+  });
+
+  // Client-side high performance chunked uploader pipeline
+  ipcMain.handle("upload-build-directory", async (event, { gameId, buildId, folderPath, platform, version }) => {
+    const { token } = db.getTokens();
+    if (!token) throw new Error("Authentication token not found. Please log in first.");
+
+    try {
+      log.info(`Staging chunked build pipeline for game ${gameId}, build ${buildId} on folder: ${folderPath}`);
+      
+      // Dynamic import to prevent CommonJS ERR_REQUIRE_ESM at runtime
+      const { processBuildDirectory } = await (eval('import("@lazplay/distribution")') as Promise<any>);
+
+      mainWindow.webContents.send("upload-progress", { buildId, progress: 10, status: "SCANNING_AND_COMPRESSING" });
+
+      const { manifest, chunks } = await processBuildDirectory(folderPath, {
+        version,
+        platform
+      });
+
+      mainWindow.webContents.send("upload-progress", { buildId, progress: 30, status: "HASHING_AND_CHECKING_CHUNKS" });
+
+      const hashList = manifest.chunkHashes;
+      
+      // IPC Helper to speak with API
+      const requestApi = async (method: string, endpoint: string, body?: any) => {
+        const res = await fetch(`https://play.lazplay.tech/api/v1${endpoint}`, {
+          method,
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: body ? JSON.stringify(body) : undefined
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(json.error?.message || `API Error ${res.status}: ${endpoint}`);
+        }
+        return json.data ?? json;
+      };
+
+      const { existing, missing } = await requestApi("POST", `/developer/builds/${buildId}/chunks/check`, { hashes: hashList });
+      log.info(`Deduplication check: ${existing.length} existing, ${missing.length} missing chunks.`);
+
+      let uploadedCount = 0;
+      if (missing.length === 0) {
+        mainWindow.webContents.send("upload-progress", { buildId, progress: 90, status: "ALL_CHUNKS_EXIST_ON_SERVER" });
+      }
+
+      for (const hash of missing) {
+        const chunk = chunks.get(hash);
+        if (!chunk) throw new Error(`Chunk data missing for hash ${hash}`);
+
+        // Request signed upload URL
+        const { uploadUrl } = await requestApi("POST", `/developer/builds/${buildId}/chunks/upload-url`, {
+          hash,
+          sizeBytes: String(chunk.size)
+        });
+
+        // PUT chunk binary payload
+        const uploadRes = await fetch(uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": "application/octet-stream" },
+          body: chunk.data
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error(`Failed to transmit chunk ${hash} (Status: ${uploadRes.status})`);
+        }
+
+        // Complete chunk registration
+        await requestApi("POST", `/developer/builds/${buildId}/chunks/complete`, {
+          hash,
+          sizeBytes: String(chunk.size)
+        });
+
+        uploadedCount++;
+        const progress = 40 + Math.round((uploadedCount / missing.length) * 50);
+        mainWindow.webContents.send("upload-progress", {
+          buildId,
+          progress,
+          status: `STREAMING_CHUNKS (${uploadedCount}/${missing.length})`
+        });
+      }
+
+      mainWindow.webContents.send("upload-progress", { buildId, progress: 95, status: "PUBLISHING_MANIFEST" });
+
+      // Publish chunked manifest
+      const result = await requestApi("POST", `/developer/builds/${buildId}/manifest`, {
+        manifest,
+        version
+      });
+
+      mainWindow.webContents.send("upload-progress", { buildId, progress: 100, status: "DONE" });
+      log.info(`Chunked build deployment complete! Chunks: ${result.chunkCount}, Total size: ${result.totalBytes}`);
+
+      return { success: true, manifestObjectKey: result.manifestObjectKey };
+    } catch (err: any) {
+      log.error(`Chunked build deployment failed:`, err);
+      mainWindow.webContents.send("upload-progress", { buildId, progress: 0, status: `ERROR: ${err.message}` });
+      return { success: false, error: err.message };
     }
   });
 }
