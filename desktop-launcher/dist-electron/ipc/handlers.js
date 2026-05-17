@@ -348,15 +348,7 @@ function setupIpcHandlers(mainWindow, storeView) {
         try {
             electron_log_1.default.info(`Staging chunked build pipeline for game ${gameId}, build ${buildId} on folder: ${folderPath}`);
             // Dynamic import to prevent CommonJS ERR_REQUIRE_ESM at runtime
-            const { processBuildDirectory } = await eval('import("@lazplay/distribution")');
-            mainWindow.webContents.send("upload-progress", { buildId, progress: 10, status: "SCANNING_AND_COMPRESSING" });
-            const { manifest, chunks } = await processBuildDirectory(folderPath, {
-                version,
-                platform
-            });
-            mainWindow.webContents.send("upload-progress", { buildId, progress: 30, status: "HASHING_AND_CHECKING_CHUNKS" });
-            const hashList = manifest.chunkHashes;
-            // IPC Helper to speak with API
+            const { runUploadPipeline } = await eval('import("@lazplay/distribution")');
             const requestApi = async (method, endpoint, body) => {
                 const res = await fetch(`https://play.lazplay.tech/api/v1${endpoint}`, {
                     method,
@@ -372,51 +364,29 @@ function setupIpcHandlers(mainWindow, storeView) {
                 }
                 return json.data ?? json;
             };
-            const { existing, missing } = await requestApi("POST", `/developer/builds/${buildId}/chunks/check`, { hashes: hashList });
-            electron_log_1.default.info(`Deduplication check: ${existing.length} existing, ${missing.length} missing chunks.`);
-            let uploadedCount = 0;
-            if (missing.length === 0) {
-                mainWindow.webContents.send("upload-progress", { buildId, progress: 90, status: "ALL_CHUNKS_EXIST_ON_SERVER" });
-            }
-            for (const hash of missing) {
-                const chunk = chunks.get(hash);
-                if (!chunk)
-                    throw new Error(`Chunk data missing for hash ${hash}`);
-                // Request signed upload URL
-                const { uploadUrl } = await requestApi("POST", `/developer/builds/${buildId}/chunks/upload-url`, {
-                    hash,
-                    sizeBytes: String(chunk.size)
-                });
-                // PUT chunk binary payload
+            const uploadChunkToUrl = async (uploadUrl, chunkBuffer) => {
                 const uploadRes = await fetch(uploadUrl, {
                     method: "PUT",
                     headers: { "Content-Type": "application/octet-stream" },
-                    body: chunk.data
+                    body: chunkBuffer
                 });
                 if (!uploadRes.ok) {
-                    throw new Error(`Failed to transmit chunk ${hash} (Status: ${uploadRes.status})`);
+                    throw new Error(`Failed to transmit chunk to R2 (Status: ${uploadRes.status})`);
                 }
-                // Complete chunk registration
-                await requestApi("POST", `/developer/builds/${buildId}/chunks/complete`, {
-                    hash,
-                    sizeBytes: String(chunk.size)
-                });
-                uploadedCount++;
-                const progress = 40 + Math.round((uploadedCount / missing.length) * 50);
-                mainWindow.webContents.send("upload-progress", {
-                    buildId,
-                    progress,
-                    status: `STREAMING_CHUNKS (${uploadedCount}/${missing.length})`
-                });
-            }
-            mainWindow.webContents.send("upload-progress", { buildId, progress: 95, status: "PUBLISHING_MANIFEST" });
-            // Publish chunked manifest
-            const result = await requestApi("POST", `/developer/builds/${buildId}/manifest`, {
-                manifest,
-                version
+            };
+            const result = await runUploadPipeline({
+                gameId,
+                buildId,
+                folderPath,
+                platform,
+                version,
+                requestApi,
+                uploadChunkToUrl,
+                onProgress: (progress, status) => {
+                    mainWindow.webContents.send("upload-progress", { buildId, progress, status });
+                }
             });
-            mainWindow.webContents.send("upload-progress", { buildId, progress: 100, status: "DONE" });
-            electron_log_1.default.info(`Chunked build deployment complete! Chunks: ${result.chunkCount}, Total size: ${result.totalBytes}`);
+            electron_log_1.default.info(`Chunked build deployment complete! Manifest: ${result.manifestObjectKey}`);
             return { success: true, manifestObjectKey: result.manifestObjectKey };
         }
         catch (err) {

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
-import { processBuildDirectory } from '@lazplay/distribution';
+import { runUploadPipeline } from '@lazplay/distribution';
 import { LazPlayApi } from './api.js';
 
 function usage() {
@@ -55,45 +55,29 @@ async function uploadBuild(options) {
   const entrypoint = options.entrypoint || null;
   const platform = options.platform || 'WINDOWS';
 
-  console.log('[1/5] Scanning, bundling, compressing, and chunking (client-side)...');
-  const { manifest, chunks, scan } = await processBuildDirectory(buildPath, {
+  console.log('[1/4] Booting native high-performance uploader pipeline...');
+  const result = await runUploadPipeline({
+    gameId: '', // not strictly needed for this CLI call
+    buildId,
+    folderPath: buildPath,
+    platform,
     version,
     entrypoint,
-    platform
+    requestApi: async (method, endpoint, body) => {
+      return api.request(method, endpoint, body);
+    },
+    uploadChunkToUrl: async (uploadUrl, chunkBuffer) => {
+      await api.uploadChunkToUrl(uploadUrl, chunkBuffer);
+    },
+    onProgress: (progress, status) => {
+      console.log(`  [Pipeline Progress ${progress}%] -> ${status}`);
+    }
   });
 
-  console.log(`  Files: ${scan.fileCount}, Size: ${(scan.totalSize / 1024 / 1024).toFixed(2)} MB`);
-  console.log(`  Bundles: ${manifest.bundles.length}, Chunks: ${manifest.chunkHashes.length}`);
-  if (scan.unsupported.length) {
-    console.warn(`  Warning: ${scan.unsupported.length} unsupported/skipped file patterns`);
-  }
-
-  const hashList = manifest.chunkHashes;
-  console.log('[2/5] Checking existing chunks on server...');
-  const { existing, missing } = await api.checkChunks(buildId, hashList);
-  console.log(`  Existing: ${existing.length}, Missing: ${missing.length}`);
-
-  console.log('[3/5] Uploading missing chunks...');
-  let uploaded = 0;
-  for (const hash of missing) {
-    const chunk = chunks.get(hash);
-    if (!chunk) {
-      throw new Error(`Chunk data missing for hash ${hash}`);
-    }
-
-    const { uploadUrl } = await api.getChunkUploadUrl(buildId, hash, chunk.size);
-    await api.uploadChunkToUrl(uploadUrl, chunk.data);
-    await api.completeChunk(buildId, hash, chunk.size);
-    uploaded += 1;
-    process.stdout.write(`\r  Uploaded ${uploaded}/${missing.length}`);
-  }
-  if (missing.length) console.log('');
-
-  console.log('[4/5] Publishing manifest...');
-  const result = await api.publishManifest(buildId, manifest, version);
-  console.log(`  Chunk count: ${result.chunkCount}, Total: ${(result.totalBytes / 1024 / 1024).toFixed(2)} MB`);
-
-  console.log('[5/5] Done. Run make-latest on the build to release.');
+  console.log('[2/4] Upload & delta patching process finalized successfully ✓');
+  console.log(`  Chunks: ${result.chunkCount}, Total Staged Size: ${(result.totalBytes / 1024 / 1024).toFixed(2)} MB`);
+  console.log('[3/4] Manifest published object key:', result.manifestObjectKey);
+  console.log('[4/4] Done.');
   return result;
 }
 

@@ -2,12 +2,9 @@ import fs from "fs";
 import axios from "axios";
 import log from "electron-log";
 import {
-  getMissingChunks,
-  reassembleFromManifest,
-  verifyChunkFile,
+  runDownloadPipeline,
 } from "@lazplay/distribution/launcher";
 import {
-  chunkPath,
   ensureCacheDirs,
   getChunksCacheDir,
   saveManifest,
@@ -52,86 +49,94 @@ export class ChunkDownloader {
     return map;
   }
 
-  async downloadChunk(hash: string, url: string): Promise<void> {
-    ensureCacheDirs();
-    const dest = chunkPath(hash);
-    const response = await axios({
-      url,
-      method: "GET",
-      responseType: "stream",
-    });
-
-    const writer = fs.createWriteStream(dest);
-    response.data.pipe(writer);
-
-    await new Promise<void>((resolve, reject) => {
-      writer.on("finish", () => resolve());
-      writer.on("error", reject);
-    });
-
-    await verifyChunkFile(dest, hash);
-  }
-
   async installFromChunks(
     options: ChunkInstallOptions,
     installPath: string,
   ): Promise<{ entrypoint: string | null }> {
-    const { manifest, entrypoint: manifestEntrypoint } = await this.fetchManifest(
-      options.gameId,
-      options.token,
-    );
-    saveManifest(options.gameId, manifest);
-
     const chunkDir = getChunksCacheDir();
-    const missingChunks = await getMissingChunks(manifest, chunkDir);
-    const total = missingChunks.length;
-    let done = 0;
 
-    if (total > 0) {
-      const hashes = missingChunks.map((c: { hash: string }) => c.hash);
-      const urlMap = await this.getDownloadUrls(options.gameId, options.token, hashes);
+    const fetchManifest = async (gameId: string) => {
+      const result = await this.fetchManifest(gameId, options.token);
+      saveManifest(gameId, result.manifest);
+      return result;
+    };
 
-      for (const { hash } of missingChunks) {
-        const url = urlMap.get(hash);
-        if (!url) throw new Error(`No download URL for chunk ${hash}`);
-        await this.downloadChunk(hash, url);
-        done += 1;
-        options.onProgress?.((done / total) * 90, done, total);
+    const getDownloadUrls = async (gameId: string, hashes: string[]) => {
+      return this.getDownloadUrls(gameId, options.token, hashes);
+    };
+
+    const downloadChunk = async (hash: string, url: string, destPath: string) => {
+      ensureCacheDirs();
+      const response = await axios({
+        url,
+        method: "GET",
+        responseType: "stream",
+      });
+
+      const writer = fs.createWriteStream(destPath);
+      response.data.pipe(writer);
+
+      await new Promise<void>((resolve, reject) => {
+        writer.on("finish", () => resolve());
+        writer.on("error", reject);
+      });
+    };
+
+    const result = await runDownloadPipeline({
+      gameId: options.gameId,
+      installPath,
+      chunkDir,
+      fetchManifest,
+      getDownloadUrls,
+      downloadChunk,
+      onProgress: (progress: number, downloadedCount: number, totalCount: number) => {
+        options.onProgress?.(progress, downloadedCount, totalCount);
       }
-    }
+    });
 
-    if (!fs.existsSync(installPath)) {
-      fs.mkdirSync(installPath, { recursive: true });
-    }
-
-    await reassembleFromManifest(manifest, chunkDir, installPath);
-    options.onProgress?.(100, total, total);
-
-    const entrypoint = manifestEntrypoint || manifest.entrypoint || options.entrypoint || null;
     log.info(`Chunk install complete for ${options.gameId}`);
-    return { entrypoint };
+    return { entrypoint: result.entrypoint || options.entrypoint || null };
   }
 
   /** Verify local install and re-download corrupted chunks only (repair). */
   async repair(gameId: string, token: string, installPath: string): Promise<void> {
-    const { manifest } = await this.fetchManifest(gameId, token);
-    const missing = await getMissingChunks(manifest, getChunksCacheDir());
-    if (missing.length === 0) {
-      log.info(`Repair: all chunks valid for ${gameId}`);
-      return;
-    }
+    const chunkDir = getChunksCacheDir();
 
-    const urlMap = await this.getDownloadUrls(
+    const fetchManifest = async (gId: string) => {
+      return this.fetchManifest(gId, token);
+    };
+
+    const getDownloadUrls = async (gId: string, hashes: string[]) => {
+      return this.getDownloadUrls(gId, token, hashes);
+    };
+
+    const downloadChunk = async (hash: string, url: string, destPath: string) => {
+      ensureCacheDirs();
+      const response = await axios({
+        url,
+        method: "GET",
+        responseType: "stream",
+      });
+
+      const writer = fs.createWriteStream(destPath);
+      response.data.pipe(writer);
+
+      await new Promise<void>((resolve, reject) => {
+        writer.on("finish", () => resolve());
+        writer.on("error", reject);
+      });
+    };
+
+    await runDownloadPipeline({
       gameId,
-      token,
-      missing.map((c: { hash: string }) => c.hash),
-    );
-    for (const { hash } of missing) {
-      const url = urlMap.get(hash);
-      if (url) await this.downloadChunk(hash, url);
-    }
+      installPath,
+      chunkDir,
+      fetchManifest,
+      getDownloadUrls,
+      downloadChunk
+    });
 
-    await reassembleFromManifest(manifest, getChunksCacheDir(), installPath);
+    log.info(`Repair complete for ${gameId}`);
   }
 }
 

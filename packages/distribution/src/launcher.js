@@ -7,3 +7,4 @@ export * from './hash.js';
 export * from './decompress.js';
 export { readChunksFromDir } from './chunk.js';
 export * from './reassemble.js';
+export * from './downloader-pipeline.js';
