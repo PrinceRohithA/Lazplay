@@ -26,7 +26,7 @@ class ApkDownloadService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val gameId = intent?.getStringExtra(EXTRA_GAME_ID) ?: return stopSelfResult()
+        val gameId = intent?.getStringExtra(EXTRA_GAME_ID) ?: return START_NOT_STICKY
         val title = intent.getStringExtra(EXTRA_TITLE) ?: gameId
 
         createChannel()
