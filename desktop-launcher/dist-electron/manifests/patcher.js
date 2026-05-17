@@ -4,73 +4,44 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.patcher = exports.PatchManager = void 0;
-const crypto_1 = __importDefault(require("crypto"));
-const fs_1 = __importDefault(require("fs"));
-const path_1 = __importDefault(require("path"));
+const electron_log_1 = __importDefault(require("electron-log"));
+const launcher_1 = require("@lazplay/distribution/launcher");
+const chunk_cache_1 = require("../downloads/chunk-cache");
+const chunk_downloader_1 = require("../downloads/chunk-downloader");
+const db_1 = require("../storage/db");
+/**
+ * Chunk-based repair: verify cached chunks against manifest hashes,
+ * re-download corrupted/missing chunks only, then reassemble.
+ */
 class PatchManager {
-    /**
-     * Generates a manifest for a given directory.
-     * This is typically run on the backend/developer machine to generate the initial manifest,
-     * but the launcher can also use it to verify local files.
-     */
-    async generateManifest(dirPath) {
-        const files = [];
-        const walk = (dir) => {
-            const list = fs_1.default.readdirSync(dir);
-            for (const file of list) {
-                const filePath = path_1.default.join(dir, file);
-                const stat = fs_1.default.statSync(filePath);
-                if (stat.isDirectory()) {
-                    walk(filePath);
-                }
-                else {
-                    const relativePath = path_1.default
-                        .relative(dirPath, filePath)
-                        .replace(/\\/g, "/");
-                    const hash = this.hashFile(filePath);
-                    files.push({
-                        path: relativePath,
-                        hash,
-                        size: stat.size,
-                    });
-                }
-            }
-        };
-        walk(dirPath);
-        return {
-            version: "1.0.0",
-            files,
-        };
-    }
-    /**
-     * Verifies an installation against a target manifest.
-     * Returns a list of files that are missing or mismatched and need to be downloaded.
-     */
-    async verifyInstallation(installPath, targetManifest) {
-        const missingOrCorrupt = [];
-        for (const file of targetManifest.files) {
-            const filePath = path_1.default.join(installPath, file.path);
-            if (!fs_1.default.existsSync(filePath)) {
-                missingOrCorrupt.push(file);
-                continue;
-            }
-            const stat = fs_1.default.statSync(filePath);
-            if (stat.size !== file.size) {
-                missingOrCorrupt.push(file);
-                continue;
-            }
-            const hash = this.hashFile(filePath);
-            if (hash !== file.hash) {
-                missingOrCorrupt.push(file);
-            }
+    async repairGame(gameId, token) {
+        const game = db_1.db.getGame(gameId);
+        if (!game?.installPath) {
+            throw new Error("Game is not installed");
         }
-        return missingOrCorrupt;
+        const manifest = (0, chunk_cache_1.loadManifest)(gameId);
+        if (!manifest) {
+            electron_log_1.default.info(`No local manifest for ${gameId}, fetching from server`);
+            await chunk_downloader_1.chunkDownloader.repair(gameId, token, game.installPath);
+            return;
+        }
+        const missing = await (0, launcher_1.getMissingChunks)(manifest, (0, chunk_cache_1.getChunksCacheDir)());
+        if (missing.length === 0) {
+            electron_log_1.default.info(`All chunks valid for ${gameId}`);
+            return;
+        }
+        electron_log_1.default.info(`Repairing ${missing.length} chunks for ${gameId}`);
+        await chunk_downloader_1.chunkDownloader.repair(gameId, token, game.installPath);
     }
-    hashFile(filePath) {
-        const fileBuffer = fs_1.default.readFileSync(filePath);
-        const hashSum = crypto_1.default.createHash("sha256");
-        hashSum.update(fileBuffer);
-        return hashSum.digest("hex");
+    async verifyChunk(hash) {
+        const filePath = `${(0, chunk_cache_1.getChunksCacheDir)()}/${hash}`;
+        try {
+            await (0, launcher_1.verifyChunkFile)(filePath, hash);
+            return true;
+        }
+        catch {
+            return false;
+        }
     }
 }
 exports.PatchManager = PatchManager;

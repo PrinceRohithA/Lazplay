@@ -20,6 +20,14 @@ export default defineConfig({
           options.startup();
         },
         vite: {
+          resolve: {
+            alias: {
+              "@lazplay/distribution/launcher": resolve(
+                __dirname,
+                "../packages/distribution/src/launcher.js",
+              ),
+            },
+          },
           build: {
             outDir: "../dist-electron/main",
             rollupOptions: {

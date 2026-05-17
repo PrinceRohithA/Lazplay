@@ -9,5 +9,5 @@
     "forceConsistentCasingInFileNames": true,
     "outDir": "../dist-electron"
   },
-  "include": ["**/*.ts"]
+  "include": ["**/*.ts", "types/**/*.d.ts"]
 }

@@ -6,7 +6,12 @@
   "description": "Shared chunking, bundling, compression, and manifest utilities for LazPlay distribution",
   "main": "./src/index.js",
   "exports": {
-    ".": "./src/index.js"
+    ".": "./src/index.js",
+    "./launcher": {
+      "types": "./src/launcher.d.ts",
+      "import": "./src/launcher.js",
+      "default": "./src/launcher.js"
+    }
   },
   "dependencies": {
     "@mongodb-js/zstd": "^2.0.1",

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import AdmZip from 'adm-zip';
-import { decompress } from './compress.js';
+import { decompress } from './decompress.js';
 import { readChunksFromDir } from './chunk.js';
 import { hashBytes } from './hash.js';
 

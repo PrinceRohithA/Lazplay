@@ -1,5 +1,5 @@
 import log from "electron-log";
-import { getMissingChunks, verifyChunkFile } from "@lazplay/distribution";
+import { getMissingChunks, verifyChunkFile } from "@lazplay/distribution/launcher";
 import { getChunksCacheDir, loadManifest } from "../downloads/chunk-cache";
 import { chunkDownloader } from "../downloads/chunk-downloader";
 import { db } from "../storage/db";
@@ -22,7 +22,10 @@ export class PatchManager {
       return;
     }
 
-    const missing = await getMissingChunks(manifest, getChunksCacheDir());
+    const missing = await getMissingChunks(
+      manifest as { chunks: Array<{ hash: string; size: number }> },
+      getChunksCacheDir(),
+    );
     if (missing.length === 0) {
       log.info(`All chunks valid for ${gameId}`);
       return;

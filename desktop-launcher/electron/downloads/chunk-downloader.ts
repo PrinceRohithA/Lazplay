@@ -5,7 +5,7 @@ import {
   getMissingChunks,
   reassembleFromManifest,
   verifyChunkFile,
-} from "@lazplay/distribution";
+} from "@lazplay/distribution/launcher";
 import {
   chunkPath,
   ensureCacheDirs,
@@ -88,7 +88,7 @@ export class ChunkDownloader {
     let done = 0;
 
     if (total > 0) {
-      const hashes = missingChunks.map((c) => c.hash);
+      const hashes = missingChunks.map((c: { hash: string }) => c.hash);
       const urlMap = await this.getDownloadUrls(options.gameId, options.token, hashes);
 
       for (const { hash } of missingChunks) {
@@ -124,7 +124,7 @@ export class ChunkDownloader {
     const urlMap = await this.getDownloadUrls(
       gameId,
       token,
-      missing.map((c) => c.hash),
+      missing.map((c: { hash: string }) => c.hash),
     );
     for (const { hash } of missing) {
       const url = urlMap.get(hash);
