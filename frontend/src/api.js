@@ -275,7 +275,7 @@ export const admin = {
   // Users
   listUsers: (params) => get('/admin/users', params),
   getUser: (userId) => get(`/admin/users/${userId}`),
-  updateUserRole: (userId, roles) => patch(`/admin/users/${userId}/role`, { roles }),
+  updateUserRole: (userId, roles) => patch(`/admin/users/${userId}/roles`, { roles }),
   updateUserStatus: (userId, status) => patch(`/admin/users/${userId}/status`, { status }),
   banUser: (userId, body) => post(`/admin/users/${userId}/ban`, body),
   unbanUser: (userId) => post(`/admin/users/${userId}/unban`),
@@ -293,9 +293,9 @@ export const admin = {
 
   // Servers
   listServers: () => get('/admin/nodes'),
-  addServer: (body) => post('/admin/servers', body),
-  updateServer: (nodeId, body) => patch(`/admin/servers/${nodeId}`, body),
-  removeServer: (nodeId) => del(`/admin/servers/${nodeId}`),
+  addServer: (body) => post('/admin/nodes', body),
+  updateServer: (nodeId, body) => patch(`/admin/nodes/${nodeId}`, body),
+  removeServer: (nodeId) => del(`/admin/nodes/${nodeId}`),
 
   // Instances
   listInstances: (params) => get('/admin/instances', params),
