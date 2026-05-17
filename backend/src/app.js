@@ -509,7 +509,7 @@ async function publicGame(game, user = null) {
   // Resolve assets with fallbacks from GameMedia
   const findMedia = (alt) => allMedia.find(m => m.alt === alt)?.url;
 
-  const coverUrl = resolveUrl(game.coverUrl, game.coverObjectKey) || findMedia('COVER_IMAGE') || findMedia('COVER');
+  const coverUrl = resolveUrl(game.coverUrl, game.coverObjectKey) || findMedia('COVER_IMAGE') || findMedia('PROJECT_COVER') || findMedia('COVER');
   const heroImageUrl = resolveUrl(game.heroImageUrl) || findMedia('HERO_IMAGE') || findMedia('HERO');
   const heroBannerUrl = resolveUrl(game.heroBannerUrl) || findMedia('HERO_BANNER') || findMedia('BANNER');
   const trailerUrl = resolveUrl(game.trailerUrl, game.trailerObjectKey) || allMedia.find(m => m.type === 'VIDEO' || m.alt === 'VIDEO_TRAILER')?.url;

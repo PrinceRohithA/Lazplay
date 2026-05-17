@@ -422,7 +422,7 @@ router.add('POST', '/developer/games/:gameId/media', async (req) => {
     await assertDeveloperOwnsGame(user, game);
     const body = validateBody(req.body, {
       type: validators.enum(['IMAGE', 'VIDEO']),
-      alt: validators.enum(['SCREENSHOT', 'HERO_BANNER', 'VIDEO_TRAILER', 'PROJECT_COVER'], { required: false }),
+      alt: validators.enum(['SCREENSHOT', 'HERO_BANNER', 'VIDEO_TRAILER', 'PROJECT_COVER', 'COVER_IMAGE'], { required: false }),
       url: validators.url({ required: false }),
       objectKey: validators.objectKey({ required: false })
     });
