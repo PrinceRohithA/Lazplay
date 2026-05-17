@@ -90,14 +90,10 @@ function App() {
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-900 text-slate-100">
-      {/* Sidebar for Native Launcher UI */}
-      <div className="w-[250px] h-full flex-shrink-0 bg-slate-950 border-r border-slate-800/50 shadow-2xl relative z-10">
-        <Sidebar />
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 h-full relative overflow-hidden bg-slate-900">
+    <div className="relative h-screen w-screen overflow-hidden bg-slate-900 text-slate-100">
+      
+      {/* Main Content - Full width and padded for floating bottom nav */}
+      <div className="w-full h-full relative overflow-hidden bg-slate-900 pb-24">
         {activePage === "library" ? (
           <Library />
         ) : activePage === "developer" ? (
@@ -115,6 +111,9 @@ function App() {
           </div>
         )}
       </div>
+
+      {/* Floating Bottom Navigation Bar */}
+      <Sidebar />
 
       {/* Entrypoint Selection Modal */}
       {setupPrompt && (
