@@ -7,10 +7,12 @@ import {
   Library,
   Play,
   Pause,
+  LogOut,
+  Terminal,
 } from "lucide-react";
 
 export default function Sidebar() {
-  const { games, activePage, setActivePage } = useLauncherStore();
+  const { games, activePage, setActivePage, logout } = useLauncherStore();
   const gameList = Object.values(games);
 
   const activeDownloads = gameList.filter(
@@ -60,6 +62,17 @@ export default function Sidebar() {
         >
           <LayoutGrid size={20} />
           <span>Store</span>
+        </button>
+        <button
+          onClick={() => setActivePage("developer")}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-colors ${
+            activePage === "developer"
+              ? "bg-brand-500/10 text-brand-500"
+              : "hover:bg-slate-800/50 hover:text-slate-100 text-slate-400"
+          }`}
+        >
+          <Terminal size={20} />
+          <span>Developer Console</span>
         </button>
       </div>
 
@@ -115,11 +128,25 @@ export default function Sidebar() {
         )}
       </div>
 
-      {/* Footer / Settings */}
-      <div className="p-4 border-t border-slate-800/50">
-        <button className="flex items-center gap-3 text-slate-400 hover:text-white transition-colors px-2 py-1 rounded w-full hover:bg-slate-800/50">
+      {/* Footer / Settings & Logout */}
+      <div className="p-4 border-t border-slate-800/50 space-y-1">
+        <button
+          onClick={() => setActivePage("settings")}
+          className={`flex items-center gap-3 px-2.5 py-2 rounded-lg w-full text-sm font-medium transition-all ${
+            activePage === "settings"
+              ? "bg-brand-500/10 text-brand-500 font-bold"
+              : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+          }`}
+        >
           <Settings size={18} />
-          <span className="text-sm font-medium">Settings</span>
+          <span>Settings</span>
+        </button>
+        <button 
+          onClick={logout}
+          className="flex items-center gap-3 text-red-400 hover:text-white hover:bg-red-500/10 active:scale-[0.98] transition-all px-2.5 py-2 rounded-lg w-full text-sm font-bold uppercase tracking-wider"
+        >
+          <LogOut size={18} />
+          <span>LOGOUT_OS</span>
         </button>
       </div>
     </div>

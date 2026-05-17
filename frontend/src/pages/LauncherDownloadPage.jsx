@@ -42,7 +42,7 @@ export default function LauncherDownloadPage() {
               </div>
 
               <p className="mt-8 font-label-mono text-[10px] text-outline-variant uppercase">
-                VERSION: 1.0.0-STABLE // BUILD: GRID_STABLE // SIZE: ~64MB
+                VERSION: 1.0.0-STABLE // BUILD: GRID_STABLE
               </p>
             </div>
 

@@ -8,17 +8,17 @@ const better_sqlite3_1 = __importDefault(require("better-sqlite3"));
 const electron_1 = require("electron");
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
-let db;
+let sqliteDb;
 const initStorage = () => {
     const userDataPath = electron_1.app.getPath("userData");
     const dbDir = path_1.default.join(userDataPath, "storage");
     if (!fs_1.default.existsSync(dbDir)) {
         fs_1.default.mkdirSync(dbDir, { recursive: true });
     }
-    db = new better_sqlite3_1.default(path_1.default.join(dbDir, "launcher.db"));
+    sqliteDb = new better_sqlite3_1.default(path_1.default.join(dbDir, "launcher.db"));
     // Initialize Schema
-    db.pragma("journal_mode = WAL");
-    db.exec(`
+    sqliteDb.pragma("journal_mode = WAL");
+    sqliteDb.exec(`
     CREATE TABLE IF NOT EXISTS games (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -46,40 +46,40 @@ const initStorage = () => {
     );
   `);
     // Migration: Ensure new columns exist for existing databases
-    const columns = db.prepare("PRAGMA table_info(games)").all();
+    const columns = sqliteDb.prepare("PRAGMA table_info(games)").all();
     const columnNames = columns.map((c) => c.name);
     if (!columnNames.includes("entrypoint")) {
-        db.exec("ALTER TABLE games ADD COLUMN entrypoint TEXT");
+        sqliteDb.exec("ALTER TABLE games ADD COLUMN entrypoint TEXT");
     }
     if (!columnNames.includes("statusText")) {
-        db.exec("ALTER TABLE games ADD COLUMN statusText TEXT");
+        sqliteDb.exec("ALTER TABLE games ADD COLUMN statusText TEXT");
     }
     if (!columnNames.includes("lastPlayed")) {
-        db.exec("ALTER TABLE games ADD COLUMN lastPlayed INTEGER");
+        sqliteDb.exec("ALTER TABLE games ADD COLUMN lastPlayed INTEGER");
     }
     if (!columnNames.includes("playtime")) {
-        db.exec("ALTER TABLE games ADD COLUMN playtime INTEGER DEFAULT 0");
+        sqliteDb.exec("ALTER TABLE games ADD COLUMN playtime INTEGER DEFAULT 0");
     }
 };
 exports.initStorage = initStorage;
 exports.storageDb = {
     setTokens: (token, refreshToken) => {
-        const stmt = db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)");
+        const stmt = sqliteDb.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)");
         stmt.run("token", token);
         stmt.run("refreshToken", refreshToken);
     },
     getTokens: () => {
-        const stmt = db.prepare("SELECT value FROM settings WHERE key = ?");
+        const stmt = sqliteDb.prepare("SELECT value FROM settings WHERE key = ?");
         const token = stmt.get("token");
         const refreshToken = stmt.get("refreshToken");
         return { token: token?.value, refreshToken: refreshToken?.value };
     },
     getGame: (id) => {
-        const stmt = db.prepare("SELECT * FROM games WHERE id = ?");
+        const stmt = sqliteDb.prepare("SELECT * FROM games WHERE id = ?");
         return stmt.get(id);
     },
     getInstalledGames: () => {
-        const stmt = db.prepare("SELECT * FROM games WHERE status = ?");
+        const stmt = sqliteDb.prepare("SELECT * FROM games WHERE status = ?");
         return stmt.all("installed");
     },
     setGameStatus: (id, status, additionalFields = {}) => {
@@ -94,11 +94,11 @@ exports.storageDb = {
             updates.push("status = ?");
             values.push(status);
             values.push(id);
-            const stmt = db.prepare(`UPDATE games SET ${updates.join(", ")} WHERE id = ?`);
+            const stmt = sqliteDb.prepare(`UPDATE games SET ${updates.join(", ")} WHERE id = ?`);
             stmt.run(...values);
         }
         else {
-            const stmt = db.prepare(`
+            const stmt = sqliteDb.prepare(`
         INSERT INTO games (id, title, status, installPath, version, size, entrypoint, statusText)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `);
@@ -106,11 +106,11 @@ exports.storageDb = {
         }
     },
     removeGame: (id) => {
-        const stmt = db.prepare("DELETE FROM games WHERE id = ?");
+        const stmt = sqliteDb.prepare("DELETE FROM games WHERE id = ?");
         stmt.run(id);
     },
     updatePlaytime: (id, durationSeconds) => {
-        const stmt = db.prepare(`
+        const stmt = sqliteDb.prepare(`
       UPDATE games 
       SET playtime = playtime + ?, lastPlayed = ?
       WHERE id = ?

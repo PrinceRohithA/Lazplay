@@ -12,13 +12,77 @@ const electron_log_1 = __importDefault(require("electron-log"));
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 function setupIpcHandlers(mainWindow, storeView) {
-    // Sync Session from website
+    // Sync Session from website or native login
     electron_1.ipcMain.handle("sync-session", async (event, { token, refreshToken }) => {
-        electron_log_1.default.info("Session tokens synced from website");
-        // Store tokens securely (e.g. in sqlite or keytar)
+        electron_log_1.default.info("Session tokens synced and saved");
+        // Store tokens securely in SQLite
         db_1.db.setTokens(token, refreshToken);
+        // Inject tokens into storeView immediately if active
+        if (storeView && !storeView.webContents.isDestroyed()) {
+            try {
+                await storeView.webContents.executeJavaScript(`
+          localStorage.setItem('accessToken', ${JSON.stringify(token)});
+          localStorage.setItem('refreshToken', ${JSON.stringify(refreshToken || '')});
+          window.dispatchEvent(new Event('storage'));
+        `);
+                electron_log_1.default.info("sync-session: Tokens injected into active storeView");
+            }
+            catch (err) {
+                electron_log_1.default.error("sync-session: Failed to inject tokens into active storeView:", err);
+            }
+        }
         // Alert the native UI about the login state
         mainWindow.webContents.send("session-updated", { loggedIn: true });
+        return { success: true };
+    });
+    // Check if session is valid
+    electron_1.ipcMain.handle("check-auth", async () => {
+        const { token } = db_1.db.getTokens();
+        if (!token) {
+            electron_log_1.default.info("check-auth: No stored token found");
+            return { success: false };
+        }
+        try {
+            electron_log_1.default.info("check-auth: Verifying token with backend...");
+            const response = await fetch("https://play.lazplay.tech/api/v1/auth/me", {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (response.ok) {
+                const result = await response.json();
+                const user = result.data || result;
+                electron_log_1.default.info("check-auth: Token verified successfully for user:", user.username || user.email);
+                return { success: true, user };
+            }
+            else {
+                electron_log_1.default.warn(`check-auth: Token verification failed with status ${response.status}`);
+                return { success: false };
+            }
+        }
+        catch (error) {
+            electron_log_1.default.error("check-auth: Failed to reach auth endpoint:", error.message);
+            // In case of network errors but we have a token, we might still return the active state or offline state.
+            // For now, let's require successful authentication.
+            return { success: false, error: "Network error" };
+        }
+    });
+    // Clear Session (Logout)
+    electron_1.ipcMain.handle("clear-session", async () => {
+        electron_log_1.default.info("clear-session: Logging out user, clearing SQLite tokens...");
+        db_1.db.setTokens("", "");
+        if (storeView && !storeView.webContents.isDestroyed()) {
+            try {
+                await storeView.webContents.executeJavaScript(`
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          window.dispatchEvent(new Event('storage'));
+        `);
+                electron_log_1.default.info("clear-session: Successfully cleared tokens from storeView localStorage");
+            }
+            catch (e) {
+                electron_log_1.default.warn("clear-session: Failed to clear tokens from storeView:", e);
+            }
+        }
+        mainWindow.webContents.send("session-updated", { loggedIn: false });
         return { success: true };
     });
     // Game Operations
@@ -109,6 +173,21 @@ function setupIpcHandlers(mainWindow, storeView) {
                 mainWindow.contentView.removeChildView(storeView);
             }
         }
+    });
+    electron_1.ipcMain.handle("navigate-store-path", async (event, path) => {
+        if (storeView && !storeView.webContents.isDestroyed()) {
+            try {
+                const fullUrl = `https://play.lazplay.tech${path}`;
+                electron_log_1.default.info(`navigate-store-path: Navigating storeView to ${fullUrl}`);
+                await storeView.webContents.loadURL(fullUrl);
+                return { success: true };
+            }
+            catch (err) {
+                electron_log_1.default.error(`navigate-store-path failed for ${path}:`, err.message);
+                return { success: false, error: err.message };
+            }
+        }
+        return { success: false, error: "Storefront view not available" };
     });
     electron_1.ipcMain.handle("sync-remote-library", async () => {
         // Strategy 1: Read token directly from the store WebContentsView's localStorage.

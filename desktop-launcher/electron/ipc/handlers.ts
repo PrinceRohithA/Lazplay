@@ -10,13 +10,80 @@ export function setupIpcHandlers(
   mainWindow: BrowserWindow,
   storeView: WebContentsView | null,
 ) {
-  // Sync Session from website
+  // Sync Session from website or native login
   ipcMain.handle("sync-session", async (event, { token, refreshToken }) => {
-    log.info("Session tokens synced from website");
-    // Store tokens securely (e.g. in sqlite or keytar)
+    log.info("Session tokens synced and saved");
+    // Store tokens securely in SQLite
     db.setTokens(token, refreshToken);
+
+    // Inject tokens into storeView immediately if active
+    if (storeView && !storeView.webContents.isDestroyed()) {
+      try {
+        await storeView.webContents.executeJavaScript(`
+          localStorage.setItem('accessToken', ${JSON.stringify(token)});
+          localStorage.setItem('refreshToken', ${JSON.stringify(refreshToken || '')});
+          window.dispatchEvent(new Event('storage'));
+        `);
+        log.info("sync-session: Tokens injected into active storeView");
+      } catch (err) {
+        log.error("sync-session: Failed to inject tokens into active storeView:", err);
+      }
+    }
+
     // Alert the native UI about the login state
     mainWindow.webContents.send("session-updated", { loggedIn: true });
+    return { success: true };
+  });
+
+  // Check if session is valid
+  ipcMain.handle("check-auth", async () => {
+    const { token } = db.getTokens();
+    if (!token) {
+      log.info("check-auth: No stored token found");
+      return { success: false };
+    }
+
+    try {
+      log.info("check-auth: Verifying token with backend...");
+      const response = await fetch("https://play.lazplay.tech/api/v1/auth/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const user = result.data || result;
+        log.info("check-auth: Token verified successfully for user:", user.username || user.email);
+        return { success: true, user };
+      } else {
+        log.warn(`check-auth: Token verification failed with status ${response.status}`);
+        return { success: false };
+      }
+    } catch (error: any) {
+      log.error("check-auth: Failed to reach auth endpoint:", error.message);
+      // In case of network errors but we have a token, we might still return the active state or offline state.
+      // For now, let's require successful authentication.
+      return { success: false, error: "Network error" };
+    }
+  });
+
+  // Clear Session (Logout)
+  ipcMain.handle("clear-session", async () => {
+    log.info("clear-session: Logging out user, clearing SQLite tokens...");
+    db.setTokens("", "");
+
+    if (storeView && !storeView.webContents.isDestroyed()) {
+      try {
+        await storeView.webContents.executeJavaScript(`
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          window.dispatchEvent(new Event('storage'));
+        `);
+        log.info("clear-session: Successfully cleared tokens from storeView localStorage");
+      } catch (e) {
+        log.warn("clear-session: Failed to clear tokens from storeView:", e);
+      }
+    }
+    mainWindow.webContents.send("session-updated", { loggedIn: false });
     return { success: true };
   });
 
@@ -117,6 +184,25 @@ export function setupIpcHandlers(
     }
   });
 
+  ipcMain.handle("navigate-store-path", async (event, path: string) => {
+    if (storeView && !storeView.webContents.isDestroyed()) {
+      try {
+        const fullUrl = `https://play.lazplay.tech${path}`;
+        log.info(`navigate-store-path: Navigating storeView to ${fullUrl}`);
+        await storeView.webContents.loadURL(fullUrl);
+        return { success: true };
+      } catch (err: any) {
+        log.error(`navigate-store-path failed for ${path}:`, err.message);
+        return { success: false, error: err.message };
+      }
+    }
+    return { success: false, error: "Storefront view not available" };
+  });
+
+  ipcMain.handle("get-access-token", () => {
+    return db.getTokens().token || null;
+  });
+
   ipcMain.handle("sync-remote-library", async () => {
     // Strategy 1: Read token directly from the store WebContentsView's localStorage.
     // This is the most reliable approach — the user is already logged in on the store tab,
@@ -175,13 +261,13 @@ export function setupIpcHandlers(
           return {
             id,
             title: game.title || entry.title || id,
-            downloadUrl: game.downloadUrl || game.buildUrl || null,
-            entrypoint: game.entrypoint || null,
-            coverUrl: game.coverImageUrl || game.coverUrl || null,
-            bannerUrl: game.bannerUrl || game.heroBannerUrl || game.heroImageUrl || null,
-            playtime: game.playtimeSeconds || 0,
-            lastPlayed: game.lastPlayedAt ? new Date(game.lastPlayedAt).getTime() : null,
-            size: game.size || 0,
+            downloadUrl: game.downloadUrl || game.buildUrl || entry.downloadUrl || entry.buildUrl || null,
+            entrypoint: game.entrypoint || entry.entrypoint || null,
+            coverUrl: game.coverUrl || game.coverImageUrl || entry.coverUrl || entry.coverImageUrl || game.heroImageUrl || entry.heroImageUrl || null,
+            bannerUrl: game.bannerUrl || game.heroBannerUrl || game.heroImageUrl || entry.bannerUrl || entry.heroBannerUrl || entry.heroImageUrl || null,
+            playtime: game.playtimeSeconds || entry.playtimeSeconds || 0,
+            lastPlayed: game.lastPlayedAt ? new Date(game.lastPlayedAt).getTime() : entry.lastPlayedAt ? new Date(entry.lastPlayedAt).getTime() : null,
+            size: game.size || entry.size || 0,
             platforms,
             isOwned: true,
           };
@@ -191,6 +277,17 @@ export function setupIpcHandlers(
           if (g.platforms.length === 0) return true; // unknown platform — include by default
           return g.platforms.some((p: string) => !WEB_PLATFORMS.has(p));
         });
+
+      // Synchronize SQLite cover/banner images for any locally registered games
+      ownedGames.forEach((g: any) => {
+        const local = db.getGame(g.id);
+        if (local) {
+          db.setGameStatus(g.id, local.status, {
+            coverUrl: g.coverUrl || local.coverUrl,
+            bannerUrl: g.bannerUrl || local.bannerUrl
+          });
+        }
+      });
 
       // Also persist the token for future use (so later calls work even if store view is hidden)
       if (token) db.setTokens(token, db.getTokens().refreshToken || "");

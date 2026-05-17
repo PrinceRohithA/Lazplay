@@ -3,6 +3,19 @@ import { Link } from 'react-router-dom';
 import { developer as devApi, auth as authApi } from '../api';
 
 export default function DeveloperWorkspace() {
+  if (window.electron) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center font-label-mono text-error p-gutter text-center min-h-[60vh]">
+        <span className="material-symbols-outlined text-[48px] text-error mb-4">gavel</span>
+        <h1 className="text-headline-md font-bold mb-4 uppercase">ACCESS_RESTRICTED</h1>
+        <p className="max-w-md text-on-surface-variant text-body-md leading-relaxed">
+          Developer Workspace protocols must be executed through the native desktop app interface. 
+          Please use the <strong className="text-primary-container">Developer Console</strong> tab in the launcher side menu.
+        </p>
+      </div>
+    );
+  }
+
   const [user, setUser] = useState(null);
   const [games, setGames] = useState([]);
   const [dash, setDash] = useState(null);

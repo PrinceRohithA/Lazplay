@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import Sidebar from "./components/Sidebar";
 import Library from "./pages/Library";
+import Login from "./pages/Login";
+import DeveloperConsole from "./pages/DeveloperConsole";
+import Settings, { applyThemeColor } from "./pages/Settings";
 import { useLauncherStore } from "./store/useLauncherStore";
 
 function App() {
@@ -10,6 +13,9 @@ function App() {
     syncRemoteLibrary,
     updateDownloadProgress,
     setRunningState,
+    isAuthenticated,
+    authChecked,
+    checkAuth,
   } = useLauncherStore();
 
   const [setupPrompt, setSetupPrompt] = useState<{
@@ -19,9 +25,16 @@ function App() {
   } | null>(null);
 
   useEffect(() => {
-    // Initial Load
+    // Apply saved colors or default storefront NEON_GREEN on startup
+    const savedPrimary = localStorage.getItem("lazplay-launcher-color") || "#39ff14";
+    const savedSecondary = localStorage.getItem("lazplay-launcher-secondary") || "#ffabf3";
+    applyThemeColor(savedPrimary, savedSecondary);
+  }, []);
+
+  useEffect(() => {
+    // Initial Load - first verify user session
+    checkAuth();
     loadInstalledGames();
-    syncRemoteLibrary();
 
     if (window.lazplayAPI) {
       window.lazplayAPI.onDownloadProgress((data: any) => {
@@ -49,7 +62,7 @@ function App() {
         console.log("Deep link received:", url);
       });
     }
-  }, [loadInstalledGames, syncRemoteLibrary, updateDownloadProgress, setRunningState]);
+  }, [checkAuth, loadInstalledGames, updateDownloadProgress, setRunningState, syncRemoteLibrary]);
 
   const handleSelectEntrypoint = async (entrypoint: string) => {
     if (setupPrompt && window.lazplayAPI) {
@@ -58,6 +71,23 @@ function App() {
       loadInstalledGames(); // Refresh
     }
   };
+
+  if (!authChecked) {
+    return (
+      <div className="w-screen h-screen bg-slate-950 flex flex-col items-center justify-center font-sans select-none">
+        <div className="flex flex-col items-center opacity-75 scale-110">
+          <div className="w-16 h-16 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mb-6"></div>
+          <span className="text-slate-400 font-black text-xs uppercase tracking-widest animate-pulse">
+            LOADING LAZPLAY OS...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Login />;
+  }
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-900 text-slate-100">
@@ -70,6 +100,10 @@ function App() {
       <div className="flex-1 h-full relative overflow-hidden bg-slate-900">
         {activePage === "library" ? (
           <Library />
+        ) : activePage === "developer" ? (
+          <DeveloperConsole />
+        ) : activePage === "settings" ? (
+          <Settings />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <div className="flex flex-col items-center opacity-30">

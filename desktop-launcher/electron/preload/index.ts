@@ -26,8 +26,17 @@ contextBridge.exposeInMainWorld("lazplayAPI", {
     ipcRenderer.invoke("open-install-folder", gameId),
   setStoreVisibility: (visible: boolean) =>
     ipcRenderer.invoke("set-store-visibility", visible),
+  navigateStorePath: (path: string) =>
+    ipcRenderer.invoke("navigate-store-path", path),
   syncRemoteLibrary: () => ipcRenderer.invoke("sync-remote-library"),
   claimGame: (gameId: string) => ipcRenderer.invoke("claim-game", gameId),
+
+  // Auth Operations
+  checkAuth: () => ipcRenderer.invoke("check-auth"),
+  getAccessToken: () => ipcRenderer.invoke("get-access-token"),
+  saveSession: (token: string, refreshToken: string) =>
+    ipcRenderer.invoke("sync-session", { token, refreshToken }),
+  clearSession: () => ipcRenderer.invoke("clear-session"),
 
   // UI Communications
   onDeepLink: (callback: (url: string) => void) => {

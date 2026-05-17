@@ -1,7 +1,7 @@
 import { app, BrowserWindow, shell, ipcMain, WebContentsView } from "electron";
 import { join, resolve } from "path";
 import { setupIpcHandlers } from "../ipc/handlers";
-import { initStorage } from "../storage/db";
+import { initStorage, db } from "../storage/db";
 import { initAutoUpdater } from "../updater/auto-updater";
 import log from "electron-log";
 
@@ -24,6 +24,14 @@ let storeView: WebContentsView | null = null;
 const STORE_URL = "https://play.lazplay.tech";
 
 function createWindow() {
+  // Initialize storage first to ensure SQLite is ready
+  try {
+    initStorage();
+    log.info("Storage initialized");
+  } catch (err) {
+    log.error("Failed to initialize storage:", err);
+  }
+
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -79,8 +87,22 @@ function createWindow() {
     },
   });
 
-  // Attach the view to the window
-  mainWindow.contentView.addChildView(storeView);
+  // Inject session tokens on dom-ready
+  storeView.webContents.on("dom-ready", () => {
+    try {
+      const { token, refreshToken } = db.getTokens();
+      if (token) {
+        log.info("dom-ready: Injecting tokens into storeView localStorage");
+        storeView?.webContents.executeJavaScript(`
+          localStorage.setItem('accessToken', ${JSON.stringify(token)});
+          localStorage.setItem('refreshToken', ${JSON.stringify(refreshToken || '')});
+          window.dispatchEvent(new Event('storage'));
+        `).catch(err => log.error("Failed to inject tokens in dom-ready:", err));
+      }
+    } catch (e) {
+      log.error("Error retrieving tokens on dom-ready:", e);
+    }
+  });
 
   // Navigate to store
   storeView.webContents.loadURL(STORE_URL);
@@ -102,13 +124,6 @@ function createWindow() {
   });
 
   // Initialize modules
-  try {
-    initStorage();
-    log.info("Storage initialized");
-  } catch (err) {
-    log.error("Failed to initialize storage:", err);
-  }
-
   try {
     setupIpcHandlers(mainWindow, storeView);
     log.info("IPC Handlers initialized");

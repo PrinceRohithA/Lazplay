@@ -54,7 +54,9 @@ export default function Library() {
       window.lazplayAPI.installGame(game.id, {
         title: game.title,
         downloadUrl: game.downloadUrl,
-        entrypoint: game.entrypoint
+        entrypoint: game.entrypoint,
+        coverUrl: game.coverUrl,
+        bannerUrl: game.bannerUrl
       });
     }
   };

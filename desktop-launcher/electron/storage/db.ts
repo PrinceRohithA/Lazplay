@@ -3,7 +3,7 @@ import { app } from "electron";
 import path from "path";
 import fs from "fs";
 
-let db: Database.Database;
+let sqliteDb: Database.Database;
 
 interface GameRecord {
   id: string;
@@ -16,6 +16,8 @@ interface GameRecord {
   statusText?: string;
   lastPlayed?: number;
   playtime?: number; // in seconds
+  coverUrl?: string;
+  bannerUrl?: string;
 }
 
 export const initStorage = () => {
@@ -25,12 +27,12 @@ export const initStorage = () => {
     fs.mkdirSync(dbDir, { recursive: true });
   }
 
-  db = new Database(path.join(dbDir, "launcher.db"));
+  sqliteDb = new Database(path.join(dbDir, "launcher.db"));
 
   // Initialize Schema
-  db.pragma("journal_mode = WAL");
+  sqliteDb.pragma("journal_mode = WAL");
 
-  db.exec(`
+  sqliteDb.exec(`
     CREATE TABLE IF NOT EXISTS games (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -41,7 +43,9 @@ export const initStorage = () => {
       entrypoint TEXT,
       statusText TEXT,
       lastPlayed INTEGER,
-      playtime INTEGER DEFAULT 0
+      playtime INTEGER DEFAULT 0,
+      coverUrl TEXT,
+      bannerUrl TEXT
     );
 
     CREATE TABLE IF NOT EXISTS settings (
@@ -59,26 +63,32 @@ export const initStorage = () => {
   `);
 
   // Migration: Ensure new columns exist for existing databases
-  const columns = db.prepare("PRAGMA table_info(games)").all() as any[];
+  const columns = sqliteDb.prepare("PRAGMA table_info(games)").all() as any[];
   const columnNames = columns.map((c) => c.name);
 
   if (!columnNames.includes("entrypoint")) {
-    db.exec("ALTER TABLE games ADD COLUMN entrypoint TEXT");
+    sqliteDb.exec("ALTER TABLE games ADD COLUMN entrypoint TEXT");
   }
   if (!columnNames.includes("statusText")) {
-    db.exec("ALTER TABLE games ADD COLUMN statusText TEXT");
+    sqliteDb.exec("ALTER TABLE games ADD COLUMN statusText TEXT");
   }
   if (!columnNames.includes("lastPlayed")) {
-    db.exec("ALTER TABLE games ADD COLUMN lastPlayed INTEGER");
+    sqliteDb.exec("ALTER TABLE games ADD COLUMN lastPlayed INTEGER");
   }
   if (!columnNames.includes("playtime")) {
-    db.exec("ALTER TABLE games ADD COLUMN playtime INTEGER DEFAULT 0");
+    sqliteDb.exec("ALTER TABLE games ADD COLUMN playtime INTEGER DEFAULT 0");
+  }
+  if (!columnNames.includes("coverUrl")) {
+    sqliteDb.exec("ALTER TABLE games ADD COLUMN coverUrl TEXT");
+  }
+  if (!columnNames.includes("bannerUrl")) {
+    sqliteDb.exec("ALTER TABLE games ADD COLUMN bannerUrl TEXT");
   }
 };
 
 export const storageDb = {
   setTokens: (token: string, refreshToken: string) => {
-    const stmt = db.prepare(
+    const stmt = sqliteDb.prepare(
       "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
     );
     stmt.run("token", token);
@@ -86,19 +96,19 @@ export const storageDb = {
   },
 
   getTokens: () => {
-    const stmt = db.prepare("SELECT value FROM settings WHERE key = ?");
+    const stmt = sqliteDb.prepare("SELECT value FROM settings WHERE key = ?");
     const token = stmt.get("token") as any;
     const refreshToken = stmt.get("refreshToken") as any;
     return { token: token?.value, refreshToken: refreshToken?.value };
   },
 
   getGame: (id: string): GameRecord | null => {
-    const stmt = db.prepare("SELECT * FROM games WHERE id = ?");
+    const stmt = sqliteDb.prepare("SELECT * FROM games WHERE id = ?");
     return stmt.get(id) as GameRecord | null;
   },
 
   getInstalledGames: (): GameRecord[] => {
-    const stmt = db.prepare("SELECT * FROM games WHERE status = ?");
+    const stmt = sqliteDb.prepare("SELECT * FROM games WHERE status = ?");
     return stmt.all("installed") as GameRecord[];
   },
 
@@ -119,14 +129,14 @@ export const storageDb = {
       values.push(status);
       values.push(id);
 
-      const stmt = db.prepare(
+      const stmt = sqliteDb.prepare(
         `UPDATE games SET ${updates.join(", ")} WHERE id = ?`,
       );
       stmt.run(...values);
     } else {
-      const stmt = db.prepare(`
-        INSERT INTO games (id, title, status, installPath, version, size, entrypoint, statusText)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      const stmt = sqliteDb.prepare(`
+        INSERT INTO games (id, title, status, installPath, version, size, entrypoint, statusText, coverUrl, bannerUrl)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       stmt.run(
         id,
@@ -137,17 +147,19 @@ export const storageDb = {
         additionalFields.size || 0,
         additionalFields.entrypoint || null,
         additionalFields.statusText || null,
+        additionalFields.coverUrl || null,
+        additionalFields.bannerUrl || null,
       );
     }
   },
 
   removeGame: (id: string) => {
-    const stmt = db.prepare("DELETE FROM games WHERE id = ?");
+    const stmt = sqliteDb.prepare("DELETE FROM games WHERE id = ?");
     stmt.run(id);
   },
 
   updatePlaytime: (id: string, durationSeconds: number) => {
-    const stmt = db.prepare(`
+    const stmt = sqliteDb.prepare(`
       UPDATE games 
       SET playtime = playtime + ?, lastPlayed = ?
       WHERE id = ?

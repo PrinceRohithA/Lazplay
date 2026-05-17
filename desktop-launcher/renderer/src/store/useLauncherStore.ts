@@ -23,16 +23,22 @@ interface GameState {
 interface LauncherStore {
   games: Record<string, GameState>;
   selectedGameId: string | null;
-  activePage: "library" | "store";
+  activePage: "library" | "store" | "developer" | "settings";
+  isAuthenticated: boolean;
+  user: any | null;
+  authChecked: boolean;
   setGameState: (id: string, state: Partial<GameState>) => void;
   setSelectedGame: (id: string | null) => void;
   loadInstalledGames: () => Promise<void>;
   updateDownloadProgress: (data: any) => void;
   setRunningState: (id: string, isRunning: boolean) => void;
-  setActivePage: (page: "library" | "store") => void;
+  setActivePage: (page: "library" | "store" | "developer" | "settings") => void;
   syncRemoteLibrary: () => Promise<void>;
   claimGame: (gameId: string) => Promise<void>;
   uninstallGame: (gameId: string) => Promise<void>;
+  checkAuth: () => Promise<void>;
+  login: (identifier: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 // In a real app, declare global types for the injected API
@@ -46,6 +52,9 @@ export const useLauncherStore = create<LauncherStore>((set, get) => ({
   games: {},
   selectedGameId: null,
   activePage: "store",
+  isAuthenticated: false,
+  user: null,
+  authChecked: false,
 
   setSelectedGame: (id) => set({ selectedGameId: id }),
 
@@ -102,7 +111,12 @@ export const useLauncherStore = create<LauncherStore>((set, get) => ({
   setActivePage: (page) => {
     set({ activePage: page });
     if (window.lazplayAPI) {
-      window.lazplayAPI.setStoreVisibility(page === "store");
+      if (page === "store") {
+        window.lazplayAPI.setStoreVisibility(true);
+        window.lazplayAPI.navigateStorePath("/");
+      } else {
+        window.lazplayAPI.setStoreVisibility(false);
+      }
     }
   },
 
@@ -174,5 +188,94 @@ export const useLauncherStore = create<LauncherStore>((set, get) => ({
         },
       }));
     }
+  },
+
+  checkAuth: async () => {
+    if (window.lazplayAPI) {
+      try {
+        const result = await window.lazplayAPI.checkAuth();
+        if (result.success) {
+          set({
+            isAuthenticated: true,
+            user: result.user,
+            authChecked: true,
+          });
+          // Authenticated! Now trigger library sync
+          try {
+            await get().syncRemoteLibrary();
+          } catch (e) {
+            console.error("Library sync failed during checkAuth:", e);
+          }
+        } else {
+          set({
+            isAuthenticated: false,
+            user: null,
+            authChecked: true,
+          });
+        }
+      } catch (e) {
+        console.error("checkAuth failed:", e);
+        set({
+          isAuthenticated: false,
+          user: null,
+          authChecked: true,
+        });
+      }
+    } else {
+      set({ authChecked: true });
+    }
+  },
+
+  login: async (identifier, password) => {
+    try {
+      const response = await fetch("https://play.lazplay.tech/api/v1/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier, password }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData?.error?.message || errData?.message || "Invalid credentials or login failed.");
+      }
+
+      const result = await response.json();
+      const data = result.data || result;
+      const token = data.accessToken || data.token;
+      const refreshToken = data.refreshToken;
+      const user = data.user;
+
+      if (window.lazplayAPI) {
+        // Save token to Electron SQLite, which will also inject it to storeView
+        await window.lazplayAPI.saveSession(token, refreshToken);
+      }
+
+      set({
+        isAuthenticated: true,
+        user: user,
+        authChecked: true,
+      });
+
+      // Synchronize library
+      try {
+        await get().syncRemoteLibrary();
+      } catch (e) {
+        console.error("Library sync failed after login:", e);
+      }
+    } catch (error: any) {
+      console.error("Login failed:", error);
+      throw error;
+    }
+  },
+
+  logout: async () => {
+    if (window.lazplayAPI) {
+      await window.lazplayAPI.clearSession();
+    }
+    set({
+      isAuthenticated: false,
+      user: null,
+      activePage: "store", // Reset default page to store
+    });
   },
 }));

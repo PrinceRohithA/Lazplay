@@ -20,6 +20,18 @@ const PLATFORMS = [
 ];
 
 export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
+  if (window.electron) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center font-label-mono text-error p-gutter text-center min-h-[60vh]">
+        <span className="material-symbols-outlined text-[48px] text-error mb-4">gavel</span>
+        <h1 className="text-headline-md font-bold mb-4 uppercase">ACCESS_RESTRICTED</h1>
+        <p className="max-w-md text-on-surface-variant text-body-md leading-relaxed">
+          Deployment protocols must be executed natively. Please use the <strong className="text-primary-container">Developer Console</strong> tab in the launcher side menu.
+        </p>
+      </div>
+    );
+  }
+
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const gameIdParam = searchParams.get('id');
