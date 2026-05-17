@@ -168,6 +168,14 @@ function setupIpcHandlers(mainWindow, storeView) {
         if (storeView && mainWindow) {
             if (visible) {
                 mainWindow.contentView.addChildView(storeView);
+                // Explicitly set bounds immediately to prevent Electron from auto-stretching/covering bottom bar
+                const bounds = mainWindow.getContentBounds();
+                storeView.setBounds({
+                    x: 0,
+                    y: 0,
+                    width: bounds.width,
+                    height: bounds.height - 80,
+                });
             }
             else {
                 mainWindow.contentView.removeChildView(storeView);
@@ -188,6 +196,9 @@ function setupIpcHandlers(mainWindow, storeView) {
             }
         }
         return { success: false, error: "Storefront view not available" };
+    });
+    electron_1.ipcMain.handle("get-access-token", () => {
+        return db_1.db.getTokens().token || null;
     });
     electron_1.ipcMain.handle("sync-remote-library", async () => {
         // Strategy 1: Read token directly from the store WebContentsView's localStorage.
@@ -239,13 +250,13 @@ function setupIpcHandlers(mainWindow, storeView) {
                 return {
                     id,
                     title: game.title || entry.title || id,
-                    downloadUrl: game.downloadUrl || game.buildUrl || null,
-                    entrypoint: game.entrypoint || null,
-                    coverUrl: game.coverImageUrl || game.coverUrl || null,
-                    bannerUrl: game.bannerUrl || game.heroBannerUrl || game.heroImageUrl || null,
-                    playtime: game.playtimeSeconds || 0,
-                    lastPlayed: game.lastPlayedAt ? new Date(game.lastPlayedAt).getTime() : null,
-                    size: game.size || 0,
+                    downloadUrl: game.downloadUrl || game.buildUrl || entry.downloadUrl || entry.buildUrl || null,
+                    entrypoint: game.entrypoint || entry.entrypoint || null,
+                    coverUrl: game.coverUrl || game.coverImageUrl || entry.coverUrl || entry.coverImageUrl || game.heroImageUrl || entry.heroImageUrl || null,
+                    bannerUrl: game.bannerUrl || game.heroBannerUrl || game.heroImageUrl || entry.bannerUrl || entry.heroBannerUrl || entry.heroImageUrl || null,
+                    playtime: game.playtimeSeconds || entry.playtimeSeconds || 0,
+                    lastPlayed: game.lastPlayedAt ? new Date(game.lastPlayedAt).getTime() : entry.lastPlayedAt ? new Date(entry.lastPlayedAt).getTime() : null,
+                    size: game.size || entry.size || 0,
                     platforms,
                     isOwned: true,
                 };
@@ -255,6 +266,16 @@ function setupIpcHandlers(mainWindow, storeView) {
                 if (g.platforms.length === 0)
                     return true; // unknown platform — include by default
                 return g.platforms.some((p) => !WEB_PLATFORMS.has(p));
+            });
+            // Synchronize SQLite cover/banner images for any locally registered games
+            ownedGames.forEach((g) => {
+                const local = db_1.db.getGame(g.id);
+                if (local) {
+                    db_1.db.setGameStatus(g.id, local.status, {
+                        coverUrl: g.coverUrl || local.coverUrl,
+                        bannerUrl: g.bannerUrl || local.bannerUrl
+                    });
+                }
             });
             // Also persist the token for future use (so later calls work even if store view is hidden)
             if (token)

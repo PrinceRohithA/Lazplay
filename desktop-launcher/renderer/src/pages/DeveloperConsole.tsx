@@ -534,7 +534,7 @@ export default function DeveloperConsole() {
 
   if (loading) {
     return (
-      <div className="w-full h-full bg-slate-900 flex items-center justify-center font-sans">
+      <div className="w-full h-full bg-transparent flex items-center justify-center font-sans">
         <div className="flex flex-col items-center opacity-70">
           <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mb-4"></div>
           <span className="text-slate-400 font-mono text-xs uppercase tracking-widest animate-pulse">
@@ -548,7 +548,7 @@ export default function DeveloperConsole() {
   // Not Logged In Safeguard
   if (!token) {
     return (
-      <div className="w-full h-full bg-slate-900 flex items-center justify-center p-8">
+      <div className="w-full h-full bg-transparent flex items-center justify-center p-8">
         <div className="max-w-md w-full bg-slate-950/80 border border-slate-800 rounded-xl p-6 text-center select-none shadow-2xl">
           <AlertTriangle className="text-amber-500 mx-auto mb-4" size={48} />
           <h3 className="text-xl font-bold mb-2 uppercase tracking-wide text-slate-100">ACCESS_RESTRICTED</h3>
@@ -566,7 +566,7 @@ export default function DeveloperConsole() {
 
   if (!isDeveloper) {
     return (
-      <div className="w-full h-full bg-slate-900 overflow-y-auto p-8 font-sans">
+      <div className="w-full h-full bg-transparent overflow-y-auto p-8 font-sans">
         <div className="max-w-xl mx-auto bg-slate-950/90 border border-brand-500/30 rounded-xl p-8 shadow-[0_0_30px_rgba(59,130,246,0.15)] relative overflow-hidden">
           {/* Cyber scanline & grid effects */}
           <div className="absolute inset-0 pointer-events-none opacity-5 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,6px_100%]"></div>
@@ -641,10 +641,10 @@ export default function DeveloperConsole() {
   }
 
   return (
-    <div className="w-full h-full bg-slate-900 text-slate-100 flex flex-col font-sans select-none overflow-hidden">
+    <div className="w-full h-full bg-transparent text-slate-100 flex flex-col font-sans select-none overflow-hidden">
       
       {/* Upper Navigation Header */}
-      <header className="h-[70px] border-b border-slate-800/80 bg-slate-950 flex-shrink-0 flex items-center justify-between px-8 relative z-20">
+      <header className="h-[70px] border-b border-slate-800/80 bg-slate-950/20 backdrop-blur-md flex-shrink-0 flex items-center justify-between px-8 relative z-20">
         <div className="flex items-center gap-3">
           <TerminalIcon className="text-brand-500 animate-pulse" size={24} />
           <div>

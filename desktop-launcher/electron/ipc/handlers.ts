@@ -178,6 +178,14 @@ export function setupIpcHandlers(
     if (storeView && mainWindow) {
       if (visible) {
         mainWindow.contentView.addChildView(storeView);
+        // Explicitly set bounds immediately to prevent Electron from auto-stretching/covering bottom bar
+        const bounds = mainWindow.getContentBounds();
+        storeView.setBounds({
+          x: 0,
+          y: 0,
+          width: bounds.width,
+          height: bounds.height - 80,
+        });
       } else {
         mainWindow.contentView.removeChildView(storeView);
       }

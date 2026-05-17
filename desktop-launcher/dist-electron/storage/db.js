@@ -29,7 +29,9 @@ const initStorage = () => {
       entrypoint TEXT,
       statusText TEXT,
       lastPlayed INTEGER,
-      playtime INTEGER DEFAULT 0
+      playtime INTEGER DEFAULT 0,
+      coverUrl TEXT,
+      bannerUrl TEXT
     );
 
     CREATE TABLE IF NOT EXISTS settings (
@@ -59,6 +61,12 @@ const initStorage = () => {
     }
     if (!columnNames.includes("playtime")) {
         sqliteDb.exec("ALTER TABLE games ADD COLUMN playtime INTEGER DEFAULT 0");
+    }
+    if (!columnNames.includes("coverUrl")) {
+        sqliteDb.exec("ALTER TABLE games ADD COLUMN coverUrl TEXT");
+    }
+    if (!columnNames.includes("bannerUrl")) {
+        sqliteDb.exec("ALTER TABLE games ADD COLUMN bannerUrl TEXT");
     }
 };
 exports.initStorage = initStorage;
@@ -99,10 +107,10 @@ exports.storageDb = {
         }
         else {
             const stmt = sqliteDb.prepare(`
-        INSERT INTO games (id, title, status, installPath, version, size, entrypoint, statusText)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO games (id, title, status, installPath, version, size, entrypoint, statusText, coverUrl, bannerUrl)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
-            stmt.run(id, additionalFields.title || id, status, additionalFields.installPath || "", additionalFields.version || "1.0.0", additionalFields.size || 0, additionalFields.entrypoint || null, additionalFields.statusText || null);
+            stmt.run(id, additionalFields.title || id, status, additionalFields.installPath || "", additionalFields.version || "1.0.0", additionalFields.size || 0, additionalFields.entrypoint || null, additionalFields.statusText || null, additionalFields.coverUrl || null, additionalFields.bannerUrl || null);
         }
     },
     removeGame: (id) => {

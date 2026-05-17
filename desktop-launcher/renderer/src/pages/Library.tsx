@@ -64,10 +64,10 @@ export default function Library() {
   const isEmpty = gameList.length === 0;
 
   return (
-    <div className="flex flex-col h-full bg-slate-900 text-slate-100 overflow-hidden">
+    <div className="flex flex-col h-full bg-transparent text-slate-100 overflow-hidden">
       {/* Hero Banner Section */}
       {!isEmpty && heroGame && (
-        <div className="relative w-full h-[350px] shrink-0 overflow-hidden group/hero">
+        <div className="relative w-full h-[220px] shrink-0 overflow-hidden group/hero border-b border-slate-800/40">
           {/* Background Banner */}
           <div className="absolute inset-0">
             {heroGame.bannerUrl ? (
@@ -78,43 +78,43 @@ export default function Library() {
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-950 flex items-center justify-center">
-                <Gamepad2 size={80} className="text-slate-700/50" />
+                <Gamepad2 size={60} className="text-slate-700/30" />
               </div>
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-transparent to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/90 via-transparent to-transparent"></div>
           </div>
-
+ 
           {/* Hero Content */}
-          <div className="absolute bottom-0 left-0 p-12 w-full flex items-end justify-between">
-            <div className="flex gap-8 items-end max-w-2xl">
+          <div className="absolute bottom-0 left-0 p-6 w-full flex items-center justify-between">
+            <div className="flex gap-4 items-center max-w-2xl">
               {/* Game Cover in Hero */}
-              <div className="w-40 aspect-[3/4] bg-slate-800 rounded-lg shadow-2xl overflow-hidden border border-slate-700 hidden md:block shrink-0">
+              <div className="w-20 aspect-[3/4] bg-slate-800 rounded-lg shadow-2xl overflow-hidden border border-slate-700 hidden md:block shrink-0">
                 {heroGame.coverUrl ? (
                    <img src={heroGame.coverUrl} className="w-full h-full object-cover" alt="" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center"><Gamepad2 size={32} className="text-slate-600" /></div>
+                  <div className="w-full h-full flex items-center justify-center"><Gamepad2 size={20} className="text-slate-650" /></div>
                 )}
               </div>
-
-              <div className="flex flex-col gap-4">
-                <h2 className="text-5xl font-black tracking-tighter uppercase drop-shadow-lg">{heroGame.title}</h2>
-                <div className="flex items-center gap-6 text-sm text-slate-300 font-medium bg-slate-900/40 backdrop-blur-md px-4 py-2 rounded-full w-fit">
-                  <span className="flex items-center gap-2">
-                    <Clock size={16} className="text-brand-500" />
+ 
+              <div className="flex flex-col gap-1.5">
+                <h2 className="text-2xl font-black tracking-tight uppercase drop-shadow-lg">{heroGame.title}</h2>
+                <div className="flex items-center gap-4 text-[10px] text-slate-350 font-bold bg-slate-950/60 backdrop-blur-md px-3 py-1 rounded-full w-fit border border-slate-800/30">
+                  <span className="flex items-center gap-1.5">
+                    <Clock size={12} className="text-brand-500" />
                     {heroGame.playtime ? Math.round(heroGame.playtime / 3600) + " HOURS PLAYED" : "NEVER PLAYED"}
                   </span>
                   <span className="w-1 h-1 rounded-full bg-slate-700"></span>
-                  <span className="flex items-center gap-2">
-                    <HardDrive size={16} className="text-brand-500" />
+                  <span className="flex items-center gap-1.5">
+                    <HardDrive size={12} className="text-brand-500" />
                     {heroGame.size ? (heroGame.size / (1024**3)).toFixed(1) + " GB" : "READY TO DOWNLOAD"}
                   </span>
                 </div>
                 
-                <div className="flex items-center gap-4 mt-2">
+                <div className="flex items-center gap-2 mt-1">
                   <button 
                     onClick={() => handleAction(heroGame)}
-                    className={`px-12 py-4 rounded-xl font-black text-lg flex items-center justify-center gap-3 shadow-xl transition-all active:scale-95 ${
+                    className={`px-6 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 ${
                       heroGame.isRunning
                         ? "bg-emerald-500 hover:bg-emerald-400 text-white shadow-emerald-500/20"
                         : heroGame.status === "installed"
@@ -125,15 +125,15 @@ export default function Library() {
                     }`}
                   >
                     {heroGame.isRunning ? (
-                      <><RefreshCw size={24} className="animate-spin" /> RUNNING</>
+                      <><RefreshCw size={14} className="animate-spin" /> RUNNING</>
                     ) : heroGame.status === "downloading" ? (
-                      <><RefreshCw size={24} className="animate-spin" /> DOWNLOADING ({Math.round(heroGame.progress || 0)}%)</>
+                      <><RefreshCw size={14} className="animate-spin" /> DOWNLOADING ({Math.round(heroGame.progress || 0)}%)</>
                     ) : heroGame.status === "paused" ? (
-                      <><Info size={24} /> SETUP REQUIRED</>
+                      <><Info size={14} /> SETUP REQUIRED</>
                     ) : heroGame.status === "installed" ? (
-                      <><Play size={24} fill="currentColor" /> START GAME</>
+                      <><Play size={14} fill="currentColor" /> START GAME</>
                     ) : (
-                      <><Download size={24} /> INSTALL NOW</>
+                      <><Download size={14} /> INSTALL NOW</>
                     )}
                   </button>
                   
@@ -141,23 +141,23 @@ export default function Library() {
                     <>
                       <button 
                         onClick={() => window.lazplayAPI.openInstallFolder(heroGame.id)}
-                        className="p-4 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-white transition-colors border border-slate-700 backdrop-blur-md"
+                        className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-white transition-colors border border-slate-700 backdrop-blur-md"
                         title="Open Folder"
                       >
-                        <FolderOpen size={24} />
+                        <FolderOpen size={14} />
                       </button>
                       <button 
                         onClick={() => uninstallGame(heroGame.id)}
-                        className="p-4 rounded-xl bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white transition-colors border border-red-500/20 backdrop-blur-md"
+                        className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white transition-colors border border-red-500/20 backdrop-blur-md"
                         title="Uninstall"
                       >
-                        <Trash2 size={24} />
+                        <Trash2 size={14} />
                       </button>
                     </>
                   )}
                   
-                  <button className="p-4 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-white transition-colors border border-slate-700 backdrop-blur-md">
-                    <Info size={24} />
+                  <button className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-white transition-colors border border-slate-700 backdrop-blur-md">
+                    <Info size={14} />
                   </button>
                 </div>
               </div>
@@ -167,11 +167,11 @@ export default function Library() {
       )}
 
       {/* Library Controls */}
-      <div className="px-8 py-4 border-b border-slate-800/50 bg-slate-900/50 backdrop-blur-sm z-10">
+      <div className="px-8 py-3 border-b border-slate-800/40 bg-slate-950/20 backdrop-blur-sm z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-8">
-            <h1 className="text-xl font-bold tracking-tight text-slate-400">Library Database</h1>
-            <div className="flex gap-6 text-sm font-bold">
+            <h1 className="text-sm font-black tracking-widest text-slate-400 uppercase">Library Database</h1>
+            <div className="flex gap-6 text-xs font-bold">
               <button 
                 onClick={() => setLibraryFilter("all")}
                 className={`pb-1 border-b-2 transition-colors ${libraryFilter === "all" ? "border-brand-500 text-white" : "border-transparent text-slate-500 hover:text-slate-300"}`}
@@ -186,14 +186,14 @@ export default function Library() {
               </button>
             </div>
           </div>
-
+ 
           <div className="flex items-center gap-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
               <input 
                 type="text" 
                 placeholder="SEARCH_MANIFEST..."
-                className="bg-slate-800/50 border border-slate-700/50 rounded-lg py-2 pl-10 pr-4 w-64 text-xs focus:ring-1 focus:ring-brand-500 transition-all outline-none"
+                className="bg-slate-800/30 border border-slate-700/50 rounded-lg py-1.5 pl-9 pr-4 w-60 text-[10px] focus:ring-1 focus:ring-brand-500 transition-all outline-none"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -201,52 +201,52 @@ export default function Library() {
             <button
               onClick={handleSync}
               disabled={isSyncing}
-              className="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors disabled:opacity-50 border border-slate-700/50"
+              className="p-1.5 rounded-lg bg-slate-800/30 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors disabled:opacity-50 border border-slate-700/50"
             >
-              <RefreshCw size={18} className={isSyncing ? "animate-spin" : ""} />
+              <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
             </button>
-            <div className="flex bg-slate-800/50 rounded-lg p-1 border border-slate-700/50">
-              <button onClick={() => setViewMode("grid")} className={`p-1.5 rounded ${viewMode === "grid" ? "bg-slate-700 text-white" : "text-slate-500"}`}><LayoutGrid size={16} /></button>
-              <button onClick={() => setViewMode("list")} className={`p-1.5 rounded ${viewMode === "list" ? "bg-slate-700 text-white" : "text-slate-500"}`}><List size={16} /></button>
+            <div className="flex bg-slate-800/30 rounded-lg p-0.5 border border-slate-700/50">
+              <button onClick={() => setViewMode("grid")} className={`p-1 rounded ${viewMode === "grid" ? "bg-slate-700 text-white" : "text-slate-500"}`}><LayoutGrid size={14} /></button>
+              <button onClick={() => setViewMode("list")} className={`p-1 rounded ${viewMode === "list" ? "bg-slate-700 text-white" : "text-slate-500"}`}><List size={14} /></button>
             </div>
           </div>
         </div>
       </div>
-
+ 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-8 pt-6 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-6 pt-4 custom-scrollbar">
         {syncError && (
-          <div className="mb-6 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs flex items-center gap-3">
-            <Info size={16} />
+          <div className="mb-4 px-4 py-2.5 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs flex items-center gap-3">
+            <Info size={14} />
             {syncError}. Please ensure the storefront session is active.
           </div>
         )}
-
+ 
         {isEmpty ? (
           <div className="flex flex-col items-center justify-center h-full text-slate-500 gap-6">
             <div className="p-8 rounded-full bg-slate-800/30 border border-slate-700/30">
-              <LogIn size={64} className="opacity-20" />
+              <LogIn size={48} className="opacity-20" />
             </div>
             <div className="text-center max-w-sm">
-              <h3 className="text-xl font-bold text-slate-200 mb-2">No data detected</h3>
-              <p className="text-sm leading-relaxed">Initialize a session via the Store tab and synchronize your encrypted library records.</p>
+              <h3 className="text-lg font-bold text-slate-200 mb-1.5">No data detected</h3>
+              <p className="text-xs leading-relaxed text-slate-400">Initialize a session via the Store tab and synchronize your encrypted library records.</p>
             </div>
             <button
               onClick={handleSync}
               disabled={isSyncing}
-              className="px-8 py-3 bg-brand-500 hover:bg-brand-400 text-white rounded-xl text-sm font-black transition-all flex items-center gap-3 shadow-lg shadow-brand-500/20"
+              className="px-6 py-2 bg-brand-500 hover:bg-brand-400 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-brand-500/20"
             >
-              <RefreshCw size={18} className={isSyncing ? "animate-spin" : ""} />
+              <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
               {isSyncing ? "INITIALIZING_SYNC..." : "INITIATE_LIBRARY_SYNC"}
             </button>
           </div>
         ) : filteredGames.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-slate-500">
-            <Gamepad2 size={48} className="mb-4 opacity-10" />
-            <p className="text-sm font-medium">No records found matching search parameters.</p>
+            <Gamepad2 size={36} className="mb-3 opacity-10" />
+            <p className="text-xs font-medium">No records found matching search parameters.</p>
           </div>
         ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 pb-12">
+          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 pb-12">
             {filteredGames.map(game => (
               <GameCard 
                 key={game.id} 

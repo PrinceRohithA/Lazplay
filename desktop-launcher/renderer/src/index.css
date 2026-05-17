@@ -4,9 +4,15 @@
 
 @layer base {
   body {
-    @apply bg-slate-900 text-slate-100 font-sans antialiased;
+    background-color: var(--bg-primary-dark, #020b00);
+    background-image: 
+      linear-gradient(rgba(var(--brand-rgb, 57, 255, 20), 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(var(--brand-rgb, 57, 255, 20), 0.05) 1px, transparent 1px);
+    background-size: 24px 24px;
+    @apply text-slate-100 font-sans antialiased;
     /* Prevent text selection in launcher UI */
     user-select: none;
+    transition: background-color 0.3s ease;
   }
 }
 

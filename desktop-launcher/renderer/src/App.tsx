@@ -90,10 +90,10 @@ function App() {
   }
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-slate-900 text-slate-100">
+    <div className="relative h-screen w-screen overflow-hidden bg-transparent text-slate-100">
       
       {/* Main Content - Full width and padded for floating bottom nav */}
-      <div className="w-full h-full relative overflow-hidden bg-slate-900 pb-24">
+      <div className="w-full h-full relative overflow-hidden bg-transparent pb-20">
         {activePage === "library" ? (
           <Library />
         ) : activePage === "developer" ? (

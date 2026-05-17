@@ -49,6 +49,8 @@ function createWindow() {
     // Customize titlebar later if needed
   });
 
+  mainWindow.setMenu(null);
+
   // Setup security restrictions
   mainWindow.webContents.session.setPermissionRequestHandler(
     (webContents, permission, callback) => {
@@ -109,16 +111,16 @@ function createWindow() {
 
   // Position the store view (leave space for sidebar/header if any)
   // This will be dynamic in real app, listening to resize events
-  storeView.setBounds({ x: 250, y: 0, width: 1030, height: 800 });
+  storeView.setBounds({ x: 0, y: 0, width: 1280, height: 800 - 80 });
 
   mainWindow.on("resize", () => {
     if (mainWindow && storeView) {
       const bounds = mainWindow.getContentBounds();
       storeView.setBounds({
-        x: 250,
+        x: 0,
         y: 0,
-        width: bounds.width - 250,
-        height: bounds.height,
+        width: bounds.width,
+        height: bounds.height - 80,
       });
     }
   });

@@ -21,7 +21,9 @@ class DownloadManager {
         db_1.db.setGameStatus(gameId, "downloading", {
             title: options.title || `Game ${gameId}`,
             installPath: installPath,
-            entrypoint: options.entrypoint
+            entrypoint: options.entrypoint,
+            coverUrl: options.coverUrl || undefined,
+            bannerUrl: options.bannerUrl || undefined
         });
         const cdnUrl = options.downloadUrl;
         if (!cdnUrl) {

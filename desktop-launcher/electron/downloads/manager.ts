@@ -18,7 +18,7 @@ class DownloadManager {
   private activeDownloads: Map<string, { abort: AbortController; stream: fs.WriteStream }> =
     new Map();
 
-  async startInstall(gameId: string, options: { title: string, downloadUrl: string, entrypoint: string }) {
+  async startInstall(gameId: string, options: { title: string, downloadUrl: string, entrypoint: string, coverUrl?: string | null, bannerUrl?: string | null }) {
     const installPath = path.join(
       app.getPath("userData"),
       "installed-games",
@@ -33,8 +33,8 @@ class DownloadManager {
       title: options.title || `Game ${gameId}`,
       installPath: installPath,
       entrypoint: options.entrypoint,
-      coverUrl: options.coverUrl || null,
-      bannerUrl: options.bannerUrl || null
+      coverUrl: options.coverUrl || undefined,
+      bannerUrl: options.bannerUrl || undefined
     });
 
     const cdnUrl = options.downloadUrl;

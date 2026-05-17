@@ -29,19 +29,10 @@ export default function Login() {
   };
 
   return (
-    <div className="relative min-h-screen w-screen bg-slate-950 flex items-center justify-center overflow-hidden font-sans">
+    <div className="relative min-h-screen w-screen bg-transparent flex items-center justify-center overflow-hidden font-sans">
       {/* Decorative Cyber Background Gradients */}
       <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-brand-500/10 rounded-full blur-[120px] pointer-events-none animate-pulse duration-[10s]"></div>
       <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-[100px] pointer-events-none animate-pulse duration-[6s]"></div>
-      
-      {/* Grid Pattern Backdrop */}
-      <div 
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
-        style={{
-          backgroundImage: `radial-gradient(circle, #3b82f6 1px, transparent 1px)`,
-          backgroundSize: '24px 24px'
-        }}
-      ></div>
 
       <div className="relative z-10 w-full max-w-[440px] px-6">
         {/* Logo and Brand Header */}

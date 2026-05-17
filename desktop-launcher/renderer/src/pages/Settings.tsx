@@ -27,16 +27,29 @@ export const adjustColorBrightness = (hex: string, percent: number) => {
   return `#${rHex}${gHex}${bHex}`;
 };
 
+export const hexToRgb = (hex: string) => {
+  const r = parseInt(hex.substring(1, 3), 16);
+  const g = parseInt(hex.substring(3, 5), 16);
+  const b = parseInt(hex.substring(5, 7), 16);
+  return `${r}, ${g}, ${b}`;
+};
+
 export const applyThemeColor = (primary: string, secondary: string) => {
   const root = document.documentElement;
 
   root.style.setProperty("--brand-500", primary);
   root.style.setProperty("--brand-600", adjustColorBrightness(primary, -20));
   root.style.setProperty("--brand-400", adjustColorBrightness(primary, 20));
+  root.style.setProperty("--brand-rgb", hexToRgb(primary));
 
   root.style.setProperty("--secondary-color", secondary);
   root.style.setProperty("--secondary-600", adjustColorBrightness(secondary, -20));
   root.style.setProperty("--secondary-400", adjustColorBrightness(secondary, 20));
+  root.style.setProperty("--secondary-rgb", hexToRgb(secondary));
+
+  // Dynamically set an ultra-dark primary tint as the application background!
+  const darkPrimaryBg = adjustColorBrightness(primary, -93);
+  root.style.setProperty("--bg-primary-dark", darkPrimaryBg);
 
   localStorage.setItem("lazplay-launcher-color", primary);
   localStorage.setItem("lazplay-launcher-secondary", secondary);
@@ -78,10 +91,10 @@ export default function Settings() {
   ];
 
   return (
-    <div className="w-full h-full bg-slate-900 text-slate-100 flex flex-col font-sans select-none overflow-hidden">
+    <div className="w-full h-full bg-transparent text-slate-100 flex flex-col font-sans select-none overflow-hidden">
       
       {/* Settings Navigation Header */}
-      <header className="h-[70px] border-b border-slate-800/80 bg-slate-950 flex-shrink-0 flex items-center justify-between px-8 relative z-20">
+      <header className="h-[70px] border-b border-slate-800/80 bg-slate-950/20 backdrop-blur-md flex-shrink-0 flex items-center justify-between px-8 relative z-20">
         <div className="flex items-center gap-3">
           <Sliders className="text-brand-500 animate-pulse" size={24} />
           <div>
