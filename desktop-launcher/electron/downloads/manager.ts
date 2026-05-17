@@ -5,6 +5,8 @@ import { db } from "../storage/db";
 import log from "electron-log";
 import axios from "axios";
 import AdmZip from "adm-zip";
+import { chunkDownloader } from "./chunk-downloader";
+import { ensureCacheDirs } from "./chunk-cache";
 
 interface DownloadProgress {
   gameId: string;
@@ -18,7 +20,18 @@ class DownloadManager {
   private activeDownloads: Map<string, { abort: AbortController; stream: fs.WriteStream }> =
     new Map();
 
-  async startInstall(gameId: string, options: { title: string, downloadUrl: string, entrypoint: string, coverUrl?: string | null, bannerUrl?: string | null }) {
+  async startInstall(
+    gameId: string,
+    options: {
+      title: string;
+      downloadUrl?: string;
+      entrypoint: string;
+      coverUrl?: string | null;
+      bannerUrl?: string | null;
+      usesChunkDistribution?: boolean;
+      token?: string;
+    },
+  ) {
     const installPath = path.join(
       app.getPath("userData"),
       "installed-games",
@@ -34,8 +47,50 @@ class DownloadManager {
       installPath: installPath,
       entrypoint: options.entrypoint,
       coverUrl: options.coverUrl || undefined,
-      bannerUrl: options.bannerUrl || undefined
+      bannerUrl: options.bannerUrl || undefined,
     });
+
+    if (options.usesChunkDistribution && options.token) {
+      ensureCacheDirs();
+      try {
+        const result = await chunkDownloader.installFromChunks(
+          {
+            gameId,
+            title: options.title,
+            token: options.token,
+            entrypoint: options.entrypoint,
+            coverUrl: options.coverUrl,
+            bannerUrl: options.bannerUrl,
+            onProgress: (progress, downloaded, total) => {
+              this.broadcastProgress({
+                gameId,
+                progress,
+                downloadedBytes: downloaded,
+                totalBytes: total,
+                status: "downloading",
+              });
+            },
+          },
+          installPath,
+        );
+        await this.finalizeInstall(gameId, installPath, {
+          ...options,
+          entrypoint: result.entrypoint || options.entrypoint,
+        });
+      } catch (error) {
+        log.error(`Chunk install failed for ${gameId}:`, error);
+        db.setGameStatus(gameId, "corrupted");
+        this.broadcastProgress({
+          gameId,
+          progress: 0,
+          downloadedBytes: 0,
+          totalBytes: 0,
+          status: "error",
+        });
+        throw error;
+      }
+      return;
+    }
 
     const cdnUrl = options.downloadUrl;
     if (!cdnUrl) {
@@ -43,6 +98,52 @@ class DownloadManager {
     }
 
     this.downloadFile(gameId, cdnUrl, path.join(installPath, "game.zip"), options);
+  }
+
+  private async finalizeInstall(
+    gameId: string,
+    extractPath: string,
+    options: { title: string; entrypoint: string },
+  ) {
+    let entrypoint = options.entrypoint;
+    const fullExePath = entrypoint ? path.join(extractPath, entrypoint) : "";
+
+    if (!entrypoint || !fs.existsSync(fullExePath)) {
+      const files = this.getAllFiles(extractPath);
+      const exes = files.filter(
+        (f) =>
+          f.endsWith(".exe") ||
+          f.endsWith(".sh") ||
+          f.endsWith(".bat") ||
+          f.endsWith(".app"),
+      );
+      if (exes.length === 1) {
+        entrypoint = path.relative(extractPath, exes[0]);
+      }
+    }
+
+    if (entrypoint && fs.existsSync(path.join(extractPath, entrypoint))) {
+      const originalPath = path.join(extractPath, entrypoint);
+      const maskedEntrypoint = entrypoint + ".lazplay_locked";
+      const maskedPath = originalPath + ".lazplay_locked";
+      try {
+        fs.renameSync(originalPath, maskedPath);
+        this.scrambleFile(maskedPath);
+        db.setGameStatus(gameId, "installed", { entrypoint: maskedEntrypoint });
+      } catch {
+        db.setGameStatus(gameId, "installed", { entrypoint });
+      }
+    } else {
+      db.setGameStatus(gameId, "installed", { entrypoint });
+    }
+
+    this.broadcastProgress({
+      gameId,
+      progress: 100,
+      downloadedBytes: 1,
+      totalBytes: 1,
+      status: "installed",
+    });
   }
 
   private async downloadFile(gameId: string, url: string, destination: string, options: any) {
@@ -265,6 +366,15 @@ class DownloadManager {
       return true;
     }
     return false;
+  }
+
+  async repairGame(gameId: string, token: string) {
+    const game = db.getGame(gameId);
+    if (!game?.installPath) throw new Error("Game not installed");
+    db.setGameStatus(gameId, "downloading");
+    await chunkDownloader.repair(gameId, token, game.installPath);
+    db.setGameStatus(gameId, "installed");
+    log.info(`Repair complete for ${gameId}`);
   }
 
   async uninstall(gameId: string) {

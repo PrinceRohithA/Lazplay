@@ -1,0 +1,103 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import {
+  MAX_GAME_SIZE_BYTES,
+  SUPPORTED_EXTENSIONS,
+  UNSUPPORTED_EXTENSIONS
+} from './constants.js';
+
+/**
+ * Recursively scan a build directory.
+ * @param {string} rootDir
+ * @returns {Promise<{ files: Array<{ relativePath: string, absolutePath: string, size: number }>, totalSize: number, fileCount: number, unsupported: string[], duplicates: string[] }>}
+ */
+export async function scanBuildDirectory(rootDir) {
+  const files = [];
+  const seenSizes = new Map();
+  const duplicates = [];
+  const unsupported = [];
+  let totalSize = 0;
+
+  async function walk(dir) {
+    const entries = await fs.promises.readdir(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const absolutePath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === '.git' || entry.name === 'node_modules' || entry.name === '__MACOSX') continue;
+        await walk(absolutePath);
+        continue;
+      }
+
+      const ext = path.extname(entry.name).toLowerCase();
+      const relativePath = path.relative(rootDir, absolutePath).replace(/\\/g, '/');
+
+      if (UNSUPPORTED_EXTENSIONS.has(ext) || entry.name.startsWith('.')) {
+        unsupported.push(relativePath);
+        continue;
+      }
+
+      if (ext && !SUPPORTED_EXTENSIONS.has(ext)) {
+        unsupported.push(relativePath);
+      }
+
+      const stat = await fs.promises.stat(absolutePath);
+      totalSize += stat.size;
+      files.push({ relativePath, absolutePath, size: stat.size });
+
+      const key = `${stat.size}:${relativePath.split('/').pop()}`;
+      if (seenSizes.has(key)) {
+        duplicates.push(relativePath);
+      } else {
+        seenSizes.set(key, relativePath);
+      }
+    }
+  }
+
+  await walk(rootDir);
+
+  if (totalSize > MAX_GAME_SIZE_BYTES) {
+    throw new Error(`Build exceeds maximum size of ${MAX_GAME_SIZE_BYTES} bytes (${totalSize} bytes)`);
+  }
+
+  return { files, totalSize, fileCount: files.length, unsupported, duplicates };
+}
+
+/**
+ * Assign files to logical bundles (core, textures, audio, maps, other).
+ * @param {Array<{ relativePath: string, absolutePath: string, size: number }>} files
+ * @returns {Record<string, typeof files>}
+ */
+export function groupIntoBundles(files) {
+  const bundles = {
+    'core.bundle': [],
+    'textures.bundle': [],
+    'audio.bundle': [],
+    'maps.bundle': [],
+    'other.bundle': []
+  };
+
+  const textureExt = /\.(png|jpg|jpeg|webp|gif|bmp|tga|dds|ktx)$/i;
+  const audioExt = /\.(ogg|wav|mp3|flac|bank)$/i;
+  const mapPath = /(^|\/)maps?\/|(^|\/)levels?\//i;
+
+  for (const file of files) {
+    const name = file.relativePath.toLowerCase();
+    if (textureExt.test(name)) {
+      bundles['textures.bundle'].push(file);
+    } else if (audioExt.test(name)) {
+      bundles['audio.bundle'].push(file);
+    } else if (mapPath.test(name)) {
+      bundles['maps.bundle'].push(file);
+    } else if (/\.(exe|dll|so|dylib|html|wasm|js|json|pak|assets|resource|bin|dat)$/i.test(name)) {
+      bundles['core.bundle'].push(file);
+    } else {
+      bundles['other.bundle'].push(file);
+    }
+  }
+
+  for (const key of Object.keys(bundles)) {
+    if (bundles[key].length === 0) delete bundles[key];
+  }
+
+  return bundles;
+}

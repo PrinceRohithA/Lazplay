@@ -132,7 +132,9 @@ model GameBuild {
   entrypoint       String?
   changelog        String?
   status           String   @default("WAITING_FOR_UPLOAD")
+  distributionType String   @default("ZIP")
   artifactObjectKey String?
+  manifestObjectKey String?
   sizeBytes        BigInt?
   checksumSha256   String?
   scanStatus       String?
@@ -141,6 +143,40 @@ model GameBuild {
   createdAt        DateTime @default(now())
 
   deployments Deployment[]
+  manifest    BuildManifest?
+  buildChunks BuildChunk[]
+}
+
+model ContentChunk {
+  hash       String   @id
+  sizeBytes  BigInt
+  objectKey  String   @unique
+  refCount   Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  buildChunks BuildChunk[]
+}
+
+model BuildChunk {
+  buildId String
+  build   GameBuild @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  hash    String
+  chunk   ContentChunk @relation(fields: [hash], references: [hash], onDelete: Restrict)
+
+  @@id([buildId, hash])
+  @@index([hash])
+}
+
+model BuildManifest {
+  id          String   @id
+  buildId     String   @unique
+  build       GameBuild @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  version     String
+  manifest    Json
+  chunkCount  Int
+  totalBytes  BigInt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Deployment {

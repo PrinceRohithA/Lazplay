@@ -19,6 +19,7 @@
     "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
+    "@lazplay/distribution": "file:../packages/distribution",
     "@electron-toolkit/utils": "^3.0.0",
     "adm-zip": "^0.5.17",
     "axios": "^1.7.7",

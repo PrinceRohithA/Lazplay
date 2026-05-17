@@ -91,10 +91,25 @@ export function setupIpcHandlers(
   ipcMain.handle("install-game", async (event, gameId: string, options: any) => {
     log.info(`Install requested for game: ${gameId}`, options);
     try {
+      const { token } = db.getTokens();
+      if (options?.usesChunkDistribution && token) {
+        options.token = token;
+      }
       await downloadManager.startInstall(gameId, options);
       return { success: true };
     } catch (error: any) {
       log.error(`Install failed for ${gameId}:`, error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle("repair-game", async (event, gameId: string) => {
+    const { token } = db.getTokens();
+    if (!token) return { success: false, error: "Not authenticated" };
+    try {
+      await downloadManager.repairGame(gameId, token);
+      return { success: true };
+    } catch (error: any) {
       return { success: false, error: error.message };
     }
   });
@@ -270,6 +285,7 @@ export function setupIpcHandlers(
             id,
             title: game.title || entry.title || id,
             downloadUrl: game.downloadUrl || game.buildUrl || entry.downloadUrl || entry.buildUrl || null,
+            usesChunkDistribution: game.usesChunkDistribution || entry.usesChunkDistribution || false,
             entrypoint: game.entrypoint || entry.entrypoint || null,
             coverUrl: game.coverUrl || game.coverImageUrl || entry.coverUrl || entry.coverImageUrl || game.heroImageUrl || entry.heroImageUrl || null,
             bannerUrl: game.bannerUrl || game.heroBannerUrl || game.heroImageUrl || entry.bannerUrl || entry.heroBannerUrl || entry.heroImageUrl || null,

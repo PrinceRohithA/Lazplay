@@ -167,6 +167,11 @@ export const games = {
 };
 
 // ─── Library & Wishlist ───────────────────────────────────────────────────────
+export const distribution = {
+  getManifest: (gameId) => get(`/games/${gameId}/distribution-manifest`),
+  getChunkDownloadUrls: (gameId, hashes) => post(`/games/${gameId}/chunks/download-urls`, { hashes }),
+};
+
 export const library = {
   list: (params) => get('/library', params),
   get: (gameId) => get(`/library/${gameId}`),
@@ -234,6 +239,13 @@ export const developer = {
   scanBuild: (buildId) => post(`/developer/builds/${buildId}/scan`),
   deployBuild: (buildId, body) => post(`/developer/builds/${buildId}/deploy`, body),
   makeLatestBuild: (buildId) => post(`/developer/builds/${buildId}/make-latest`),
+
+  // Chunked distribution (client-side compress + chunk + BLAKE3)
+  checkChunks: (buildId, hashes) => post(`/developer/builds/${buildId}/chunks/check`, { hashes }),
+  getChunkUploadUrl: (buildId, body) => post(`/developer/builds/${buildId}/chunks/upload-url`, body),
+  completeChunk: (buildId, body) => post(`/developer/builds/${buildId}/chunks/complete`, body),
+  publishManifest: (buildId, body) => post(`/developer/builds/${buildId}/manifest`, body),
+  getBuildManifest: (buildId) => get(`/developer/builds/${buildId}/manifest`),
 
   // Deployments
   listDeployments: (params) => get('/developer/deployments', params),
@@ -316,6 +328,6 @@ export const system = {
 
 export default {
   auth, user, games, library, wishlist, entitlements,
-  payments, storage, developer, instances, admin,
+  payments, storage, developer, distribution, instances, admin,
   notifications, system,
 };

@@ -10,6 +10,7 @@ interface GameState {
   isRunning?: boolean;
   isOwned?: boolean;
   downloadUrl?: string;
+  usesChunkDistribution?: boolean;
   entrypoint?: string;
   coverUrl?: string;
   bannerUrl?: string;
@@ -143,6 +144,7 @@ export const useLauncherStore = create<LauncherStore>((set, get) => ({
               status: "uninstalled",
               isOwned,
               downloadUrl: item.downloadUrl,
+              usesChunkDistribution: item.usesChunkDistribution,
               entrypoint: item.entrypoint,
               coverUrl: item.coverUrl,
               bannerUrl: item.bannerUrl,
@@ -153,6 +155,7 @@ export const useLauncherStore = create<LauncherStore>((set, get) => ({
               title: item.title,
               isOwned,
               downloadUrl: item.downloadUrl,
+              usesChunkDistribution: item.usesChunkDistribution,
               entrypoint: item.entrypoint,
               coverUrl: item.coverUrl,
               bannerUrl: item.bannerUrl,

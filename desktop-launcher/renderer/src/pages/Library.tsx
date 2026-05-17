@@ -56,7 +56,8 @@ export default function Library() {
         downloadUrl: game.downloadUrl,
         entrypoint: game.entrypoint,
         coverUrl: game.coverUrl,
-        bannerUrl: game.bannerUrl
+        bannerUrl: game.bannerUrl,
+        usesChunkDistribution: game.usesChunkDistribution,
       });
     }
   };

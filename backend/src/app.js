@@ -18,6 +18,7 @@ import { registerInstancesRoutes } from './routes/instances.js';
 import { registerAdminRoutes } from './routes/admin.js';
 import { registerNotificationsRoutes } from './routes/notifications.js';
 import { registerSystemRoutes } from './routes/system.js';
+import { registerChunkRoutes } from './routes/chunks.js';
 
 
 const config = {
@@ -530,7 +531,10 @@ async function publicGame(game, user = null) {
   const entrypoint = build?.entrypoint || (isWeb ? 'index.html' : 'game.exe');
 
   let downloadUrl = null;
-  if (isOwned && build?.artifactObjectKey) {
+  let distributionType = build?.distributionType || 'ZIP';
+  let usesChunkDistribution = distributionType === 'CHUNKED';
+
+  if (isOwned && build?.artifactObjectKey && !usesChunkDistribution) {
     const signed = await signedStorageUrl(build.artifactObjectKey, 'GET', 3600, getPrivateGameBucket());
     downloadUrl = signed.url;
   }
@@ -549,6 +553,7 @@ async function publicGame(game, user = null) {
     hardwareSpecs: game.hardwareSpecs,
     systemRequirements: game.systemRequirements,
     entrypoint, downloadUrl,
+    distributionType, usesChunkDistribution,
     isOwned, hasEntitlement, isWishlisted, rating, reviewCount: reviews.length,
     status: game.status, publishedAt: game.publishedAt, createdAt: game.createdAt, updatedAt: game.updatedAt,
   };
@@ -1024,6 +1029,7 @@ function registerRoutes(router) {
   registerAdminRoutes(router, ctx);
   registerNotificationsRoutes(router, ctx);
   registerSystemRoutes(router, ctx);
+  registerChunkRoutes(router, ctx);
 }
 
 export async function createApp() {
