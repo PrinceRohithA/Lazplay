@@ -596,6 +596,11 @@ router.add('POST', '/developer/builds/:buildId/upload-url', async (req) => {
       sizeBytes: validators.bigint({ min: 1n })
     });
 
+    const isWindows = build.platform?.toUpperCase() === 'WINDOWS' || build.runtime?.toUpperCase() === 'WINDOWS';
+    if (isWindows) {
+      throw new HttpError(400, 'WINDOWS_UPLOAD_RESTRICTED', 'Windows game builds cannot be uploaded through the web portal. To guarantee native DRM encryption and chunked distribution, please use the Creator Workspace inside the LazPlay Desktop Launcher.');
+    }
+
     const isAndroid = build.platform?.toUpperCase() === 'ANDROID' || build.runtime?.toUpperCase() === 'ANDROID';
     if (isAndroid && body.sizeBytes > 5n * 1024n * 1024n * 1024n) {
       throw new HttpError(400, 'BUILD_LIMIT_EXCEEDED', 'Android game builds are strictly limited to 5GB (5,368,709,120 bytes)');

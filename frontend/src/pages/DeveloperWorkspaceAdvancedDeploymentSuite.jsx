@@ -162,22 +162,25 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     if (!selectedFiles.length) return;
 
     if (type === 'GAME_BINARIES' || type.startsWith('GAME_BINARIES_')) {
+      if (type === 'GAME_BINARIES_WINDOWS') {
+        alert(
+          `UPLOAD_RESTRICTED: Windows builds cannot be uploaded through the web browser.\n\n` +
+          `To guarantee secure DRM encryption (XOR scrambling), native chunk distribution, and ZSTD compression, Windows game uploads must be done exclusively inside the Creator Workspace in the LazPlay Desktop Launcher.`
+        );
+        addLog(`BLOCKED: Windows web uploads are restricted. Please use the Desktop Launcher.`);
+        if (e.target) e.target.value = '';
+        return;
+      }
+
       const file = selectedFiles[0];
       const isAndroid = type === 'GAME_BINARIES_ANDROID';
       const maxSizeBytes = isAndroid ? 5 * 1024 * 1024 * 1024 : 500 * 1024 * 1024; // 5GB for Android, 500MB for others
       const limitLabel = isAndroid ? '5GB' : '500MB';
 
       if (file.size > maxSizeBytes) {
-        if (type === 'GAME_BINARIES_WINDOWS') {
-          alert(
-            `UPLOAD_BLOCKED: The selected Windows build "${file.name}" is ${(file.size / 1024 / 1024).toFixed(2)}MB, which exceeds the 500MB browser upload limit for Windows games.\n\n` +
-            `To upload Windows games larger than 500MB, you must use the Creator Workspace inside the LazPlay Desktop Launcher, which supports high-performance native directory chunking, ZSTD compression, and BLAKE3 delta deduplication.`
-          );
-        } else {
-          alert(
-            `UPLOAD_BLOCKED: The selected build "${file.name}" is ${(file.size / 1024 / 1024).toFixed(2)}MB, which exceeds the ${limitLabel} browser upload limit for ${isAndroid ? 'Android' : 'Web/Linux'} games.`
-          );
-        }
+        alert(
+          `UPLOAD_BLOCKED: The selected build "${file.name}" is ${(file.size / 1024 / 1024).toFixed(2)}MB, which exceeds the ${limitLabel} browser upload limit for ${isAndroid ? 'Android' : 'Web/Linux'} games.`
+        );
         addLog(`BLOCKED: ${type} is too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Limit is ${limitLabel}.`);
         if (e.target) e.target.value = '';
         return;
@@ -935,29 +938,48 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
 
                       {/* Right Column: Platform Zip/Executable File Slot */}
                       <div className="space-y-2">
-                        <span className="block font-label-mono text-[9px] text-on-surface-variant uppercase tracking-wider">
-                          {platform} BINARY PAYLOAD
-                        </span>
-                        <div
-                          onClick={() => fileInputRefs[slotId].current?.click()}
-                          className={`relative border-2 border-dashed p-4 flex flex-col items-center justify-center text-center bg-surface-container-lowest transition-all group cursor-pointer min-h-[90px] ${isStaged ? 'border-primary-container bg-primary-container/5 shadow-[0_0_15px_rgba(var(--primary-container-rgb),0.1)]' : 'border-outline-variant hover:border-primary-container hover:bg-surface-container-low'}`}
-                        >
-                          <input type="file" ref={fileInputRefs[slotId]} className="hidden" accept="*" onChange={(e) => handleFileSelect(slotId, e)} />
-                          <div className="flex items-center gap-2">
-                            <span className={`material-symbols-outlined text-headline-sm group-hover:text-primary-container transition-transform group-hover:scale-110 ${isStaged ? 'text-primary-container animate-pulse' : 'text-outline'}`}>folder_zip</span>
-                            <p className={`font-label-mono text-[10px] font-bold uppercase tracking-wider ${isStaged ? 'text-primary-container' : 'text-on-surface'}`}>
-                              {isStaged ? 'BUILD_ZIP_STAGED' : `SELECT_${platform}_BUILD_ZIP`}
-                            </p>
-                          </div>
-                          <p className="font-label-mono text-[8px] text-on-surface-variant opacity-70 mt-1 max-w-[90%] truncate">
-                            {isStaged ? isStaged.name : '.ZIP / .EXE / .APK / .PKG (MAX 500MB)'}
-                          </p>
-                          {isStaged && (
-                            <div className="absolute top-2 right-2 p-1 bg-surface-container-highest hover:bg-error/20 transition-colors cursor-pointer group/close" onClick={(e) => { e.stopPropagation(); setFiles(prev => ({ ...prev, [slotId]: null })); }}>
-                              <span className="material-symbols-outlined text-[12px] text-on-surface-variant group-hover/close:text-error transition-colors">close</span>
+                        {(() => {
+                          const isWindows = platform === 'WINDOWS';
+                          return (
+                            <div
+                              onClick={() => {
+                                if (isWindows) {
+                                  alert(
+                                    `UPLOAD_RESTRICTED: Windows builds cannot be uploaded through the web browser.\n\n` +
+                                    `To guarantee secure DRM encryption (XOR scrambling), native chunk distribution, and ZSTD compression, Windows game uploads must be done exclusively inside the Creator Workspace in the LazPlay Desktop Launcher.`
+                                  );
+                                  return;
+                                }
+                                fileInputRefs[slotId].current?.click();
+                              }}
+                              className={`relative border-2 border-dashed p-4 flex flex-col items-center justify-center text-center bg-surface-container-lowest transition-all group cursor-pointer min-h-[90px] ${
+                                isWindows
+                                  ? 'opacity-65 border-error/30 cursor-not-allowed bg-error/5 hover:border-error/50'
+                                  : isStaged
+                                  ? 'border-primary-container bg-primary-container/5 shadow-[0_0_15px_rgba(var(--primary-container-rgb),0.1)]'
+                                  : 'border-outline-variant hover:border-primary-container hover:bg-surface-container-low'
+                              }`}
+                            >
+                              <input type="file" ref={fileInputRefs[slotId]} className="hidden" accept="*" disabled={isWindows} onChange={(e) => handleFileSelect(slotId, e)} />
+                              <div className="flex items-center gap-2">
+                                <span className={`material-symbols-outlined text-headline-sm transition-transform group-hover:scale-110 ${isWindows ? 'text-error animate-pulse' : isStaged ? 'text-primary-container' : 'text-outline'}`}>
+                                  {isWindows ? 'lock' : 'folder_zip'}
+                                </span>
+                                <p className={`font-label-mono text-[10px] font-bold uppercase tracking-wider ${isWindows ? 'text-error' : isStaged ? 'text-primary-container' : 'text-on-surface'}`}>
+                                  {isWindows ? 'WINDOWS_UPLOAD_RESTRICTED' : isStaged ? 'BUILD_ZIP_STAGED' : `SELECT_${platform}_BUILD_ZIP`}
+                                </p>
+                              </div>
+                              <p className="font-label-mono text-[8px] text-on-surface-variant opacity-70 mt-1 max-w-[90%] truncate">
+                                {isWindows ? 'UPLOAD_VIA_DESKTOP_LAUNCHER_ONLY' : isStaged ? isStaged.name : '.ZIP / .EXE / .APK / .PKG (MAX 500MB)'}
+                              </p>
+                              {isStaged && !isWindows && (
+                                <div className="absolute top-2 right-2 p-1 bg-surface-container-highest hover:bg-error/20 transition-colors cursor-pointer group/close" onClick={(e) => { e.stopPropagation(); setFiles(prev => ({ ...prev, [slotId]: null })); }}>
+                                  <span className="material-symbols-outlined text-[12px] text-on-surface-variant group-hover/close:text-error transition-colors">close</span>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
+                          );
+                        })()}
                       </div>
 
                     </div>
