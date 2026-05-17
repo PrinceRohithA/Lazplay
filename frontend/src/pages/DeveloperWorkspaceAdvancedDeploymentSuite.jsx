@@ -850,7 +850,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
               <span className="material-symbols-outlined">cloud_upload</span> ASSET_DEPLOYMENT
             </h3>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             {(() => {
               const slots = [
                 { id: 'COVER_IMAGE', icon: 'auto_stories', label: 'PROJECT_COVER', sub: '600x900 (2:3 RATIO)', accept: 'image/*' },
@@ -858,15 +858,6 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
                 { id: 'SCREENSHOTS', icon: 'collections', label: 'SCREENSHOTS', sub: '1920x1080 (MAX 10)', accept: 'image/*', multiple: true },
                 { id: 'VIDEO_TRAILER', icon: 'movie', label: 'VIDEO_TRAILER', sub: '.MP4 (MAX 1GB)', accept: 'video/*' }
               ];
-              form.hardwareSpecs.forEach(platform => {
-                slots.push({
-                  id: `GAME_BINARIES_${platform}`,
-                  icon: 'folder_zip',
-                  label: `BUILD_ZIP (${platform})`,
-                  sub: '.ZIP / .EXE / .APK / .PKG',
-                  accept: '*'
-                });
-              });
               return slots;
             })().map(slot => (
               <div
@@ -892,36 +883,77 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
           {form.hardwareSpecs.length > 0 && (
             <div className="space-y-4 mt-8 pt-8 border-t border-outline-variant/30">
               <h4 className="font-label-mono text-[10px] text-primary-fixed uppercase tracking-widest flex items-center gap-2">
-                <span className="material-symbols-outlined text-[14px]">terminal</span> TARGET_PLATFORM_ENTRYPOINTS
+                <span className="material-symbols-outlined text-[14px]">terminal</span> TARGET_PLATFORM_BUILDS_AND_ENTRYPOINTS
               </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {form.hardwareSpecs.map(platform => (
-                  <div key={platform} className="space-y-1 bg-surface-container/30 p-3 border border-outline-variant/20 rounded">
-                    <label className="block font-label-mono text-[9px] text-on-surface-variant uppercase">
-                      {platform} ENTRYPOINT (E.G. {platform === 'WEB' ? 'INDEX.HTML' : 'GAME.EXE'})
-                    </label>
-                    <div className="flex items-center bg-surface-container text-secondary-container p-2 border border-outline-variant focus-within:border-secondary-container group">
-                      <span className="mr-2 group-focus-within:animate-pulse text-secondary-container font-mono text-[10px]">&gt;</span>
-                      <input
-                        className="bg-transparent border-none focus:ring-0 p-0 w-full font-label-mono text-[11px] placeholder:opacity-30 text-on-surface"
-                        placeholder={platform === 'WEB' ? 'index.html' : 'game.exe'}
-                        type="text"
-                        value={form.platformEntrypoints?.[platform] || ''}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setForm(prev => ({
-                            ...prev,
-                            platformEntrypoints: {
-                              ...(prev.platformEntrypoints || {}),
-                              [platform]: val
-                            }
-                          }));
-                        }}
-                        autoComplete="off"
-                      />
+              <div className="space-y-4">
+                {form.hardwareSpecs.map(platform => {
+                  const slotId = `GAME_BINARIES_${platform}`;
+                  const isStaged = files[slotId];
+                  return (
+                    <div key={platform} className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-surface-container/20 border border-outline-variant/20 rounded items-center">
+                      
+                      {/* Left Column: Platform Entry Point Input */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-label-mono text-[10px] text-on-surface bg-secondary-container/20 px-2 py-0.5 rounded font-black tracking-widest uppercase">
+                            {platform}
+                          </span>
+                          <span className="font-label-mono text-[9px] text-on-surface-variant uppercase tracking-wider">
+                            ENTRYPOINT (E.G. {platform === 'WEB' ? 'INDEX.HTML' : 'GAME.EXE'})
+                          </span>
+                        </div>
+                        <div className="flex items-center bg-surface-container text-secondary-container p-2.5 border border-outline-variant focus-within:border-secondary-container group">
+                          <span className="mr-2 group-focus-within:animate-pulse text-secondary-container font-mono text-[10px]">&gt;</span>
+                          <input
+                            className="bg-transparent border-none focus:ring-0 p-0 w-full font-label-mono text-[11px] placeholder:opacity-30 text-on-surface"
+                            placeholder={platform === 'WEB' ? 'index.html' : 'game.exe'}
+                            type="text"
+                            value={form.platformEntrypoints?.[platform] || ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setForm(prev => ({
+                                ...prev,
+                                platformEntrypoints: {
+                                  ...(prev.platformEntrypoints || {}),
+                                  [platform]: val
+                                }
+                              }));
+                            }}
+                            autoComplete="off"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Right Column: Platform Zip/Executable File Slot */}
+                      <div className="space-y-2">
+                        <span className="block font-label-mono text-[9px] text-on-surface-variant uppercase tracking-wider">
+                          {platform} BINARY PAYLOAD
+                        </span>
+                        <div
+                          onClick={() => fileInputRefs[slotId].current?.click()}
+                          className={`relative border-2 border-dashed p-4 flex flex-col items-center justify-center text-center bg-surface-container-lowest transition-all group cursor-pointer min-h-[90px] ${isStaged ? 'border-primary-container bg-primary-container/5 shadow-[0_0_15px_rgba(var(--primary-container-rgb),0.1)]' : 'border-outline-variant hover:border-primary-container hover:bg-surface-container-low'}`}
+                        >
+                          <input type="file" ref={fileInputRefs[slotId]} className="hidden" accept="*" onChange={(e) => handleFileSelect(slotId, e)} />
+                          <div className="flex items-center gap-2">
+                            <span className={`material-symbols-outlined text-headline-sm group-hover:text-primary-container transition-transform group-hover:scale-110 ${isStaged ? 'text-primary-container animate-pulse' : 'text-outline'}`}>folder_zip</span>
+                            <p className={`font-label-mono text-[10px] font-bold uppercase tracking-wider ${isStaged ? 'text-primary-container' : 'text-on-surface'}`}>
+                              {isStaged ? 'BUILD_ZIP_STAGED' : `SELECT_${platform}_BUILD_ZIP`}
+                            </p>
+                          </div>
+                          <p className="font-label-mono text-[8px] text-on-surface-variant opacity-70 mt-1 max-w-[90%] truncate">
+                            {isStaged ? isStaged.name : '.ZIP / .EXE / .APK / .PKG (MAX 500MB)'}
+                          </p>
+                          {isStaged && (
+                            <div className="absolute top-2 right-2 p-1 bg-surface-container-highest hover:bg-error/20 transition-colors cursor-pointer group/close" onClick={(e) => { e.stopPropagation(); setFiles(prev => ({ ...prev, [slotId]: null })); }}>
+                              <span className="material-symbols-outlined text-[12px] text-on-surface-variant group-hover/close:text-error transition-colors">close</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
