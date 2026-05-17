@@ -597,8 +597,8 @@ router.add('POST', '/developer/builds/:buildId/upload-url', async (req) => {
     });
 
     const isAndroid = build.platform?.toUpperCase() === 'ANDROID' || build.runtime?.toUpperCase() === 'ANDROID';
-    if (isAndroid && body.sizeBytes > 500n * 1024n * 1024n) {
-      throw new HttpError(400, 'BUILD_LIMIT_EXCEEDED', 'Android game builds are strictly limited to 500MB (524,288,000 bytes)');
+    if (isAndroid && body.sizeBytes > 5n * 1024n * 1024n * 1024n) {
+      throw new HttpError(400, 'BUILD_LIMIT_EXCEEDED', 'Android game builds are strictly limited to 5GB (5,368,709,120 bytes)');
     }
 
     const objectKey = `games/${build.gameId}/builds/${build.id}/${body.fileName}`;

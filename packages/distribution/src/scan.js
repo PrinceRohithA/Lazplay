@@ -56,9 +56,9 @@ export async function scanBuildDirectory(rootDir, { platform } = {}) {
   await walk(rootDir);
 
   const isAndroid = platform?.toUpperCase() === 'ANDROID';
-  const limit = isAndroid ? 500 * 1024 * 1024 : MAX_GAME_SIZE_BYTES;
+  const limit = isAndroid ? 5 * 1024 * 1024 * 1024 : MAX_GAME_SIZE_BYTES;
   if (totalSize > limit) {
-    const limitLabel = isAndroid ? '500MB' : '10GB';
+    const limitLabel = isAndroid ? '5GB' : '10GB';
     throw new Error(`Build exceeds maximum size of ${limitLabel} for ${platform || 'NATIVE'} (${totalSize} bytes)`);
   }
 
