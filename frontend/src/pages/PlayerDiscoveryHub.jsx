@@ -81,8 +81,27 @@ export default function PlayerDiscoveryHub() {
                   className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all"
                   alt={game.title}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2 gap-1">
                   <span className="font-label-mono text-[9px] text-on-primary-container truncate">{game.title}</span>
+                  <div className="flex items-center gap-1 opacity-70">
+                    {(game.platforms || ['WINDOWS']).map(p => {
+                      const name = p.toUpperCase();
+                      let icon = 'desktop_windows';
+                      if (name === 'WEB' || name === 'BROWSER') icon = 'language';
+                      if (name === 'LINUX') icon = 'terminal';
+                      if (name === 'ANDROID') icon = 'smartphone';
+                      if (name === 'MAC' || name === 'OSX') icon = 'laptop_mac';
+                      return (
+                        <span 
+                          key={p} 
+                          title={name}
+                          className="material-symbols-outlined text-[10px] text-on-primary-container"
+                        >
+                          {icon}
+                        </span>
+                      );
+                    })}
+                  </div>
                 </div>
                 <div className="absolute top-1 left-1 bg-surface-container-highest/90 border border-outline-variant px-1 text-[8px] font-label-mono text-on-surface-variant">
                   #{i+6}

@@ -119,12 +119,24 @@ export default function GameLibraryCyberEdition() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-60"></div>
                 
                 {/* Platform Badges */}
-                <div className="absolute bottom-2 left-2 md:bottom-3 md:left-3 flex gap-1">
-                   {(item.platforms || []).slice(0, 2).map(p => (
-                     <span key={p} className="text-[7px] md:text-[8px] font-label-mono px-1 md:px-1.5 py-0.5 bg-black/60 border border-outline-variant/30 text-outline-variant uppercase">
-                       {p}
-                     </span>
-                   ))}
+                <div className="absolute bottom-2 left-2 md:bottom-3 md:left-3 flex gap-1.5 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded border border-outline-variant/30">
+                   {(item.platforms || []).map(p => {
+                     const name = p.toUpperCase();
+                     let icon = 'desktop_windows';
+                     if (name === 'WEB' || name === 'BROWSER') icon = 'language';
+                     if (name === 'LINUX') icon = 'terminal';
+                     if (name === 'ANDROID') icon = 'smartphone';
+                     if (name === 'MAC' || name === 'OSX') icon = 'laptop_mac';
+                     return (
+                       <span 
+                         key={p} 
+                         title={name} 
+                         className="material-symbols-outlined text-[12px] md:text-[14px] text-outline-variant hover:text-primary-container transition-colors"
+                       >
+                         {icon}
+                       </span>
+                     );
+                   })}
                 </div>
               </div>
 

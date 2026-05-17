@@ -193,10 +193,31 @@ export default function GamesDiscoveryRetroEdition() {
                     <p className="text-on-surface-variant text-[11px] md:text-body-md mb-4 line-clamp-2 opacity-80">
                       {game.tagline || toPlainText(game.description)}
                     </p>
-                    <div className="flex flex-wrap gap-1 md:gap-2 mb-6">
-                      {(game.genres || []).slice(0,2).map(genre => (
-                        <span key={genre} className="bg-surface-variant text-[9px] md:text-[10px] font-label-mono px-2 py-0.5 md:py-1 border border-outline uppercase">{genre}</span>
-                      ))}
+                    <div className="flex justify-between items-center gap-2 mb-6">
+                      <div className="flex flex-wrap gap-1 md:gap-2">
+                        {(game.genres || []).slice(0,2).map(genre => (
+                          <span key={genre} className="bg-surface-variant text-[9px] md:text-[10px] font-label-mono px-2 py-0.5 md:py-1 border border-outline uppercase">{genre}</span>
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-on-surface-variant/70">
+                        {(game.platforms || ['WINDOWS']).map(p => {
+                          const name = p.toUpperCase();
+                          let icon = 'desktop_windows';
+                          if (name === 'WEB' || name === 'BROWSER') icon = 'language';
+                          if (name === 'LINUX') icon = 'terminal';
+                          if (name === 'ANDROID') icon = 'smartphone';
+                          if (name === 'MAC' || name === 'OSX') icon = 'laptop_mac';
+                          return (
+                            <span 
+                              key={p} 
+                              title={name}
+                              className="material-symbols-outlined text-[14px] md:text-[16px] hover:text-primary-container transition-colors"
+                            >
+                              {icon}
+                            </span>
+                          );
+                        })}
+                      </div>
                     </div>
                     <div className="mt-auto grid grid-cols-2 gap-2">
                       <Link to={`/game?id=${game.id}`} className="bg-primary-container text-on-primary-container font-label-mono py-2 text-[11px] md:text-[12px] font-bold hover:brightness-110 active:translate-y-0.5 transition-all text-center">HOST_NOW</Link>

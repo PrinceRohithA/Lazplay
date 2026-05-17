@@ -1,5 +1,5 @@
 import { useLauncherStore } from "../store/useLauncherStore";
-import { Play, Download, Search, LayoutGrid, List, Info, Clock, HardDrive, Gamepad2, RefreshCw, LogIn, Trash2, FolderOpen } from "lucide-react";
+import { Play, Download, Search, LayoutGrid, List, Info, Clock, HardDrive, Gamepad2, RefreshCw, LogIn, Trash2, FolderOpen, Monitor, Smartphone, Globe, Terminal } from "lucide-react";
 import { useState } from "react";
 
 export default function Library() {
@@ -339,9 +339,20 @@ function GameCard({ game, isSelected, onSelect, onAction, onUninstall }: { game:
       </div>
       <div className="p-3">
         <h3 className={`font-bold text-xs truncate mb-1 ${isSelected ? "text-brand-400" : "text-slate-200"}`}>{game.title}</h3>
-        <div className="flex items-center gap-3 text-[10px] text-slate-500 font-medium">
-          <span className="flex items-center gap-1"><Clock size={10} />{game.playtime ? Math.round(game.playtime / 3600) + "h" : "0h"}</span>
-          <span className="flex items-center gap-1"><HardDrive size={10} />{game.size ? (game.size / (1024**3)).toFixed(1) + " GB" : "--"}</span>
+        <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1"><Clock size={10} />{game.playtime ? Math.round(game.playtime / 3600) + "h" : "0h"}</span>
+            <span className="flex items-center gap-1"><HardDrive size={10} />{game.size ? (game.size / (1024**3)).toFixed(1) + " GB" : "--"}</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-slate-400">
+            {(game.platforms || ["WINDOWS"]).map((p: string) => {
+              const name = p.toUpperCase();
+              if (name === "WEB" || name === "BROWSER") return <span key={p} title={name} className="hover:text-brand-400 transition-colors"><Globe size={11} /></span>;
+              if (name === "LINUX") return <span key={p} title={name} className="hover:text-brand-400 transition-colors"><Terminal size={11} /></span>;
+              if (name === "ANDROID") return <span key={p} title={name} className="hover:text-brand-400 transition-colors"><Smartphone size={11} /></span>;
+              return <span key={p} title={name} className="hover:text-brand-400 transition-colors"><Monitor size={11} /></span>;
+            })}
+          </div>
         </div>
       </div>
     </div>
@@ -370,6 +381,18 @@ function GameListRow({ game, isSelected, onSelect, onAction, onUninstall }: { ga
         <div className="text-[10px] text-slate-500 w-24">
           <div className="flex items-center gap-1.5 mb-1"><Clock size={12} /><span>Playtime</span></div>
           <span className="text-slate-300 font-medium">{game.playtime ? Math.round(game.playtime / 3600) + " hours" : "0 hours"}</span>
+        </div>
+        <div className="text-[10px] text-slate-500 w-20">
+          <div className="flex items-center gap-1.5 mb-1"><Monitor size={12} /><span>Platforms</span></div>
+          <div className="flex items-center gap-1.5 text-slate-300">
+            {(game.platforms || ["WINDOWS"]).map((p: string) => {
+              const name = p.toUpperCase();
+              if (name === "WEB" || name === "BROWSER") return <span key={p} title={name}><Globe size={12} /></span>;
+              if (name === "LINUX") return <span key={p} title={name}><Terminal size={12} /></span>;
+              if (name === "ANDROID") return <span key={p} title={name}><Smartphone size={12} /></span>;
+              return <span key={p} title={name}><Monitor size={12} /></span>;
+            })}
+          </div>
         </div>
       </div>
       <div className="flex items-center gap-2">
