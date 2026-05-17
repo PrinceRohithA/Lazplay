@@ -9,5 +9,7 @@ desktop-launcher/node_modules
 .vscode/
 desktop-launcher/dist/
 desktop-launcher/release/
+packages/distribution/node_modules/
 packages/distribution/node_modules
 uploader/node_modules
+uploader/node_modules/
