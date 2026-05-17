@@ -12,7 +12,7 @@ import {
   Terminal,
 } from "lucide-react";
 
-export default function Sidebar() {
+export default function tobbar() {
   const { games, activePage, setActivePage, logout } = useLauncherStore();
   const [showDownloads, setShowDownloads] = useState(false);
   const gameList = Object.values(games);

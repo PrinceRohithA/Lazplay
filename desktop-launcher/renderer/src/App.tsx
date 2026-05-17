@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import Sidebar from "./components/Sidebar";
+import Tobbar from "./components/tobbar";
 import Library from "./pages/Library";
 import Login from "./pages/Login";
 import DeveloperConsole from "./pages/DeveloperConsole";
@@ -30,6 +30,14 @@ function App() {
     const savedSecondary = localStorage.getItem("lazplay-launcher-secondary") || "#ffabf3";
     applyThemeColor(savedPrimary, savedSecondary);
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated && activePage === "store" && window.lazplayAPI) {
+      console.log("[App] Initializing storefront visibility on login/startup...");
+      window.lazplayAPI.setStoreVisibility(true);
+      window.lazplayAPI.navigateStorePath("/");
+    }
+  }, [isAuthenticated, activePage]);
 
   useEffect(() => {
     // Initial Load - first verify user session
@@ -113,7 +121,7 @@ function App() {
       </div>
 
       {/* Floating Bottom Navigation Bar */}
-      <Sidebar />
+      <Tobbar />
 
       {/* Entrypoint Selection Modal */}
       {setupPrompt && (

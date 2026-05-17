@@ -111,16 +111,16 @@ function createWindow() {
 
   // Position the store view (leave space for sidebar/header if any)
   // This will be dynamic in real app, listening to resize events
-  storeView.setBounds({ x: 0, y: 80, width: 1280, height: 800 - 80 });
+  storeView.setBounds({ x: 0, y: 64, width: 1280, height: 800 - 64 });
 
   mainWindow.on("resize", () => {
     if (mainWindow && storeView) {
       const bounds = mainWindow.getContentBounds();
       storeView.setBounds({
         x: 0,
-        y: 80,
+        y: 64,
         width: bounds.width,
-        height: bounds.height - 80,
+        height: bounds.height - 64,
       });
     }
   });
