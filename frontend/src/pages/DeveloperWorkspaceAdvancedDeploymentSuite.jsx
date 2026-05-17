@@ -161,6 +161,20 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     const selectedFiles = Array.from(e.target.files);
     if (!selectedFiles.length) return;
 
+    if (type.startsWith('GAME_BINARIES_')) {
+      const file = selectedFiles[0];
+      const maxSizeBytes = 500 * 1024 * 1024; // 500MB
+      if (file.size > maxSizeBytes) {
+        alert(
+          `UPLOAD_BLOCKED: The selected build "${file.name}" is ${(file.size / 1024 / 1024).toFixed(2)}MB, which exceeds the 500MB browser upload limit.\n\n` +
+          `To utilize faster chunking, native ZSTD compression, and BLAKE3 hashing, please use the Creator Workspace inside the LazPlay Desktop Launcher instead.`
+        );
+        addLog(`BLOCKED: ${type} is too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Use Desktop Launcher.`);
+        if (e.target) e.target.value = '';
+        return;
+      }
+    }
+
     if (type === 'COVER_IMAGE') {
       const existingCover = existingMedia.filter((m) => m.alt === 'COVER_IMAGE');
       if (existingCover.length > 0 && !window.confirm('COVER_IMAGE_ALREADY_EXISTS. REPLACE_IT? THIS WILL DELETE THE CURRENT ONE.')) {

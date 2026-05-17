@@ -1,5 +1,5 @@
 import AdmZip from 'adm-zip';
-import { compress } from './compress.js';
+import { compress } from './compress-native.js';
 import { chunkBuffer } from './chunk.js';
 import { ZSTD_LEVEL } from './constants.js';
 
