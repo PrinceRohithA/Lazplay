@@ -163,13 +163,22 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
 
     if (type === 'GAME_BINARIES' || type.startsWith('GAME_BINARIES_')) {
       const file = selectedFiles[0];
-      const maxSizeBytes = 500 * 1024 * 1024; // 500MB
+      const isAndroid = type === 'GAME_BINARIES_ANDROID';
+      const maxSizeBytes = isAndroid ? 5 * 1024 * 1024 * 1024 : 500 * 1024 * 1024; // 5GB for Android, 500MB for others
+      const limitLabel = isAndroid ? '5GB' : '500MB';
+
       if (file.size > maxSizeBytes) {
-        alert(
-          `UPLOAD_BLOCKED: The selected build "${file.name}" is ${(file.size / 1024 / 1024).toFixed(2)}MB, which exceeds the 500MB browser upload limit.\n\n` +
-          `To utilize faster chunking, native ZSTD compression, and BLAKE3 hashing, please use the Creator Workspace inside the LazPlay Desktop Launcher instead.`
-        );
-        addLog(`BLOCKED: ${type} is too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Use Desktop Launcher.`);
+        if (type === 'GAME_BINARIES_WINDOWS') {
+          alert(
+            `UPLOAD_BLOCKED: The selected Windows build "${file.name}" is ${(file.size / 1024 / 1024).toFixed(2)}MB, which exceeds the 500MB browser upload limit for Windows games.\n\n` +
+            `To upload Windows games larger than 500MB, you must use the Creator Workspace inside the LazPlay Desktop Launcher, which supports high-performance native directory chunking, ZSTD compression, and BLAKE3 delta deduplication.`
+          );
+        } else {
+          alert(
+            `UPLOAD_BLOCKED: The selected build "${file.name}" is ${(file.size / 1024 / 1024).toFixed(2)}MB, which exceeds the ${limitLabel} browser upload limit for ${isAndroid ? 'Android' : 'Web/Linux'} games.`
+          );
+        }
+        addLog(`BLOCKED: ${type} is too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Limit is ${limitLabel}.`);
         if (e.target) e.target.value = '';
         return;
       }
