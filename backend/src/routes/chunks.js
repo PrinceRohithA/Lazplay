@@ -11,7 +11,7 @@ import {
 export function registerChunkRoutes(router, ctx) {
   const {
     HttpError, ok, createId, requireAuth, findGame, assertDeveloperOwnsGame,
-    userOwnsGame, getPrivateGameBucket, signedStorageUrl, getBearerToken
+    userOwnsGame, getPrivateGameBucket, getPublicGameBucket, isWebRuntime, signedStorageUrl, getBearerToken
   } = ctx;
 
   router.add('POST', '/developer/builds/:buildId/chunks/check', async (req) => {
@@ -46,11 +46,13 @@ export function registerChunkRoutes(router, ctx) {
     });
 
     const objectKey = chunkObjectKey(body.hash);
+    const isWeb = isWebRuntime(build.runtime || build.platform);
+    const bucket = isWeb ? getPublicGameBucket() : getPrivateGameBucket();
     const upload = await signedStorageUrl(
       objectKey,
       'PUT',
       3600,
-      getPrivateGameBucket(),
+      bucket,
       { contentType: 'application/octet-stream' }
     );
 
@@ -212,7 +214,9 @@ export function registerChunkRoutes(router, ctx) {
       }
       const chunk = buildChunks.find((bc) => bc.hash === hash)?.chunk;
       const objectKey = chunk?.objectKey || chunkObjectKey(hash);
-      const signed = await signedStorageUrl(objectKey, 'GET', 3600, getPrivateGameBucket());
+      const isWeb = isWebRuntime(build.runtime || build.platform);
+      const bucket = isWeb ? getPublicGameBucket() : getPrivateGameBucket();
+      const signed = await signedStorageUrl(objectKey, 'GET', 3600, bucket);
       urls.push({ hash, url: signed.url, expiresAt: signed.expiresAt, size: chunk ? Number(chunk.sizeBytes) : null });
     }
 

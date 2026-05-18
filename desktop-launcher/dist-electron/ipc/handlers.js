@@ -7,6 +7,7 @@ exports.setupIpcHandlers = setupIpcHandlers;
 const electron_1 = require("electron");
 const manager_1 = require("../downloads/manager");
 const process_manager_1 = require("../runtime/process-manager");
+const compatibility_manager_1 = require("../runtime/compatibility-manager");
 const db_1 = require("../storage/db");
 const electron_log_1 = __importDefault(require("electron-log"));
 const fs_1 = __importDefault(require("fs"));
@@ -393,6 +394,28 @@ function setupIpcHandlers(mainWindow, storeView) {
             electron_log_1.default.error(`Chunked build deployment failed:`, err);
             mainWindow.webContents.send("upload-progress", { buildId, progress: 0, status: `ERROR: ${err.message}` });
             return { success: false, error: err.message };
+        }
+    });
+    // Compatibility and Proton layer handling
+    electron_1.ipcMain.handle("check-proton-status", () => {
+        try {
+            const isInstalled = compatibility_manager_1.compatibilityManager.checkProtonInstalled() || process_manager_1.processManager.findProtonPath() !== null;
+            return { success: true, isInstalled };
+        }
+        catch (error) {
+            electron_log_1.default.error("Failed to check proton status:", error);
+            return { success: false, error: error.message };
+        }
+    });
+    electron_1.ipcMain.handle("download-proton", async () => {
+        electron_log_1.default.info("Proton download requested via IPC");
+        try {
+            const success = await compatibility_manager_1.compatibilityManager.downloadProton(mainWindow);
+            return { success };
+        }
+        catch (error) {
+            electron_log_1.default.error("Proton download handler failed:", error);
+            return { success: false, error: error.message };
         }
     });
 }

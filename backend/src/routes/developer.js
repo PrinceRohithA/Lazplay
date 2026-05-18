@@ -316,7 +316,9 @@ router.add('DELETE', '/developer/games/:gameId', async (req) => {
 
     // Cleanup build artifacts from storage
     for (const b of game.builds) {
-      await deleteStorageObject(b.artifactObjectKey, getPrivateGameBucket());
+      const isWeb = isWebRuntime(b.runtime || b.platform);
+      const bucket = isWeb ? getPublicGameBucket() : getPrivateGameBucket();
+      await deleteStorageObject(b.artifactObjectKey, bucket);
     }
 
     const deployments = await prisma.deployment.findMany({
@@ -557,6 +559,17 @@ router.add('POST', '/developer/games/:gameId/builds', async (req) => {
       checksumSha256: validators.string({ required: false, min: 0, max: 256, allowBlank: true })
     });
 
+    const existing = await prisma.gameBuild.findFirst({
+      where: {
+        gameId: game.id,
+        platform: body.platform,
+        version: body.version
+      }
+    });
+    if (existing) {
+      throw new HttpError(409, 'SAME_VERSION', 'The previous upload has the same version');
+    }
+
     const build = await prisma.gameBuild.create({
       data: {
         id: createId('build'),
@@ -615,7 +628,8 @@ router.add('POST', '/developer/builds/:buildId/upload-url', async (req) => {
 
     const objectKey = `games/${build.gameId}/builds/${build.id}/${body.fileName}`;
     console.log('[build-upload-url]', { buildId: build.id, gameId: build.gameId, objectKey, sizeBytes: body.sizeBytes.toString() });
-    const upload = await signedStorageUrl(objectKey, 'PUT', 3600, getPrivateGameBucket(), { contentType: body.contentType });
+    const bucket = isWeb ? getPublicGameBucket() : getPrivateGameBucket();
+    const upload = await signedStorageUrl(objectKey, 'PUT', 3600, bucket, { contentType: body.contentType });
     return ok({ uploadUrl: upload.url, objectKey, expiresAt: upload.expiresAt });
   });
 
@@ -761,7 +775,9 @@ router.add('DELETE', '/developer/builds/:buildId', async (req) => {
       await prisma.deployment.deleteMany({ where: { id: { in: deploymentIds } } });
     }
 
-    await deleteStorageObject(build.artifactObjectKey, getPrivateGameBucket());
+    const isWeb = isWebRuntime(build.runtime || build.platform);
+    const bucket = isWeb ? getPublicGameBucket() : getPrivateGameBucket();
+    await deleteStorageObject(build.artifactObjectKey, bucket);
 
     if (game.latestBuildId === build.id) {
       await prisma.game.update({ where: { id: game.id }, data: { latestBuildId: null, version: null } });

@@ -539,7 +539,9 @@ async function publicGame(game, user = null) {
   let usesChunkDistribution = distributionType === 'CHUNKED';
 
   if (isOwned && build?.artifactObjectKey && !usesChunkDistribution) {
-    const signed = await signedStorageUrl(build.artifactObjectKey, 'GET', 3600, getPrivateGameBucket());
+    const isWebBuild = isWebRuntime(build.runtime || build.platform);
+    const bucket = isWebBuild ? getPublicGameBucket() : getPrivateGameBucket();
+    const signed = await signedStorageUrl(build.artifactObjectKey, 'GET', 3600, bucket);
     downloadUrl = signed.url;
   }
 
@@ -570,7 +572,11 @@ const getPrivateGameBucket = () => config.r2PrivateGameBucket || config.r2GameBu
 const getGameBucket = () => getPrivateGameBucket();
 const getRuntimeBucketForPriceType = (priceType) =>
   String(priceType || '').toUpperCase() === 'FREE' ? getPublicGameBucket() : getPrivateGameBucket();
-const getRuntimeBucketForGame = (game) => getRuntimeBucketForPriceType(game?.priceType);
+const getRuntimeBucketForGame = (game, build = null) => {
+  const isWebBuild = (build && isWebRuntime(build.runtime || build.platform)) || 
+                isWebRuntime(game?.platform || game?.runtime);
+  return isWebBuild ? getPublicGameBucket() : getPrivateGameBucket();
+};
 
 const assertR2Config = (bucket) => {
   if (!config.r2Endpoint || !bucket || !config.r2AccessKeyId || !config.r2SecretAccessKey) {
@@ -913,9 +919,9 @@ async function scanAndPrepareBuild(build, game) {
     });
   }
 
-  const bucket = getPrivateGameBucket();
+  const bucket = isWeb ? getPublicGameBucket() : getPrivateGameBucket();
   assertR2Config(bucket);
-  const runtimeBucket = getRuntimeBucketForGame(game);
+  const runtimeBucket = getRuntimeBucketForGame(game, build);
 
   // Only download if we are actually going to extract it (Free + Web)
   let archiveBuffer;

@@ -232,6 +232,7 @@ class ProcessManager {
     findProtonPath() {
         const home = os_1.default.homedir();
         const searchDirs = [
+            path_1.default.join(home, ".config/lazplay/runtimes"),
             path_1.default.join(home, ".local/share/Steam/steamapps/common"),
             path_1.default.join(home, ".steam/steam/steamapps/common"),
             path_1.default.join(home, ".steam/root/compatibilitytools.d"),
