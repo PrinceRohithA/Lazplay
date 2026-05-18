@@ -1,0 +1,4 @@
+id,email,username,displayName,passwordHash,roles,status,avatarUrl,bio
+usr_seed_admin,admin@example.com,admin,Admin,REPLACE_WITH_HASH,ADMIN,ACTIVE,,
+usr_seed_dev,dev@example.com,developer,Developer,REPLACE_WITH_HASH,DEVELOPER,ACTIVE,,
+usr_seed_player,player@example.com,player,Player,REPLACE_WITH_HASH,PLAYER,ACTIVE,,

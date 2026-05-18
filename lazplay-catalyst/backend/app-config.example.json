@@ -1,19 +1,36 @@
 {
-  "command": "node src/server.js",
+  "command": "node src/catalyst/server.js",
   "buildPath": ".",
   "stack": "node20",
   "memory": 512,
-  "platform": "node",
   "env_variables": {
-    "NODE_ENV": "production",
-    "PORT": "8080",
-    "JWT_SECRET": "YOUR_PRODUCTION_JWT_SECRET",
-    "CLOUDFLARE_R2_ACCESS_KEY_ID": "YOUR_CLOUDFLARE_R2_ACCESS_KEY_ID",
-    "CLOUDFLARE_R2_SECRET_ACCESS_KEY": "YOUR_CLOUDFLARE_R2_SECRET_ACCESS_KEY",
-    "CLOUDFLARE_R2_ENDPOINT": "YOUR_CLOUDFLARE_R2_S3_ENDPOINT",
-    "CLOUDFLARE_R2_BUCKET_NAME": "lazplay-games-public",
-    "RAZORPAY_KEY_ID": "YOUR_RAZORPAY_KEY_ID",
-    "RAZORPAY_KEY_SECRET": "YOUR_RAZORPAY_KEY_SECRET",
-    "RESEND_API_KEY": "YOUR_RESEND_API_KEY"
+    "LAZPLAY_APP_ENV": "production",
+    "LAZPLAY_API_PREFIXES": "/api/v1,/v1",
+    "LAZPLAY_PUBLIC_WEB_URL": "https://play.lazplay.tech",
+    "LAZPLAY_PUBLIC_API_URL": "https://play.lazplay.tech/api/v1",
+    "LAZPLAY_AUTH_SECRET": "CHANGE_ME_LONG_RANDOM_SECRET",
+    "LAZPLAY_CACHE_HOME_SEGMENT_ID": "",
+    "LAZPLAY_CACHE_METADATA_SEGMENT_ID": "",
+    "LAZPLAY_CACHE_MANIFEST_SEGMENT_ID": "",
+    "LAZPLAY_CACHE_SIGNED_URL_SEGMENT_ID": "",
+    "LAZPLAY_CACHE_RATE_LIMIT_SEGMENT_ID": "",
+    "LAZPLAY_CACHE_LAUNCHER_SEGMENT_ID": "",
+    "LAZPLAY_R2_ENDPOINT": "https://<account-id>.r2.cloudflarestorage.com",
+    "LAZPLAY_R2_ACCESS_KEY_ID": "CHANGE_ME",
+    "LAZPLAY_R2_SECRET_ACCESS_KEY": "CHANGE_ME",
+    "LAZPLAY_R2_REGION": "auto",
+    "LAZPLAY_R2_PRIVATE_GAME_BUCKET": "lazplay-games-private",
+    "LAZPLAY_R2_PUBLIC_GAME_BUCKET": "lazplay-games-public",
+    "LAZPLAY_R2_MEDIA_BUCKET": "lazplay-media",
+    "LAZPLAY_R2_PUBLIC_GAME_PUBLIC_URL": "https://cdn.lazplay.tech",
+    "LAZPLAY_R2_MEDIA_PUBLIC_URL": "https://media.lazplay.tech",
+    "LAZPLAY_SIGNED_URL_TTL_SECONDS": "900",
+    "LAZPLAY_RAZORPAY_KEY_ID": "",
+    "LAZPLAY_RAZORPAY_KEY_SECRET": "",
+    "LAZPLAY_RAZORPAY_WEBHOOK_SECRET": ""
+  },
+  "scripts": {
+    "preserve": "npm install --omit=dev",
+    "predeploy": "npm install --omit=dev"
   }
 }

@@ -1,0 +1,2 @@
+id,gameId,versionId,objectKey,manifestHash,distributionType,manifestJson,chunkCount,totalBytes
+mft_seed_demo,game_seed_demo,ver_seed_demo_100,manifests/demo/1.0.0.json,REPLACE_WITH_HASH,CHUNKED,"{""entrypoint"":""game.exe"",""chunks"":[]}",0,0

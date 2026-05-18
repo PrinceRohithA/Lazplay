@@ -1,0 +1,32 @@
+{
+  "public": [
+    "GET /api/v1/health",
+    "GET /api/v1/version",
+    "POST /api/v1/auth/register",
+    "POST /api/v1/auth/login",
+    "GET /api/v1/games",
+    "GET /api/v1/games/featured",
+    "GET /api/v1/games/trending",
+    "GET /api/v1/games/:gameId",
+    "GET /api/v1/games/:gameId/launch-manifest",
+    "GET /api/v1/comments/:gameId",
+    "GET /api/v1/cosmetics/:gameId"
+  ],
+  "authenticated": [
+    "GET /api/v1/auth/me",
+    "POST /api/v1/games/:gameId/download-session",
+    "POST /api/v1/storage/presign-upload",
+    "POST /api/v1/comments/:gameId",
+    "POST /api/v1/payments/razorpay/orders"
+  ],
+  "developer": [
+    "POST /api/v1/developer/games",
+    "POST /api/v1/developer/builds/:buildId/upload-url",
+    "POST /api/v1/developer/builds/:buildId/manifest",
+    "GET /api/v1/developer/builds/:buildId/manifest"
+  ],
+  "admin": [
+    "GET /api/v1/admin/audit-logs",
+    "POST /internal/cache/invalidate"
+  ]
+}

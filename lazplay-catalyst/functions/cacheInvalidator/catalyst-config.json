@@ -1,0 +1,18 @@
+{
+  "deployment": {
+    "name": "cacheInvalidator",
+    "stack": "node20",
+    "type": "advancedio",
+    "env_variables": {
+      "LAZPLAY_CACHE_HOME_SEGMENT_ID": "",
+      "LAZPLAY_CACHE_MANIFEST_SEGMENT_ID": "",
+      "LAZPLAY_CACHE_SIGNED_URL_SEGMENT_ID": "",
+      "LAZPLAY_CACHE_METADATA_SEGMENT_ID": "",
+      "LAZPLAY_CACHE_LAUNCHER_SEGMENT_ID": "",
+      "LAZPLAY_CACHE_INVALIDATION_SECRET": "CHANGE_ME"
+    }
+  },
+  "execution": {
+    "main": "index.js"
+  }
+}

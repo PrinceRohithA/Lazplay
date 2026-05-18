@@ -1,0 +1,31 @@
+{
+  "order": [
+    "users",
+    "developers",
+    "games",
+    "versions",
+    "manifests",
+    "purchases",
+    "cosmetics",
+    "achievements",
+    "comments",
+    "reports",
+    "admin_logs",
+    "launcher_sessions",
+    "analytics_events"
+  ],
+  "steps": [
+    "Create Catalyst Cache segments in the Catalyst console and copy each Segment ID into backend/app-config.json env_variables.",
+    "Create Data Store tables and columns from iac/datastore.schema.json. Use table IDs only when table names become ambiguous.",
+    "Import seed CSV files only after tables exist. Catalyst CLI ds:import handles row import, not schema creation.",
+    "Deploy AppSail and API Gateway to Catalyst development using catalyst deploy --only appsail,apig.",
+    "Deploy the client after Vite build output is present in client/dist.",
+    "Promote to production from the Catalyst console after development smoke tests pass."
+  ],
+  "rollback": [
+    "Revert AppSail deployment from Catalyst console deployment history.",
+    "Re-deploy the previous catalyst-user-rules.json for API Gateway rollback.",
+    "Keep R2 object versions or immutable manifest keys so launcher manifests can point back to the last known-good object keys.",
+    "Use Data Store export before schema-affecting migrations; restore rows through ds:import if rollback is needed."
+  ]
+}

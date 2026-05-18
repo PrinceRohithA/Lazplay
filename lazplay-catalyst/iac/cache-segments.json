@@ -1,0 +1,69 @@
+{
+  "segments": [
+    {
+      "name": "home",
+      "env": "LAZPLAY_CACHE_HOME_SEGMENT_ID",
+      "purpose": "Homepage game lists and featured/trending shelves",
+      "defaultTtlHours": 1,
+      "keys": ["homepage:published:{limit}", "games:featured", "games:trending"]
+    },
+    {
+      "name": "metadata",
+      "env": "LAZPLAY_CACHE_METADATA_SEGMENT_ID",
+      "purpose": "Game details, developer profiles, comments, cosmetics, achievements",
+      "defaultTtlHours": 6,
+      "keys": ["game:{gameIdOrSlug}", "developer:{developerId}", "comments:{gameId}", "cosmetics:{gameId}"]
+    },
+    {
+      "name": "manifests",
+      "env": "LAZPLAY_CACHE_MANIFEST_SEGMENT_ID",
+      "purpose": "Launcher and runtime manifests after metadata validation",
+      "defaultTtlHours": 12,
+      "keys": ["manifest:{gameId}", "manifest:{versionId}"]
+    },
+    {
+      "name": "signedUrls",
+      "env": "LAZPLAY_CACHE_SIGNED_URL_SEGMENT_ID",
+      "purpose": "Short-lived download session metadata, not the large game files",
+      "defaultTtlHours": 1,
+      "keys": ["download:{sessionId}", "upload:{buildId}:{nonce}"]
+    },
+    {
+      "name": "rateLimit",
+      "env": "LAZPLAY_CACHE_RATE_LIMIT_SEGMENT_ID",
+      "purpose": "API abuse controls by user, IP, route, and launcher install id",
+      "defaultTtlHours": 1,
+      "keys": ["rl:{route}:{principal}:{window}"]
+    },
+    {
+      "name": "launcher",
+      "env": "LAZPLAY_CACHE_LAUNCHER_SEGMENT_ID",
+      "purpose": "Launcher session metadata, install fingerprints, active manifests",
+      "defaultTtlHours": 6,
+      "keys": ["session:{userId}", "launcher:{installId}", "launcher:{gameId}"]
+    }
+  ],
+  "catalystLimits": {
+    "cacheItemMaxTtlHours": 48,
+    "ttlUnit": "hours",
+    "operationalNote": "Use expiresAt inside signed URL payloads for minute-level expiry because Catalyst Cache expiry is hour-based."
+  },
+  "invalidation": [
+    {
+      "event": "game_published_or_updated",
+      "delete": ["homepage:published:*", "games:featured", "games:trending", "game:{gameId}", "manifest:{gameId}", "launcher:{gameId}"]
+    },
+    {
+      "event": "manifest_uploaded",
+      "delete": ["manifest:{gameId}", "manifest:{versionId}", "launcher:{gameId}", "download:*"]
+    },
+    {
+      "event": "purchase_completed",
+      "delete": ["library:{userId}", "download:{sessionId}"]
+    },
+    {
+      "event": "comment_created_or_moderated",
+      "delete": ["comments:{gameId}", "game:{gameId}"]
+    }
+  ]
+}

@@ -1,0 +1,285 @@
+@import "tailwindcss";
+
+:root {
+  --primary: #00f6f6;
+  --primary-container: #003737;
+  --primary-fixed: #00fbfb;
+  --primary-fixed-dim: #00dddd;
+  --on-primary: #001414;
+  --on-primary-container: #00fbfb;
+  --surface-tint: #00f6f6;
+  --glow-primary: rgba(0, 246, 246, 0.6);
+  --primary-rgb: 0, 246, 246;
+  --secondary: #ffabf3;
+  --secondary-container: #500050;
+  --on-secondary-container: #ffabf3;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1c1b1b;
+  border-left: 1px solid var(--primary-container);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-container);
+  border: 2px solid #1c1b1b;
+  box-shadow: inset -1px -1px 0px 0px rgba(0, 0, 0, 0.5);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Global Input Styling */
+input:not([type="color"]),
+textarea,
+select {
+  background-color: #201f1f !important;
+  border: 1px solid var(--primary-container);
+  color: #e5e2e1 !important;
+  font-family: "Space Grotesk", sans-serif !important;
+  padding: 8px 12px !important;
+  outline: none !important;
+  transition: all 0.2s ease;
+  border-radius: 0 !important;
+}
+
+input:not([type="color"]):focus,
+textarea:focus,
+select:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 5px var(--primary) !important;
+}
+
+input[type="color"] {
+  border-radius: 0;
+  border: 2px solid var(--primary-container);
+}
+
+@theme {
+  --color-surface-container-lowest: #0e0e0e;
+  --color-on-secondary: #5b005b;
+  --color-on-secondary-fixed-variant: #810081;
+  --color-background: #131313;
+  --color-surface: #131313;
+  --color-on-tertiary-container: #006d6d;
+  --color-secondary-fixed-dim: #ffabf3;
+  --color-on-tertiary-fixed: #002020;
+  --color-error: #ffb4ab;
+  --color-surface-bright: #3a3939;
+  --color-primary-fixed: var(--primary-fixed);
+  --color-surface-dim: #131313;
+  --color-on-tertiary-fixed-variant: #004f4f;
+  --color-inverse-surface: #e5e2e1;
+  --color-surface-container-high: #2a2a2a;
+  --color-surface-container-highest: #353534;
+  --color-on-background: #ffffff;
+  --color-on-secondary-fixed: #380038;
+  --color-outline: var(--primary);
+  --color-error-container: #93000a;
+  --color-inverse-on-surface: #313030;
+  --color-on-surface: #ffffff;
+  --color-on-primary-container: var(--on-primary-container);
+  --color-surface-variant: #353534;
+  --color-outline-variant: var(--primary);
+  --color-tertiary-fixed-dim: #00dddd;
+  --color-on-primary-fixed: var(--on-primary);
+  --color-secondary-fixed: #ffd7f5;
+  --color-on-primary-fixed-variant: var(--on-primary-container);
+  --color-primary-container: var(--primary-container);
+  --color-surface-container: #201f1f;
+  --color-secondary-container: var(--secondary-container);
+  --color-surface-container-low: #1c1b1b;
+  --color-on-tertiary: #003737;
+  --color-secondary: var(--secondary);
+  --color-on-primary: var(--on-primary);
+  --color-tertiary-container: #00f6f6;
+  --color-on-error: #690005;
+  --color-tertiary-fixed: #00fbfb;
+  --color-on-surface-variant: #f0f4ef;
+  --color-inverse-primary: var(--on-primary-container);
+  --color-surface-tint: var(--surface-tint);
+  --color-primary: var(--primary);
+  --color-primary-fixed-dim: var(--primary-fixed-dim);
+  --color-tertiary: #e6fffe;
+  --color-on-secondary-container: var(--on-secondary-container);
+  --color-on-error-container: #ffdad6;
+
+  --radius-default: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+
+  --spacing-gutter: 16px;
+  --spacing-unit: 4px;
+  --spacing-margin: 24px;
+  --spacing-container-max: 1440px;
+
+  --font-body-md: "Space Grotesk";
+  --font-label-mono: "Space Grotesk";
+  --font-headline-xl: "Space Grotesk";
+  --font-headline-md: "Space Grotesk";
+  --font-body-lg: "Space Grotesk";
+  --font-headline-lg: "Space Grotesk";
+}
+
+@utility scanlines {
+  background: linear-gradient(to bottom,
+      rgba(255, 255, 255, 0),
+      rgba(255, 255, 255, 0) 50%,
+      rgba(0, 0, 0, 0.2) 50%,
+      rgba(0, 0, 0, 0.2));
+  background-size: 100% 4px;
+  pointer-events: none;
+}
+
+@utility retro-border {
+  box-shadow: -2px -2px 0 0 var(--color-on-primary-container), 2px 2px 0 0 #131313;
+}
+
+@utility retro-border-hover {
+  &:hover {
+    box-shadow: -2px -2px 0 0 var(--color-primary-container), 2px 2px 0 0 var(--color-on-primary-container);
+  }
+}
+
+@utility pixel-border {
+  border: 1px solid var(--primary);
+  box-shadow: 0 0 8px rgba(var(--primary-rgb), 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+@utility neon-glow {
+  box-shadow: 0 0 15px var(--glow-primary);
+}
+
+/* Autofill Override */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #131313 inset !important;
+  -webkit-text-fill-color: #e5e2e1 !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.quill-content {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.quill-content ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.quill-content ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.quill-content h1 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  color: var(--primary);
+}
+
+.quill-content h2 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 0.75rem;
+  color: var(--primary);
+}
+
+.quill-content p {
+  margin-bottom: 0.5rem;
+}
+
+.quill-content a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.quill-content strong {
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.quill-content em {
+  font-style: italic;
+}
+
+.quill-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+.quill-content pre {
+  overflow-x: auto;
+  padding: 1rem;
+  background: #111;
+  border: 1px solid var(--primary-container);
+  font-family: monospace;
+}
+
+.quill-content table {
+  display: block;
+  overflow-x: auto;
+  width: 100%;
+}
+
+/* Global Layout Fixes */
+
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-background);
+  color: var(--color-on-background);
+  font-family: "Space Grotesk", sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary-container) #1c1b1b;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.min-w-safe {
+  min-width: 0;
+}
+
+img,
+video,
+iframe,
+canvas {
+  max-width: 100%;
+  display: block;
+}

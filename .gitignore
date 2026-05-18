@@ -19,3 +19,10 @@ lazplay-catalyst/backend/node_modules/
 lazplay-catalyst/backend/node_modules
 lazplay-catalyst/backend/app-config.json
 lazplay-catalyst/backend/.env
+lazplay-catalyst/node_modules/
+lazplay-catalyst/functions/cacheInvalidator/node_modules/
+lazplay-catalyst/functions/cacheInvalidator/node_modules
+lazplay-catalyst/functions/cacheInvalidator/.env
+lazplay-catalyst/iac/.env
+lazplay-catalyst/lazplay-iac-deploy.zip
+lazplay-iac-deploy.zip

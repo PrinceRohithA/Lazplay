@@ -22,4 +22,7 @@ interface InstalledGameDao {
 
     @Query("DELETE FROM installed_games WHERE gameId = :gameId")
     suspend fun delete(gameId: String)
+
+    @Query("DELETE FROM installed_games")
+    suspend fun deleteAll()
 }

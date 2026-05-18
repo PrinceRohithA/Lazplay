@@ -33,6 +33,11 @@ class LoginActivity : AppCompatActivity() {
                 ServiceLocator.api.me()
                 openMain()
             } catch (_: Exception) {
+                try {
+                    ServiceLocator.database.installedGameDao().deleteAll()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
                 ServiceLocator.tokenStore.clear()
                 if (!::binding.isInitialized) {
                     binding = ActivityLoginBinding.inflate(layoutInflater)

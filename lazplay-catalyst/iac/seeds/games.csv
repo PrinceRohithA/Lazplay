@@ -1,0 +1,2 @@
+id,developerId,slug,title,tagline,description,status,priceType,price,currency,genres,tags,platforms,featured,weeklyPlayCount,latestVersionId,coverObjectKey,heroObjectKey,mediaJson,publishedAt
+game_seed_demo,dev_seed_studio,demo-game,Demo Game,Playable through Lazplay,Seed metadata only. Assets live in Cloudflare R2.,PUBLISHED,FREE,0,INR,"action","demo","windows",true,0,ver_seed_demo_100,media/demo/cover.png,media/demo/hero.png,"{}",2026-05-18 00:00:00

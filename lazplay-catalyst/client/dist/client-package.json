@@ -1,5 +1,7 @@
-{
-  "name": "lazplay-client",
-  "version": "1.0.0",
-  "homepage": "index.html"
+﻿{
+    "homepage":  "index.html",
+    "login_redirect":  "index.html",
+    "name":  "lazplay-client",
+    "version":  "1.0.0",
+    "404":  "404.html"
 }

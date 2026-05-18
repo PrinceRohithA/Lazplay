@@ -90,10 +90,45 @@ class ApkDownloadRepository(
     }
 
     suspend fun syncLibraryToCache(items: List<LibraryItemDto>) {
+        val incomingIds = items.map { it.resolvedGameId() }.filter { it.isNotBlank() }.toSet()
+        val cachedGames = dao.getAll()
+
+        // 1. Remove games from database and disk that are not owned by the authenticated user
+        for (cached in cachedGames) {
+            if (cached.gameId !in incomingIds) {
+                cached.apkPath?.let { path ->
+                    try {
+                        val file = File(path)
+                        if (file.exists()) {
+                            file.delete()
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+                dao.delete(cached.gameId)
+            }
+        }
+
+        // 2. Sync / Upsert owned games, restoring download/install states if APK exists
         for (item in items) {
             val gameId = item.resolvedGameId()
             if (gameId.isBlank()) continue
             val existing = dao.get(gameId)
+
+            val lockedFile = File(downloadDir, "$gameId.apk.lazplay_locked")
+            val apkExists = lockedFile.exists()
+
+            val pkg = existing?.packageName ?: findPackageByAppName(context, item.title ?: gameId)
+            val isInstalled = pkg?.let { isAppInstalled(it) } ?: false
+
+            val initialStatus = when {
+                isInstalled -> GameInstallStatus.INSTALLED.name
+                apkExists -> GameInstallStatus.DOWNLOADED.name
+                else -> GameInstallStatus.READY.name
+            }
+            val initialApkPath = if (apkExists) lockedFile.absolutePath else null
+
             dao.upsert(
                 (existing ?: InstalledGameEntity(
                     gameId = gameId,
@@ -102,9 +137,9 @@ class ApkDownloadRepository(
                     downloadUrl = item.downloadUrl,
                     coverUrl = item.coverUrl ?: item.heroBannerUrl ?: item.heroImageUrl,
                     entrypoint = item.entrypoint,
-                    apkPath = null,
-                    packageName = null,
-                    status = GameInstallStatus.READY.name,
+                    apkPath = initialApkPath,
+                    packageName = pkg,
+                    status = initialStatus,
                     latestChecksumSha256 = item.checksumSha256
                 )).copy(
                     title = item.title ?: existing?.title ?: gameId,
@@ -113,7 +148,10 @@ class ApkDownloadRepository(
                     coverUrl = item.coverUrl ?: item.heroBannerUrl ?: item.heroImageUrl ?: existing?.coverUrl,
                     entrypoint = item.entrypoint ?: existing?.entrypoint,
                     fileSizeBytes = item.size ?: existing?.fileSizeBytes ?: 0L,
-                    latestChecksumSha256 = item.checksumSha256 ?: existing?.latestChecksumSha256
+                    latestChecksumSha256 = item.checksumSha256 ?: existing?.latestChecksumSha256,
+                    status = existing?.status ?: initialStatus,
+                    apkPath = existing?.apkPath ?: initialApkPath,
+                    packageName = existing?.packageName ?: pkg
                 ),
             )
         }

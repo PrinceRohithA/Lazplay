@@ -1,0 +1,209 @@
+{
+  "provider": "zoho-catalyst-data-store",
+  "notes": [
+    "Create tables and columns in the Catalyst console or through Catalyst APIs before running the backend.",
+    "Catalyst table names and column names must avoid whitespace. ROWID, CREATORID, CREATEDTIME, and MODIFIEDTIME are automatic columns.",
+    "JSON-like payloads are stored as Text because Catalyst Data Store does not expose a native JSON data type in the current public docs."
+  ],
+  "tables": [
+    {
+      "name": "users",
+      "columns": [
+        { "name": "id", "type": "Var Char", "length": 64, "unique": true, "mandatory": true },
+        { "name": "email", "type": "Var Char", "length": 255, "unique": true, "mandatory": true, "pii": true },
+        { "name": "username", "type": "Var Char", "length": 80, "unique": true, "mandatory": true },
+        { "name": "displayName", "type": "Var Char", "length": 120, "mandatory": true },
+        { "name": "passwordHash", "type": "Encrypted text", "mandatory": true, "pii": true },
+        { "name": "roles", "type": "Var Char", "length": 120, "mandatory": true },
+        { "name": "status", "type": "Var Char", "length": 32, "mandatory": true },
+        { "name": "avatarUrl", "type": "Text" },
+        { "name": "bio", "type": "Text" }
+      ],
+      "indexes": ["email unique", "username unique", "status search"]
+    },
+    {
+      "name": "developers",
+      "columns": [
+        { "name": "id", "type": "Var Char", "length": 64, "unique": true, "mandatory": true },
+        { "name": "userId", "type": "Var Char", "length": 64, "unique": true, "mandatory": true, "references": "users.id" },
+        { "name": "displayName", "type": "Var Char", "length": 160, "mandatory": true },
+        { "name": "slug", "type": "Var Char", "length": 160, "unique": true, "mandatory": true },
+        { "name": "bio", "type": "Text" },
+        { "name": "website", "type": "Var Char", "length": 255 },
+        { "name": "supportEmail", "type": "Var Char", "length": 255, "pii": true },
+        { "name": "verificationStatus", "type": "Var Char", "length": 40, "mandatory": true },
+        { "name": "payoutStatus", "type": "Var Char", "length": 40, "mandatory": true }
+      ],
+      "indexes": ["userId unique", "slug unique", "verificationStatus search"]
+    },
+    {
+      "name": "games",
+      "columns": [
+        { "name": "id", "type": "Var Char", "length": 64, "unique": true, "mandatory": true },
+        { "name": "developerId", "type": "Var Char", "length": 64, "mandatory": true, "references": "developers.id" },
+        { "name": "slug", "type": "Var Char", "length": 180, "unique": true, "mandatory": true },
+        { "name": "title", "type": "Var Char", "length": 180, "mandatory": true, "search": true },
+        { "name": "tagline", "type": "Var Char", "length": 255 },
+        { "name": "description", "type": "Text", "search": true },
+        { "name": "status", "type": "Var Char", "length": 40, "mandatory": true },
+        { "name": "priceType", "type": "Var Char", "length": 40, "mandatory": true },
+        { "name": "price", "type": "Int" },
+        { "name": "currency", "type": "Var Char", "length": 12 },
+        { "name": "genres", "type": "Text" },
+        { "name": "tags", "type": "Text" },
+        { "name": "platforms", "type": "Text" },
+        { "name": "featured", "type": "Boolean" },
+        { "name": "weeklyPlayCount", "type": "Int" },
+        { "name": "latestVersionId", "type": "Var Char", "length": 64, "references": "versions.id" },
+        { "name": "coverObjectKey", "type": "Text" },
+        { "name": "heroObjectKey", "type": "Text" },
+        { "name": "mediaJson", "type": "Text" },
+        { "name": "publishedAt", "type": "DateTime" }
+      ],
+      "indexes": ["slug unique", "developerId search", "status search", "featured search", "weeklyPlayCount sort"]
+    },
+    {
+      "name": "versions",
+      "columns": [
+        { "name": "id", "type": "Var Char", "length": 64, "unique": true, "mandatory": true },
+        { "name": "gameId", "type": "Var Char", "length": 64, "mandatory": true, "references": "games.id" },
+        { "name": "version", "type": "Var Char", "length": 80, "mandatory": true },
+        { "name": "platform", "type": "Var Char", "length": 60, "mandatory": true },
+        { "name": "runtime", "type": "Var Char", "length": 60 },
+        { "name": "entrypoint", "type": "Var Char", "length": 255 },
+        { "name": "distributionType", "type": "Var Char", "length": 40, "mandatory": true },
+        { "name": "artifactObjectKey", "type": "Text" },
+        { "name": "manifestObjectKey", "type": "Text" },
+        { "name": "sizeBytes", "type": "BigInt" },
+        { "name": "checksumSha256", "type": "Var Char", "length": 80 },
+        { "name": "status", "type": "Var Char", "length": 40, "mandatory": true }
+      ],
+      "indexes": ["gameId search", "status search", "checksumSha256 search"]
+    },
+    {
+      "name": "manifests",
+      "columns": [
+        { "name": "id", "type": "Var Char", "length": 64, "unique": true, "mandatory": true },
+        { "name": "gameId", "type": "Var Char", "length": 64, "mandatory": true, "references": "games.id" },
+        { "name": "versionId", "type": "Var Char", "length": 64, "unique": true, "mandatory": true, "references": "versions.id" },
+        { "name": "objectKey", "type": "Text" },
+        { "name": "manifestHash", "type": "Var Char", "length": 80, "mandatory": true },
+        { "name": "distributionType", "type": "Var Char", "length": 40, "mandatory": true },
+        { "name": "manifestJson", "type": "Text", "mandatory": true },
+        { "name": "chunkCount", "type": "Int" },
+        { "name": "totalBytes", "type": "BigInt" }
+      ],
+      "indexes": ["versionId unique", "gameId search", "manifestHash search"]
+    },
+    {
+      "name": "purchases",
+      "columns": [
+        { "name": "id", "type": "Var Char", "length": 64, "unique": true, "mandatory": true },
+        { "name": "userId", "type": "Var Char", "length": 64, "mandatory": true, "references": "users.id" },
+        { "name": "gameId", "type": "Var Char", "length": 64, "mandatory": true, "references": "games.id" },
+        { "name": "userGameKey", "type": "Var Char", "length": 140, "unique": true, "mandatory": true },
+        { "name": "provider", "type": "Var Char", "length": 40, "mandatory": true },
+        { "name": "providerOrderId", "type": "Var Char", "length": 120 },
+        { "name": "providerPaymentId", "type": "Var Char", "length": 120 },
+        { "name": "amount", "type": "Int" },
+        { "name": "currency", "type": "Var Char", "length": 12 },
+        { "name": "status", "type": "Var Char", "length": 40, "mandatory": true }
+      ],
+      "indexes": ["userGameKey unique", "userId search", "gameId search", "status search"]
+    },
+    {
+      "name": "cosmetics",
+      "columns": [
+        { "name": "id", "type": "Var Char", "length": 64, "unique": true, "mandatory": true },
+        { "name": "gameId", "type": "Var Char", "length": 64, "mandatory": true, "references": "games.id" },
+        { "name": "sku", "type": "Var Char", "length": 120, "unique": true, "mandatory": true },
+        { "name": "name", "type": "Var Char", "length": 180, "mandatory": true },
+        { "name": "kind", "type": "Var Char", "length": 80, "mandatory": true },
+        { "name": "metadataJson", "type": "Text" },
+        { "name": "price", "type": "Int" },
+        { "name": "status", "type": "Var Char", "length": 40, "mandatory": true }
+      ],
+      "indexes": ["sku unique", "gameId search", "status search"]
+    },
+    {
+      "name": "achievements",
+      "columns": [
+        { "name": "id", "type": "Var Char", "length": 64, "unique": true, "mandatory": true },
+        { "name": "gameId", "type": "Var Char", "length": 64, "mandatory": true, "references": "games.id" },
+        { "name": "code", "type": "Var Char", "length": 120, "mandatory": true },
+        { "name": "title", "type": "Var Char", "length": 180, "mandatory": true },
+        { "name": "description", "type": "Text" },
+        { "name": "iconObjectKey", "type": "Text" },
+        { "name": "isHidden", "type": "Boolean" },
+        { "name": "points", "type": "Int" }
+      ],
+      "indexes": ["gameId search", "code search"]
+    },
+    {
+      "name": "comments",
+      "columns": [
+        { "name": "id", "type": "Var Char", "length": 64, "unique": true, "mandatory": true },
+        { "name": "gameId", "type": "Var Char", "length": 64, "mandatory": true, "references": "games.id" },
+        { "name": "userId", "type": "Var Char", "length": 64, "mandatory": true, "references": "users.id" },
+        { "name": "parentId", "type": "Var Char", "length": 64 },
+        { "name": "body", "type": "Text", "mandatory": true },
+        { "name": "status", "type": "Var Char", "length": 40, "mandatory": true },
+        { "name": "moderationReason", "type": "Text" }
+      ],
+      "indexes": ["gameId search", "userId search", "status search"]
+    },
+    {
+      "name": "reports",
+      "columns": [
+        { "name": "id", "type": "Var Char", "length": 64, "unique": true, "mandatory": true },
+        { "name": "reporterUserId", "type": "Var Char", "length": 64, "mandatory": true, "references": "users.id" },
+        { "name": "targetType", "type": "Var Char", "length": 60, "mandatory": true },
+        { "name": "targetId", "type": "Var Char", "length": 64, "mandatory": true },
+        { "name": "reason", "type": "Var Char", "length": 120, "mandatory": true },
+        { "name": "body", "type": "Text" },
+        { "name": "status", "type": "Var Char", "length": 40, "mandatory": true },
+        { "name": "resolvedBy", "type": "Var Char", "length": 64 },
+        { "name": "resolvedAt", "type": "DateTime" }
+      ],
+      "indexes": ["targetType search", "targetId search", "status search"]
+    },
+    {
+      "name": "admin_logs",
+      "columns": [
+        { "name": "id", "type": "Var Char", "length": 64, "unique": true, "mandatory": true },
+        { "name": "actorUserId", "type": "Var Char", "length": 64, "mandatory": true, "references": "users.id" },
+        { "name": "action", "type": "Var Char", "length": 160, "mandatory": true },
+        { "name": "targetType", "type": "Var Char", "length": 60, "mandatory": true },
+        { "name": "targetId", "type": "Var Char", "length": 64, "mandatory": true },
+        { "name": "metadataJson", "type": "Text" },
+        { "name": "ipAddress", "type": "Var Char", "length": 80, "pii": true }
+      ],
+      "indexes": ["actorUserId search", "action search", "targetType search", "targetId search"]
+    },
+    {
+      "name": "launcher_sessions",
+      "columns": [
+        { "name": "id", "type": "Var Char", "length": 64, "unique": true, "mandatory": true },
+        { "name": "userId", "type": "Var Char", "length": 64, "mandatory": true, "references": "users.id" },
+        { "name": "installId", "type": "Var Char", "length": 120, "mandatory": true },
+        { "name": "deviceHash", "type": "Var Char", "length": 120 },
+        { "name": "metadataJson", "type": "Text" },
+        { "name": "expiresAt", "type": "DateTime", "mandatory": true },
+        { "name": "status", "type": "Var Char", "length": 40, "mandatory": true }
+      ],
+      "indexes": ["userId search", "installId search", "status search"]
+    },
+    {
+      "name": "analytics_events",
+      "columns": [
+        { "name": "id", "type": "Var Char", "length": 64, "unique": true, "mandatory": true },
+        { "name": "userId", "type": "Var Char", "length": 64, "references": "users.id" },
+        { "name": "gameId", "type": "Var Char", "length": 64, "references": "games.id" },
+        { "name": "eventType", "type": "Var Char", "length": 120, "mandatory": true },
+        { "name": "eventJson", "type": "Text" },
+        { "name": "occurredAt", "type": "DateTime", "mandatory": true }
+      ],
+      "indexes": ["eventType search", "gameId search", "userId search", "occurredAt search"]
+    }
+  ]
+}

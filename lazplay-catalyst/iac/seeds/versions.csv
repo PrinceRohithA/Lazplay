@@ -1,0 +1,2 @@
+id,gameId,version,platform,runtime,entrypoint,distributionType,artifactObjectKey,manifestObjectKey,sizeBytes,checksumSha256,status
+ver_seed_demo_100,game_seed_demo,1.0.0,WINDOWS,NATIVE,game.exe,CHUNKED,,manifests/demo/1.0.0.json,0,,READY

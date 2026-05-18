@@ -1,0 +1,28 @@
+{
+  "principles": [
+    "Cloudflare R2 remains the only storage layer for chunks, web builds, game files, manifests, screenshots, and CDN-served assets.",
+    "Catalyst never proxies or streams large game files.",
+    "Catalyst only signs short-lived R2 PUT and GET URLs after authentication, authorization, and ownership checks.",
+    "Private bucket objects are delivered with temporary signed URLs; public web builds and media use CDN URLs."
+  ],
+  "buckets": {
+    "privateGame": {
+      "env": "LAZPLAY_R2_PRIVATE_GAME_BUCKET",
+      "contains": ["paid game chunks", "native binaries", "private manifests"]
+    },
+    "publicGame": {
+      "env": "LAZPLAY_R2_PUBLIC_GAME_BUCKET",
+      "contains": ["free web builds", "public runtime assets"]
+    },
+    "media": {
+      "env": "LAZPLAY_R2_MEDIA_BUCKET",
+      "contains": ["screenshots", "trailers", "cover art"]
+    }
+  },
+  "signedUrl": {
+    "defaultTtlSeconds": 900,
+    "cacheSegment": "signedUrls",
+    "cacheTtlHours": 1,
+    "note": "Catalyst Cache expiration is hour-based and maxes out at 48 hours, so signed URL session payloads include their own expiresAt timestamp for minute-level enforcement."
+  }
+}

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.map
 import tech.lazplay.launcher.data.ServiceLocator
 import tech.lazplay.launcher.data.api.isAndroidGame
 import tech.lazplay.launcher.data.api.isWebOnly
@@ -20,6 +21,9 @@ class LibraryViewModel : ViewModel() {
     private val installer = ServiceLocator.apkInstaller
 
     val games = dao.observeAll()
+        .map { list ->
+            if (ServiceLocator.tokenStore.hasSession()) list else emptyList()
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     var lastError: String? = null

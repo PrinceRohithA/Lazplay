@@ -5,20 +5,39 @@
       "source": "client/dist",
       "ignore": [
         "**/node_modules/**",
-        ".env"
+        ".env",
+        "*.log"
       ]
     }
   ],
   "appsail": [
     {
-      "name": "backend",
+      "name": "lazplay-api",
       "source": "backend",
       "ignore": [
         "**/node_modules/**",
         ".env",
-        "scripts/**",
+        ".env.*",
+        "prisma/**",
+        "src/routes/**",
+        "src/services/distribution.js",
+        "src/prisma.js",
+        "scripts/init-db-with-psql.js",
+        "scripts/test-catalyst.js",
+        "scripts/zip-iac.ps1",
         "*.log"
       ]
     }
-  ]
+  ],
+  "functions": {
+    "source": "functions",
+    "targets": [
+      "cacheInvalidator"
+    ],
+    "ignore": [
+      "**/node_modules/**",
+      ".env",
+      "*.log"
+    ]
+  }
 }

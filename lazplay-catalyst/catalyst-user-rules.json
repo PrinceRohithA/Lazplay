@@ -1,16 +1,38 @@
 [
   {
-    "name": "lazplay-backend-api-v1",
-    "source_endpoint": "/api/v1/{path:*}",
-    "target_type": "appsail",
-    "target_name": "backend",
-    "method": "ANY"
+    "name": "lazplay-api-v1",
+    "source_endpoint": "/api/v1/{path1:(.*)}",
+    "target_endpoint": "/{path1}",
+    "target": "appsail",
+    "target_name": "lazplay-api",
+    "method": "ANY",
+    "throttling": {
+      "overall": {},
+      "ip": {}
+    }
   },
   {
-    "name": "lazplay-backend-api-root",
-    "source_endpoint": "/api/{path:*}",
-    "target_type": "appsail",
-    "target_name": "backend",
-    "method": "ANY"
+    "name": "lazplay-api-health",
+    "source_endpoint": "/api/health",
+    "target_endpoint": "/health",
+    "target": "appsail",
+    "target_name": "lazplay-api",
+    "method": "GET",
+    "throttling": {
+      "overall": {},
+      "ip": {}
+    }
+  },
+  {
+    "name": "lazplay-cache-invalidation",
+    "source_endpoint": "/internal/cache/invalidate",
+    "target_endpoint": "/server/cacheInvalidator/execute",
+    "target": "advancedio",
+    "target_name": "cacheInvalidator",
+    "method": "POST",
+    "throttling": {
+      "overall": {},
+      "ip": {}
+    }
   }
 ]
