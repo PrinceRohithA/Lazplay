@@ -13,3 +13,9 @@ packages/distribution/node_modules/
 packages/distribution/node_modules
 uploader/node_modules
 uploader/node_modules/
+
+# --- Zoho Catalyst Exclusions ------------------------------------------------
+lazplay-catalyst/backend/node_modules/
+lazplay-catalyst/backend/node_modules
+lazplay-catalyst/backend/app-config.json
+lazplay-catalyst/backend/.env

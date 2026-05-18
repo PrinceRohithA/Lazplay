@@ -1,0 +1,19 @@
+{
+  "command": "node src/server.js",
+  "buildPath": ".",
+  "stack": "node20",
+  "memory": 512,
+  "platform": "node",
+  "env_variables": {
+    "NODE_ENV": "production",
+    "PORT": "8080",
+    "JWT_SECRET": "YOUR_PRODUCTION_JWT_SECRET",
+    "CLOUDFLARE_R2_ACCESS_KEY_ID": "YOUR_CLOUDFLARE_R2_ACCESS_KEY_ID",
+    "CLOUDFLARE_R2_SECRET_ACCESS_KEY": "YOUR_CLOUDFLARE_R2_SECRET_ACCESS_KEY",
+    "CLOUDFLARE_R2_ENDPOINT": "YOUR_CLOUDFLARE_R2_S3_ENDPOINT",
+    "CLOUDFLARE_R2_BUCKET_NAME": "lazplay-games-public",
+    "RAZORPAY_KEY_ID": "YOUR_RAZORPAY_KEY_ID",
+    "RAZORPAY_KEY_SECRET": "YOUR_RAZORPAY_KEY_SECRET",
+    "RESEND_API_KEY": "YOUR_RESEND_API_KEY"
+  }
+}

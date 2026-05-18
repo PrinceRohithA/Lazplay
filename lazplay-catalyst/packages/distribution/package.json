@@ -1,0 +1,29 @@
+{
+  "name": "@lazplay/distribution",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared chunking, bundling, compression, and manifest utilities for LazPlay distribution",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": "./src/index.js",
+    "./launcher": {
+      "types": "./src/launcher.d.ts",
+      "import": "./src/launcher.js",
+      "default": "./src/launcher.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "launcher": ["./src/launcher.d.ts"],
+      "launcher/*": ["./src/launcher.d.ts"]
+    }
+  },
+  "dependencies": {
+    "@mongodb-js/zstd": "^2.0.1",
+    "adm-zip": "^0.5.16",
+    "fzstd": "^0.1.1",
+    "hash-wasm": "^4.12.0"
+  }
+}

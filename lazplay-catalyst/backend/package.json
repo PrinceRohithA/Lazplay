@@ -1,0 +1,36 @@
+{
+  "name": "lazplay-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Self-hosted backend API for the LazPlay game hosting platform.",
+  "scripts": {
+    "start": "npm run db:migrate && npm run db:generate && node --env-file=.env src/server.js",
+    "dev": "npm run db:sync && node --watch --env-file=.env src/server.js",
+    "check": "node --check --env-file=.env src/app.js && node --check --env-file=.env src/server.js && node --check src/validation.js",
+    "db:init:psql": "node scripts/init-db-with-psql.js",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev --name",
+    "db:seed": "node prisma/seed.js",
+    "db:studio": "prisma studio",
+    "db:push": "prisma db push",
+    "db:sync": "prisma db push --accept-data-loss && prisma generate",
+    "smoke": "node scripts/smoke-test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.758.0",
+    "@aws-sdk/s3-request-presigner": "^3.758.0",
+    "@lazplay/distribution": "file:../packages/distribution",
+    "@prisma/client": "^6.7.0",
+    "adm-zip": "^0.5.12",
+    "razorpay": "^2.9.6",
+    "zcatalyst-sdk-node": "^3.4.0"
+  },
+  "devDependencies": {
+    "prisma": "^6.7.0"
+  }
+}

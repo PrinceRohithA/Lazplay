@@ -1,0 +1,16 @@
+[
+  {
+    "name": "lazplay-backend-api-v1",
+    "source_endpoint": "/api/v1/{path:*}",
+    "target_type": "appsail",
+    "target_name": "backend",
+    "method": "ANY"
+  },
+  {
+    "name": "lazplay-backend-api-root",
+    "source_endpoint": "/api/{path:*}",
+    "target_type": "appsail",
+    "target_name": "backend",
+    "method": "ANY"
+  }
+]

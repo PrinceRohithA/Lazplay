@@ -1,0 +1,9 @@
+{
+  "client": {
+    "source": "client/dist",
+    "ignore": []
+  },
+  "appsail": {
+    "source": "backend"
+  }
+}
