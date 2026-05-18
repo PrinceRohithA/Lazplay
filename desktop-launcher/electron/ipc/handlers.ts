@@ -1,6 +1,7 @@
 import { ipcMain, BrowserWindow, WebContentsView, shell, dialog } from "electron";
 import { downloadManager } from "../downloads/manager";
 import { processManager } from "../runtime/process-manager";
+import { compatibilityManager } from "../runtime/compatibility-manager";
 import { db } from "../storage/db";
 import log from "electron-log";
 import fs from "fs";
@@ -416,6 +417,28 @@ export function setupIpcHandlers(
       log.error(`Chunked build deployment failed:`, err);
       mainWindow.webContents.send("upload-progress", { buildId, progress: 0, status: `ERROR: ${err.message}` });
       return { success: false, error: err.message };
+    }
+  });
+
+  // Compatibility and Proton layer handling
+  ipcMain.handle("check-proton-status", () => {
+    try {
+      const isInstalled = compatibilityManager.checkProtonInstalled() || processManager.findProtonPath() !== null;
+      return { success: true, isInstalled };
+    } catch (error: any) {
+      log.error("Failed to check proton status:", error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle("download-proton", async () => {
+    log.info("Proton download requested via IPC");
+    try {
+      const success = await compatibilityManager.downloadProton(mainWindow);
+      return { success };
+    } catch (error: any) {
+      log.error("Proton download handler failed:", error);
+      return { success: false, error: error.message };
     }
   });
 }

@@ -3,6 +3,7 @@ package tech.lazplay.launcher.download
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.isActive
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import tech.lazplay.launcher.data.api.ApiException
@@ -127,64 +128,127 @@ class ApkDownloadRepository(
 
         dao.upsert(row.copy(status = GameInstallStatus.DOWNLOADING.name, progress = 0))
 
-        val request = Request.Builder().url(url).get().build()
-        client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                dao.upsert(row.copy(status = GameInstallStatus.ERROR.name))
-                throw ApiException("Download failed: HTTP ${response.code}")
-            }
+        var attempts = 0
+        val maxAttempts = 3
+        var success = false
+        var exception: Exception? = null
 
-            val body = response.body ?: throw ApiException("Empty download body")
-            val total = body.contentLength().coerceAtLeast(1L)
-            var downloaded = 0L
+        while (attempts < maxAttempts && !success) {
+            attempts++
+            try {
+                val existingBytes = if (partial.exists()) partial.length() else 0L
+                val requestBuilder = Request.Builder().url(url)
+                if (existingBytes > 0) {
+                    requestBuilder.header("Range", "bytes=$existingBytes-")
+                }
+                val request = requestBuilder.get().build()
 
-            partial.outputStream().use { out ->
-                body.byteStream().use { input ->
-                    val buffer = ByteArray(8192)
-                    while (true) {
-                        val read = input.read(buffer)
-                        if (read <= 0) break
-                        out.write(buffer, 0, read)
-                        downloaded += read
-                        val pct = ((downloaded * 100) / total).toInt().coerceIn(0, 100)
-                        onProgress(pct)
-                        dao.upsert(
-                            row.copy(
-                                status = GameInstallStatus.DOWNLOADING.name,
-                                progress = pct,
-                            ),
-                        )
+                client.newCall(request).execute().use { response ->
+                    if (response.code != 200 && response.code != 206) {
+                        throw ApiException("Download failed: HTTP ${response.code}")
                     }
+
+                    val isPartial = response.code == 206
+                    val body = response.body ?: throw ApiException("Empty download body")
+
+                    var totalSize = row.fileSizeBytes
+                    if (totalSize <= 0L) {
+                        totalSize = body.contentLength() + if (isPartial) existingBytes else 0L
+                    }
+
+                    var downloaded = if (isPartial) existingBytes else 0L
+                    val appendMode = isPartial && existingBytes > 0
+
+                    java.io.FileOutputStream(partial, appendMode).use { out ->
+                        body.byteStream().use { input ->
+                            val buffer = ByteArray(8192)
+                            while (true) {
+                                if (!isActive) {
+                                    throw kotlinx.coroutines.CancellationException("Download cancelled")
+                                }
+
+                                val read = input.read(buffer)
+                                if (read <= 0) break
+                                out.write(buffer, 0, read)
+                                downloaded += read
+                                val pct = ((downloaded * 100) / totalSize.coerceAtLeast(1L)).toInt().coerceIn(0, 100)
+                                onProgress(pct)
+                                dao.upsert(
+                                    row.copy(
+                                        status = GameInstallStatus.DOWNLOADING.name,
+                                        progress = pct,
+                                    ),
+                                )
+                            }
+                        }
+                    }
+                    success = true
+                }
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) {
+                    throw e
+                }
+                exception = e
+                if (attempts < maxAttempts) {
+                    kotlinx.coroutines.delay(2000)
                 }
             }
-
-            if (partial.length() < 1024) {
-                partial.delete()
-                dao.upsert(row.copy(status = GameInstallStatus.ERROR.name))
-                throw ApiException("Downloaded file is too small")
-            }
-
-            partial.renameTo(dest)
-            val hash = sha256(dest)
-
-            // Scramble file in-place and rename to .lazplay_locked
-            scrambleFile(dest)
-            val lockedDest = File(dest.parentFile, "${dest.name}.lazplay_locked")
-            if (lockedDest.exists()) {
-                lockedDest.delete()
-            }
-            dest.renameTo(lockedDest)
-
-            val updatedRow = row.copy(
-                status = GameInstallStatus.DOWNLOADED.name,
-                progress = 100,
-                apkPath = lockedDest.absolutePath,
-                checksumSha256 = hash,
-                fileSizeBytes = lockedDest.length(),
-            )
-            dao.upsert(updatedRow)
-            prepareApkForInstall(updatedRow) ?: lockedDest
         }
+
+        if (!success) {
+            if (partial.exists()) {
+                partial.delete()
+            }
+            val tempFile = File(downloadDir, "temp_install.apk")
+            if (tempFile.exists()) {
+                tempFile.delete()
+            }
+
+            dao.upsert(row.copy(
+                status = GameInstallStatus.READY.name,
+                progress = 0,
+                apkPath = null
+            ))
+
+            throw exception ?: ApiException("Download failed after $maxAttempts attempts")
+        }
+
+        if (partial.length() < 1024) {
+            partial.delete()
+            dao.upsert(row.copy(
+                status = GameInstallStatus.READY.name,
+                progress = 0,
+                apkPath = null
+            ))
+            throw ApiException("Downloaded file is too small")
+        }
+
+        partial.renameTo(dest)
+        val hash = sha256(dest)
+
+        // Extract package name from raw APK file before scrambling
+        val pm = context.packageManager
+        val info = pm.getPackageArchiveInfo(dest.absolutePath, 0)
+        val packageName = info?.packageName
+
+        // Scramble file in-place and rename to .lazplay_locked
+        scrambleFile(dest)
+        val lockedDest = File(dest.parentFile, "${dest.name}.lazplay_locked")
+        if (lockedDest.exists()) {
+            lockedDest.delete()
+        }
+        dest.renameTo(lockedDest)
+
+        val updatedRow = row.copy(
+            status = GameInstallStatus.DOWNLOADED.name,
+            progress = 100,
+            apkPath = lockedDest.absolutePath,
+            packageName = packageName,
+            checksumSha256 = hash,
+            fileSizeBytes = lockedDest.length(),
+        )
+        dao.upsert(updatedRow)
+        prepareApkForInstall(updatedRow) ?: lockedDest
     }
 
     private fun sha256(file: File): String {
@@ -200,7 +264,88 @@ class ApkDownloadRepository(
         return digest.digest().joinToString("") { "%02x".format(it) }
     }
 
-    fun clearCache() {
-        downloadDir.listFiles()?.forEach { it.delete() }
+    suspend fun verifyInstallAndApkStates() = withContext(Dispatchers.IO) {
+        try {
+            val games = dao.getAll()
+            for (game in games) {
+                var pkg = game.packageName
+                if (pkg.isNullOrBlank()) {
+                    pkg = findPackageByAppName(context, game.title)
+                    if (!pkg.isNullOrBlank()) {
+                        dao.upsert(game.copy(packageName = pkg))
+                    }
+                }
+
+                val apkExists = game.apkPath?.let { File(it).exists() } ?: false
+                val isInstalled = pkg?.let { isAppInstalled(it) } ?: false
+
+                var newStatus = GameInstallStatus.from(game.status)
+
+                if (isInstalled) {
+                    newStatus = GameInstallStatus.INSTALLED
+                } else {
+                    if (newStatus == GameInstallStatus.INSTALLED) {
+                        newStatus = if (apkExists) GameInstallStatus.DOWNLOADED else GameInstallStatus.READY
+                    } else if (newStatus == GameInstallStatus.DOWNLOADED && !apkExists) {
+                        newStatus = GameInstallStatus.READY
+                    }
+                }
+
+                if (newStatus.name != game.status) {
+                    dao.upsert(game.copy(status = newStatus.name))
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun findPackageByAppName(context: Context, appName: String): String? {
+        return try {
+            val pm = context.packageManager
+            val apps = pm.getInstalledApplications(0)
+            for (app in apps) {
+                val label = pm.getApplicationLabel(app).toString()
+                if (label.equals(appName, ignoreCase = true)) {
+                    return app.packageName
+                }
+            }
+            null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun isAppInstalled(packageName: String): Boolean {
+        return try {
+            context.packageManager.getPackageInfo(packageName, 0)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun clearCache() = withContext(Dispatchers.IO) {
+        try {
+            downloadDir.listFiles()?.forEach { it.delete() }
+            val games = dao.getAll()
+            for (game in games) {
+                val isInstalled = game.packageName?.let { isAppInstalled(it) } ?: false
+                if (isInstalled) {
+                    dao.upsert(game.copy(
+                        status = GameInstallStatus.INSTALLED.name,
+                        apkPath = null
+                    ))
+                } else {
+                    dao.upsert(game.copy(
+                        status = GameInstallStatus.READY.name,
+                        progress = 0,
+                        apkPath = null
+                    ))
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 }

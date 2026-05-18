@@ -3,7 +3,12 @@ import { Link, NavLink, Outlet } from 'react-router-dom';
 import { auth as authApi } from '../api';
 
 export default function Layout() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
   const [user, setUser] = useState(null);
 
   useEffect(() => {

@@ -14,6 +14,7 @@ import tech.lazplay.launcher.ui.theme.ThemeManager
 class LibraryAdapter(
     private val onDownload: (InstalledGameEntity) -> Unit,
     private val onInstall: (InstalledGameEntity) -> Unit,
+    private val onDelete: (InstalledGameEntity) -> Unit,
 ) : ListAdapter<InstalledGameEntity, LibraryAdapter.VH>(Diff) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
@@ -54,27 +55,60 @@ class LibraryAdapter(
                 if (status == GameInstallStatus.DOWNLOADING) android.view.View.VISIBLE
                 else android.view.View.GONE
 
-            binding.actionButton.text = when (status) {
-                GameInstallStatus.DOWNLOADED -> "INSTALL"
-                GameInstallStatus.DOWNLOADING -> "DOWNLOADING…"
-                GameInstallStatus.INSTALLED -> "INSTALLED"
-                GameInstallStatus.ERROR -> "RETRY"
+            // Check dynamically if app is installed and if APK exists
+            val apkExists = game.apkPath?.let { java.io.File(it).exists() } ?: false
+            val isInstalled = game.packageName?.let { pkg ->
+                try {
+                    binding.root.context.packageManager.getPackageInfo(pkg, 0)
+                    true
+                } catch (e: Exception) {
+                    false
+                }
+            } ?: false
+
+            binding.actionButton.text = when {
+                isInstalled -> "PLAY"
+                status == GameInstallStatus.DOWNLOADED -> "INSTALL"
+                status == GameInstallStatus.DOWNLOADING -> "DOWNLOADING…"
+                status == GameInstallStatus.ERROR -> "RETRY"
                 else -> if (game.downloadUrl.isNullOrBlank()) "NO APK" else "DOWNLOAD"
             }
 
             binding.actionButton.isEnabled =
                 status != GameInstallStatus.DOWNLOADING &&
-                    !game.downloadUrl.isNullOrBlank()
+                    (isInstalled || !game.downloadUrl.isNullOrBlank())
+
+            // Show delete button if APK is cached or app is installed, and not currently downloading
+            binding.deleteButton.visibility =
+                if ((apkExists || isInstalled) && status != GameInstallStatus.DOWNLOADING) {
+                    android.view.View.VISIBLE
+                } else {
+                    android.view.View.GONE
+                }
 
             // Dynamic theme styling on action button and status text
             ThemeManager.applyTheme(binding.actionButton)
             binding.gameStatus.setTextColor(ThemeManager.getThemeColor())
 
             binding.actionButton.setOnClickListener {
-                when (GameInstallStatus.from(game.status)) {
-                    GameInstallStatus.DOWNLOADED -> onInstall(game)
-                    else -> onDownload(game)
+                if (isInstalled && !game.packageName.isNullOrBlank()) {
+                    val intent = binding.root.context.packageManager.getLaunchIntentForPackage(game.packageName)
+                    if (intent != null) {
+                        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                        binding.root.context.startActivity(intent)
+                    } else {
+                        onInstall(game)
+                    }
+                } else {
+                    when (status) {
+                        GameInstallStatus.DOWNLOADED -> onInstall(game)
+                        else -> onDownload(game)
+                    }
                 }
+            }
+
+            binding.deleteButton.setOnClickListener {
+                onDelete(game)
             }
         }
     }

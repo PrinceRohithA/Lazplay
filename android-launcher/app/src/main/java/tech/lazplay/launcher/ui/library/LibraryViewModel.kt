@@ -28,13 +28,83 @@ class LibraryViewModel : ViewModel() {
     fun refresh() {
         viewModelScope.launch {
             try {
+                downloadRepo.verifyInstallAndApkStates()
                 val items = api.library()
                     .filter { !it.isWebOnly() && it.isAndroidGame() }
                 downloadRepo.syncLibraryToCache(items)
+                downloadRepo.verifyInstallAndApkStates()
                 lastError = null
             } catch (e: Exception) {
                 lastError = e.message
             }
+        }
+    }
+
+    fun deleteGame(game: InstalledGameEntity) {
+        viewModelScope.launch {
+            // Also delete the temporary unscrambled APK file (temp_install.apk) if it exists
+            try {
+                val downloadDir = java.io.File(ServiceLocator.requireContext().filesDir, "downloads")
+                val tempFile = java.io.File(downloadDir, "temp_install.apk")
+                if (tempFile.exists()) {
+                    tempFile.delete()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+            // 2. Trigger native app uninstallation dialog if installed
+            val context = ServiceLocator.requireContext()
+            var pkg = game.packageName
+            if (pkg.isNullOrBlank()) {
+                pkg = try {
+                    val pm = context.packageManager
+                    val apps = pm.getInstalledApplications(0)
+                    var found: String? = null
+                    for (app in apps) {
+                        val label = pm.getApplicationLabel(app).toString()
+                        if (label.equals(game.title, ignoreCase = true)) {
+                            found = app.packageName
+                            break
+                        }
+                    }
+                    found
+                } catch (e: Exception) {
+                    null
+                }
+            }
+
+            val isInstalled = pkg?.let {
+                try {
+                    context.packageManager.getPackageInfo(it, 0)
+                    true
+                } catch (e: Exception) {
+                    false
+                }
+            } ?: false
+
+            if (isInstalled && pkg != null) {
+                val intent = android.content.Intent(android.content.Intent.ACTION_DELETE).apply {
+                    data = android.net.Uri.parse("package:$pkg")
+                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(intent)
+
+                // Preserve the apkPath in the database so the card returns to the INSTALL stage!
+                dao.upsert(game.copy(
+                    packageName = pkg
+                ))
+            } else {
+                // If it wasn't installed, revert back to READY
+                dao.upsert(game.copy(
+                    status = tech.lazplay.launcher.data.local.GameInstallStatus.READY.name,
+                    progress = 0,
+                    apkPath = null
+                ))
+            }
+
+            // 4. Force a status sync refresh
+            downloadRepo.verifyInstallAndApkStates()
         }
     }
 

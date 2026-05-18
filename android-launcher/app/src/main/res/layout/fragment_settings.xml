@@ -168,17 +168,35 @@
                 app:strokeWidth="0dp" />
         </LinearLayout>
 
-        <!-- System Controls -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/clearCacheButton"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="match_parent"
+        <!-- Cache Management Section -->
+        <TextView
+            android:id="@+id/cacheManagementLabel"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="28dp"
             android:fontFamily="monospace"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:text="@string/clear_cache" />
+            android:text="SYSTEM_CACHE_MANAGEMENT"
+            android:textColor="@color/primary"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/cacheManagementSubLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:fontFamily="monospace"
+            android:text="RESOLVED_APKS // CLEAR INDIVIDUAL PAYLOADS"
+            android:textColor="@color/on_surface_variant"
+            android:textSize="9sp"
+            android:alpha="0.7" />
+
+        <LinearLayout
+            android:id="@+id/cacheContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="8dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/logoutButton"

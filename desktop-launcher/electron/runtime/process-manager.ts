@@ -259,9 +259,10 @@ class ProcessManager {
     });
   }
 
-  private findProtonPath(): string | null {
+  public findProtonPath(): string | null {
     const home = os.homedir();
     const searchDirs = [
+      path.join(home, ".config/lazplay/runtimes"),
       path.join(home, ".local/share/Steam/steamapps/common"),
       path.join(home, ".steam/steam/steamapps/common"),
       path.join(home, ".steam/root/compatibilitytools.d"),

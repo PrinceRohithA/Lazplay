@@ -188,21 +188,23 @@ configure launch options
 
 
 Proton Integration Architecture
-Recommended Philosophy
+Philosophy
 Do NOT build your own compatibility layer.
-Instead:
+Instead, use a **Seamless Hybrid Resolution Strategy**:
 
-integrate existing Proton installations
-detect Steam Proton automatically later
-allow custom Proton paths
+1. **Auto-Detection (Zero Download)**: The launcher scans standard Steam, Flatpak, and system directories for existing Proton runtimes.
+2. **In-Launcher Background Download**: If no Proton runtime is found on the player's system, the launcher triggers a background download and extracts a pre-compiled runtime (like GE-Proton or Wine-GE) to `~/.config/lazplay/runtimes/`.
+3. **Custom Run Path**: Allows power users to point the launcher to custom Proton configurations in Settings.
 
 
 Proton Launch Flow
 Player launches Windows game
 ↓
-Launcher detects Proton runtime
+Launcher detects Proton runtime (System-wide or LazPlay-managed)
 ↓
-Create/Reuse compatibility prefix
+If missing: Trigger 'download-proton' background process with IPC progress tracking
+↓
+Create/Reuse compatibility prefix in `~/Games/Lazplay/compatdata/{gameId}`
 ↓
 Launch game using Proton
 

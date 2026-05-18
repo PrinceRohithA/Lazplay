@@ -22,6 +22,7 @@ class LibraryFragment : Fragment() {
     private val adapter = LibraryAdapter(
         onDownload = { viewModel.download(it) },
         onInstall = { viewModel.installDownloaded(it) },
+        onDelete = { viewModel.deleteGame(it) },
     )
 
     override fun onCreateView(

@@ -9,11 +9,14 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import coil.load
 import kotlinx.coroutines.launch
 import tech.lazplay.launcher.data.ServiceLocator
 import tech.lazplay.launcher.databinding.FragmentSettingsBinding
+import tech.lazplay.launcher.databinding.ItemCachedApkBinding
 import tech.lazplay.launcher.ui.auth.LoginActivity
 import tech.lazplay.launcher.ui.theme.ThemeManager
+import java.io.File
 
 class SettingsFragment : Fragment() {
     private var _binding: FragmentSettingsBinding? = null
@@ -42,10 +45,6 @@ class SettingsFragment : Fragment() {
             }
         }
 
-        binding.clearCacheButton.setOnClickListener {
-            ServiceLocator.downloadRepository.clearCache()
-        }
-
         binding.logoutButton.setOnClickListener {
             ServiceLocator.tokenStore.clear()
             val intent = Intent(requireContext(), LoginActivity::class.java).apply {
@@ -58,6 +57,9 @@ class SettingsFragment : Fragment() {
         // Initialize Theme Color Preset Selectors
         setupColorPresets()
         updateColorPickers()
+        
+        // Dynamically load the cached APKs
+        loadCacheList()
     }
 
     private fun setupColorPresets() {
@@ -74,6 +76,102 @@ class SettingsFragment : Fragment() {
             card.setOnClickListener {
                 ServiceLocator.tokenStore.saveThemeColor(hexColor)
                 updateColorPickers()
+                // Reload list to apply new stroke styling
+                loadCacheList()
+            }
+        }
+    }
+
+    private fun loadCacheList() {
+        lifecycleScope.launch {
+            try {
+                binding.cacheContainer.removeAllViews()
+                val dao = ServiceLocator.database.installedGameDao()
+                val games = dao.getAll()
+                val cachedGames = games.filter { game ->
+                    game.apkPath?.let { File(it).exists() } ?: false
+                }
+
+                if (cachedGames.isEmpty()) {
+                    val emptyTv = android.widget.TextView(requireContext()).apply {
+                        text = "NO_CACHED_PAYLOADS_FOUND"
+                        typeface = android.graphics.Typeface.MONOSPACE
+                        textSize = 12f
+                        gravity = android.view.Gravity.CENTER
+                        setTextColor(Color.GRAY)
+                        setPadding(0, 48, 0, 48)
+                    }
+                    binding.cacheContainer.addView(emptyTv)
+                } else {
+                    val inflater = LayoutInflater.from(requireContext())
+                    val themeColor = ThemeManager.getThemeColor()
+
+                    for (game in cachedGames) {
+                        val itemBinding = ItemCachedApkBinding.inflate(inflater, binding.cacheContainer, false)
+
+                        // Bind game details
+                        itemBinding.gameTitle.text = game.title
+                        itemBinding.gameCover.load(game.coverUrl) {
+                            crossfade(true)
+                        }
+
+                        // Calculate file size
+                        val file = File(game.apkPath!!)
+                        val sizeMb = file.length() / (1024 * 1024)
+                        itemBinding.cacheSize.text = "${sizeMb} MB // SECURED_PAYLOAD"
+
+                        // Apply theme card styling
+                        itemBinding.cardRoot.strokeColor = themeColor
+
+                        // Clear button action
+                        itemBinding.clearBtn.setOnClickListener {
+                            lifecycleScope.launch {
+                                // 1. Delete physical cache file
+                                if (file.exists()) {
+                                    file.delete()
+                                }
+
+                                // 2. Update DB based on if installed
+                                val pkg = game.packageName
+                                val isInstalled = pkg?.let { p ->
+                                    try {
+                                        requireContext().packageManager.getPackageInfo(p, 0)
+                                        true
+                                    } catch (e: Exception) {
+                                        false
+                                    }
+                                } ?: false
+
+                                if (isInstalled) {
+                                    dao.upsert(game.copy(
+                                        status = tech.lazplay.launcher.data.local.GameInstallStatus.INSTALLED.name,
+                                        apkPath = null
+                                    ))
+                                } else {
+                                    dao.upsert(game.copy(
+                                        status = tech.lazplay.launcher.data.local.GameInstallStatus.READY.name,
+                                        progress = 0,
+                                        apkPath = null
+                                    ))
+                                }
+
+                                // 3. Refresh list and repository
+                                ServiceLocator.downloadRepository.verifyInstallAndApkStates()
+                                loadCacheList()
+
+                                android.widget.Toast.makeText(
+                                    requireContext(),
+                                    "Deleted cache for ${game.title}",
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+
+                        binding.cacheContainer.addView(itemBinding.root)
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
@@ -104,9 +202,7 @@ class SettingsFragment : Fragment() {
         binding.settingsHeader.setTextColor(themeColor)
         binding.colorCalibrationLabel.setTextColor(themeColor)
         binding.profileCard.strokeColor = themeColor
-
-        binding.clearCacheButton.strokeColor = ColorStateList.valueOf(themeColor)
-        binding.clearCacheButton.setTextColor(themeColor)
+        binding.cacheManagementLabel.setTextColor(themeColor)
 
         binding.logoutButton.backgroundTintList = ColorStateList.valueOf(themeColor)
         binding.logoutButton.setTextColor(Color.BLACK)
@@ -117,6 +213,7 @@ class SettingsFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         updateColorPickers()
+        loadCacheList()
     }
 
     override fun onDestroyView() {

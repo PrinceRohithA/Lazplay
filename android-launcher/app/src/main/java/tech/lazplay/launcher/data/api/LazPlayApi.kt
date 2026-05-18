@@ -61,7 +61,16 @@ class LazPlayApi(private val tokenStore: TokenStore) {
     private fun <T> unwrap(response: Response<ApiEnvelope<T>>): T? {
         if (!response.isSuccessful) {
             val err = response.errorBody()?.string()
-            throw ApiException(err ?: "HTTP ${response.code()}")
+            val cleanMessage = if (!err.isNullOrEmpty()) {
+                try {
+                    com.google.gson.Gson().fromJson(err, ApiEnvelope::class.java)?.error?.message
+                } catch (e: Exception) {
+                    null
+                }
+            } else {
+                null
+            }
+            throw ApiException(cleanMessage ?: "HTTP ${response.code()}")
         }
         val body = response.body()
         if (body?.success == false) {

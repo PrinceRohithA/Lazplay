@@ -17,6 +17,9 @@ interface InstalledGameDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(game: InstalledGameEntity)
 
+    @Query("SELECT * FROM installed_games")
+    suspend fun getAll(): List<InstalledGameEntity>
+
     @Query("DELETE FROM installed_games WHERE gameId = :gameId")
     suspend fun delete(gameId: String)
 }
