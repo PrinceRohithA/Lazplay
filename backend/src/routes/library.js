@@ -127,6 +127,14 @@ router.add('GET', '/entitlements', async (req) => {
       }
     });
 
+    // Calculate coin reward based on play duration (1 coin per 10 seconds, minimum 1 coin)
+    const coinsEarned = Math.max(1, Math.floor(body.durationSeconds / 10));
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { coins: { increment: coinsEarned } }
+    });
+
     // Also log a play session for history
     await prisma.gamePlaySession.create({
       data: {
@@ -138,6 +146,10 @@ router.add('GET', '/entitlements', async (req) => {
       }
     });
 
-    return ok(updated);
+    return ok({
+      ...updated,
+      coinsEarned,
+      message: `You earned ${coinsEarned} coins for playing!`
+    });
   });
 }

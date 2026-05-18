@@ -9,11 +9,29 @@ export function registerUsersRoutes(router, { ok, HttpError, requireAuth, create
               include: {
                   cosmetic: true
               }
+          },
+          achievements: {
+              include: {
+                  achievement: true
+              }
+          },
+          playSessions: {
+              take: 5,
+              orderBy: { startedAt: 'desc' },
+              include: { game: true }
+          },
+          reviews: {
+              include: { game: true }
+          },
+          libraryItems: {
+              include: { game: true }
           }
       }
     });
     
     if (!user) throw new HttpError(404, 'USER_NOT_FOUND', 'User profile not found');
+
+    const totalPlaytime = user.libraryItems.reduce((acc, item) => acc + (item.playtimeSeconds || 0), 0);
     
     return ok({ 
         profile: {
@@ -23,9 +41,35 @@ export function registerUsersRoutes(router, { ok, HttpError, requireAuth, create
             avatarUrl: user.avatarUrl,
             bio: user.bio,
             roles: user.roles,
+            coins: user.coins,
             equipped: user.equippedCosmetics.map(e => ({
                 slot: e.slot,
                 cosmetic: e.cosmetic
+            })),
+            achievements: user.achievements.map(ua => ({
+                id: ua.achievement.id,
+                code: ua.achievement.code,
+                title: ua.achievement.title,
+                description: ua.achievement.description,
+                points: ua.achievement.points,
+                coinReward: ua.achievement.coinReward,
+                unlockedAt: ua.unlockedAt
+            })),
+            stats: {
+                totalPlaytime,
+                gamesCount: user.libraryItems.length,
+                reviewsCount: user.reviews.length
+            },
+            recentActivity: user.playSessions.map(ps => ({
+                gameTitle: ps.game.title,
+                gameId: ps.game.id,
+                playedAt: ps.startedAt,
+                duration: ps.durationSeconds
+            })),
+            favoriteGames: user.libraryItems.filter(item => item.favorite).map(item => ({
+                id: item.game.id,
+                title: item.game.title,
+                coverUrl: item.game.coverUrl
             }))
         } 
     });

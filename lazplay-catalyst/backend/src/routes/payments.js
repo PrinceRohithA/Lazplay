@@ -12,7 +12,7 @@ export function registerPaymentsRoutes(router, ctx) {
     getMediaBucket, getPublicGameBucket, getPrivateGameBucket, getGameBucket, getRuntimeBucketForPriceType,
     getRuntimeBucketForGame, assertR2Config, resolveBucketForPurpose, resolveBucketForKey, publicObjectUrl,
     scanAndPrepareBuild, deleteStorageObject, deleteStorageRecord, deleteStorageObjectFromUrl, razorpaySignature,
-    assertRazorpayWebhook, sendEmail
+    assertRazorpayWebhook, sendEmail, signedStorageUrl, extractObjectKeyFromUrl
   } = ctx;
 
   async function sendPurchaseEmail(user, game, amount, currency = 'INR') {
@@ -238,13 +238,15 @@ router.add('GET', '/orders/:orderId', async (req) => {
 router.add('GET', '/invoices/:invoiceId', async (req) => {
     const user = await requireAuth(req);
     const invoice = await prisma.invoice.findUnique({
-      where: { id: req.params.invoiceId }
+      where: { id: req.params.invoiceId },
+      include: { order: true }
     });
-    if (!invoice || (invoice.userId !== user.id && !user.roles.includes('ADMIN'))) {
+    if (!invoice || (invoice.order.userId !== user.id && !user.roles.includes('ADMIN'))) {
       throw new HttpError(404, 'INVOICE_NOT_FOUND', 'Invoice not found');
     }
-    const invoiceBucket = resolveBucketForKey(invoice.objectKey);
-    const invoiceSigned = await signedStorageUrl(invoice.objectKey, 'GET', 900, invoiceBucket);
+    const key = invoice.pdfUrl ? extractObjectKeyFromUrl(invoice.pdfUrl) : `invoices/${invoice.id}.pdf`;
+    const invoiceBucket = resolveBucketForKey(key);
+    const invoiceSigned = await signedStorageUrl(key, 'GET', 900, invoiceBucket);
     return ok({
       downloadUrl: invoiceSigned.url
     });

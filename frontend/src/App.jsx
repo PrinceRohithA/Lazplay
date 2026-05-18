@@ -11,6 +11,7 @@ import GamesDiscoveryRetroEdition from './pages/GamesDiscoveryRetroEdition';
 import DeveloperWorkspaceAdvancedDeploymentSuite from './pages/DeveloperWorkspaceAdvancedDeploymentSuite';
 import Options from './pages/Options';
 import LauncherDownloadPage from './pages/LauncherDownloadPage';
+import Profile from './pages/Profile';
 import Layout from './components/Layout';
 
 const isInsideLauncher = typeof window !== 'undefined' && !!window.electron;
@@ -29,6 +30,7 @@ function App() {
           <Route path="library" element={<GameLibraryCyberEdition />} />
           <Route path="games" element={<GamesDiscoveryRetroEdition />} />
           <Route path="options" element={<Options />} />
+          <Route path="profile" element={<Profile />} />
           <Route path="deployment" element={<DeveloperWorkspaceAdvancedDeploymentSuite />} />
           <Route path="download-launcher" element={<LauncherDownloadPage />} />
         </Route>

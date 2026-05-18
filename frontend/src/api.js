@@ -149,6 +149,21 @@ export const auth = {
 export const user = {
   updateProfile: (body) => patch('/users/me', body),
   changePassword: (body) => patch('/users/me/password', body),
+  getProfile: (username) => get(`/users/${username}/profile`),
+  getInventory: () => get('/users/me/inventory'),
+  equipCosmetic: (body) => post('/users/me/equip', body),
+};
+
+// ─── Cosmetics & Achievements ──────────────────────────────────────────────────
+export const cosmetics = {
+  listPlatform: () => get('/cosmetics/platform'),
+  purchase: (sku) => post(`/cosmetics/${sku}/purchase`),
+};
+
+export const achievements = {
+  listPlatform: () => get('/achievements/platform'),
+  check: () => post('/achievements/check'),
+  unlockGameSpec: (gameId, code) => post(`/games/${gameId}/achievements/${code}/unlock`),
 };
 
 // ─── Games (Public) ───────────────────────────────────────────────────────────
@@ -331,5 +346,5 @@ export const system = {
 export default {
   auth, user, games, library, wishlist, entitlements,
   payments, storage, developer, distribution, instances, admin,
-  notifications, system,
+  notifications, system, cosmetics, achievements
 };
