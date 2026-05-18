@@ -141,7 +141,7 @@ Response:
 
 ### POST /auth/register
 
-Description: Creates a new player account. Developer status can be requested later.
+Description: Creates a new player account. Requires an email verification OTP code sent via `/auth/resend-otp` with `purpose: "VERIFY_EMAIL"`.
 
 Auth: Public.
 
@@ -152,7 +152,8 @@ Request body:
   "username": "neon_runner",
   "email": "runner@example.com",
   "password": "StrongPassword123!",
-  "displayName": "Neon Runner"
+  "displayName": "Neon Runner",
+  "code": "123456"
 }
 ```
 
