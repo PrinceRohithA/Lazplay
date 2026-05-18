@@ -581,7 +581,7 @@ export default function DeveloperConsole() {
           <div className="relative z-10">
             <div className="flex items-center gap-3 text-brand-500 font-mono text-xs uppercase tracking-widest mb-3">
               <Shield size={16} />
-              <span>CREATOR_REGISTRY_PROTOCOL.EXE</span>
+              <span>Creator Registration</span>
             </div>
 
             <h2 className="text-3xl font-black text-slate-100 mb-2 uppercase tracking-tight">Become a LazPlay Creator</h2>
@@ -631,12 +631,12 @@ export default function DeveloperConsole() {
                 {registering ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>VERIFYING_REGISTRY...</span>
+                    <span>Verifying...</span>
                   </>
                 ) : (
                   <>
                     <UserCheck size={18} />
-                    <span>INITIALIZE_CREATOR_PROTOCOL</span>
+                    <span>Register as Creator</span>
                   </>
                 )}
               </button>
@@ -656,10 +656,10 @@ export default function DeveloperConsole() {
           <TerminalIcon className="text-brand-500 animate-pulse" size={24} />
           <div>
             <h1 className="text-lg font-black tracking-tight text-slate-100 uppercase">
-              CREATOR_WORKSPACE // LAZPLAY_OS
+              Creator Workspace
             </h1>
             <p className="text-[10px] font-mono text-brand-500 uppercase tracking-widest">
-              GRID: STABLE // AUTH: {userProfile.displayName || userProfile.email}
+              Status: Online // AUTH: {userProfile.displayName || userProfile.email}
             </p>
           </div>
         </div>
@@ -670,7 +670,7 @@ export default function DeveloperConsole() {
             className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition-all px-4 py-2 rounded-lg text-xs font-mono font-bold"
           >
             <ChevronLeft size={16} />
-            <span>RETURN_TO_DASHBOARD</span>
+            <span>Return to Dashboard</span>
           </button>
         )}
       </header>
