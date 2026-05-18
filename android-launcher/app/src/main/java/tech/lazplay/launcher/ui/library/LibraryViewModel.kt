@@ -84,6 +84,7 @@ class LibraryViewModel : ViewModel() {
             } ?: false
 
             if (isInstalled && pkg != null) {
+                // Game is installed. Prompt uninstallation and preserve the cache file!
                 val intent = android.content.Intent(android.content.Intent.ACTION_DELETE).apply {
                     data = android.net.Uri.parse("package:$pkg")
                     addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -95,7 +96,20 @@ class LibraryViewModel : ViewModel() {
                     packageName = pkg
                 ))
             } else {
-                // If it wasn't installed, revert back to READY
+                // Game is not installed on the system (it's in the INSTALL stage).
+                // Delete the physical .lazplay_locked cache file from disk to free up space!
+                game.apkPath?.let { path ->
+                    try {
+                        val file = java.io.File(path)
+                        if (file.exists()) {
+                            file.delete()
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+
+                // Reset back to READY
                 dao.upsert(game.copy(
                     status = tech.lazplay.launcher.data.local.GameInstallStatus.READY.name,
                     progress = 0,
