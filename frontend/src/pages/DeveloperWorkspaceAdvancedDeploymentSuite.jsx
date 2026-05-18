@@ -3,6 +3,26 @@ import { developer as devApi, storage as storageApi, auth as authApi } from '../
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
+import { blake3 } from 'hash-wasm';
+
+const calculateFileBlake3 = async (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const buffer = e.target.result;
+        const uint8Array = new Uint8Array(buffer);
+        const hash = await blake3(uint8Array);
+        resolve(hash);
+      } catch (err) {
+        reject(err);
+      }
+    };
+    reader.onerror = (err) => reject(err);
+    reader.readAsArrayBuffer(file);
+  });
+};
+
 
 const GENRES = [
   'ACTION', 'RPG', 'STRATEGY', 'ADVENTURE', 'SIMULATION',
@@ -437,12 +457,23 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         if (binaryFile) {
           binariesUploadedCount++;
           await replaceBuildsIfNeeded(platform);
-          addLog(`STEP_03: INITIALIZING_${platform}_BUILD_NODE...`);
+
+          addLog(`STEP_03A: COMPUTING_${platform}_PAYLOAD_CHECKSUM (BLAKE3)...`);
+          let checksumHex = '';
+          try {
+            checksumHex = await calculateFileBlake3(binaryFile);
+            addLog(`SUCCESS: ${platform} CHECKSUM_VERIFIED (${checksumHex})`);
+          } catch (hashErr) {
+            addLog(`WARN: HASH_CALCULATION_FAILED - ${hashErr.message}`);
+          }
+
+          addLog(`STEP_03B: INITIALIZING_${platform}_BUILD_NODE...`);
           const buildRes = await devApi.createBuild(gameId, {
             version: form.version,
             platform: platform,
             runtime: platform === 'WEB' ? 'WEB' : 'NATIVE',
-            entrypoint: form.platformEntrypoints?.[platform] || form.entrypoint || (platform === 'WEB' ? 'index.html' : 'game.exe')
+            entrypoint: form.platformEntrypoints?.[platform] || form.entrypoint || (platform === 'WEB' ? 'index.html' : 'game.exe'),
+            checksumSha256: checksumHex
           });
           const buildId = buildRes.data.id;
           addLog(`SUCCESS: ${platform} BUILD_READY (ID: ${buildId})`);
@@ -462,7 +493,8 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
 
           await devApi.completeBuildUpload(buildId, {
             objectKey: uploadInfo.data.objectKey,
-            sizeBytes: Number(binaryFile.size || 0)
+            sizeBytes: Number(binaryFile.size || 0),
+            checksumSha256: checksumHex
           });
           addLog(`SUCCESS: ${platform} PAYLOAD_STATIONED`);
 

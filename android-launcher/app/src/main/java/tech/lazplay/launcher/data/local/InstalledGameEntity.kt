@@ -17,6 +17,7 @@ data class InstalledGameEntity(
     val progress: Int = 0,
     val fileSizeBytes: Long = 0,
     val checksumSha256: String? = null,
+    val latestChecksumSha256: String? = null,
     val updatedAt: Long = System.currentTimeMillis(),
 )
 

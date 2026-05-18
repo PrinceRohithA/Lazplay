@@ -49,6 +49,7 @@ data class LibraryItemDto(
     @SerializedName("heroBannerUrl") val heroBannerUrl: String? = null,
     @SerializedName("heroImageUrl") val heroImageUrl: String? = null,
     val game: JsonElement? = null,
+    @SerializedName("checksumSha256") val checksumSha256: String? = null,
 )
 
 data class ClaimGameRequest(

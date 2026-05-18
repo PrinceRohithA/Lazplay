@@ -16,6 +16,7 @@ import tech.lazplay.launcher.data.local.InstalledGameEntity
 import java.io.File
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
+import org.apache.commons.codec.digest.Blake3
 
 class ApkDownloadRepository(
     private val context: Context,
@@ -104,6 +105,7 @@ class ApkDownloadRepository(
                     apkPath = null,
                     packageName = null,
                     status = GameInstallStatus.READY.name,
+                    latestChecksumSha256 = item.checksumSha256
                 )).copy(
                     title = item.title ?: existing?.title ?: gameId,
                     version = item.version ?: existing?.version,
@@ -111,6 +113,7 @@ class ApkDownloadRepository(
                     coverUrl = item.coverUrl ?: item.heroBannerUrl ?: item.heroImageUrl ?: existing?.coverUrl,
                     entrypoint = item.entrypoint ?: existing?.entrypoint,
                     fileSizeBytes = item.size ?: existing?.fileSizeBytes ?: 0L,
+                    latestChecksumSha256 = item.checksumSha256 ?: existing?.latestChecksumSha256
                 ),
             )
         }
@@ -224,7 +227,7 @@ class ApkDownloadRepository(
         }
 
         partial.renameTo(dest)
-        val hash = sha256(dest)
+        val hash = calculateBlake3(dest)
 
         // Extract package name from raw APK file before scrambling
         val pm = context.packageManager
@@ -251,17 +254,19 @@ class ApkDownloadRepository(
         prepareApkForInstall(updatedRow) ?: lockedDest
     }
 
-    private fun sha256(file: File): String {
-        val digest = MessageDigest.getInstance("SHA-256")
+    private fun calculateBlake3(file: File): String {
+        val blake = Blake3.initHash()
         file.inputStream().use { input ->
             val buffer = ByteArray(8192)
             while (true) {
                 val read = input.read(buffer)
                 if (read <= 0) break
-                digest.update(buffer, 0, read)
+                blake.update(buffer, 0, read)
             }
         }
-        return digest.digest().joinToString("") { "%02x".format(it) }
+        val hashBytes = ByteArray(32)
+        blake.doFinalize(hashBytes)
+        return hashBytes.joinToString("") { "%02x".format(it) }
     }
 
     suspend fun verifyInstallAndApkStates() = withContext(Dispatchers.IO) {

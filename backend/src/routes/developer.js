@@ -553,7 +553,8 @@ router.add('POST', '/developer/games/:gameId/builds', async (req) => {
       platform: validators.string({ min: 2, max: 80, upper: true }),
       runtime: validators.string({ required: false, min: 2, max: 80, upper: true }),
       entrypoint: validators.string({ required: false, min: 1, max: 255 }),
-      changelog: validators.string({ required: false, min: 0, max: 4000, allowBlank: true })
+      changelog: validators.string({ required: false, min: 0, max: 4000, allowBlank: true }),
+      checksumSha256: validators.string({ required: false, min: 0, max: 256, allowBlank: true })
     });
 
     const build = await prisma.gameBuild.create({
@@ -565,6 +566,7 @@ router.add('POST', '/developer/games/:gameId/builds', async (req) => {
         runtime: body.runtime,
         entrypoint: body.entrypoint,
         changelog: body.changelog,
+        checksumSha256: body.checksumSha256 || null,
         status: 'WAITING_FOR_UPLOAD'
       }
     });
@@ -624,7 +626,8 @@ router.add('POST', '/developer/builds/:buildId/uploads/complete', async (req) =>
     await assertDeveloperOwnsGame(user, build.game);
     const body = validateBody(req.body, {
       objectKey: validators.objectKey(),
-      sizeBytes: validators.bigint({ required: false, min: 1n })
+      sizeBytes: validators.bigint({ required: false, min: 1n }),
+      checksumSha256: validators.string({ required: false, min: 0, max: 256, allowBlank: true })
     });
 
     console.log('[build-upload-complete]', { buildId: build.id, gameId: build.gameId, objectKey: body.objectKey, sizeBytes: body.sizeBytes?.toString() });
@@ -634,6 +637,7 @@ router.add('POST', '/developer/builds/:buildId/uploads/complete', async (req) =>
         status: 'PROCESSING',
         artifactObjectKey: body.objectKey,
         sizeBytes: body.sizeBytes,
+        checksumSha256: body.checksumSha256 || undefined,
         uploadedAt: new Date()
       }
     });

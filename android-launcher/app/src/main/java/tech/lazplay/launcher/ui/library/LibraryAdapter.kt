@@ -66,17 +66,22 @@ class LibraryAdapter(
                 }
             } ?: false
 
+            val hasUpdate = !game.latestChecksumSha256.isNullOrBlank() &&
+                            !game.checksumSha256.isNullOrBlank() &&
+                            game.checksumSha256 != game.latestChecksumSha256
+
             binding.actionButton.text = when {
+                status == GameInstallStatus.DOWNLOADING -> "DOWNLOADING…"
+                hasUpdate -> "UPDATE"
                 isInstalled -> "PLAY"
                 status == GameInstallStatus.DOWNLOADED -> "INSTALL"
-                status == GameInstallStatus.DOWNLOADING -> "DOWNLOADING…"
                 status == GameInstallStatus.ERROR -> "RETRY"
                 else -> if (game.downloadUrl.isNullOrBlank()) "NO APK" else "DOWNLOAD"
             }
 
             binding.actionButton.isEnabled =
                 status != GameInstallStatus.DOWNLOADING &&
-                    (isInstalled || !game.downloadUrl.isNullOrBlank())
+                    (isInstalled || !game.downloadUrl.isNullOrBlank() || hasUpdate)
 
             // Show delete button if APK is cached or app is installed, and not currently downloading
             binding.deleteButton.visibility =
@@ -91,7 +96,9 @@ class LibraryAdapter(
             binding.gameStatus.setTextColor(ThemeManager.getThemeColor())
 
             binding.actionButton.setOnClickListener {
-                if (isInstalled && !game.packageName.isNullOrBlank()) {
+                if (hasUpdate) {
+                    onDownload(game)
+                } else if (isInstalled && !game.packageName.isNullOrBlank()) {
                     val intent = binding.root.context.packageManager.getLaunchIntentForPackage(game.packageName)
                     if (intent != null) {
                         intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)

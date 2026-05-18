@@ -558,6 +558,7 @@ async function publicGame(game, user = null) {
     systemRequirements: game.systemRequirements,
     entrypoint, downloadUrl,
     distributionType, usesChunkDistribution,
+    checksumSha256: build?.checksumSha256 || null,
     isOwned, hasEntitlement, isWishlisted, rating, reviewCount: reviews.length,
     status: game.status, publishedAt: game.publishedAt, createdAt: game.createdAt, updatedAt: game.updatedAt,
   };
