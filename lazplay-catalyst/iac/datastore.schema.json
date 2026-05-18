@@ -17,7 +17,8 @@
         { "name": "roles", "type": "Var Char", "length": 120, "mandatory": true },
         { "name": "status", "type": "Var Char", "length": 32, "mandatory": true },
         { "name": "avatarUrl", "type": "Text" },
-        { "name": "bio", "type": "Text" }
+        { "name": "bio", "type": "Text" },
+        { "name": "coins", "type": "Int" }
       ],
       "indexes": ["email unique", "username unique", "status search"]
     },
@@ -115,10 +116,11 @@
       "name": "cosmetics",
       "columns": [
         { "name": "id", "type": "Var Char", "length": 64, "unique": true, "mandatory": true },
-        { "name": "gameId", "type": "Var Char", "length": 64, "mandatory": true, "references": "games.id" },
+        { "name": "gameId", "type": "Var Char", "length": 64, "references": "games.id" },
         { "name": "sku", "type": "Var Char", "length": 120, "unique": true, "mandatory": true },
         { "name": "name", "type": "Var Char", "length": 180, "mandatory": true },
         { "name": "kind", "type": "Var Char", "length": 80, "mandatory": true },
+        { "name": "sourceType", "type": "Var Char", "length": 80, "mandatory": true },
         { "name": "metadataJson", "type": "Text" },
         { "name": "price", "type": "Int" },
         { "name": "status", "type": "Var Char", "length": 40, "mandatory": true }
@@ -129,13 +131,14 @@
       "name": "achievements",
       "columns": [
         { "name": "id", "type": "Var Char", "length": 64, "unique": true, "mandatory": true },
-        { "name": "gameId", "type": "Var Char", "length": 64, "mandatory": true, "references": "games.id" },
+        { "name": "gameId", "type": "Var Char", "length": 64, "references": "games.id" },
         { "name": "code", "type": "Var Char", "length": 120, "mandatory": true },
         { "name": "title", "type": "Var Char", "length": 180, "mandatory": true },
         { "name": "description", "type": "Text" },
         { "name": "iconObjectKey", "type": "Text" },
         { "name": "isHidden", "type": "Boolean" },
-        { "name": "points", "type": "Int" }
+        { "name": "points", "type": "Int" },
+        { "name": "coinReward", "type": "Int" }
       ],
       "indexes": ["gameId search", "code search"]
     },
@@ -204,6 +207,36 @@
         { "name": "occurredAt", "type": "DateTime", "mandatory": true }
       ],
       "indexes": ["eventType search", "gameId search", "userId search", "occurredAt search"]
+    },
+    {
+      "name": "user_inventory",
+      "columns": [
+        { "name": "id", "type": "Var Char", "length": 64, "unique": true, "mandatory": true },
+        { "name": "userId", "type": "Var Char", "length": 64, "mandatory": true, "references": "users.id" },
+        { "name": "cosmeticId", "type": "Var Char", "length": 64, "mandatory": true, "references": "cosmetics.id" },
+        { "name": "acquiredAt", "type": "DateTime", "mandatory": true }
+      ],
+      "indexes": ["userId search", "cosmeticId search"]
+    },
+    {
+      "name": "user_equipped_cosmetics",
+      "columns": [
+        { "name": "id", "type": "Var Char", "length": 64, "unique": true, "mandatory": true },
+        { "name": "userId", "type": "Var Char", "length": 64, "mandatory": true, "references": "users.id" },
+        { "name": "slot", "type": "Var Char", "length": 64, "mandatory": true },
+        { "name": "cosmeticId", "type": "Var Char", "length": 64, "mandatory": true, "references": "cosmetics.id" }
+      ],
+      "indexes": ["userId search", "slot search"]
+    },
+    {
+      "name": "user_achievements",
+      "columns": [
+        { "name": "id", "type": "Var Char", "length": 64, "unique": true, "mandatory": true },
+        { "name": "userId", "type": "Var Char", "length": 64, "mandatory": true, "references": "users.id" },
+        { "name": "achievementId", "type": "Var Char", "length": 64, "mandatory": true, "references": "achievements.id" },
+        { "name": "unlockedAt", "type": "DateTime", "mandatory": true }
+      ],
+      "indexes": ["userId search", "achievementId search"]
     }
   ]
 }

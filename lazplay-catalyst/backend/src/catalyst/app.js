@@ -286,6 +286,102 @@ export function createApp() {
     return ok({ order: purchase }, 201);
   });
 
+  router.add('GET', '/users/:username/profile', async (req, { db, cache }) => {
+    const { username } = req.params;
+    const { value, cache: state } = await cache.withJson('metadata', `profile:${username}`, config.cacheTtlHours.metadata, async () => {
+      const user = await db.findOne(config.tables.users, 'username', username);
+      if (!user) return null;
+      
+      const equipped = await db.list(config.tables.userEquippedCosmetics, `userId = ${sqlString(user.id)}`, 100);
+      const equippedIds = equipped.map(e => e.cosmeticId).filter(Boolean);
+      
+      let equippedCosmetics = [];
+      if (equippedIds.length > 0) {
+        equippedCosmetics = await db.query(`SELECT * FROM ${config.tables.cosmetics} WHERE id IN (${equippedIds.map(id => sqlString(id)).join(', ')})`, config.tables.cosmetics);
+      }
+      
+      return {
+        id: user.id,
+        username: user.username,
+        displayName: user.displayName,
+        avatarUrl: user.avatarUrl,
+        bio: user.bio,
+        roles: user.roles,
+        equipped: equipped.map(e => {
+            const cosmetic = equippedCosmetics.find(c => c.id === e.cosmeticId);
+            return { slot: e.slot, cosmetic };
+        })
+      };
+    });
+    if (!value) throw new HttpError(404, 'USER_NOT_FOUND', 'User profile not found');
+    return ok({ profile: value }, 200, { cache: state });
+  });
+
+  router.add('GET', '/cosmetics/platform', async (req, { db, cache }) => {
+    const { value, cache: state } = await cache.withJson('metadata', 'cosmetics:platform', config.cacheTtlHours.metadata, () =>
+      db.list(config.tables.cosmetics, `sourceType = 'platform' AND status = 'ACTIVE'`, 500)
+    );
+    return ok({ cosmetics: value }, 200, { cache: state });
+  });
+
+  router.add('GET', '/users/me/inventory', async (req, { db }) => {
+    const user = await requireUser(req, db);
+    const inventory = await db.list(config.tables.userInventory, `userId = ${sqlString(user.id)}`, 1000);
+    const equipped = await db.list(config.tables.userEquippedCosmetics, `userId = ${sqlString(user.id)}`, 100);
+    return ok({ inventory, equipped });
+  });
+
+  router.add('POST', '/users/me/equip', async (req, { db, cache }) => {
+    const user = await requireUser(req, db);
+    requireFields(req.body, ['slot', 'cosmeticId']);
+    const { slot, cosmeticId } = req.body;
+    
+    // Check ownership
+    const owns = await db.list(config.tables.userInventory, `userId = ${sqlString(user.id)} AND cosmeticId = ${sqlString(cosmeticId)}`, 1);
+    if (owns.length === 0) throw new HttpError(403, 'NOT_OWNED', 'You do not own this cosmetic');
+    
+    const existing = await db.findOne(config.tables.userEquippedCosmetics, 'userId', user.id); // Wait, this logic needs refinement, but we delete existing slot first
+    await db.query(`DELETE FROM ${config.tables.userEquippedCosmetics} WHERE userId = ${sqlString(user.id)} AND slot = ${sqlString(slot)}`, config.tables.userEquippedCosmetics);
+    
+    const equipped = await db.insert(config.tables.userEquippedCosmetics, {
+      id: createId('uec'),
+      userId: user.id,
+      slot: slot,
+      cosmeticId: cosmeticId
+    });
+    
+    await cache.deleteKey('metadata', `profile:${user.username}`);
+    return ok({ equipped });
+  });
+
+  router.add('POST', '/cosmetics/:sku/purchase', async (req, { db, cache }) => {
+    const user = await requireUser(req, db);
+    const cosmetic = await db.findOne(config.tables.cosmetics, 'sku', req.params.sku);
+    if (!cosmetic) throw new HttpError(404, 'COSMETIC_NOT_FOUND', 'Cosmetic not found');
+    if (cosmetic.status !== 'ACTIVE') throw new HttpError(400, 'UNAVAILABLE', 'Cosmetic is not active');
+    
+    const owns = await db.list(config.tables.userInventory, `userId = ${sqlString(user.id)} AND cosmeticId = ${sqlString(cosmetic.id)}`, 1);
+    if (owns.length > 0) throw new HttpError(409, 'ALREADY_OWNED', 'You already own this cosmetic');
+    
+    const price = Number(cosmetic.price || 0);
+    const currentCoins = Number(user.coins || 0);
+    
+    if (currentCoins < price) {
+        throw new HttpError(402, 'INSUFFICIENT_COINS', 'Not enough coins to purchase this cosmetic');
+    }
+    
+    // Deduct coins and add to inventory
+    await db.update(config.tables.users, user.id, { coins: currentCoins - price });
+    const inventory = await db.insert(config.tables.userInventory, {
+        id: createId('inv'),
+        userId: user.id,
+        cosmeticId: cosmetic.id,
+        acquiredAt: new Date().toISOString()
+    });
+    
+    return ok({ inventory, remainingCoins: currentCoins - price });
+  });
+
   router.add('GET', '/admin/audit-logs', async (req, { db }) => {
     await requireUser(req, db, ['ADMIN']);
     return ok({ logs: await db.list(config.tables.adminLogs, '', 100) });

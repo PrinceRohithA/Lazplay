@@ -68,7 +68,10 @@ export const config = {
     reports: envValue('LAZPLAY_TABLE_REPORTS', 'TABLE_REPORTS') || 'reports',
     adminLogs: envValue('LAZPLAY_TABLE_ADMIN_LOGS', 'TABLE_ADMIN_LOGS') || 'admin_logs',
     launcherSessions: envValue('LAZPLAY_TABLE_LAUNCHER_SESSIONS', 'TABLE_LAUNCHER_SESSIONS') || 'launcher_sessions',
-    analyticsEvents: envValue('LAZPLAY_TABLE_ANALYTICS_EVENTS', 'TABLE_ANALYTICS_EVENTS') || 'analytics_events'
+    analyticsEvents: envValue('LAZPLAY_TABLE_ANALYTICS_EVENTS', 'TABLE_ANALYTICS_EVENTS') || 'analytics_events',
+    userInventory: envValue('LAZPLAY_TABLE_USER_INVENTORY', 'TABLE_USER_INVENTORY') || 'user_inventory',
+    userEquippedCosmetics: envValue('LAZPLAY_TABLE_USER_EQUIPPED_COSMETICS', 'TABLE_USER_EQUIPPED_COSMETICS') || 'user_equipped_cosmetics',
+    userAchievements: envValue('LAZPLAY_TABLE_USER_ACHIEVEMENTS', 'TABLE_USER_ACHIEVEMENTS') || 'user_achievements'
   }
 };
 

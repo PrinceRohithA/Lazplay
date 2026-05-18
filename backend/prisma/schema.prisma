@@ -8,54 +8,58 @@ datasource db {
 }
 
 model User {
-  id           String   @id
-  username     String   @unique
-  email        String   @unique
+  id           String    @id
+  username     String    @unique
+  email        String    @unique
   passwordHash String
   displayName  String
   bio          String?
   avatarUrl    String?
   roles        String[]
-  status       String   @default("ACTIVE")
+  status       String    @default("ACTIVE")
   banReason    String?
   banExpiresAt DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  coins        Int       @default(0)
 
-  refreshSessions  RefreshSession[]
-  developerProfile DeveloperProfile?
-  libraryItems     LibraryItem[]
-  wishlistItems    WishlistItem[]
-  entitlements     Entitlement[]
-  orders           Order[]
-  reviews          GameReview[]
-  hostedInstances  GameInstance[]
-  instancePlayers  InstancePlayer[]
-  notifications    Notification[]
-  auditLogs        AuditLog[]
-  playSessions     GamePlaySession[]
+  refreshSessions   RefreshSession[]
+  developerProfile  DeveloperProfile?
+  libraryItems      LibraryItem[]
+  wishlistItems     WishlistItem[]
+  entitlements      Entitlement[]
+  orders            Order[]
+  reviews           GameReview[]
+  hostedInstances   GameInstance[]
+  instancePlayers   InstancePlayer[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+  playSessions      GamePlaySession[]
+  inventory         UserInventory[]
+  equippedCosmetics UserEquippedCosmetic[]
+  achievements      UserAchievement[]
 }
 
 model RefreshSession {
-  id             String   @id
+  id             String    @id
   userId         String
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  refreshTokenId String   @unique
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenId String    @unique
   expiresAt      DateTime
   revokedAt      DateTime?
-  createdAt      DateTime @default(now())
+  createdAt      DateTime  @default(now())
 }
 
 model DeveloperProfile {
-  id                 String  @id
-  userId             String  @unique
-  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                 String   @id
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   displayName        String
   bio                String?
   website            String?
   supportEmail       String?
-  verificationStatus String  @default("PENDING")
-  payoutStatus       String  @default("INACTIVE")
+  verificationStatus String   @default("PENDING")
+  payoutStatus       String   @default("INACTIVE")
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -63,24 +67,24 @@ model DeveloperProfile {
 }
 
 model Game {
-  id                 String   @id
+  id                 String           @id
   developerId        String
   developer          DeveloperProfile @relation(fields: [developerId], references: [id])
-  slug               String   @unique
+  slug               String           @unique
   title              String
   description        String?
   tagline            String?
-  price              Int      @default(0)
-  currency           String   @default("INR")
-  priceType          String   @default("FREE")
+  price              Int              @default(0)
+  currency           String           @default("INR")
+  priceType          String           @default("FREE")
   pricingUpdatedAt   DateTime?
   releaseDate        String?
   publisher          String?
   genres             String[]
   tags               String[]
   platforms          String[]
-  status             String   @default("DRAFT")
-  featured           Boolean  @default(false)
+  status             String           @default("DRAFT")
+  featured           Boolean          @default(false)
   coverUrl           String?
   coverObjectKey     String?
   heroImageUrl       String?
@@ -93,22 +97,24 @@ model Game {
   hardwareSpecs      Json?
   systemRequirements Json?
   rating             Float?
-  reviewCount        Int      @default(0)
+  reviewCount        Int              @default(0)
   submittedAt        DateTime?
   publishedAt        DateTime?
   statusReason       String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 
-  media        GameMedia[]
-  builds       GameBuild[]
-  deployments  Deployment[]
-  reviews      GameReview[]
-  libraryItems LibraryItem[]
+  media         GameMedia[]
+  builds        GameBuild[]
+  deployments   Deployment[]
+  reviews       GameReview[]
+  libraryItems  LibraryItem[]
   wishlistItems WishlistItem[]
-  entitlements Entitlement[]
-  instances    GameInstance[]
-  playSessions GamePlaySession[]
+  entitlements  Entitlement[]
+  instances     GameInstance[]
+  playSessions  GamePlaySession[]
+  cosmetics     Cosmetic[]
+  achievements  Achievement[]
 }
 
 model GameMedia {
@@ -123,24 +129,24 @@ model GameMedia {
 }
 
 model GameBuild {
-  id               String   @id
-  gameId           String
-  game             Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  version          String
-  platform         String
-  runtime          String?
-  entrypoint       String?
-  changelog        String?
-  status           String   @default("WAITING_FOR_UPLOAD")
-  distributionType String   @default("ZIP")
+  id                String    @id
+  gameId            String
+  game              Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  version           String
+  platform          String
+  runtime           String?
+  entrypoint        String?
+  changelog         String?
+  status            String    @default("WAITING_FOR_UPLOAD")
+  distributionType  String    @default("ZIP")
   artifactObjectKey String?
   manifestObjectKey String?
-  sizeBytes        BigInt?
-  checksumSha256   String?
-  scanStatus       String?
-  scanMessage      String?
-  uploadedAt       DateTime?
-  createdAt        DateTime @default(now())
+  sizeBytes         BigInt?
+  checksumSha256    String?
+  scanStatus        String?
+  scanMessage       String?
+  uploadedAt        DateTime?
+  createdAt         DateTime  @default(now())
 
   deployments Deployment[]
   manifest    BuildManifest?
@@ -148,18 +154,18 @@ model GameBuild {
 }
 
 model ContentChunk {
-  hash       String   @id
-  sizeBytes  BigInt
-  objectKey  String   @unique
-  refCount   Int      @default(0)
-  createdAt  DateTime @default(now())
+  hash      String   @id
+  sizeBytes BigInt
+  objectKey String   @unique
+  refCount  Int      @default(0)
+  createdAt DateTime @default(now())
 
   buildChunks BuildChunk[]
 }
 
 model BuildChunk {
   buildId String
-  build   GameBuild @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  build   GameBuild    @relation(fields: [buildId], references: [id], onDelete: Cascade)
   hash    String
   chunk   ContentChunk @relation(fields: [hash], references: [hash], onDelete: Restrict)
 
@@ -168,15 +174,15 @@ model BuildChunk {
 }
 
 model BuildManifest {
-  id          String   @id
-  buildId     String   @unique
-  build       GameBuild @relation(fields: [buildId], references: [id], onDelete: Cascade)
-  version     String
-  manifest    Json
-  chunkCount  Int
-  totalBytes  BigInt
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String    @id
+  buildId    String    @unique
+  build      GameBuild @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  version    String
+  manifest   Json
+  chunkCount Int
+  totalBytes BigInt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
 
 model Deployment {
@@ -219,15 +225,15 @@ model GameReview {
 }
 
 model GamePlaySession {
-  id               String   @id
-  gameId           String
-  game             Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  userId           String
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  startedAt        DateTime @default(now())
-  endedAt          DateTime?
-  durationSeconds  Int?
-  createdAt        DateTime @default(now())
+  id              String    @id
+  gameId          String
+  game            Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startedAt       DateTime  @default(now())
+  endedAt         DateTime?
+  durationSeconds Int?
+  createdAt       DateTime  @default(now())
 
   @@index([gameId, startedAt])
   @@index([userId, startedAt])
@@ -407,9 +413,77 @@ model Otp {
   id        String   @id
   email     String
   code      String
-  purpose   String   // VERIFY_EMAIL, RESET_PASSWORD
+  purpose   String // VERIFY_EMAIL, RESET_PASSWORD
   expiresAt DateTime
   createdAt DateTime @default(now())
 
   @@index([email, purpose])
+}
+
+model Cosmetic {
+  id         String   @id
+  gameId     String?
+  game       Game?    @relation(fields: [gameId], references: [id])
+  sku        String   @unique
+  name       String
+  kind       String
+  sourceType String
+  metadata   Json?
+  price      Int      @default(0)
+  status     String   @default("ACTIVE")
+  createdAt  DateTime @default(now())
+
+  inventory         UserInventory[]
+  equippedCosmetics UserEquippedCosmetic[]
+}
+
+model Achievement {
+  id            String   @id
+  gameId        String?
+  game          Game?    @relation(fields: [gameId], references: [id])
+  code          String
+  title         String
+  description   String?
+  iconObjectKey String?
+  isHidden      Boolean  @default(false)
+  points        Int      @default(0)
+  coinReward    Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  userAchievements UserAchievement[]
+
+  @@unique([gameId, code])
+}
+
+model UserInventory {
+  id         String   @id
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cosmeticId String
+  cosmetic   Cosmetic @relation(fields: [cosmeticId], references: [id], onDelete: Cascade)
+  acquiredAt DateTime @default(now())
+
+  @@unique([userId, cosmeticId])
+}
+
+model UserEquippedCosmetic {
+  id         String   @id
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slot       String
+  cosmeticId String
+  cosmetic   Cosmetic @relation(fields: [cosmeticId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, slot])
+}
+
+model UserAchievement {
+  id            String      @id
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  unlockedAt    DateTime    @default(now())
+
+  @@unique([userId, achievementId])
 }

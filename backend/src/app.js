@@ -23,6 +23,8 @@ import { registerAdminRoutes } from './routes/admin.js';
 import { registerNotificationsRoutes } from './routes/notifications.js';
 import { registerSystemRoutes } from './routes/system.js';
 import { registerChunkRoutes } from './routes/chunks.js';
+import { registerCosmeticsRoutes } from './routes/cosmetics.js';
+import { registerUsersRoutes } from './routes/users.js';
 
 
 const config = {
@@ -1138,6 +1140,8 @@ function registerRoutes(router) {
   registerNotificationsRoutes(router, ctx);
   registerSystemRoutes(router, ctx);
   registerChunkRoutes(router, ctx);
+  registerCosmeticsRoutes(router, ctx);
+  registerUsersRoutes(router, ctx);
 }
 
 export async function createApp() {
