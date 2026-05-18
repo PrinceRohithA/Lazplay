@@ -91,6 +91,12 @@ class LazPlayJsBridge(
                 window.electron.launchGame = function(id) {
                   window.LazPlayAndroid.launchGame(id);
                 };
+                window.electron.invoke = function(channel) {
+                  if (channel === 'get-access-token') {
+                    return Promise.resolve(window.LazPlayAndroid.getAccessToken());
+                  }
+                  return Promise.reject(new Error('Unsupported channel: ' + channel));
+                };
                 window.electron.isLauncher = true;
               }
             })();

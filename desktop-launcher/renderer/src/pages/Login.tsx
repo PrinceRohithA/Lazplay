@@ -57,8 +57,8 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 px-1">
-                SYSTEM_IDENTIFIER
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5 px-1">
+                Username or Email
               </label>
               <div className="relative group">
                 <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-brand-500 transition-colors">
@@ -66,7 +66,7 @@ export default function Login() {
                 </div>
                 <input
                   type="text"
-                  placeholder="USERNAME OR EMAIL"
+                  placeholder="Enter your username or email"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   disabled={loading}
@@ -77,8 +77,8 @@ export default function Login() {
             </div>
 
             <div>
-              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 px-1">
-                ACCESS_DECRYPT_KEY
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5 px-1">
+                Password
               </label>
               <div className="relative group">
                 <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-brand-500 transition-colors">
@@ -86,7 +86,7 @@ export default function Login() {
                 </div>
                 <input
                   type="password"
-                  placeholder="PASSWORD"
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
@@ -108,23 +108,18 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="relative w-full py-3.5 px-4 bg-brand-500 hover:bg-brand-400 disabled:bg-brand-500/50 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 select-none"
+              className="relative w-full py-3.5 px-4 bg-brand-500 hover:bg-brand-400 disabled:bg-brand-500/50 text-slate-950 rounded-xl font-bold text-sm shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 select-none"
             >
               {loading ? (
                 <>
                   <Loader2 size={16} className="animate-spin" />
-                  <span>AUTHORIZING_SESSION...</span>
+                  <span>Signing In...</span>
                 </>
               ) : (
-                <span>INITIATE_OS_ACCESS</span>
+                <span>Sign In</span>
               )}
             </button>
           </form>
-        </div>
-
-        {/* Footer Security Note */}
-        <div className="mt-8 text-center text-[10px] text-slate-600 font-bold uppercase tracking-wider select-none">
-          SECURE ENCRYPTED CHANNEL // VER 1.0.0
         </div>
       </div>
     </div>

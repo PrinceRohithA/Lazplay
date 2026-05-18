@@ -88,6 +88,12 @@ export function setupIpcHandlers(
     return { success: true };
   });
 
+  // Retrieve security authorization token
+  ipcMain.handle("get-access-token", async () => {
+    const { token } = db.getTokens();
+    return token || null;
+  });
+
   // Game Operations
   ipcMain.handle("install-game", async (event, gameId: string, options: any) => {
     log.info(`Install requested for game: ${gameId}`, options);
@@ -274,9 +280,6 @@ export function setupIpcHandlers(
       const ownedItems: any[] = libData.data || libData.items || (Array.isArray(libData) ? libData : []);
       log.info(`Library items count: ${ownedItems.length}`);
 
-      // Each library item: game details may be nested under .game, or flat at top level
-      const WEB_PLATFORMS = new Set(["WEB", "BROWSER", "HTML5"]);
-
       const ownedGames = ownedItems
         .map((entry: any) => {
           const game = entry.game || entry;
@@ -297,10 +300,36 @@ export function setupIpcHandlers(
             isOwned: true,
           };
         })
-        // Exclude games that are ONLY playable in a browser — they don't need the launcher
         .filter((g: any) => {
-          if (g.platforms.length === 0) return true; // unknown platform — include by default
-          return g.platforms.some((p: string) => !WEB_PLATFORMS.has(p));
+          if (g.platforms.length === 0) return true; // unknown/unspecified — include by default
+          
+          // Exclude mobile-only / Android-only games on desktop launcher
+          const MOBILE_ONLY = new Set(["ANDROID", "IOS", "MOBILE"]);
+          if (g.platforms.every((p: string) => MOBILE_ONLY.has(p))) {
+            return false;
+          }
+
+          // Exclude browser-only games
+          const WEB_PLATFORMS = new Set(["WEB", "BROWSER", "HTML5"]);
+          if (g.platforms.every((p: string) => WEB_PLATFORMS.has(p))) {
+            return false;
+          }
+
+          // Ensure OS platform compatibility
+          if (process.platform === "win32") {
+            return g.platforms.some((p: string) => p === "WINDOWS" || p === "PC" || p === "DESKTOP" || p === "WIN" || p === "WIN32");
+          }
+          
+          if (process.platform === "linux") {
+            // Linux launcher supports native Linux games OR Windows games via Proton compatibility
+            return g.platforms.some((p: string) => p === "LINUX" || p === "WINDOWS" || p === "PC" || p === "DESKTOP" || p === "WIN" || p === "WIN32");
+          }
+
+          if (process.platform === "darwin") {
+            return g.platforms.some((p: string) => p === "MAC" || p === "OSX" || p === "MACOS" || p === "PC" || p === "DESKTOP");
+          }
+
+          return true;
         });
 
       // Synchronize SQLite cover/banner images for any locally registered games

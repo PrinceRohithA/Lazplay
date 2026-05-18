@@ -148,6 +148,10 @@ export const useLauncherStore = create<LauncherStore>((set, get) => ({
               entrypoint: item.entrypoint,
               coverUrl: item.coverUrl,
               bannerUrl: item.bannerUrl,
+              platforms: item.platforms || [],
+              playtime: item.playtime || 0,
+              size: item.size || 0,
+              lastPlayed: item.lastPlayed || undefined,
             };
           } else {
             newGames[itemId] = {
@@ -159,6 +163,10 @@ export const useLauncherStore = create<LauncherStore>((set, get) => ({
               entrypoint: item.entrypoint,
               coverUrl: item.coverUrl,
               bannerUrl: item.bannerUrl,
+              platforms: item.platforms || newGames[itemId].platforms || [],
+              playtime: item.playtime || newGames[itemId].playtime || 0,
+              size: item.size || newGames[itemId].size || 0,
+              lastPlayed: item.lastPlayed || newGames[itemId].lastPlayed,
             };
           }
         });

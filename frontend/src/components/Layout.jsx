@@ -13,8 +13,20 @@ export default function Layout() {
   const isInsideLauncher = typeof window !== 'undefined' && !!window.electron;
 
   useEffect(() => {
-    authApi.me()
-      .then(res => {
+    const initAuth = async () => {
+      if (window.electron && typeof window.electron.invoke === 'function') {
+        try {
+          const launcherToken = await window.electron.invoke('get-access-token');
+          if (launcherToken) {
+            localStorage.setItem('accessToken', launcherToken);
+          }
+        } catch (e) {
+          console.error("Failed to sync token from launcher:", e);
+        }
+      }
+
+      try {
+        const res = await authApi.me();
         setUser(res.data);
         // Sync session with native launcher if running inside Electron
         if (window.electron && window.electron.syncSession) {
@@ -24,8 +36,12 @@ export default function Layout() {
             window.electron.syncSession(access, refresh);
           }
         }
-      })
-      .catch(() => setUser(null));
+      } catch (err) {
+        setUser(null);
+      }
+    };
+
+    initAuth();
   }, []);
 
   const navItems = useMemo(() => {

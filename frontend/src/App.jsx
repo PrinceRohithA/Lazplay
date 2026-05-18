@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AdminMainframe from './pages/AdminMainframe';
 import SystemLoginCyberEdition from './pages/SystemLoginCyberEdition';
 import DeveloperWorkspace from './pages/DeveloperWorkspace';
@@ -13,12 +13,14 @@ import Options from './pages/Options';
 import LauncherDownloadPage from './pages/LauncherDownloadPage';
 import Layout from './components/Layout';
 
+const isInsideLauncher = typeof window !== 'undefined' && !!window.electron;
+
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<SystemLoginCyberEdition />} />
-        <Route path="/signup" element={<UserRegistrationCyberEdition />} />
+        <Route path="/login" element={isInsideLauncher ? <Navigate to="/" replace /> : <SystemLoginCyberEdition />} />
+        <Route path="/signup" element={isInsideLauncher ? <Navigate to="/" replace /> : <UserRegistrationCyberEdition />} />
         <Route element={<Layout />}>
           <Route index element={<PlayerDiscoveryHub />} />
           <Route path="game" element={<GameDetailsSteamStyleLayout />} />

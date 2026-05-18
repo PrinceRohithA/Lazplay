@@ -686,7 +686,7 @@ export default function DeveloperConsole() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="bg-slate-950 border border-slate-800/80 p-5 rounded-xl flex items-center justify-between">
                 <div>
-                  <span className="block text-[10px] font-mono uppercase text-slate-500 mb-1">TOTAL_PROJECTS</span>
+                  <span className="block text-[10px] font-mono uppercase text-slate-500 mb-1">Total Projects</span>
                   <span className="text-3xl font-black text-slate-100">{games.length}</span>
                 </div>
                 <div className="w-12 h-12 rounded-lg bg-brand-500/10 flex items-center justify-center text-brand-500">
@@ -696,7 +696,7 @@ export default function DeveloperConsole() {
 
               <div className="bg-slate-950 border border-slate-800/80 p-5 rounded-xl flex items-center justify-between">
                 <div>
-                  <span className="block text-[10px] font-mono uppercase text-slate-500 mb-1">GRID_STATUS</span>
+                  <span className="block text-[10px] font-mono uppercase text-slate-500 mb-1">System Status</span>
                   <span className="text-3xl font-black text-emerald-400">ONLINE</span>
                 </div>
                 <div className="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
@@ -706,7 +706,7 @@ export default function DeveloperConsole() {
 
               <div className="bg-slate-950 border border-slate-800/80 p-5 rounded-xl flex items-center justify-between">
                 <div>
-                  <span className="block text-[10px] font-mono uppercase text-slate-500 mb-1">CURRENCY_ROUTING</span>
+                  <span className="block text-[10px] font-mono uppercase text-slate-500 mb-1">Currency</span>
                   <span className="text-3xl font-black text-brand-500">INR (₹)</span>
                 </div>
                 <div className="w-12 h-12 rounded-lg bg-brand-500/10 flex items-center justify-center text-brand-500">
@@ -720,7 +720,7 @@ export default function DeveloperConsole() {
                   className="w-full bg-brand-600 hover:bg-brand-500 transition-all font-mono text-xs font-bold py-3 rounded-lg flex items-center justify-center gap-2 text-white shadow-[0_0_15px_rgba(59,130,246,0.2)]"
                 >
                   <Plus size={16} />
-                  <span>CREATE_NEW_PROJECT</span>
+                  <span>Create New Project</span>
                 </button>
               </div>
             </div>
@@ -728,19 +728,19 @@ export default function DeveloperConsole() {
             {/* Games Listing Workspace */}
             <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl overflow-hidden shadow-xl">
               <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
-                <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-slate-400">PROJECTS_MANIFEST</h3>
-                <span className="text-[10px] font-mono text-slate-500 uppercase">{games.length} ACTIVE_REGISTERS</span>
+                <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-slate-400">Projects List</h3>
+                <span className="text-[10px] font-mono text-slate-500 uppercase">{games.length} Active Projects</span>
               </div>
 
               {games.length === 0 ? (
                 <div className="p-16 text-center border-t border-slate-900">
                   <UploadCloud className="text-slate-700 mx-auto mb-4 opacity-50" size={48} />
-                  <p className="text-slate-400 font-mono text-sm uppercase">NO_ACTIVE_PROJECTS_REGISTERED</p>
+                  <p className="text-slate-400 font-mono text-sm uppercase">No Projects Found</p>
                   <button
                     onClick={enterCreateMode}
                     className="mt-4 px-4 py-2 bg-slate-900 border border-slate-800 hover:bg-slate-800 transition-colors font-mono text-xs text-brand-500 font-bold"
                   >
-                    &gt; INITIATE_FIRST_PROJECT
+                    &gt; Create First Project
                   </button>
                 </div>
               ) : (
@@ -785,7 +785,7 @@ export default function DeveloperConsole() {
                           onClick={() => enterDeployMode(game)}
                           className="px-4 py-2 rounded bg-brand-600/10 border border-brand-500/20 hover:bg-brand-600 hover:text-white transition-all text-xs font-mono font-bold text-brand-500 flex items-center gap-1.5"
                         >
-                          <span>INSPECT_&_DEPLOY</span>
+                          <span>Manage Project</span>
                           <ArrowRight size={14} />
                         </button>
                       </div>
@@ -885,13 +885,13 @@ export default function DeveloperConsole() {
               <div className="lg:col-span-7 bg-slate-950/80 border border-slate-800/80 rounded-xl p-6 space-y-6">
                 <div className="border-b border-slate-800 pb-3">
                   <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-slate-400">
-                    MANIFEST_SPECIFICATIONS
+                    Project Details
                   </h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-mono uppercase text-slate-500">_PROJECT_TITLE</label>
+                    <label className="block text-[10px] font-mono uppercase text-slate-500">Project Title</label>
                     <input
                       placeholder="e.g. CyberRun 2099"
                       value={form.title}
@@ -901,7 +901,7 @@ export default function DeveloperConsole() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-mono uppercase text-slate-500">_PROJECT_VERSION</label>
+                    <label className="block text-[10px] font-mono uppercase text-slate-500">Version</label>
                     <input
                       placeholder="e.g. 1.0.0"
                       value={form.version}
@@ -913,7 +913,7 @@ export default function DeveloperConsole() {
 
 
                   <div className="space-y-2 col-span-full">
-                    <label className="block text-[10px] font-mono uppercase text-slate-500">_DESCRIPTION_SYNOPSIS</label>
+                    <label className="block text-[10px] font-mono uppercase text-slate-500">Description</label>
                     <textarea
                       placeholder="Input description details here..."
                       value={form.description}
@@ -927,13 +927,13 @@ export default function DeveloperConsole() {
                 {/* Specifications Matrix */}
                 <div className="space-y-4">
                   <span className="block text-[10px] font-mono uppercase text-slate-500 border-b border-slate-800/40 pb-1.5">
-                    HARDWARE_REQUIREMENTS
+                    Hardware Requirements
                   </span>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Minimum Specs */}
                     <div className="bg-slate-900/50 p-4 border border-slate-800/60 rounded-lg space-y-3">
-                      <span className="block text-[9px] font-mono uppercase text-brand-500">MINIMUM_SPECS</span>
+                      <span className="block text-[9px] font-mono uppercase text-brand-500">Minimum Specs</span>
                       {["os", "processor", "memory", "graphics", "storage"].map((f) => (
                         <div key={f} className="space-y-1">
                           <label className="block text-[8px] font-mono uppercase text-slate-500">{f}</label>
@@ -953,7 +953,7 @@ export default function DeveloperConsole() {
 
                     {/* Recommended Specs */}
                     <div className="bg-slate-900/50 p-4 border border-slate-800/60 rounded-lg space-y-3">
-                      <span className="block text-[9px] font-mono uppercase text-emerald-400">RECOMMENDED_SPECS</span>
+                      <span className="block text-[9px] font-mono uppercase text-emerald-400">Recommended Specs</span>
                       {["os", "processor", "memory", "graphics", "storage"].map((f) => (
                         <div key={f} className="space-y-1">
                           <label className="block text-[8px] font-mono uppercase text-slate-500">{f}</label>
@@ -981,13 +981,13 @@ export default function DeveloperConsole() {
                 <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-6 space-y-5">
                   <div className="border-b border-slate-800 pb-3">
                     <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-slate-400">
-                      GRID_INTEGRATION
+                      Platform Integration
                     </h3>
                   </div>
 
                   {/* Platforms Supported */}
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-mono uppercase text-slate-500">_HARDWARE_TARGETS</label>
+                    <label className="block text-[10px] font-mono uppercase text-slate-500">Hardware Targets</label>
                     <div className="grid grid-cols-2 gap-2">
                       {HARDWARE_OPTIONS.map((opt) => (
                         <button
@@ -1097,16 +1097,16 @@ export default function DeveloperConsole() {
                 <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-6 space-y-4">
                   <div className="border-b border-slate-800 pb-3">
                     <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-slate-400">
-                      ASSET_STAGING_CELLS
+                      Media Assets
                     </h3>
                   </div>
 
                   {/* Cover image file picker */}
                   <div className="space-y-1.5">
-                    <label className="block text-[9px] font-mono uppercase text-slate-500">_PROJECT_COVER_ART (2:3)</label>
+                    <label className="block text-[9px] font-mono uppercase text-slate-500">Project Cover Art (2:3)</label>
                     <div className="flex items-center gap-3">
                       <label className="flex-1 bg-slate-900 border border-slate-800 hover:border-brand-500 cursor-pointer p-3 rounded-lg flex items-center justify-between text-xs font-mono transition-all text-slate-400">
-                        <span className="truncate">{coverFile ? coverFile.name : "CHOOSE_IMAGE_MANIFEST..."}</span>
+                        <span className="truncate">{coverFile ? coverFile.name : "Choose Cover Image..."}</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -1124,10 +1124,10 @@ export default function DeveloperConsole() {
 
                   {/* Banner Image file picker */}
                   <div className="space-y-1.5">
-                    <label className="block text-[9px] font-mono uppercase text-slate-500">_HERO_BANNER_ART (16:9)</label>
+                    <label className="block text-[9px] font-mono uppercase text-slate-500">Hero Banner Art (16:9)</label>
                     <div className="flex items-center gap-3">
                       <label className="flex-1 bg-slate-900 border border-slate-800 hover:border-brand-500 cursor-pointer p-3 rounded-lg flex items-center justify-between text-xs font-mono transition-all text-slate-400">
-                        <span className="truncate">{bannerFile ? bannerFile.name : "CHOOSE_BANNER_MANIFEST..."}</span>
+                        <span className="truncate">{bannerFile ? bannerFile.name : "Choose Banner Image..."}</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -1145,10 +1145,10 @@ export default function DeveloperConsole() {
 
                   {/* Trailer Video file picker */}
                   <div className="space-y-1.5">
-                    <label className="block text-[9px] font-mono uppercase text-slate-500">_TRAILER_VIDEO (.MP4)</label>
+                    <label className="block text-[9px] font-mono uppercase text-slate-500">Trailer Video (.MP4)</label>
                     <div className="flex items-center gap-3">
                       <label className="flex-1 bg-slate-900 border border-slate-800 hover:border-brand-500 cursor-pointer p-3 rounded-lg flex items-center justify-between text-xs font-mono transition-all text-slate-400">
-                        <span className="truncate">{trailerFile ? trailerFile.name : "CHOOSE_VIDEO_MANIFEST..."}</span>
+                        <span className="truncate">{trailerFile ? trailerFile.name : "Choose Video File..."}</span>
                         <input
                           type="file"
                           accept="video/mp4"
@@ -1169,7 +1169,7 @@ export default function DeveloperConsole() {
                     <div className="space-y-4 pt-4 mt-4 border-t border-slate-800/60">
                       <h4 className="text-[10px] font-mono uppercase text-brand-500 font-bold tracking-widest flex items-center gap-2">
                         <TerminalIcon size={12} className="animate-pulse" />
-                        _TARGET_PLATFORMS_BUILDS_AND_ENTRYPOINTS
+                        Target Platforms & Builds
                       </h4>
                       <div className="space-y-3.5">
                         {form.hardwareSpecs.map((platform) => {
@@ -1184,7 +1184,7 @@ export default function DeveloperConsole() {
                                     {platform}
                                   </span>
                                   <span className="text-[8px] font-mono text-slate-400 uppercase tracking-wide">
-                                    ENTRYPOINT (E.G. {platform === "WEB" ? "INDEX.HTML" : "GAME.EXE"})
+                                    Entrypoint
                                   </span>
                                 </div>
                                 <div className="flex items-center bg-slate-950 border border-slate-800 focus-within:border-brand-500 transition-all p-2.5 rounded-lg">
@@ -1211,7 +1211,7 @@ export default function DeveloperConsole() {
                               {/* Right Column: Platform Directory Picker */}
                               <div className="space-y-1.5">
                                 <span className="block text-[8px] font-mono text-slate-400 uppercase tracking-wide">
-                                  {platform} BINARY FOLDER DIRECTORY
+                                  Build Directory
                                 </span>
                                 <div className="flex items-center gap-2">
                                   <button
@@ -1230,7 +1230,7 @@ export default function DeveloperConsole() {
                                     className="flex-1 bg-slate-950 border border-emerald-500/20 hover:border-emerald-500 cursor-pointer p-2.5 rounded-lg flex items-center justify-between text-[10px] font-mono transition-all text-emerald-500/70 text-left"
                                   >
                                     <span className="truncate font-bold text-emerald-500/90 max-w-[85%]">
-                                      {binaryPath ? binaryPath : `CHOOSE_${platform}_DIRECTORY...`}
+                                      {binaryPath ? binaryPath : `Choose Directory...`}
                                     </span>
                                   </button>
                                   {binaryPath && (
@@ -1261,20 +1261,48 @@ export default function DeveloperConsole() {
                 <button
                   onClick={handleExecuteDeployment}
                   disabled={isDeploying || !form.title}
-                  className="w-full bg-brand-600 hover:bg-brand-500 disabled:opacity-40 active:scale-[0.98] transition-all py-4 rounded-xl text-white font-mono text-sm font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(59,130,246,0.3)]"
+                  className="w-full bg-brand-600 hover:bg-brand-500 disabled:opacity-40 active:scale-[0.98] transition-all py-4 rounded-xl text-slate-950 font-bold text-sm tracking-wider flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(0,246,246,0.2)]"
                 >
                   {isDeploying ? (
                     <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>EXECUTING_DEPLOYMENT_CONTAINER...</span>
+                      <div className="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></div>
+                      <span>Deploying Project...</span>
                     </>
                   ) : (
                     <>
                       <UploadCloud size={18} />
-                      <span>DECRYPT_&_DEPLOY_PRODUCTION</span>
+                      <span>{selectedGame ? "Update Project" : "Deploy Project"}</span>
                     </>
                   )}
                 </button>
+
+                {/* Terminate Project Button */}
+                {selectedGame && (
+                  <button
+                    onClick={async () => {
+                      if (window.confirm("Are you sure you want to terminate this project? This will permanently delete the game, its builds, and all assets.")) {
+                        try {
+                          setIsDeploying(true);
+                          await axios.delete(`https://play.lazplay.tech/api/v1/developer/games/${selectedGame.id}`, {
+                            headers: { Authorization: `Bearer ${token}` }
+                          });
+                          alert("Project successfully terminated.");
+                          fetchDeveloperGames(token);
+                          setView("dashboard");
+                        } catch (err: any) {
+                          alert(err.response?.data?.message || "Failed to terminate project.");
+                        } finally {
+                          setIsDeploying(false);
+                        }
+                      }
+                    }}
+                    disabled={isDeploying}
+                    className="w-full mt-4 bg-transparent border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-all py-3 rounded-xl font-bold text-xs tracking-wider flex items-center justify-center gap-2"
+                  >
+                    <Trash2 size={16} />
+                    <span>Terminate Project</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
