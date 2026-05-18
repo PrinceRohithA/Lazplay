@@ -10,6 +10,7 @@ export default function Layout() {
     return false;
   });
   const [user, setUser] = useState(null);
+  const isInsideLauncher = typeof window !== 'undefined' && !!window.electron;
 
   useEffect(() => {
     authApi.me()
@@ -28,7 +29,6 @@ export default function Layout() {
   }, []);
 
   const navItems = useMemo(() => {
-    const isInsideLauncher = !!window.electron;
     const baseItems = [
       { name: 'START', path: '/', icon: 'play_arrow' },
       { name: 'GAMES', path: '/games', icon: 'sports_esports' },
@@ -47,7 +47,7 @@ export default function Layout() {
       if (!item.roles) return true;
       return item.roles.some(r => userRoles.includes(r.toUpperCase()));
     });
-  }, [user]);
+  }, [user, isInsideLauncher]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col grid-glow-bg">
@@ -83,20 +83,24 @@ export default function Layout() {
         </div>
 
         <div className="flex items-center gap-2 md:gap-3 h-full">
-          <Link 
-            to="/download-launcher" 
-            className="hidden sm:flex w-10 h-10 hover:text-primary-fixed hover:bg-surface-variant transition-colors items-center justify-center border-2 border-transparent hover:border-primary-container group relative"
-            title="DOWNLOAD_LAUNCHER"
-          >
-            <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 0"}}>download</span>
-            <span className="absolute -bottom-8 right-0 bg-surface border border-outline-variant px-2 py-1 text-[8px] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">GET_LAUNCHER</span>
-          </Link>
+          {!isInsideLauncher && (
+            <Link 
+              to="/download-launcher" 
+              className="hidden sm:flex w-10 h-10 hover:text-primary-fixed hover:bg-surface-variant transition-colors items-center justify-center border-2 border-transparent hover:border-primary-container group relative"
+              title="DOWNLOAD_LAUNCHER"
+            >
+              <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 0"}}>download</span>
+              <span className="absolute -bottom-8 right-0 bg-surface border border-outline-variant px-2 py-1 text-[8px] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">GET_LAUNCHER</span>
+            </Link>
+          )}
           <button className="w-10 h-10 hover:text-primary-fixed hover:bg-surface-variant transition-colors flex items-center justify-center border-2 border-transparent hover:border-primary-container">
             <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 0"}}>notifications</span>
           </button>
-          <Link to="/login" className="w-10 h-10 hover:text-primary-fixed hover:bg-surface-variant transition-colors flex items-center justify-center border-2 border-transparent hover:border-primary-container">
-            <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 0"}}>account_circle</span>
-          </Link>
+          {!isInsideLauncher && (
+            <Link to="/login" className="w-10 h-10 hover:text-primary-fixed hover:bg-surface-variant transition-colors flex items-center justify-center border-2 border-transparent hover:border-primary-container">
+              <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 0"}}>account_circle</span>
+            </Link>
+          )}
         </div>
       </header>
 
@@ -105,21 +109,23 @@ export default function Layout() {
         <nav className={`fixed left-0 top-16 h-[calc(100vh-64px)] bg-surface-container border-r-2 border-outline-variant flex flex-col pb-4 z-40 transition-all duration-300 
           ${isCollapsed ? 'w-0 -translate-x-full md:w-20 md:translate-x-0' : 'w-64 translate-x-0'} 
         `}>
-          <div className={`px-6 py-8 border-b-2 border-outline-variant mb-4 overflow-hidden transition-all duration-300 ${isCollapsed ? 'opacity-0 h-0 p-0 border-0 mb-0' : 'opacity-100'}`}>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 border-2 border-primary bg-surface flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-primary" style={{fontVariationSettings: "'FILL' 1"}}>terminal</span>
-              </div>
-              <div className="overflow-hidden">
-                <div className="font-headline-md text-headline-sm font-bold text-primary truncate max-w-[140px]">
-                  {user ? user.displayName.toUpperCase() : 'GUEST_USER'}
+          {!isInsideLauncher && (
+            <div className={`px-6 py-8 border-b-2 border-outline-variant mb-4 overflow-hidden transition-all duration-300 ${isCollapsed ? 'opacity-0 h-0 p-0 border-0 mb-0' : 'opacity-100'}`}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 border-2 border-primary bg-surface flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-primary" style={{fontVariationSettings: "'FILL' 1"}}>terminal</span>
                 </div>
-                <div className="text-[10px] text-on-surface-variant uppercase">
-                  {user ? `${user.roles[user.roles.length - 1]}_MODE` : 'OFFLINE_MODE'}
+                <div className="overflow-hidden">
+                  <div className="font-headline-md text-headline-sm font-bold text-primary truncate max-w-[140px]">
+                    {user ? user.displayName.toUpperCase() : 'GUEST_USER'}
+                  </div>
+                  <div className="text-[10px] text-on-surface-variant uppercase">
+                    {user ? `${user.roles[user.roles.length - 1]}_MODE` : 'OFFLINE_MODE'}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           <div className="flex-1 space-y-1 overflow-y-auto overflow-x-hidden">
             {navItems.map((item) => (
@@ -144,12 +150,14 @@ export default function Layout() {
             ))}
           </div>
 
-          <div className="mt-auto border-t-2 border-outline-variant pt-4">
-            <Link className="flex items-center gap-3 px-6 py-3 text-error opacity-80 hover:opacity-100 hover:bg-surface-bright hover:text-error transition-all border-l-4 border-transparent w-full" to="/login">
-              <span className="material-symbols-outlined shrink-0">power_settings_new</span>
-              <span className={`font-label-mono text-label-mono transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 invisible' : 'opacity-100 w-auto'}`}>LOGOUT</span>
-            </Link>
-          </div>
+          {!isInsideLauncher && (
+            <div className="mt-auto border-t-2 border-outline-variant pt-4">
+              <Link className="flex items-center gap-3 px-6 py-3 text-error opacity-80 hover:opacity-100 hover:bg-surface-bright hover:text-error transition-all border-l-4 border-transparent w-full" to="/login">
+                <span className="material-symbols-outlined shrink-0">power_settings_new</span>
+                <span className={`font-label-mono text-label-mono transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 invisible' : 'opacity-100 w-auto'}`}>LOGOUT</span>
+              </Link>
+            </div>
+          )}
         </nav>
 
         {/* Main Content Area */}
