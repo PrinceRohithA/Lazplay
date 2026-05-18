@@ -76,6 +76,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     customTags: [],
     licensing: 'PAID',
     price: '999',
+    storeCut: 10,
     status: 'DRAFT',
     minSpecs: { os: 'WINDOWS_10_X64', processor: 'I5-6600K', memory: '8GB', graphics: 'GTX 1060', storage: '50GB' },
     recSpecs: { os: 'WINDOWS_11_X64', processor: 'I7-9700K', memory: '16GB', graphics: 'RTX 2070', storage: '50GB' }
@@ -125,7 +126,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
       const initialSpecs = {};
       const hasRootSpecs = reqs.minimum || reqs.recommended;
       const selectedPlatforms = game.platforms || ['WINDOWS'];
-      
+
       selectedPlatforms.forEach((platform) => {
         if (platform === 'WEB') return;
         if (reqs[platform]) {
@@ -158,6 +159,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         customTags: game.tags || [],
         licensing: game.priceType || 'PAID',
         price: ((game.price || 0) / 100).toString(),
+        storeCut: game.storeCut || 5,
         status: game.status || 'DRAFT',
         minSpecs: game.systemRequirements?.minimum || { os: 'WINDOWS_10_X64', processor: 'I5-6600K', memory: '8GB', graphics: 'GTX 1060', storage: '50GB' },
         recSpecs: game.systemRequirements?.recommended || { os: 'WINDOWS_11_X64', processor: 'I7-9700K', memory: '16GB', graphics: 'RTX 2070', storage: '50GB' }
@@ -404,14 +406,14 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
 
       // Prepare the multi-platform systemRequirements payload
       const systemRequirements = {};
-      
+
       // Set platform-specific requirements
       Object.keys(platformSpecs).forEach((platform) => {
         if (form.hardwareSpecs.includes(platform)) {
           systemRequirements[platform] = platformSpecs[platform];
         }
       });
-      
+
       // Find the first selected platform (except WEB) to set at root for backwards-compatibility
       const firstPlatform = form.hardwareSpecs.find((h) => h !== 'WEB');
       if (firstPlatform && platformSpecs[firstPlatform]) {
@@ -428,6 +430,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
           description: form.description,
           price: form.licensing === 'FREE' ? 0 : Math.round(parseFloat(form.price || 0) * 100),
           priceType: form.licensing === 'PAID' ? 'PAID' : 'FREE',
+          storeCut: Number(form.storeCut || 10),
           genres: form.genres,
           tags: form.customTags,
           platforms: form.hardwareSpecs,
@@ -443,6 +446,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
           description: form.description,
           price: form.licensing === 'FREE' ? 0 : Math.round(parseFloat(form.price || 0) * 100),
           priceType: form.licensing === 'PAID' ? 'PAID' : 'FREE',
+          storeCut: Number(form.storeCut || 10),
           genres: form.genres,
           tags: form.customTags,
           platforms: form.hardwareSpecs,
@@ -772,7 +776,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
                     const nextHardware = isSelected
                       ? form.hardwareSpecs.filter(s => s !== spec.id)
                       : [...form.hardwareSpecs, spec.id];
-                    
+
                     if (spec.id !== 'WEB' && !isSelected && !platformSpecs[spec.id]) {
                       setPlatformSpecs(prevSpecs => ({
                         ...prevSpecs,
@@ -782,7 +786,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
                         }
                       }));
                     }
-                    
+
                     setForm(prev => ({
                       ...prev,
                       hardwareSpecs: nextHardware
@@ -979,6 +983,30 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
               </div>
             </div>
           </div>
+
+          <div className="space-y-3 mt-4">
+            <div className="flex justify-between items-center">
+              <label className="block font-label-mono text-[10px] text-on-surface-variant uppercase">_STORE_COMMISSION_CUT</label>
+              <span className="font-label-mono text-xs text-primary-container font-bold bg-primary-container/10 px-2 py-0.5 border border-primary-container/20 rounded shadow-[0_0_10px_rgba(var(--primary-container-rgb),0.1)]">
+                {form.storeCut || 10}%
+              </span>
+            </div>
+            <div className="flex items-center gap-4 bg-surface-container p-4 border border-outline-variant focus-within:border-primary-container">
+              <span className="font-label-mono text-[10px] text-on-surface-variant">5%</span>
+              <input
+                type="range"
+                min="5"
+                max="50"
+                value={form.storeCut || 10}
+                onChange={(e) => setForm(prev => ({ ...prev, storeCut: Number(e.target.value) }))}
+                className="flex-1 accent-primary h-1 bg-surface-container-high rounded-lg appearance-none cursor-pointer focus:outline-none"
+              />
+              <span className="font-label-mono text-[10px] text-on-surface-variant">50%</span>
+            </div>
+            <p className="font-label-mono text-[8px] text-on-surface-variant opacity-60">
+              THE SYSTEM ALLOCATES A PERCENTAGE OF SALES REVENUE TO SECURING MAINFRAME OPERATIONS.
+            </p>
+          </div>
         </div>
 
         {/*  Asset Deployment Card  */}
@@ -1029,7 +1057,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
                   const isStaged = files[slotId];
                   return (
                     <div key={platform} className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-surface-container/20 border border-outline-variant/20 rounded items-center">
-                      
+
                       {/* Left Column: Platform Entry Point Input */}
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
@@ -1078,13 +1106,12 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
                                 }
                                 fileInputRefs[slotId].current?.click();
                               }}
-                              className={`relative border-2 border-dashed p-4 flex flex-col items-center justify-center text-center bg-surface-container-lowest transition-all group cursor-pointer min-h-[90px] ${
-                                isWindows
+                              className={`relative border-2 border-dashed p-4 flex flex-col items-center justify-center text-center bg-surface-container-lowest transition-all group cursor-pointer min-h-[90px] ${isWindows
                                   ? 'opacity-65 border-error/30 cursor-not-allowed bg-error/5 hover:border-error/50'
                                   : isStaged
-                                  ? 'border-primary-container bg-primary-container/5 shadow-[0_0_15px_rgba(var(--primary-container-rgb),0.1)]'
-                                  : 'border-outline-variant hover:border-primary-container hover:bg-surface-container-low'
-                              }`}
+                                    ? 'border-primary-container bg-primary-container/5 shadow-[0_0_15px_rgba(var(--primary-container-rgb),0.1)]'
+                                    : 'border-outline-variant hover:border-primary-container hover:bg-surface-container-low'
+                                }`}
                             >
                               <input type="file" ref={fileInputRefs[slotId]} className="hidden" accept="*" disabled={isWindows} onChange={(e) => handleFileSelect(slotId, e)} />
                               <div className="flex items-center gap-2">
@@ -1099,14 +1126,14 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
                                 {isWindows
                                   ? 'UPLOAD_VIA_DESKTOP_LAUNCHER_ONLY'
                                   : isStaged
-                                  ? isStaged.name
-                                  : platform === 'WEB'
-                                  ? '.ZIP ONLY (MAX 500MB, < 2,000 FILES)'
-                                  : platform === 'ANDROID'
-                                  ? '.APK ONLY (MAX 5GB)'
-                                  : platform === 'LINUX'
-                                  ? '.ZIP ONLY (MAX 500MB)'
-                                  : '.ZIP / .EXE / .APK / .PKG (MAX 500MB)'}
+                                    ? isStaged.name
+                                    : platform === 'WEB'
+                                      ? '.ZIP ONLY (MAX 500MB, < 2,000 FILES)'
+                                      : platform === 'ANDROID'
+                                        ? '.APK ONLY (MAX 5GB)'
+                                        : platform === 'LINUX'
+                                          ? '.ZIP ONLY (MAX 500MB)'
+                                          : '.ZIP / .EXE / .APK / .PKG (MAX 500MB)'}
                               </p>
                               {isStaged && !isWindows && (
                                 <div className="absolute top-2 right-2 p-1 bg-surface-container-highest hover:bg-error/20 transition-colors cursor-pointer group/close" onClick={(e) => { e.stopPropagation(); setFiles(prev => ({ ...prev, [slotId]: null })); }}>
@@ -1210,8 +1237,8 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
                 <span>{uploadProgress}%</span>
               </div>
               <div className="h-1 bg-surface-container border border-outline-variant relative overflow-hidden">
-                <div 
-                  className="absolute inset-y-0 left-0 bg-primary-container shadow-[0_0_10px_var(--primary-container)] transition-all duration-300" 
+                <div
+                  className="absolute inset-y-0 left-0 bg-primary-container shadow-[0_0_10px_var(--primary-container)] transition-all duration-300"
                   style={{ width: `${uploadProgress}%` }}
                 ></div>
               </div>

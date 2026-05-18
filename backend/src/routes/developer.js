@@ -102,6 +102,7 @@ router.add('POST', '/developer/games', async (req) => {
       tagline: validators.string({ required: false, min: 0, max: 120, allowBlank: true }),
       price: validators.int({ required: false, min: 0, max: 10000000 }),
       priceType: validators.enum(['FREE', 'PAID'], { required: false }),
+      storeCut: validators.int({ required: false, min: 5, max: 50 }),
       releaseDate: validators.string({ required: false, min: 0, max: 40, allowBlank: true }),
       publisher: validators.string({ required: false, min: 0, max: 120, allowBlank: true }),
       genres: validators.stringArray({ required: false, maxItems: 10, maxLength: 60 }),
@@ -122,6 +123,7 @@ router.add('POST', '/developer/games', async (req) => {
         price: body.price ?? 0,
         currency: 'INR',
         priceType: body.priceType ?? 'FREE',
+        storeCut: body.storeCut ?? 10,
         description: body.description,
         tagline: body.tagline,
         releaseDate: body.releaseDate,
@@ -164,13 +166,12 @@ router.add('PATCH', '/developer/games/:gameId', async (req) => {
       tagline: validators.string({ required: false, min: 0, max: 120, allowBlank: true }),
       price: validators.int({ required: false, min: 0, max: 10000000 }),
       priceType: validators.enum(['FREE', 'PAID'], { required: false }),
+      storeCut: validators.int({ required: false, min: 5, max: 50 }),
       releaseDate: validators.string({ required: false, min: 0, max: 40, allowBlank: true }),
       publisher: validators.string({ required: false, min: 0, max: 120, allowBlank: true }),
       genres: validators.stringArray({ required: false, maxItems: 10, maxLength: 60 }),
       tags: validators.stringArray({ required: false, maxItems: 20, maxLength: 60 }),
       platforms: validators.stringArray({ required: false, maxItems: 12, maxLength: 60, upper: true }),
-      licensingModel: validators.string({ required: false, min: 0, max: 60, allowBlank: true }),
-      hardwareSpecs: validators.object({ required: false }),
       licensingModel: validators.string({ required: false, min: 0, max: 60, allowBlank: true }),
       hardwareSpecs: validators.object({ required: false }),
       systemRequirements: validators.object({ required: false }),
@@ -183,7 +184,7 @@ router.add('PATCH', '/developer/games/:gameId', async (req) => {
     }, {
       atLeastOne: [
         'title', 'description', 'tagline',
-        'price', 'priceType', 'releaseDate', 'publisher',
+        'price', 'priceType', 'storeCut', 'releaseDate', 'publisher',
         'genres', 'tags', 'platforms', 'licensingModel',
         'hardwareSpecs', 'systemRequirements',
         'coverUrl', 'heroImageUrl', 'heroBannerUrl', 'trailerUrl'
@@ -258,6 +259,7 @@ router.add('PATCH', '/developer/games/:gameId', async (req) => {
     setIfChanged('publisher', body.publisher);
     if (body.price !== undefined) setIfChanged('price', nextPrice);
     if (body.priceType !== undefined) setIfChanged('priceType', nextPriceType);
+    setIfChanged('storeCut', body.storeCut);
     setIfChanged('genres', body.genres);
     setIfChanged('tags', body.tags);
     setIfChanged('platforms', body.platforms);
