@@ -88,7 +88,7 @@ export default function GamesDiscoveryRetroEdition() {
 
   return (
     <div className="p-4 md:p-gutter lg:p-margin flex-1 pb-12 min-w-0">
-      <section className="mb-6 md:mb-8">
+      <section className="mb-6 md:mb-8 relative z-30">
         <div className="bg-surface-container-low border-2 border-outline-variant p-3 md:p-4 pixel-border">
           <div className="flex flex-col gap-4">
             <div className="relative w-full">

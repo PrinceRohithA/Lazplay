@@ -7,6 +7,34 @@ export default function UserRegistrationCyberEdition() {
   const [form, setForm] = useState({ username: '', email: '', password: '', displayName: '' });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpSending, setOtpSending] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [otpMessage, setOtpMessage] = useState(null);
+
+  const handleSendOTP = async () => {
+    if (!form.email) {
+      setError("EMAIL IS REQUIRED TO GENERATE OTP");
+      return;
+    }
+    if (!/\S+@\S+\.\S+/.test(form.email)) {
+      setError("INVALID EMAIL FORMAT");
+      return;
+    }
+
+    setError(null);
+    setOtpSending(true);
+    setOtpMessage(null);
+    try {
+      await authApi.sendOtp(form.email, 'VERIFY_EMAIL');
+      setOtpSent(true);
+      setOtpMessage("VERIFICATION CODE TRANSMITTED TO YOUR EMAIL");
+    } catch (err) {
+      setError(err.message || 'Failed to send OTP code');
+    } finally {
+      setOtpSending(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,6 +50,16 @@ export default function UserRegistrationCyberEdition() {
       return;
     }
 
+    if (!otpSent) {
+      setError("EMAIL VERIFICATION OTP MUST BE SENT AND GENERATED");
+      return;
+    }
+
+    if (!verificationCode || verificationCode.length !== 6) {
+      setError("VERIFICATION CODE MUST BE EXACTLY 6 DIGITS");
+      return;
+    }
+
     setError(null); 
     setLoading(true);
     try {
@@ -29,9 +67,10 @@ export default function UserRegistrationCyberEdition() {
         username: form.username, 
         email: form.email, 
         password: form.password,
-        displayName: form.displayName 
+        displayName: form.displayName,
+        code: verificationCode
       });
-      navigate('/login');
+      navigate('/login', { state: { registered: true } });
     } catch (err) {
       setError(err.message || 'Registration failed');
     } finally { setLoading(false); }
@@ -125,20 +164,60 @@ export default function UserRegistrationCyberEdition() {
                     <span className="material-symbols-outlined text-[14px]">alternate_email</span>
                     Email Address
                   </label>
-                  <div className="relative rounded">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-primary-container font-label-caps opacity-60">&gt;</span>
-                    <input 
-                      className="w-full bg-surface-container-low border border-outline-variant focus:border-primary-container text-on-surface font-body-md pl-10 py-2.5 outline-none transition-colors placeholder:text-outline-variant rounded" 
-                      id="email" 
-                      name="email" 
-                      placeholder="yourname@example.com" 
-                      type="email"
-                      value={form.email}
-                      onChange={handleChange('email')}
-                      required
-                    />
+                  <div className="flex gap-2">
+                    <div className="relative flex-grow rounded">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-primary-container font-label-caps opacity-60">&gt;</span>
+                      <input 
+                        className="w-full bg-surface-container-low border border-outline-variant focus:border-primary-container text-on-surface font-body-md pl-10 py-2.5 outline-none transition-colors placeholder:text-outline-variant rounded" 
+                        id="email" 
+                        name="email" 
+                        placeholder="yourname@example.com" 
+                        type="email"
+                        value={form.email}
+                        onChange={handleChange('email')}
+                        disabled={otpSent}
+                        required
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSendOTP}
+                      disabled={otpSending || !form.email}
+                      className="bg-primary/10 border border-primary text-primary px-4 font-label-caps text-[10px] rounded hover:bg-primary hover:text-black transition-colors disabled:opacity-50"
+                    >
+                      {otpSending ? 'SENDING...' : otpSent ? 'RESEND OTP' : 'SEND OTP'}
+                    </button>
                   </div>
+                  {otpMessage && (
+                    <p className="mt-1 text-[9px] font-label-mono text-primary animate-pulse uppercase">
+                      &gt; {otpMessage}
+                    </p>
+                  )}
                 </div>
+
+                {/*  OTP Code Verification Input (conditionally visible)  */}
+                {otpSent && (
+                  <div className="group">
+                    <label className="block font-label-caps text-primary-fixed-dim text-[10px] mb-1.5 flex items-center gap-2" htmlFor="otp">
+                      <span className="material-symbols-outlined text-[14px]">vpn_key</span>
+                      Verification OTP Code
+                    </label>
+                    <div className="relative rounded">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-primary-container font-label-caps opacity-60">&gt;</span>
+                      <input 
+                        className="w-full bg-surface-container-low border border-primary focus:border-primary text-on-surface font-label-mono tracking-[0.5em] text-center text-sm py-2.5 outline-none placeholder:text-outline-variant rounded" 
+                        id="otp" 
+                        name="otp" 
+                        maxLength={6}
+                        placeholder="------" 
+                        type="text"
+                        value={verificationCode}
+                        onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/*  Password Input  */}
                 <div className="group">

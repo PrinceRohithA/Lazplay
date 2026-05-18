@@ -141,6 +141,8 @@ export const auth = {
   me: () => get('/auth/me'),
   forgotPassword: (email) => post('/auth/forgot-password', { email }),
   resetPassword: (body) => post('/auth/reset-password', body),
+  sendOtp: (email, purpose) => post('/auth/resend-otp', { email, purpose }),
+  verifyOtp: (body) => post('/auth/verify-otp', body),
 };
 
 // ─── User ─────────────────────────────────────────────────────────────────────

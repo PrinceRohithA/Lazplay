@@ -20,7 +20,8 @@ router.add('POST', '/auth/register', async (req) => {
       username: validators.string({ min: 3, max: 32, lower: true, pattern: /^[a-z0-9_.-]+$/ }),
       email: validators.email(),
       password: validators.password(),
-      displayName: validators.string({ min: 2, max: 80 })
+      displayName: validators.string({ min: 2, max: 80 }),
+      code: validators.string({ min: 6, max: 6 })
     });
 
     const existing = await prisma.user.findFirst({
@@ -28,6 +29,12 @@ router.add('POST', '/auth/register', async (req) => {
     });
     if (existing) {
       throw new HttpError(400, 'USER_EXISTS', 'Email or username already registered');
+    }
+
+    // Verify the email OTP code
+    const isValid = await verifyOTP(body.email, 'VERIFY_EMAIL', body.code);
+    if (!isValid) {
+      throw new HttpError(400, 'INVALID_OTP', 'The verification code is invalid or has expired');
     }
 
     const user = await prisma.user.create({
@@ -141,6 +148,15 @@ router.add('POST', '/auth/resend-otp', async (req) => {
       email: validators.email(),
       purpose: validators.string({ pattern: /^(VERIFY_EMAIL|RESET_PASSWORD)$/ })
     });
+    
+    if (body.purpose === 'VERIFY_EMAIL') {
+      const existing = await prisma.user.findFirst({
+        where: { email: body.email }
+      });
+      if (existing) {
+        throw new HttpError(400, 'USER_EXISTS', 'Email is already registered');
+      }
+    }
     
     await sendOTP(body.email, body.purpose);
     return ok({ sent: true });
