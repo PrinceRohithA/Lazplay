@@ -182,105 +182,87 @@ Avoid:
 plain shared preferences for sensitive tokens
 
 
-APK Download System
-Initial Download Flow
-Launcher requests download
-↓
-API verifies ownership
-↓
-Worker generates signed URL
-↓
-Launcher downloads APK
-↓
-Verify hash
-↓
-Install prompt
+## 4. Production APK Download, Installation & Update Architecture
 
-Download Verification
-Purpose
-Prevent:
+```mermaid
+graph TB
+    %% Download Stage
+    subgraph Secure Chunked Download Pipeline
+        Request[User triggers Install/Update] --> CheckLocal{Locked APK in Cache?}
+        CheckLocal -->|No| FetchURL[Request Signed URL from API]
+        FetchURL --> DirectDownload[Stream payload from CDN via Public Bucket]
+        DirectDownload --> HashCompute[Compute Blake3 Checksum]
+        HashCompute --> EncryptBytes[Obfuscate first 1024 bytes via XOR 0x42]
+        EncryptBytes --> WriteLocked[Save as game_id.apk.lazplay_locked]
+    end
 
-corruption
-incomplete downloads
-tampering
+    %% Notification Service
+    subgraph Status Bar Progress Delivery
+        DirectDownload -->|Track Bytes| NotificationService[Foreground Service & channel download_channel]
+        NotificationService -->|Post Notification| NotificationUI[Vibrant Status Bar Progress Bar]
+        NotificationService -->|Broadcast States| UIProgress[Launcher UI Interface Progress Updates]
+    end
 
+    %% Install Stage
+    subgraph Safe Decryption & System Install
+        CheckLocal -->|Yes| MapCached[Map game_id.apk.lazplay_locked Path]
+        WriteLocked --> MapCached
+        MapCached --> CopyTemp[Create Temporary File: temp_install.apk]
+        CopyTemp --> DecryptBytes[Decrypt first 1024 bytes via XOR 0x42]
+        DecryptBytes --> PackageIntent[Trigger Android Package Installer Intent ACTION_UNINSTALL_PACKAGE / ACTION_INSTALL_PACKAGE]
+    end
 
-Verification Method
-Use:
+    %% Cleanup Stage
+    subgraph Boot Cleanup
+        Init[Launcher Boot] --> DeleteLeftover[Delete stale temp_install.apk]
+    end
 
-SHA-256 or BLAKE3 hashes
+    classDef stage fill:#1a1b26,stroke:#7aa2f7,stroke-width:1px,color:#c0caf5;
+    classDef security fill:#16161e,stroke:#f7768e,stroke-width:2px,color:#c0caf5;
+    class Request,FetchURL,DirectDownload,HashCompute,MapCached,CopyTemp,PackageIntent,Init,DeleteLeftover,NotificationService,NotificationUI,UIProgress stage;
+    class EncryptBytes,WriteLocked,DecryptBytes security;
+```
 
-Example:
-Downloaded APK
-↓
-Generate hash
-↓
-Compare with manifest
+---
 
+### A. Dynamic Blake3 Update Detection & Verification Flow
 
-Cache System
-Purpose
-Reduce repeated downloads.
+To prevent unauthorized uploads and ensure 100% data integrity, LazPlay uses client-side Blake3 hashing during the build pipeline:
+1. **Developer Build Upload**: The developer CLI tool computes the **Blake3 checksum** of the final APK and transmits it to the API storefront server during manifest registration, storing it securely in the `checksumSha256` column.
+2. **Dynamic Update Check**:
+   - When the Android Launcher launches, it queries the backend API storefront using `/developer/games/:gameId` or `/developer/games` to fetch game metadata.
+   - It retrieves the latest build's `checksumSha256` from the server.
+   - It computes the local checksum of the currently installed application (or checks the registered package version in `GameDatabase`) and compares them.
+   - If a mismatch is detected, the UI instantly transforms the "Play" button into a highlighted **"Update"** option.
 
-Cached Data
-Store:
+---
 
-downloaded APKs
-launcher assets
-manifests
-thumbnails
+### B. Separated Cache Clearance & Game Deletion Flow
 
+In mobile environments, bandwidth is expensive while device storage is premium. To balance these two concerns, LazPlay decouples local APK caches from active Android installations:
 
-Cache Management
-Launcher should:
+1. **Delete Game Action**:
+   - When a player clicks the "Delete" button on a game card inside their Library, the launcher **initiates a native uninstallation of the game from the Android device** (triggering the `ACTION_UNINSTALL_PACKAGE` or direct package scheme intent).
+   - Crucially, the launcher **preserves the downloaded `.apk.lazplay_locked` cache file** in its secure cache folder.
+   - This ensures that if the player wants to reinstall the game later, they do not have to waste bandwidth redownloading the large APK payload.
+2. **Dedicated Cache Management Screen**:
+   - The launcher's **Settings Page** is solely responsible for cache cleanup.
+   - It provides a **"Clear Cache"** toggle or button that runs a deep cleanup routine, safely purging all `.apk.lazplay_locked` cache files and clearing up device memory.
+3. **Manual Uninstall Tracking**:
+   - If the user uninstalls a game manually from their Android device Settings (external to the launcher), this is intercepted by a registered `BroadcastReceiver` listening to `ACTION_PACKAGE_REMOVED`.
+   - On detecting this event, the launcher's database updates the game's `installedStatus` state to `READY` (indicating it can be installed again from the cache), ensuring the UI instantly updates to show "Install" instead of "Play" next time the app loads.
 
-auto-clean old files
-limit cache size
-allow manual clearing
+---
 
+### C. Native Status Bar Notification & Progress Bar Integration
 
-Update System
-v1 Update Strategy
-Simple:
-
-full APK redownload
-
-Flow:
-Launcher checks version
-↓
-New version available
-↓
-Download new APK
-↓
-Install prompt
-
-Future Update System
-Possible later:
-
-chunked APK downloads
-differential patching
-asset reuse
-
-Important:
-Android app signing makes advanced patching more complicated.
-
-Android Package Limitations
-Important Reality
-APK updates are harder than PC patching because:
-
-Android package signatures matter
-apps reinstall/update through package manager
-app data separation exists
-
-
-Practical Initial Approach
-Use:
-
-full APK updates initially
-
-Avoid:
-
-custom APK patch systems early
+To guarantee highly reliable download progress delivery on newer Android versions (12, 13, and 14+):
+- **Foreground Service Integration**: The downloading engine starts a persistent `ForegroundService` that binds to the task lifecycle, preventing the system from killing the download when the launcher is pushed to the background.
+- **Vibrant Notification Styling**:
+  - Automatically registers a notification channel named `download_channel` with high priority.
+  - Generates a real-time updating status bar notification with a dynamic progress bar, current throughput speed, and estimated time remaining.
+  - Implements custom play/pause/cancel Action Buttons directly on the notification.
+  - Uses `PendingIntent` flags `FLAG_IMMUTABLE | FLAG_UPDATE_CURRENT` for maximum security, compatibility, and responsiveness.
 
 
 Web Game Support

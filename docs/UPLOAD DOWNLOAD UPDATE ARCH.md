@@ -482,3 +482,37 @@ support scalable distribution
 make indie publishing easy
 survive long-term sustainably
 
+---
+
+## 9. Automated 3-Version Windows Retention & GC Pipeline
+
+To optimize storage costs on Cloudflare R2 and prevent storage overhead from accumulated historical builds, LazPlay operates an automated version retention pipeline for Windows games:
+
+```mermaid
+graph TD
+    Publish[Developer Publishes New Windows Build] --> LoadBuilds[Fetch all READY Windows builds sorted desc by createdAt]
+    LoadBuilds --> CheckCount{Build Count > 3?}
+    CheckCount -->|No| End[No GC required]
+    
+    CheckCount -->|Yes| KeepTop3[Retain most recent 3 builds]
+    CheckCount -->|Yes| GetOld[Select older builds for deletion]
+    
+    GetOld --> DeleteR2Manifest[Delete old build manifest .json from R2]
+    GetOld --> DeleteR2Zip[Delete old build artifact .zip from R2]
+    GetOld --> DeletePrisma[Cascade delete GameBuild record from Prisma DB]
+    
+    DeletePrisma --> CheckOrphans[Prisma Query: Find ContentChunks with no remaining reference in BuildChunk]
+    CheckOrphans --> DeleteOrphanR2[Delete orphaned chunk files chunks/hash from R2]
+    DeleteOrphanR2 --> DeleteOrphanDB[Delete orphaned ContentChunk records from Database]
+    DeleteOrphanDB --> Finished[Garbage Collection complete]
+```
+
+### A. Pre-Upload Change Verification
+Before starting any new chunk upload process:
+- The **Uploader CLI/Pipeline Client** retrieves the latest successfully ready build manifest for that platform from the backend server.
+- It computes a local manifest of chunk hashes and compares the sets.
+- If the sets of chunk hashes are identical, the client halts immediately and throws an error: `NO_CHANGES_FOUND: The local build is identical to the previous build. No changes detected.`, preventing redundant network load.
+
+### B. Shared Chunk Retention Safeguard
+Because chunking is content-addressed, multiple builds can reference the exact same chunk hash. The garbage collection system uses a Prisma relational constraint (`buildChunks: { none: {} }` or zero references) to verify that a chunk is truly orphaned before removing it. If a chunk is shared by any of the 3 active/retained builds, it remains perfectly safe and is **never** deleted.
+

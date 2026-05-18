@@ -31,7 +31,8 @@ const request = async (baseUrl, path, options = {}) => {
 
 try {
   const address = await listen();
-  const baseUrl = `http://${address.address}:${address.port}/api/v1`;
+  const prefix = process.env.API_PREFIX || '/v1';
+  const baseUrl = `http://${address.address}:${address.port}${prefix}`;
 
   const health = await request(baseUrl, '/health');
   console.log(`health: ${health.data.status}`);

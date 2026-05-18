@@ -198,3 +198,45 @@ sequenceDiagram
         Launcher-->>Player: Return to Library view
     end
 ```
+
+---
+
+## 5. Dynamic S3/R2 Storage Isolation (Public Web vs Private Native)
+
+To ensure secure compartmentalization and CDN scaling, LazPlay implements a strict, platform-aware bucket separation policy:
+
+* **Web Games**: All Web game ZIP artifacts, extracted HTML5/WebGL/WASM runtime directories, and chunked files are stored in the **Public R2 Bucket** (`getPublicGameBucket()`). This permits direct, unauthenticated browser preloads, reducing load times.
+* **Native Games (Windows, Linux, Android)**: All native platforms store their compressed build ZIPs, chunk files (`/chunks/<hash>`), manifests, and encryption-locked builds in the **Private R2 Bucket** (`getPrivateGameBucket()`). Downloads must be initiated via time-limited presigned storage URLs verified by storefront authentication hooks.
+
+### S3/R2 Bucket Decision Flow
+```mermaid
+graph TD
+    Start[Request Storage URL / Process Build] --> CheckPlatform{Platform is Web / Browser / WebGL?}
+    CheckPlatform -->|Yes| TargetPublic[Direct to Public Game Bucket R2_PUBLIC_GAME_BUCKET]
+    CheckPlatform -->|No| TargetPrivate[Direct to Private Game Bucket R2_PRIVATE_GAME_BUCKET]
+    
+    TargetPublic --> ReturnUrl[Sign Storage URL & return response]
+    TargetPrivate --> ReturnUrl
+```
+
+---
+
+## 6. Android Installed Game Deletion vs Cache Preservation
+
+Mobile players have strict bandwidth limits. To minimize redownloading large installation binaries while preserving local memory on demand, LazPlay decouples package uninstalls from cache retention:
+
+* **Uninstallation Card Action**: Clicking "Delete" on a game card removes the compiled app from the Android operating system using the Package Manager (`ACTION_UNINSTALL_PACKAGE`), reclaiming runtime storage. However, the downloaded `.apk.lazplay_locked` cache file is **retained** in private app storage.
+* **Settings Page Cache Purge**: A dedicated cache management panel in Settings handles the absolute deletion of `.apk.lazplay_locked` files from local disk memory.
+* **Background OS Sync**: The app hooks into the `ACTION_PACKAGE_REMOVED` system broadcast receiver. If the user uninstalls a game manually through Android Settings, the local library db reflects the status change to `READY` immediately, altering the UI indicator to display "Install" instead of "Play" dynamically.
+
+```mermaid
+graph TB
+    Action[User Clicks Card 'Delete'] --> TriggerUninstall[Trigger Package Manager ACTION_UNINSTALL_PACKAGE]
+    TriggerUninstall --> NativeUninstall[Android OS Purges Installed Application]
+    NativeUninstall --> PreserveCache[Retain /cache/downloads/*.apk.lazplay_locked]
+    
+    Settings[User triggers Settings 'Clear Cache'] --> PurgeFolder[Deep Cleanup: Delete all locked APK cache files]
+    
+    OSRemoved[OS Broadcast ACTION_PACKAGE_REMOVED received] --> SyncDB[Update Library db status to READY]
+    SyncDB --> UpdateUI[UI shows 'Install' button next time app runs]
+```
