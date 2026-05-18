@@ -1,0 +1,215 @@
+{
+  "name": "project-template",
+  "version": "1.0.0",
+  "components": {
+    "Data Store": [
+      {
+        "type": "table",
+        "name": "User",
+        "columns": [
+          {
+            "name": "id",
+            "datatype": "STRING",
+            "is_primary_key": true
+          },
+          {
+            "name": "username",
+            "datatype": "STRING",
+            "is_primary_key": false
+          },
+          {
+            "name": "email",
+            "datatype": "STRING",
+            "is_primary_key": false
+          },
+          {
+            "name": "passwordHash",
+            "datatype": "STRING",
+            "is_primary_key": false
+          },
+          {
+            "name": "displayName",
+            "datatype": "STRING",
+            "is_primary_key": false
+          },
+          {
+            "name": "status",
+            "datatype": "STRING",
+            "is_primary_key": false
+          }
+        ]
+      },
+      {
+        "type": "table",
+        "name": "DeveloperProfile",
+        "columns": [
+          {
+            "name": "id",
+            "datatype": "STRING",
+            "is_primary_key": true
+          },
+          {
+            "name": "userId",
+            "datatype": "STRING",
+            "is_primary_key": false
+          },
+          {
+            "name": "displayName",
+            "datatype": "STRING",
+            "is_primary_key": false
+          },
+          {
+            "name": "verificationStatus",
+            "datatype": "STRING",
+            "is_primary_key": false
+          }
+        ]
+      },
+      {
+        "type": "table",
+        "name": "Game",
+        "columns": [
+          {
+            "name": "id",
+            "datatype": "STRING",
+            "is_primary_key": true
+          },
+          {
+            "name": "developerId",
+            "datatype": "STRING",
+            "is_primary_key": false
+          },
+          {
+            "name": "slug",
+            "datatype": "STRING",
+            "is_primary_key": false
+          },
+          {
+            "name": "title",
+            "datatype": "STRING",
+            "is_primary_key": false
+          },
+          {
+            "name": "price",
+            "datatype": "BIGINT",
+            "is_primary_key": false
+          },
+          {
+            "name": "status",
+            "datatype": "STRING",
+            "is_primary_key": false
+          },
+          {
+            "name": "genres",
+            "datatype": "STRING",
+            "is_primary_key": false
+          },
+          {
+            "name": "tags",
+            "datatype": "STRING",
+            "is_primary_key": false
+          }
+        ]
+      },
+      {
+        "type": "table",
+        "name": "GameBuild",
+        "columns": [
+          {
+            "name": "id",
+            "datatype": "STRING",
+            "is_primary_key": true
+          },
+          {
+            "name": "gameId",
+            "datatype": "STRING",
+            "is_primary_key": false
+          },
+          {
+            "name": "version",
+            "datatype": "STRING",
+            "is_primary_key": false
+          },
+          {
+            "name": "status",
+            "datatype": "STRING",
+            "is_primary_key": false
+          },
+          {
+            "name": "artifactObjectKey",
+            "datatype": "STRING",
+            "is_primary_key": false
+          },
+          {
+            "name": "manifestObjectKey",
+            "datatype": "STRING",
+            "is_primary_key": false
+          }
+        ]
+      },
+      {
+        "type": "table",
+        "name": "ContentChunk",
+        "columns": [
+          {
+            "name": "hash",
+            "datatype": "STRING",
+            "is_primary_key": true
+          },
+          {
+            "name": "sizeBytes",
+            "datatype": "BIGINT",
+            "is_primary_key": false
+          },
+          {
+            "name": "objectKey",
+            "datatype": "STRING",
+            "is_primary_key": false
+          }
+        ]
+      },
+      {
+        "type": "table",
+        "name": "BuildChunk",
+        "columns": [
+          {
+            "name": "buildId",
+            "datatype": "STRING",
+            "is_primary_key": true
+          },
+          {
+            "name": "hash",
+            "datatype": "STRING",
+            "is_primary_key": true
+          }
+        ]
+      },
+      {
+        "type": "table",
+        "name": "BuildManifest",
+        "columns": [
+          {
+            "name": "id",
+            "datatype": "STRING",
+            "is_primary_key": true
+          },
+          {
+            "name": "buildId",
+            "datatype": "STRING",
+            "is_primary_key": false
+          },
+          {
+            "name": "version",
+            "datatype": "STRING",
+            "is_primary_key": false
+          },
+          {
+            "name": "totalBytes",
+            "datatype": "BIGINT",
+            "is_primary_key": false
+          }
+        ]
+      }
+    ]
+  }
+}

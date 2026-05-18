@@ -1,9 +1,24 @@
 {
-  "client": {
-    "source": "client/dist",
-    "ignore": []
-  },
-  "appsail": {
-    "source": "backend"
-  }
+  "client": [
+    {
+      "name": "lazplay-client",
+      "source": "client/dist",
+      "ignore": [
+        "**/node_modules/**",
+        ".env"
+      ]
+    }
+  ],
+  "appsail": [
+    {
+      "name": "backend",
+      "source": "backend",
+      "ignore": [
+        "**/node_modules/**",
+        ".env",
+        "scripts/**",
+        "*.log"
+      ]
+    }
+  ]
 }
