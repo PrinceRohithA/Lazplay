@@ -81,6 +81,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     recSpecs: { os: 'WINDOWS_11_X64', processor: 'I7-9700K', memory: '16GB', graphics: 'RTX 2070', storage: '50GB' }
   });
 
+  const [platformSpecs, setPlatformSpecs] = useState({});
   const [existingMedia, setExistingMedia] = useState([]);
   const [existingBuilds, setExistingBuilds] = useState([]);
   const [files, setFiles] = useState({
@@ -119,6 +120,33 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
       builds.forEach(b => {
         platformEntrypoints[b.platform] = b.entrypoint || '';
       });
+      // Parse platform-specific systemRequirements
+      const reqs = game.systemRequirements || {};
+      const initialSpecs = {};
+      const hasRootSpecs = reqs.minimum || reqs.recommended;
+      const selectedPlatforms = game.platforms || ['WINDOWS'];
+      
+      selectedPlatforms.forEach((platform) => {
+        if (platform === 'WEB') return;
+        if (reqs[platform]) {
+          initialSpecs[platform] = {
+            minimum: reqs[platform].minimum || { os: '', processor: '', memory: '', graphics: '', storage: '' },
+            recommended: reqs[platform].recommended || { os: '', processor: '', memory: '', graphics: '', storage: '' }
+          };
+        } else if (hasRootSpecs && platform === 'WINDOWS') {
+          initialSpecs[platform] = {
+            minimum: reqs.minimum || { os: '', processor: '', memory: '', graphics: '', storage: '' },
+            recommended: reqs.recommended || { os: '', processor: '', memory: '', graphics: '', storage: '' }
+          };
+        } else {
+          initialSpecs[platform] = {
+            minimum: { os: '', processor: '', memory: '', graphics: '', storage: '' },
+            recommended: { os: '', processor: '', memory: '', graphics: '', storage: '' }
+          };
+        }
+      });
+      setPlatformSpecs(initialSpecs);
+
       setForm({
         title: game.title,
         version: game.version || builds[0]?.version || 'v1.0.0',
@@ -374,6 +402,23 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     try {
       let gameId = gameIdParam;
 
+      // Prepare the multi-platform systemRequirements payload
+      const systemRequirements = {};
+      
+      // Set platform-specific requirements
+      Object.keys(platformSpecs).forEach((platform) => {
+        if (form.hardwareSpecs.includes(platform)) {
+          systemRequirements[platform] = platformSpecs[platform];
+        }
+      });
+      
+      // Find the first selected platform (except WEB) to set at root for backwards-compatibility
+      const firstPlatform = form.hardwareSpecs.find((h) => h !== 'WEB');
+      if (firstPlatform && platformSpecs[firstPlatform]) {
+        systemRequirements.minimum = platformSpecs[firstPlatform].minimum;
+        systemRequirements.recommended = platformSpecs[firstPlatform].recommended;
+      }
+
       // 1. Create or Update Game
       if (!gameId) {
         addLog('STEP_01: CREATING_NEW_GRID_RECORD...');
@@ -386,10 +431,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
           genres: form.genres,
           tags: form.customTags,
           platforms: form.hardwareSpecs,
-          systemRequirements: {
-            minimum: form.minSpecs,
-            recommended: form.recSpecs
-          }
+          systemRequirements: systemRequirements
         });
         gameId = gameRes.data.id;
         addLog(`SUCCESS: GAME_INITIALIZED (ID: ${gameId})`);
@@ -404,10 +446,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
           genres: form.genres,
           tags: form.customTags,
           platforms: form.hardwareSpecs,
-          systemRequirements: {
-            minimum: form.minSpecs,
-            recommended: form.recSpecs
-          }
+          systemRequirements: systemRequirements
         });
         addLog('SUCCESS: METADATA_SYNC_COMPLETE');
       }
@@ -729,11 +768,24 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
                 <input
                   checked={form.hardwareSpecs.includes(spec.id)}
                   onChange={() => {
+                    const isSelected = form.hardwareSpecs.includes(spec.id);
+                    const nextHardware = isSelected
+                      ? form.hardwareSpecs.filter(s => s !== spec.id)
+                      : [...form.hardwareSpecs, spec.id];
+                    
+                    if (spec.id !== 'WEB' && !isSelected && !platformSpecs[spec.id]) {
+                      setPlatformSpecs(prevSpecs => ({
+                        ...prevSpecs,
+                        [spec.id]: {
+                          minimum: { os: '', processor: '', memory: '', graphics: '', storage: '' },
+                          recommended: { os: '', processor: '', memory: '', graphics: '', storage: '' }
+                        }
+                      }));
+                    }
+                    
                     setForm(prev => ({
                       ...prev,
-                      hardwareSpecs: prev.hardwareSpecs.includes(spec.id)
-                        ? prev.hardwareSpecs.filter(s => s !== spec.id)
-                        : [...prev.hardwareSpecs, spec.id]
+                      hardwareSpecs: nextHardware
                     }));
                   }}
                   className="form-checkbox bg-transparent border-2 border-outline-variant text-primary-container rounded-none focus:ring-0"
@@ -756,39 +808,81 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
               <div className="h-px flex-1 mx-4 bg-outline-variant/30"></div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              {/* Minimum Specs */}
-              <div className="space-y-3 bg-surface-container/50 p-4 border border-outline-variant/30">
-                <p className="font-label-mono text-[9px] text-secondary-container uppercase mb-2 underline underline-offset-4">MINIMUM_SPECS</p>
-                {['os', 'processor', 'memory', 'graphics', 'storage'].map(field => (
-                  <div key={field} className="space-y-1">
-                    <label className="block font-label-mono text-[8px] text-on-surface-variant uppercase">{field}</label>
-                    <input
-                      className="w-full bg-surface-container border border-outline-variant p-2 text-[10px] font-label-mono text-on-surface focus:border-primary-container outline-none"
-                      value={form.minSpecs[field] || ''}
-                      onChange={(e) => handleSpecChange('minSpecs', field, e.target.value)}
-                      autoComplete="off"
-                    />
-                  </div>
-                ))}
+            {form.hardwareSpecs.filter(h => h !== 'WEB').length === 0 ? (
+              <div className="p-4 text-center border border-dashed border-outline-variant/30 bg-surface-container/30 rounded font-label-mono text-[10px] text-on-surface-variant italic uppercase">
+                NO_HARDWARE_SPECIFICATIONS_REQUIRED_FOR_WEB_ONLY_BUILD
               </div>
+            ) : (
+              <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                {form.hardwareSpecs
+                  .filter(platform => platform !== 'WEB')
+                  .map(platform => {
+                    const specs = platformSpecs[platform] || {
+                      minimum: { os: '', processor: '', memory: '', graphics: '', storage: '' },
+                      recommended: { os: '', processor: '', memory: '', graphics: '', storage: '' }
+                    };
+                    return (
+                      <div key={platform} className="p-4 bg-surface-container/30 border border-outline-variant/20 rounded space-y-4">
+                        <div className="flex items-center gap-2 border-b border-outline-variant/20 pb-2">
+                          <span className="text-[9px] font-label-mono font-black px-2 py-0.5 rounded bg-secondary-container/20 text-primary-container uppercase tracking-wider">
+                            {platform} SPECIFICATIONS
+                          </span>
+                        </div>
 
-              {/* Recommended Specs */}
-              <div className="space-y-3 bg-surface-container/50 p-4 border border-outline-variant/30">
-                <p className="font-label-mono text-[9px] text-tertiary-fixed uppercase mb-2 underline underline-offset-4">RECOMMENDED_SPECS</p>
-                {['os', 'processor', 'memory', 'graphics', 'storage'].map(field => (
-                  <div key={field} className="space-y-1">
-                    <label className="block font-label-mono text-[8px] text-on-surface-variant uppercase">{field}</label>
-                    <input
-                      className="w-full bg-surface-container border border-outline-variant p-2 text-[10px] font-label-mono text-on-surface focus:border-primary-container outline-none"
-                      value={form.recSpecs[field] || ''}
-                      onChange={(e) => handleSpecChange('recSpecs', field, e.target.value)}
-                      autoComplete="off"
-                    />
-                  </div>
-                ))}
+                        <div className="grid grid-cols-2 gap-4">
+                          {/* Minimum Specs */}
+                          <div className="space-y-3 bg-surface-container/50 p-3 border border-outline-variant/30">
+                            <p className="font-label-mono text-[8px] text-secondary-container uppercase mb-1 underline underline-offset-2">MINIMUM_SPECS</p>
+                            {['os', 'processor', 'memory', 'graphics', 'storage'].map(field => (
+                              <div key={field} className="space-y-1">
+                                <label className="block font-label-mono text-[7px] text-on-surface-variant uppercase">{field}</label>
+                                <input
+                                  className="w-full bg-surface-container border border-outline-variant p-1.5 text-[9px] font-label-mono text-on-surface focus:border-primary-container outline-none"
+                                  value={specs.minimum[field] || ''}
+                                  onChange={(e) => {
+                                    setPlatformSpecs(prev => ({
+                                      ...prev,
+                                      [platform]: {
+                                        ...prev[platform],
+                                        minimum: { ...prev[platform].minimum, [field]: e.target.value }
+                                      }
+                                    }));
+                                  }}
+                                  autoComplete="off"
+                                />
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Recommended Specs */}
+                          <div className="space-y-3 bg-surface-container/50 p-3 border border-outline-variant/30">
+                            <p className="font-label-mono text-[8px] text-tertiary-fixed uppercase mb-1 underline underline-offset-2">RECOMMENDED_SPECS</p>
+                            {['os', 'processor', 'memory', 'graphics', 'storage'].map(field => (
+                              <div key={field} className="space-y-1">
+                                <label className="block font-label-mono text-[7px] text-on-surface-variant uppercase">{field}</label>
+                                <input
+                                  className="w-full bg-surface-container border border-outline-variant p-1.5 text-[9px] font-label-mono text-on-surface focus:border-primary-container outline-none"
+                                  value={specs.recommended[field] || ''}
+                                  onChange={(e) => {
+                                    setPlatformSpecs(prev => ({
+                                      ...prev,
+                                      [platform]: {
+                                        ...prev[platform],
+                                        recommended: { ...prev[platform].recommended, [field]: e.target.value }
+                                      }
+                                    }));
+                                  }}
+                                  autoComplete="off"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
-            </div>
+            )}
           </div>
         </div>
 

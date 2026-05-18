@@ -304,9 +304,23 @@ class DownloadManager {
         if (game && game.status === "paused") {
             db_1.db.setGameStatus(gameId, "downloading");
             electron_log_1.default.info(`Resuming download for ${gameId}`);
-            // In a real app, you'd fetch the latest downloadUrl again
-            // For now, we'll re-start the install if we have the URL stored or passed
-            return true;
+            const { token } = db_1.db.getTokens();
+            if (!token) {
+                electron_log_1.default.warn(`Cannot resume ${gameId}: Not authenticated`);
+                db_1.db.setGameStatus(gameId, "paused");
+                return false;
+            }
+            try {
+                // Chunk-based distribution inherently supports resuming by verifying
+                // existing chunks and downloading only the missing ones.
+                await this.repairGame(gameId, token);
+                return true;
+            }
+            catch (error) {
+                electron_log_1.default.error(`Failed to resume ${gameId}:`, error);
+                db_1.db.setGameStatus(gameId, "paused");
+                return false;
+            }
         }
         return false;
     }

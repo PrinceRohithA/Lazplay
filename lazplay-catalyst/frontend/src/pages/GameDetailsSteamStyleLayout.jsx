@@ -180,8 +180,23 @@ export default function GameDetailsSteamStyleLayout() {
   const videos = media.filter((m) => m.type === 'VIDEO');
 
   const sysReqs = game?.systemRequirements || {};
-  const minSpecs = sysReqs.minimum || {};
-  const recSpecs = sysReqs.recommended || {};
+  const specPlatforms = Object.keys(sysReqs).filter(k => k !== 'minimum' && k !== 'recommended' && k !== 'WEB' && k !== 'BROWSER');
+  
+  if (specPlatforms.length === 0 && (sysReqs.minimum || sysReqs.recommended)) {
+    specPlatforms.push('WINDOWS');
+  }
+
+  const [activeSpecPlatform, setActiveSpecPlatform] = useState('');
+
+  useEffect(() => {
+    if (specPlatforms.length > 0 && !activeSpecPlatform) {
+      setActiveSpecPlatform(specPlatforms[0]);
+    }
+  }, [specPlatforms, activeSpecPlatform]);
+
+  const activeSpecs = sysReqs[activeSpecPlatform] || {};
+  const minSpecs = activeSpecs.minimum || (activeSpecPlatform === 'WINDOWS' ? sysReqs.minimum : {}) || {};
+  const recSpecs = activeSpecs.recommended || (activeSpecPlatform === 'WINDOWS' ? sysReqs.recommended : {}) || {};
 
   return (
     <div className="flex flex-col min-w-0 p-4 md:p-margin gap-4 md:gap-6 grid-glow-bg overflow-x-hidden">
@@ -456,7 +471,28 @@ export default function GameDetailsSteamStyleLayout() {
             )}
           </section>
           <section className="bg-surface-container pixel-border p-gutter font-label-mono">
-            <div className="text-on-surface-variant border-b border-outline-variant pb-2 mb-4 text-[12px] uppercase">System Requirements</div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-outline-variant pb-2 mb-4 gap-2">
+              <div className="text-on-surface-variant text-[12px] uppercase">System Requirements</div>
+              
+              {/* Platform Selector Tabs */}
+              {specPlatforms.length > 1 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {specPlatforms.map(platform => (
+                    <button
+                      key={platform}
+                      onClick={() => setActiveSpecPlatform(platform)}
+                      className={`px-2.5 py-0.5 text-[9px] font-label-mono uppercase border transition-all ${
+                        activeSpecPlatform === platform
+                          ? 'bg-primary-container/20 text-primary border-primary font-bold'
+                          : 'bg-surface border-outline-variant text-on-surface-variant hover:text-on-surface'
+                      }`}
+                    >
+                      {platform}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-[11px]">
               <div>
                 <div className="text-primary mb-2">MINIMUM_SPECS:</div>

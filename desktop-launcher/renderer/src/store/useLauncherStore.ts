@@ -281,6 +281,7 @@ export const useLauncherStore = create<LauncherStore>((set, get) => ({
 
   logout: async () => {
     if (window.lazplayAPI) {
+      window.lazplayAPI.setStoreVisibility(false);
       await window.lazplayAPI.clearSession();
     }
     set({

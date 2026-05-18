@@ -37,19 +37,69 @@ export const hexToRgb = (hex: string) => {
 export const applyThemeColor = (primary: string, secondary: string) => {
   const root = document.documentElement;
 
+  // 1. Primary Scales
+  root.style.setProperty("--primary", primary);
+  root.style.setProperty("--primary-rgb", hexToRgb(primary));
+  root.style.setProperty("--primary-container", adjustColorBrightness(primary, -75));
+  root.style.setProperty("--on-primary-container", adjustColorBrightness(primary, 20));
+  root.style.setProperty("--on-primary", adjustColorBrightness(primary, -90));
+  root.style.setProperty("--primary-fixed", adjustColorBrightness(primary, 10));
+  root.style.setProperty("--primary-fixed-dim", adjustColorBrightness(primary, -10));
+  root.style.setProperty("--on-primary-fixed", adjustColorBrightness(primary, -90));
+  root.style.setProperty("--on-primary-fixed-variant", adjustColorBrightness(primary, 10));
+
+  // 2. Secondary Scales
+  root.style.setProperty("--secondary", secondary);
+  root.style.setProperty("--secondary-rgb", hexToRgb(secondary));
+  root.style.setProperty("--secondary-container", adjustColorBrightness(secondary, -75));
+  root.style.setProperty("--on-secondary-container", adjustColorBrightness(secondary, 20));
+  root.style.setProperty("--secondary-fixed", adjustColorBrightness(secondary, 15));
+  root.style.setProperty("--secondary-fixed-dim", adjustColorBrightness(secondary, -5));
+  root.style.setProperty("--on-secondary-fixed", adjustColorBrightness(secondary, -90));
+  root.style.setProperty("--on-secondary-fixed-variant", adjustColorBrightness(secondary, -20));
+
+  // 3. Tertiary Scales (Dynamic transition based on primary/secondary)
+  const tertiary = adjustColorBrightness(primary, 80);
+  root.style.setProperty("--tertiary", tertiary);
+  root.style.setProperty("--tertiary-container", primary);
+  root.style.setProperty("--on-tertiary-container", adjustColorBrightness(primary, -60));
+  root.style.setProperty("--tertiary-fixed", adjustColorBrightness(primary, 10));
+  root.style.setProperty("--tertiary-fixed-dim", adjustColorBrightness(primary, -10));
+  root.style.setProperty("--on-tertiary-fixed", adjustColorBrightness(primary, -85));
+  root.style.setProperty("--on-tertiary-fixed-variant", adjustColorBrightness(primary, -50));
+
+  // 4. Outlines
+  root.style.setProperty("--outline", primary);
+  root.style.setProperty("--outline-variant", primary);
+
+  // 5. Surfacing & Backgrounds (Dynamically tinted with the primary hue for high premium glassmorphism)
+  const savedDarkness = Number(localStorage.getItem("lazplay-launcher-bg-darkness") || "93");
+  const baseSurface = adjustColorBrightness(primary, -savedDarkness);
+  root.style.setProperty("--surface", baseSurface);
+  root.style.setProperty("--bg-primary-dark", baseSurface);
+  root.style.setProperty("--surface-container", adjustColorBrightness(primary, -Math.max(50, savedDarkness - 7)));
+  root.style.setProperty("--surface-container-low", adjustColorBrightness(primary, -Math.max(50, savedDarkness - 4)));
+  root.style.setProperty("--surface-container-high", adjustColorBrightness(primary, -Math.max(50, savedDarkness - 10)));
+  root.style.setProperty("--surface-container-highest", adjustColorBrightness(primary, -Math.max(50, savedDarkness - 13)));
+  root.style.setProperty("--surface-container-lowest", adjustColorBrightness(primary, -Math.min(99, savedDarkness + 3)));
+  root.style.setProperty("--surface-dim", baseSurface);
+  root.style.setProperty("--surface-bright", adjustColorBrightness(primary, -Math.max(50, savedDarkness - 18)));
+  root.style.setProperty("--surface-variant", adjustColorBrightness(primary, -Math.max(50, savedDarkness - 13)));
+  root.style.setProperty("--on-surface", "#ffffff");
+  root.style.setProperty("--on-surface-variant", adjustColorBrightness(primary, 75));
+
+  // 6. Inverses & Slate Overrides
+  root.style.setProperty("--inverse-surface", "#e5e2e1");
+  root.style.setProperty("--inverse-on-surface", "#313030");
+  root.style.setProperty("--inverse-primary", adjustColorBrightness(primary, 10));
+
+  // Legacy variables support
   root.style.setProperty("--brand-500", primary);
   root.style.setProperty("--brand-600", adjustColorBrightness(primary, -20));
   root.style.setProperty("--brand-400", adjustColorBrightness(primary, 20));
-  root.style.setProperty("--brand-rgb", hexToRgb(primary));
-
   root.style.setProperty("--secondary-color", secondary);
   root.style.setProperty("--secondary-600", adjustColorBrightness(secondary, -20));
   root.style.setProperty("--secondary-400", adjustColorBrightness(secondary, 20));
-  root.style.setProperty("--secondary-rgb", hexToRgb(secondary));
-
-  // Dynamically set an ultra-dark primary tint as the application background!
-  const darkPrimaryBg = adjustColorBrightness(primary, -93);
-  root.style.setProperty("--bg-primary-dark", darkPrimaryBg);
 
   localStorage.setItem("lazplay-launcher-color", primary);
   localStorage.setItem("lazplay-launcher-secondary", secondary);
@@ -58,13 +108,16 @@ export const applyThemeColor = (primary: string, secondary: string) => {
 export default function Settings() {
   const [primaryColor, setPrimaryColor] = useState("#39ff14");
   const [secondaryColor, setSecondaryColor] = useState("#ffabf3");
+  const [darkness, setDarkness] = useState(93);
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
     const savedPrimary = localStorage.getItem("lazplay-launcher-color") || "#39ff14";
     const savedSecondary = localStorage.getItem("lazplay-launcher-secondary") || "#ffabf3";
+    const savedDarkness = Number(localStorage.getItem("lazplay-launcher-bg-darkness") || "93");
     setPrimaryColor(savedPrimary);
     setSecondaryColor(savedSecondary);
+    setDarkness(savedDarkness);
   }, []);
 
   const handlePrimaryChange = (color: string) => {
@@ -77,6 +130,14 @@ export default function Settings() {
   const handleSecondaryChange = (color: string) => {
     setSecondaryColor(color);
     applyThemeColor(primaryColor, color);
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 2000);
+  };
+
+  const handleDarknessChange = (val: number) => {
+    setDarkness(val);
+    localStorage.setItem("lazplay-launcher-bg-darkness", String(val));
+    applyThemeColor(primaryColor, secondaryColor);
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2000);
   };
@@ -231,6 +292,47 @@ export default function Settings() {
               </div>
             </div>
           </div>
+
+          {/* Background Darkness Calibration Card */}
+          <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-6 relative overflow-hidden flex flex-col gap-6 lg:col-span-2">
+            <div className="absolute top-0 right-0 p-2.5 text-[8px] text-slate-600 font-mono tracking-widest">
+              MODULE // ENVIRONMENT
+            </div>
+
+            <div className="flex items-center gap-2.5 border-b border-slate-800 pb-3">
+              <Sliders className="text-brand-500" size={20} />
+              <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-slate-400">
+                BACKGROUND_DARKNESS_CALIBRATION
+              </h3>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-mono uppercase text-slate-500">CALIBRATE_SURFACE_OPACITY</span>
+                <span className="font-mono text-xs font-bold text-brand-400">{darkness}% Dark</span>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                <input
+                  type="range"
+                  min="75"
+                  max="98"
+                  value={darkness}
+                  onChange={(e) => handleDarknessChange(Number(e.target.value))}
+                  className="flex-1 accent-brand-500 bg-slate-900 border border-slate-800 h-2 rounded-lg cursor-pointer appearance-none"
+                />
+                <div 
+                  className="px-4 py-2 rounded-lg border border-brand-500/20 flex items-center justify-center font-mono text-[10px] text-slate-300 font-bold transition-all w-full sm:w-28 text-center" 
+                  style={{ backgroundColor: `var(--surface)` }}
+                >
+                  PREVIEW
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-500 leading-normal">
+                Adjust the base background tint level of LazPlay OS. Lower percentages introduce more vibrant primary-color ambient tints, while higher percentages align the experience with deep-space midnight profiles.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* General System Information Widgets (Bento Matrix) */}
@@ -278,6 +380,7 @@ export default function Settings() {
             onClick={() => {
               handlePrimaryChange("#39ff14");
               handleSecondaryChange("#ffabf3");
+              handleDarknessChange(93);
             }}
             className="flex items-center gap-2 bg-slate-900 border border-slate-800 hover:border-brand-500/30 hover:bg-brand-500/5 active:scale-[0.98] transition-all px-5 py-3 rounded-lg text-xs font-mono font-bold text-brand-400"
           >

@@ -10,7 +10,6 @@ import {
   Shield,
   Layers,
   ArrowRight,
-  DollarSign,
   Activity,
   UserCheck,
   Trash2
@@ -71,12 +70,16 @@ export default function DeveloperConsole() {
 
   // Form State
   const [form, setForm] = useState<GameForm>(INITIAL_FORM);
-  const [customTagInput, setCustomTagInput] = useState("");
 
   // Asset Files State
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [trailerFile, setTrailerFile] = useState<File | null>(null);
+  const [screenshotsFiles, setScreenshotsFiles] = useState<File[]>([]);
+  const [platformSpecs, setPlatformSpecs] = useState<Record<string, {
+    minimum: Record<string, string>;
+    recommended: Record<string, string>;
+  }>>({});
   const [binaryFiles, setBinaryFiles] = useState<Record<string, string | null>>({});
 
   // Logging & Deployment Terminal State
@@ -187,13 +190,41 @@ export default function DeveloperConsole() {
     if (game.entrypoint && !platformEntrypoints.WINDOWS) {
       platformEntrypoints.WINDOWS = game.entrypoint;
     }
+    
+    // Parse platform-specific systemRequirements
+    const reqs = game.systemRequirements || {};
+    const initialSpecs: Record<string, { minimum: any; recommended: any }> = {};
+    const hasRootSpecs = reqs.minimum || reqs.recommended;
+    const selectedPlatforms: string[] = game.hardwareSpecs || game.platforms || ["WINDOWS"];
+    
+    selectedPlatforms.forEach((platform: string) => {
+      if (platform === "WEB") return;
+      if (reqs[platform]) {
+        initialSpecs[platform] = {
+          minimum: reqs[platform].minimum || { os: "", processor: "", memory: "", graphics: "", storage: "" },
+          recommended: reqs[platform].recommended || { os: "", processor: "", memory: "", graphics: "", storage: "" }
+        };
+      } else if (hasRootSpecs && platform === "WINDOWS") {
+        initialSpecs[platform] = {
+          minimum: reqs.minimum || { os: "", processor: "", memory: "", graphics: "", storage: "" },
+          recommended: reqs.recommended || { os: "", processor: "", memory: "", graphics: "", storage: "" }
+        };
+      } else {
+        initialSpecs[platform] = {
+          minimum: { os: "", processor: "", memory: "", graphics: "", storage: "" },
+          recommended: { os: "", processor: "", memory: "", graphics: "", storage: "" }
+        };
+      }
+    });
+    setPlatformSpecs(initialSpecs);
+
     setForm({
       title: game.title || "",
       version: game.version || "1.0.0",
       entrypoint: game.entrypoint || "",
       platformEntrypoints: Object.keys(platformEntrypoints).length > 0 ? platformEntrypoints : { WINDOWS: "game.exe" },
       description: game.description || "",
-      hardwareSpecs: game.hardwareSpecs || ["WINDOWS"],
+      hardwareSpecs: game.hardwareSpecs || game.platforms || ["WINDOWS"],
       genres: game.genres || ["ACTION"],
       customTags: game.customTags || [],
       licensing: game.licensing || "FREE",
@@ -204,6 +235,7 @@ export default function DeveloperConsole() {
     setCoverFile(null);
     setBannerFile(null);
     setTrailerFile(null);
+    setScreenshotsFiles([]);
     setBinaryFiles({});
     setLogs([]);
     setErrorMessage(null);
@@ -213,10 +245,20 @@ export default function DeveloperConsole() {
 
   const enterCreateMode = () => {
     setSelectedGame(null);
+    
+    // Default system requirement values for WINDOWS build
+    setPlatformSpecs({
+      WINDOWS: {
+        minimum: { os: "Windows 10", processor: "Intel i3", memory: "8 GB RAM", graphics: "GTX 1050", storage: "5 GB space" },
+        recommended: { os: "Windows 11", processor: "Intel i7", memory: "16 GB RAM", graphics: "RTX 3060", storage: "10 GB space" }
+      }
+    });
+
     setForm(INITIAL_FORM);
     setCoverFile(null);
     setBannerFile(null);
     setTrailerFile(null);
+    setScreenshotsFiles([]);
     setBinaryFiles({});
     setLogs([]);
     setErrorMessage(null);
@@ -234,33 +276,26 @@ export default function DeveloperConsole() {
   };
 
   const handleHardwareToggle = (spec: string) => {
-    setForm((prev) => ({
-      ...prev,
-      hardwareSpecs: prev.hardwareSpecs.includes(spec)
+    setForm((prev) => {
+      const nextHardware = prev.hardwareSpecs.includes(spec)
         ? prev.hardwareSpecs.filter((s) => s !== spec)
-        : [...prev.hardwareSpecs, spec]
-    }));
-  };
+        : [...prev.hardwareSpecs, spec];
 
-  const handleCustomTagAdd = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && customTagInput.trim()) {
-      e.preventDefault();
-      const newTag = customTagInput.trim().toUpperCase();
-      if (!form.customTags.includes(newTag)) {
-        setForm((prev) => ({
-          ...prev,
-          customTags: [...prev.customTags, newTag]
+      if (spec !== "WEB" && !prev.hardwareSpecs.includes(spec) && !platformSpecs[spec]) {
+        setPlatformSpecs((prevSpecs) => ({
+          ...prevSpecs,
+          [spec]: {
+            minimum: { os: "", processor: "", memory: "", graphics: "", storage: "" },
+            recommended: { os: "", processor: "", memory: "", graphics: "", storage: "" }
+          }
         }));
       }
-      setCustomTagInput("");
-    }
-  };
 
-  const handleCustomTagRemove = (tag: string) => {
-    setForm((prev) => ({
-      ...prev,
-      customTags: prev.customTags.filter((t) => t !== tag)
-    }));
+      return {
+        ...prev,
+        hardwareSpecs: nextHardware
+      };
+    });
   };
 
   // REST PUT Upload Method to direct Cloudflare R2
@@ -307,19 +342,36 @@ export default function DeveloperConsole() {
       setDeployStep(1);
       addLog(isUpdate ? `UPDATING_GAME_METADATA_FOR_ID: ${gameId}...` : "INITIALIZING_NEW_GAME_CONTAINER...");
 
+      // Prepare the multi-platform systemRequirements payload
+      const systemRequirements: Record<string, any> = {};
+      
+      // Set platform-specific requirements
+      Object.keys(platformSpecs).forEach((platform) => {
+        if (form.hardwareSpecs.includes(platform)) {
+          systemRequirements[platform] = platformSpecs[platform];
+        }
+      });
+      
+      // Find the first selected platform (except WEB) to set at root for backwards-compatibility
+      const firstPlatform = form.hardwareSpecs.find((h) => h !== "WEB");
+      if (firstPlatform && platformSpecs[firstPlatform]) {
+        systemRequirements.minimum = platformSpecs[firstPlatform].minimum;
+        systemRequirements.recommended = platformSpecs[firstPlatform].recommended;
+      }
+
       const payload = {
         title: form.title,
         version: form.version,
         entrypoint: form.entrypoint || undefined,
         platformEntrypoints: form.platformEntrypoints || undefined,
         description: form.description,
+        platforms: form.hardwareSpecs,
         hardwareSpecs: form.hardwareSpecs,
         genres: form.genres,
         customTags: form.customTags,
         licensing: form.licensing,
         price: Number(form.price),
-        minSpecs: form.minSpecs,
-        recSpecs: form.recSpecs
+        systemRequirements: systemRequirements
       };
 
       if (isUpdate) {
@@ -443,6 +495,44 @@ export default function DeveloperConsole() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         addLog("TRAILER_ASSET_REGISTERED ✓");
+        setUploadProgress(0);
+      }
+
+      // Step 4B: Upload Screenshots
+      if (screenshotsFiles.length > 0) {
+        setDeployStep(4);
+        addLog(`TRANSMITTING_SCREENSHOTS (${screenshotsFiles.length} files)...`);
+        for (let i = 0; i < screenshotsFiles.length; i++) {
+          const file = screenshotsFiles[i];
+          addLog(`[SCREENSHOT ${i + 1}/${screenshotsFiles.length}] REQUESTING_PRESIGNED_URL...`);
+          const presignRes = await axios.post(
+            "https://play.lazplay.tech/api/v1/storage/presign-upload",
+            {
+              gameId,
+              fileName: file.name,
+              contentType: file.type || "image/jpeg",
+              purpose: "GAME_MEDIA"
+            },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          const { uploadUrl, publicUrl } = presignRes.data.data || presignRes.data;
+
+          addLog(`[SCREENSHOT ${i + 1}/${screenshotsFiles.length}] UPLOADING: ${file.name} (${Math.round(file.size / 1024)} KB) TO CLOUDFLARE_R2...`);
+          await uploadToR2(uploadUrl, file, (pct) => setUploadProgress(pct));
+
+          addLog(`[SCREENSHOT ${i + 1}/${screenshotsFiles.length}] REGISTERING ASSET WITH BACKEND...`);
+          await axios.post(
+            `https://play.lazplay.tech/api/v1/developer/games/${gameId}/media`,
+            {
+              type: "IMAGE",
+              url: publicUrl,
+              purpose: "SCREENSHOT",
+              alt: "SCREENSHOT"
+            },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+        }
+        addLog("SCREENSHOTS_UPLOADED_TO_R2_SUCCESSFULLY ✓");
         setUploadProgress(0);
       }
 
@@ -648,149 +738,186 @@ export default function DeveloperConsole() {
   }
 
   return (
-    <div className="w-full h-full bg-transparent text-slate-100 flex flex-col font-sans select-none overflow-hidden">
+    <div className="w-full h-full bg-background grid-glow-bg text-on-surface flex flex-col font-sans select-none overflow-hidden">
       
       {/* Upper Navigation Header */}
-      <header className="h-[70px] border-b border-slate-800/80 bg-slate-950/20 backdrop-blur-md flex-shrink-0 flex items-center justify-between px-8 relative z-20">
-        <div className="flex items-center gap-3">
-          <TerminalIcon className="text-brand-500 animate-pulse" size={24} />
-          <div>
-            <h1 className="text-lg font-black tracking-tight text-slate-100 uppercase">
-              Creator Workspace
-            </h1>
-            <p className="text-[10px] font-mono text-brand-500 uppercase tracking-widest">
-              Status: Online // AUTH: {userProfile.displayName || userProfile.email}
-            </p>
-          </div>
+      <header className="flex-shrink-0 flex items-center justify-between p-6 border-b-2 border-outline-variant relative z-20">
+        <div>
+          <h1 className="font-headline-lg text-2xl text-on-surface uppercase mb-1 flex items-center gap-3 glow-text-primary font-bold">
+            <span className="w-4 h-4 bg-primary-container animate-pulse shadow-[0_0_8px_var(--primary-container)]"></span>
+            Creator Workspace
+          </h1>
+          <p className="font-label-mono text-xs text-on-surface-variant uppercase tracking-widest">
+            OPERATOR: {userProfile.displayName || userProfile.email} // NODE: ALPHA_TANGO // STATUS: ONLINE
+          </p>
         </div>
 
-        {view !== "dashboard" && (
-          <button
-            onClick={() => setView("dashboard")}
-            className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition-all px-4 py-2 rounded-lg text-xs font-mono font-bold"
-          >
-            <ChevronLeft size={16} />
-            <span>Return to Dashboard</span>
-          </button>
-        )}
+        <div className="flex gap-2">
+          {view !== "dashboard" ? (
+            <button
+              onClick={() => setView("dashboard")}
+              className="bg-surface-container border-2 border-outline-variant px-4 py-2 font-label-mono text-xs text-on-surface hover:border-primary hover:text-primary transition-colors flex items-center gap-2 group"
+            >
+              <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+              RETURN_TO_DASHBOARD
+            </button>
+          ) : (
+            <>
+              <button 
+                onClick={() => fetchDeveloperGames(token!)}
+                className="bg-surface-container border-2 border-outline-variant px-4 py-2 font-label-mono text-xs text-on-surface hover:border-primary hover:text-primary transition-colors flex items-center gap-2 group"
+              >
+                <Activity size={16} className="group-hover:animate-spin" />
+                REFRESH_DATA
+              </button>
+              <button 
+                onClick={enterCreateMode}
+                className="bg-primary-container/10 border-2 border-primary-container text-primary-container hover:bg-primary-container hover:text-on-primary-container transition-all px-4 py-2 font-label-mono font-bold text-xs flex items-center gap-2 shadow-[4px_4px_0_0_var(--primary-container)]"
+              >
+                <Plus size={16} />
+                CREATE_PROJECT
+              </button>
+            </>
+          )}
+        </div>
       </header>
 
       {/* Main Content Areas */}
-      <div className="flex-1 overflow-y-auto p-8">
+      <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
         
         {/* DASHBOARD VIEW */}
         {view === "dashboard" && (
           <div className="space-y-8 animate-in fade-in duration-300">
             
             {/* Bento Grid Analytics */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="bg-slate-950 border border-slate-800/80 p-5 rounded-xl flex items-center justify-between">
-                <div>
-                  <span className="block text-[10px] font-mono uppercase text-slate-500 mb-1">Total Projects</span>
-                  <span className="text-3xl font-black text-slate-100">{games.length}</span>
+            <div className="grid grid-cols-12 gap-4">
+              {/* Analytics: Revenue (8-bit style) */}
+              <div className="col-span-12 lg:col-span-8 bg-surface border-2 border-outline-variant hover:border-secondary-container transition-colors group relative overflow-hidden flex flex-col">
+                <div className="bg-surface-container border-b-2 border-outline-variant px-3 py-1.5 flex justify-between items-center group-hover:bg-surface-container-high transition-colors">
+                  <span className="font-label-mono text-xs text-secondary drop-shadow-[0_0_4px_var(--secondary)]">REVENUE_ANALYTICS.exe</span>
+                  <div className="flex gap-1">
+                    <div className="w-3 h-3 border border-outline-variant"></div>
+                    <div className="w-3 h-3 border border-outline-variant"></div>
+                    <div className="w-3 h-3 bg-outline-variant border border-outline-variant"></div>
+                  </div>
                 </div>
-                <div className="w-12 h-12 rounded-lg bg-brand-500/10 flex items-center justify-center text-brand-500">
-                  <Layers size={22} />
+                <div className="p-4 flex-1 flex flex-col gap-4 relative">
+                  <div className="flex justify-between items-baseline">
+                    <div>
+                      <span className="font-label-mono text-xs text-on-surface-variant block mb-1">TOTAL_GROSS_REVENUE</span>
+                      <span className="font-headline-lg text-4xl text-secondary glow-text-secondary block">
+                        ₹0.00
+                      </span>
+                    </div>
+                    <span className="bg-surface-container border-2 border-secondary-container text-on-secondary-container font-label-mono text-xs px-2 py-1 flex items-center gap-1 shadow-[2px_2px_0_0_var(--secondary)]">
+                      SALES: 0
+                    </span>
+                  </div>
+                  <div className="flex-1 flex items-end gap-1 mt-4 h-32 w-full border-b-2 border-l-2 border-outline-variant pt-2 pr-2 relative">
+                    <div className="absolute inset-0 bg-[linear-gradient(rgba(0,246,246,0.1)_1px,transparent_1px)] bg-[length:100%_20px] pointer-events-none"></div>
+                    {/* Placeholder Bar Chart */}
+                    <div className="flex-1 group/bar relative border-t-2 transition-all bg-surface-container border-outline-variant" style={{ height: "10%" }}></div>
+                    <div className="flex-1 group/bar relative border-t-2 transition-all bg-surface-container border-outline-variant" style={{ height: "30%" }}></div>
+                    <div className="flex-1 group/bar relative border-t-2 transition-all bg-surface-container border-outline-variant" style={{ height: "15%" }}></div>
+                    <div className="flex-1 group/bar relative border-t-2 transition-all bg-surface-container border-outline-variant" style={{ height: "5%" }}></div>
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-slate-950 border border-slate-800/80 p-5 rounded-xl flex items-center justify-between">
-                <div>
-                  <span className="block text-[10px] font-mono uppercase text-slate-500 mb-1">System Status</span>
-                  <span className="text-3xl font-black text-emerald-400">ONLINE</span>
+              <div className="col-span-12 lg:col-span-4 flex flex-col gap-4">
+                <div className="bg-surface border-2 border-outline-variant p-4 hover:border-primary-container transition-all group flex-1 flex flex-col justify-center">
+                  <span className="font-label-mono text-xs text-on-surface-variant flex justify-between">
+                    PLAYERS (C/T)
+                    <span className="text-on-primary-container animate-pulse">●</span>
+                  </span>
+                  <span className="font-headline-md text-2xl text-on-surface mt-2 block group-hover:text-on-primary-container transition-colors">
+                    0 / 0
+                  </span>
+                  <div className="flex gap-1 mt-4 h-3 w-full">
+                    <div className="flex-1 bg-surface-container border border-outline-variant"></div>
+                    <div className="flex-1 bg-surface-container border border-outline-variant"></div>
+                    <div className="flex-1 bg-surface-container border border-outline-variant"></div>
+                  </div>
                 </div>
-                <div className="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
-                  <Activity size={22} />
+                <div className="bg-surface border-2 border-outline-variant p-4 hover:border-secondary-fixed transition-all group flex-1 flex flex-col justify-center">
+                  <span className="font-label-mono text-xs text-on-surface-variant flex justify-between">
+                    TOTAL_PROJECTS 
+                    <span className="text-secondary-fixed font-bold block">LINKED</span>
+                  </span>
+                  <span className="font-headline-md text-2xl text-secondary-fixed mt-2 block drop-shadow-[0_0_5px_var(--secondary-fixed)]">
+                    {games.length}
+                  </span>
+                  <p className="font-label-mono text-[10px] text-on-surface-variant mt-4 uppercase">
+                    VERSION_CONTROL: ACTIVE
+                  </p>
                 </div>
-              </div>
-
-              <div className="bg-slate-950 border border-slate-800/80 p-5 rounded-xl flex items-center justify-between">
-                <div>
-                  <span className="block text-[10px] font-mono uppercase text-slate-500 mb-1">Currency</span>
-                  <span className="text-3xl font-black text-brand-500">INR (₹)</span>
-                </div>
-                <div className="w-12 h-12 rounded-lg bg-brand-500/10 flex items-center justify-center text-brand-500">
-                  <DollarSign size={22} />
-                </div>
-              </div>
-
-              <div className="bg-slate-950 border border-slate-800/80 p-5 rounded-xl flex flex-col justify-center">
-                <button
-                  onClick={enterCreateMode}
-                  className="w-full bg-brand-600 hover:bg-brand-500 transition-all font-mono text-xs font-bold py-3 rounded-lg flex items-center justify-center gap-2 text-white shadow-[0_0_15px_rgba(59,130,246,0.2)]"
-                >
-                  <Plus size={16} />
-                  <span>Create New Project</span>
-                </button>
               </div>
             </div>
 
             {/* Games Listing Workspace */}
-            <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl overflow-hidden shadow-xl">
-              <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
-                <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-slate-400">Projects List</h3>
-                <span className="text-[10px] font-mono text-slate-500 uppercase">{games.length} Active Projects</span>
+            <div className="bg-surface-container-lowest border-2 border-outline-variant flex flex-col shadow-[8px_8px_0_0_rgba(0,55,55,0.5)] mb-8">
+              <div className="bg-surface-container border-b-2 border-outline-variant px-4 py-2 flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <TerminalIcon className="text-primary" size={16} />
+                  <span className="font-label-mono text-xs text-on-surface font-bold uppercase">Projects List</span>
+                </div>
+                <div className="font-label-mono text-[10px] text-on-surface-variant">
+                  {games.length} Active Projects
+                </div>
               </div>
 
               {games.length === 0 ? (
-                <div className="p-16 text-center border-t border-slate-900">
-                  <UploadCloud className="text-slate-700 mx-auto mb-4 opacity-50" size={48} />
-                  <p className="text-slate-400 font-mono text-sm uppercase">No Projects Found</p>
-                  <button
-                    onClick={enterCreateMode}
-                    className="mt-4 px-4 py-2 bg-slate-900 border border-slate-800 hover:bg-slate-800 transition-colors font-mono text-xs text-brand-500 font-bold"
-                  >
-                    &gt; Create First Project
-                  </button>
+                <div className="p-16 text-center text-on-surface-variant font-label-mono italic">
+                  NO_PROJECTS_FOUND_IN_WORKSPACE
                 </div>
               ) : (
-                <div className="divide-y divide-slate-800/50">
-                  {games.map((game) => (
-                    <div
-                      key={game.id || game.gameId}
-                      className="px-6 py-5 hover:bg-slate-900/30 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
-                    >
-                      <div className="flex items-center gap-4">
-                        {game.coverUrl ? (
-                          <img src={game.coverUrl} className="w-10 h-14 object-cover rounded bg-slate-850" alt="" />
-                        ) : (
-                          <div className="w-10 h-14 rounded bg-slate-850 border border-slate-800 flex items-center justify-center">
-                            <Layers className="text-slate-700" size={16} />
-                          </div>
-                        )}
-                        <div>
-                          <h4 className="font-bold text-slate-100 uppercase">{game.title}</h4>
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            <span className="px-1.5 py-0.5 rounded bg-slate-800 text-[9px] font-mono text-slate-400">
-                              V.{game.version || "1.0.0"}
-                            </span>
-                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono uppercase ${
-                              game.status === "PUBLISHED"
-                                ? "bg-emerald-500/10 text-emerald-400"
-                                : game.status === "QUEUED"
-                                ? "bg-amber-500/10 text-amber-400"
-                                : "bg-blue-500/10 text-blue-400"
-                            }`}>
-                              {game.status || "DRAFT"}
-                            </span>
-                            <span className="px-1.5 py-0.5 rounded bg-slate-800 text-[9px] font-mono text-slate-400 uppercase">
-                              {game.licensing === "FREE" ? "FREE" : `₹${game.price}`}
-                            </span>
-                          </div>
+                <div className="p-4 overflow-x-auto">
+                  <div className="min-w-[600px]">
+                    <div className="grid grid-cols-12 gap-2 text-on-surface-variant border-b border-outline-variant pb-1 mb-1 text-[10px] font-label-mono">
+                      <div className="col-span-4">PROJECT_TITLE</div>
+                      <div className="col-span-2 text-center">VERSION</div>
+                      <div className="col-span-2 text-center">STATUS</div>
+                      <div className="col-span-2 text-center">PRICE</div>
+                      <div className="col-span-2 text-right">ACTION</div>
+                    </div>
+                    {games.map((game) => (
+                      <div key={game.id || game.gameId} className="grid grid-cols-12 gap-2 text-primary hover:bg-surface-container cursor-pointer transition-colors py-2 group items-center border-b border-outline-variant/10">
+                        <div className="col-span-4 flex items-center gap-3 font-bold">
+                          {game.coverUrl ? (
+                            <img src={game.coverUrl} className="w-8 h-8 object-cover border border-outline-variant" alt="" />
+                          ) : (
+                            <div className="w-8 h-8 border border-outline-variant bg-surface flex items-center justify-center">
+                              <Layers size={14} className="text-outline-variant" />
+                            </div>
+                          )}
+                          <span className="truncate">{game.title}</span>
+                        </div>
+                        <div className="col-span-2 text-center font-label-mono text-[10px]">
+                          V.{game.version || "1.0.0"}
+                        </div>
+                        <div className="col-span-2 text-center">
+                          <span className={`text-[9px] px-1 border font-label-mono ${
+                            game.status === "PUBLISHED"
+                              ? "border-secondary-container text-secondary shadow-[0_0_5px_var(--secondary)]"
+                              : "border-outline-variant text-on-surface-variant"
+                          }`}>
+                            {game.status || "DRAFT"}
+                          </span>
+                        </div>
+                        <div className="col-span-2 text-center font-label-mono text-[10px]">
+                          {game.licensing === "FREE" ? "FREE" : `₹${game.price}`}
+                        </div>
+                        <div className="col-span-2 text-right flex items-center justify-end gap-3">
+                          <button
+                            onClick={() => enterDeployMode(game)}
+                            className="bg-surface-container border border-outline-variant p-1.5 hover:border-primary hover:text-primary transition-all text-on-surface"
+                          >
+                            <ArrowRight size={14} />
+                          </button>
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => enterDeployMode(game)}
-                          className="px-4 py-2 rounded bg-brand-600/10 border border-brand-500/20 hover:bg-brand-600 hover:text-white transition-all text-xs font-mono font-bold text-brand-500 flex items-center gap-1.5"
-                        >
-                          <span>Manage Project</span>
-                          <ArrowRight size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -803,48 +930,31 @@ export default function DeveloperConsole() {
             
             {/* Deploy Pipeline Logs Terminal */}
             {(isDeploying || logs.length > 0 || errorMessage || successMessage) && (
-              <div className="bg-slate-950 border border-slate-800/80 rounded-xl p-5 shadow-2xl relative overflow-hidden flex flex-col gap-4">
-                <div className="flex justify-between items-center border-b border-slate-800/60 pb-3">
-                  <div className="flex items-center gap-2 text-brand-500 font-mono text-xs uppercase tracking-wider">
-                    <TerminalIcon size={16} className={isDeploying ? "animate-pulse" : ""} />
-                    <span>DEPLOYMENT_CONSOLE_OUTPUT.LOG</span>
+              <div className="bg-surface-container-lowest border-2 border-outline-variant p-4 flex flex-col gap-3 shadow-[8px_8px_0_0_rgba(0,55,55,0.5)]">
+                <div className="flex justify-between items-center border-b-2 border-outline-variant pb-2">
+                  <div className="flex items-center gap-2 text-primary font-label-mono text-[10px] uppercase font-bold">
+                    <TerminalIcon size={14} className={isDeploying ? "animate-pulse" : ""} />
+                    <span>PROJECT_TERMINAL :: ROOT_ACCESS</span>
                   </div>
                   {isDeploying && (
-                    <div className="text-[10px] font-mono text-brand-500 animate-pulse">
+                    <div className="text-[10px] font-label-mono text-primary animate-pulse">
                       PROCESSING_STAGE_{deployStep}_OF_8
                     </div>
                   )}
                 </div>
 
-                {/* Animated Stages Progress Tracker */}
-                {isDeploying && (
-                  <div className="grid grid-cols-8 gap-1.5 h-1">
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
-                      <div
-                        key={s}
-                        className={`h-full transition-all duration-300 ${
-                          s < deployStep
-                            ? "bg-emerald-500"
-                            : s === deployStep
-                            ? "bg-brand-500 animate-pulse"
-                            : "bg-slate-800"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                )}
-
                 {/* Log Screen */}
-                <div className="bg-black/90 rounded border border-slate-900 p-4 h-[200px] overflow-y-auto font-mono text-[11px] text-slate-300 space-y-1.5 custom-scrollbar">
+                <div className="bg-surface border border-outline-variant p-3 h-[180px] overflow-y-auto font-label-mono text-[10px] text-primary space-y-1 custom-scrollbar">
                   {logs.map((log, index) => (
-                    <div key={index} className={log.includes("SYSTEM_FAILURE") ? "text-red-400" : log.includes("✓") ? "text-emerald-400" : "text-slate-300"}>
-                      {log}
+                    <div key={index} className={log.includes("SYSTEM_FAILURE") || log.includes("CRITICAL") ? "text-error" : log.includes("SUCCESS") || log.includes("✓") ? "text-secondary" : "text-primary opacity-80"}>
+                      <span className="mr-2 text-on-surface-variant opacity-50">&gt;</span> {log}
                     </div>
                   ))}
                   {isDeploying && (
-                    <div className="text-brand-500 animate-pulse flex items-center gap-1.5">
-                      <span>&gt; STREAMING_SIGNAL_CELLS...</span>
-                      {uploadProgress > 0 && <span className="font-bold text-xs">({uploadProgress}%)</span>}
+                    <div className="text-primary animate-pulse flex items-center gap-1.5 mt-2">
+                      <span className="mr-2 text-on-surface-variant opacity-50">&gt;</span>
+                      <span>AWAITING_RESPONSE...</span>
+                      {uploadProgress > 0 && <span className="font-bold text-secondary">[{uploadProgress}%]</span>}
                     </div>
                   )}
                   <div ref={logsEndRef} />
@@ -852,457 +962,395 @@ export default function DeveloperConsole() {
 
                 {/* Progress Bar */}
                 {isDeploying && uploadProgress > 0 && (
-                  <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden border border-slate-800">
+                  <div className="w-full bg-surface-container h-1 border border-outline-variant">
                     <div
-                      className="bg-brand-500 h-1.5 transition-all duration-150"
+                      className="bg-primary h-full transition-all duration-150"
                       style={{ width: `${uploadProgress}%` }}
                     />
                   </div>
                 )}
 
-                {/* Failure Alerts */}
+                {/* Alerts */}
                 {errorMessage && (
-                  <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded text-xs font-mono flex items-center gap-2 animate-in slide-in-from-top duration-200">
-                    <AlertTriangle size={16} />
+                  <div className="bg-error-container border border-error text-on-error-container p-2 text-[10px] font-label-mono uppercase flex items-center gap-2">
+                    <AlertTriangle size={14} />
                     <span>SYSTEM_FAILURE_ENCOUNTERED: {errorMessage}</span>
                   </div>
                 )}
 
-                {/* Success Alerts */}
                 {successMessage && (
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3 rounded text-xs font-mono flex items-center gap-2 animate-in slide-in-from-top duration-200">
-                    <CheckCircle size={16} />
+                  <div className="bg-secondary-container border border-secondary text-on-secondary-container p-2 text-[10px] font-label-mono uppercase flex items-center gap-2">
+                    <CheckCircle size={14} />
                     <span>PROTOCOL_VERIFIED_SUCCESSFUL: {successMessage}</span>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Two-Column Specification Form */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Bento Grid Layout */}
+            <div className="grid grid-cols-12 gap-6">
               
-              {/* Left Column - Metadata */}
-              <div className="lg:col-span-7 bg-slate-950/80 border border-slate-800/80 rounded-xl p-6 space-y-6">
-                <div className="border-b border-slate-800 pb-3">
-                  <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-slate-400">
-                    Project Details
+              {/* Metadata Card */}
+              <div className="col-span-12 lg:col-span-7 bg-[#0D1410]/30 pixel-border p-6 flex flex-col gap-6">
+                <div className="flex items-center justify-between border-b border-brand-500/10 pb-3">
+                  <h3 className="font-label-mono text-primary text-[10px] font-bold flex items-center gap-2 uppercase tracking-widest">
+                    <TerminalIcon size={14} /> Project Metadata
                   </h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-mono uppercase text-slate-500">Project Title</label>
-                    <input
-                      placeholder="e.g. CyberRun 2099"
-                      value={form.title}
-                      onChange={(e) => setForm({ ...form, title: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-800 focus:border-brand-500 p-3 rounded-lg text-sm text-slate-200 outline-none transition-all font-mono"
-                    />
+                    <label className="block font-label-mono text-[10px] text-slate-400 uppercase font-bold tracking-wider">Project Title</label>
+                    <div className="flex items-center bg-[#0B120D] text-primary p-2.5 border border-brand-500/12 rounded-lg focus-within:border-brand-500/60 focus-within:shadow-[0_0_12px_rgba(57,255,136,0.12)] transition-all group">
+                      <span className="mr-2 text-brand-500/40 font-mono group-focus-within:text-brand-500">&gt;</span>
+                      <input
+                        placeholder="Enter project name"
+                        value={form.title}
+                        onChange={(e) => setForm({ ...form, title: e.target.value })}
+                        className="bg-transparent border-none focus:ring-0 p-0 w-full font-sans text-sm text-slate-200 outline-none"
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-mono uppercase text-slate-500">Version</label>
-                    <input
-                      placeholder="e.g. 1.0.0"
-                      value={form.version}
-                      onChange={(e) => setForm({ ...form, version: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-800 focus:border-brand-500 p-3 rounded-lg text-sm text-slate-200 outline-none transition-all font-mono"
-                    />
+                    <label className="block font-label-mono text-[10px] text-slate-400 uppercase font-bold tracking-wider">Version</label>
+                    <div className="flex items-center bg-[#0B120D] text-primary p-2.5 border border-brand-500/12 rounded-lg focus-within:border-brand-500/60 focus-within:shadow-[0_0_12px_rgba(57,255,136,0.12)] transition-all group">
+                      <span className="mr-2 text-brand-500/40 font-mono group-focus-within:text-brand-500">&gt;</span>
+                      <input
+                        placeholder="1.0.0"
+                        value={form.version}
+                        onChange={(e) => setForm({ ...form, version: e.target.value })}
+                        className="bg-transparent border-none focus:ring-0 p-0 w-full font-sans text-sm text-slate-200 outline-none"
+                      />
+                    </div>
                   </div>
 
-
-
-                  <div className="space-y-2 col-span-full">
-                    <label className="block text-[10px] font-mono uppercase text-slate-500">Description</label>
+                  <div className="col-span-full space-y-2">
+                    <label className="block font-label-mono text-[10px] text-slate-400 uppercase font-bold tracking-wider">Description</label>
                     <textarea
-                      placeholder="Input description details here..."
+                      placeholder="Tell players about your game, mechanics, and story..."
                       value={form.description}
                       onChange={(e) => setForm({ ...form, description: e.target.value })}
-                      rows={5}
-                      className="w-full bg-slate-900 border border-slate-800 focus:border-brand-500 p-3 rounded-lg text-sm text-slate-200 outline-none transition-all font-mono resize-none"
+                      rows={4}
+                      className="w-full bg-[#0B120D] border border-brand-500/12 focus:border-brand-500/60 focus:shadow-[0_0_12px_rgba(57,255,136,0.12)] p-3 rounded-lg text-sm text-slate-200 outline-none transition-all font-sans resize-none"
                     />
                   </div>
                 </div>
 
-                {/* Specifications Matrix */}
-                <div className="space-y-4">
-                  <span className="block text-[10px] font-mono uppercase text-slate-500 border-b border-slate-800/40 pb-1.5">
-                    Hardware Requirements
+                {/* Specs */}
+                <div className="space-y-4 pt-4 border-t border-brand-500/10">
+                  <span className="block text-[10px] font-label-mono uppercase text-primary font-bold tracking-wider">
+                    Hardware Requirements (Per Platform)
                   </span>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Minimum Specs */}
-                    <div className="bg-slate-900/50 p-4 border border-slate-800/60 rounded-lg space-y-3">
-                      <span className="block text-[9px] font-mono uppercase text-brand-500">Minimum Specs</span>
-                      {["os", "processor", "memory", "graphics", "storage"].map((f) => (
-                        <div key={f} className="space-y-1">
-                          <label className="block text-[8px] font-mono uppercase text-slate-500">{f}</label>
-                          <input
-                            value={(form.minSpecs as any)[f]}
-                            onChange={(e) =>
-                              setForm({
-                                ...form,
-                                minSpecs: { ...form.minSpecs, [f]: e.target.value }
-                              })
-                            }
-                            className="w-full bg-slate-950 border border-slate-800 p-2 text-xs font-mono text-slate-300 focus:border-brand-500 outline-none"
-                          />
-                        </div>
-                      ))}
+                  {form.hardwareSpecs.filter((h) => h !== "WEB").length === 0 ? (
+                    <div className="p-4 text-center border border-dashed border-brand-500/20 bg-[#0B120D]/60 rounded-xl text-slate-400 font-label-mono text-xs italic">
+                      NO HARDWARE SPECIFICATIONS REQUIRED FOR WEB-ONLY DEPLOYMENT
                     </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {form.hardwareSpecs
+                        .filter((platform) => platform !== "WEB")
+                        .map((platform) => {
+                          const specs = platformSpecs[platform] || {
+                            minimum: { os: "", processor: "", memory: "", graphics: "", storage: "" },
+                            recommended: { os: "", processor: "", memory: "", graphics: "", storage: "" }
+                          };
+                          return (
+                            <div key={platform} className="bg-[#0B120D]/40 border border-brand-500/10 rounded-xl p-4 space-y-4">
+                              <div className="flex items-center gap-2 border-b border-brand-500/10 pb-2">
+                                <span className="text-[9px] font-label-mono font-bold px-2 py-0.5 rounded bg-secondary/15 text-secondary border border-secondary/30 uppercase">
+                                  {platform} SPECIFICATIONS
+                                </span>
+                              </div>
 
-                    {/* Recommended Specs */}
-                    <div className="bg-slate-900/50 p-4 border border-slate-800/60 rounded-lg space-y-3">
-                      <span className="block text-[9px] font-mono uppercase text-emerald-400">Recommended Specs</span>
-                      {["os", "processor", "memory", "graphics", "storage"].map((f) => (
-                        <div key={f} className="space-y-1">
-                          <label className="block text-[8px] font-mono uppercase text-slate-500">{f}</label>
-                          <input
-                            value={(form.recSpecs as any)[f]}
-                            onChange={(e) =>
-                              setForm({
-                                ...form,
-                                recSpecs: { ...form.recSpecs, [f]: e.target.value }
-                              })
-                            }
-                            className="w-full bg-slate-950 border border-slate-800 p-2 text-xs font-mono text-slate-300 focus:border-brand-500 outline-none"
-                          />
-                        </div>
-                      ))}
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Minimum specs */}
+                                <div className="bg-[#0D1410]/20 p-4 border border-brand-500/5 rounded-lg space-y-3">
+                                  <p className="font-label-mono text-[9px] text-secondary/80 font-bold tracking-wider uppercase mb-1">Minimum Specs</p>
+                                  {["os", "processor", "memory", "graphics", "storage"].map((f) => (
+                                    <div key={f} className="space-y-1">
+                                      <label className="block font-label-mono text-[8px] text-slate-400 uppercase tracking-wider">{f === "os" ? "OS" : f}</label>
+                                      <input
+                                        value={specs.minimum[f] || ""}
+                                        onChange={(e) => {
+                                          setPlatformSpecs((prev) => ({
+                                            ...prev,
+                                            [platform]: {
+                                              ...prev[platform],
+                                              minimum: { ...prev[platform].minimum, [f]: e.target.value }
+                                            }
+                                          }));
+                                        }}
+                                        className="w-full bg-[#0B120D] border border-brand-500/12 rounded-lg p-2 text-xs font-sans text-slate-200 focus:border-brand-500/60 focus:shadow-[0_0_12px_rgba(57,255,136,0.12)] outline-none transition-all"
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+
+                                {/* Recommended specs */}
+                                <div className="bg-[#0D1410]/20 p-4 border border-brand-500/5 rounded-lg space-y-3">
+                                  <p className="font-label-mono text-[9px] text-primary/80 font-bold tracking-wider uppercase mb-1">Recommended Specs</p>
+                                  {["os", "processor", "memory", "graphics", "storage"].map((f) => (
+                                    <div key={f} className="space-y-1">
+                                      <label className="block font-label-mono text-[8px] text-slate-400 uppercase tracking-wider">{f === "os" ? "OS" : f}</label>
+                                      <input
+                                        value={specs.recommended[f] || ""}
+                                        onChange={(e) => {
+                                          setPlatformSpecs((prev) => ({
+                                            ...prev,
+                                            [platform]: {
+                                              ...prev[platform],
+                                              recommended: { ...prev[platform].recommended, [f]: e.target.value }
+                                            }
+                                          }));
+                                        }}
+                                        className="w-full bg-[#0B120D] border border-brand-500/12 rounded-lg p-2 text-xs font-sans text-slate-200 focus:border-brand-500/60 focus:shadow-[0_0_12px_rgba(57,255,136,0.12)] outline-none transition-all"
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
-              {/* Right Column - Categorization & Files */}
-              <div className="lg:col-span-5 space-y-6">
+              {/* Categorization & Integrations Card */}
+              <div className="col-span-12 lg:col-span-5 flex flex-col gap-6">
                 
-                {/* Categorization & Pricing */}
-                <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-6 space-y-5">
-                  <div className="border-b border-slate-800 pb-3">
-                    <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-slate-400">
-                      Platform Integration
+                <div className="bg-[#0D1410]/30 pixel-border p-6 space-y-5 flex-1">
+                  <div className="border-b border-brand-500/10 pb-3">
+                    <h3 className="font-label-mono text-[10px] font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                      <Layers size={14} /> Categorization & Licensing
                     </h3>
                   </div>
 
-                  {/* Platforms Supported */}
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-mono uppercase text-slate-500">Hardware Targets</label>
+                    <label className="block font-label-mono text-[10px] text-slate-400 uppercase font-bold tracking-wider">Target Platforms</label>
                     <div className="grid grid-cols-2 gap-2">
-                      {HARDWARE_OPTIONS.map((opt) => (
-                        <button
-                          key={opt}
-                          onClick={() => handleHardwareToggle(opt)}
-                          className={`p-2 border font-mono text-[10px] text-left transition-all ${
-                            form.hardwareSpecs.includes(opt)
-                              ? "bg-brand-500/10 border-brand-500 text-brand-500 font-bold"
-                              : "bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700"
-                          }`}
-                        >
-                          {opt}
-                        </button>
-                      ))}
-                    </div>
-                    {form.hardwareSpecs.includes("WEB") && (
-                      <div className="p-3 border border-amber-500/20 bg-amber-500/5 text-amber-500 font-mono text-[9px] uppercase animate-in fade-in duration-200 rounded-lg">
-                        ⚠️ WARNING: WEB BUILDS ARE STRICTLY FOR FREE PLAY & DEMO PURPOSES ONLY. THEY CANNOT BE SOLD FOR A PRICE.
-                      </div>
-                    )}
-                  </div>
-
-
-
-                  {/* Genres Supported */}
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-mono uppercase text-slate-500">_GENRE_TAGS</label>
-                    <div className="flex flex-wrap gap-1.5">
-                      {GENRES.map((g) => (
-                        <button
-                          key={g}
-                          onClick={() => handleGenreToggle(g)}
-                          className={`px-2.5 py-1.5 border font-mono text-[9px] transition-all rounded ${
-                            form.genres.includes(g)
-                              ? "bg-brand-500/10 border-brand-500 text-brand-500 font-bold"
-                              : "bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700"
-                          }`}
-                        >
-                          {g}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Custom Vectors Tags */}
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-mono uppercase text-slate-500">_CUSTOM_VECTORS</label>
-                    <input
-                      placeholder="INPUT_TAG_AND_PRESS_ENTER"
-                      value={customTagInput}
-                      onChange={(e) => setCustomTagInput(e.target.value)}
-                      onKeyDown={handleCustomTagAdd}
-                      className="w-full bg-slate-900 border border-slate-800 focus:border-brand-500 p-2.5 rounded-lg text-xs text-slate-200 outline-none transition-all font-mono uppercase"
-                    />
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {form.customTags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="flex items-center gap-1.5 px-2 py-1 bg-slate-900 text-slate-300 font-mono text-[9px] border border-slate-800 rounded"
-                        >
-                          <span>{tag}</span>
+                      {HARDWARE_OPTIONS.map((opt) => {
+                        const isSelected = form.hardwareSpecs.includes(opt);
+                        return (
                           <button
-                            onClick={() => handleCustomTagRemove(tag)}
-                            className="text-slate-500 hover:text-red-400 transition-colors"
+                            key={opt}
+                            type="button"
+                            onClick={() => handleHardwareToggle(opt)}
+                            className={`p-3 rounded-lg border text-xs transition-all font-sans flex items-center justify-between ${
+                              isSelected
+                                ? "bg-primary/8 border-brand-500 text-brand-500 shadow-[0_0_10px_rgba(57,255,136,0.08)] font-bold"
+                                : "bg-[#0D1410]/40 border-brand-500/12 text-slate-400 hover:text-slate-200 hover:border-brand-500/30"
+                            }`}
                           >
-                            ×
+                            <span>{opt.charAt(0) + opt.slice(1).toLowerCase()}</span>
+                            {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></span>}
                           </button>
-                        </span>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
 
-                  {/* Pricing / Base model */}
-                  <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-800/40">
+                  <div className="space-y-2">
+                    <label className="block font-label-mono text-[10px] text-slate-400 uppercase font-bold tracking-wider">Genre Tags</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {GENRES.map((g) => {
+                        const isSelected = form.genres.includes(g);
+                        return (
+                          <button
+                            key={g}
+                            type="button"
+                            onClick={() => handleGenreToggle(g)}
+                            className={`px-2.5 py-1.5 rounded-md border text-[9px] font-mono transition-all uppercase ${
+                              isSelected
+                                ? "bg-secondary/15 border-secondary text-secondary font-bold"
+                                : "bg-[#0D1410]/40 border-brand-500/12 text-slate-400 hover:border-secondary/40 hover:text-slate-200"
+                            }`}
+                          >
+                            {g}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-brand-500/10">
                     <div className="space-y-2">
-                      <label className="block text-[10px] font-mono uppercase text-slate-500">_LICENSING</label>
+                      <label className="block font-label-mono text-[10px] text-slate-400 uppercase font-bold tracking-wider">Licensing</label>
                       <select
                         value={form.licensing}
-                        onChange={(e) =>
-                          setForm({
-                            ...form,
-                            licensing: e.target.value as "FREE" | "PAID",
-                            price: e.target.value === "FREE" ? 0 : form.price
-                          })
-                        }
-                        className="w-full bg-slate-900 border border-slate-800 text-slate-300 p-2.5 rounded-lg text-xs font-mono outline-none"
+                        onChange={(e) => setForm({ ...form, licensing: e.target.value as "FREE" | "PAID", price: e.target.value === "FREE" ? 0 : form.price })}
+                        className="w-full bg-[#0B120D] border border-brand-500/12 text-slate-300 p-2.5 rounded-lg text-xs outline-none focus:border-brand-500/60 focus:shadow-[0_0_12px_rgba(57,255,136,0.12)] transition-all font-sans"
                       >
-                        <option value="FREE">FREE_TO_PLAY</option>
-                        <option value="PAID">PREMIUM</option>
+                        <option value="FREE">Free to Play</option>
+                        <option value="PAID">Premium Paid</option>
                       </select>
                     </div>
 
                     <div className="space-y-2">
-                      <label className="block text-[10px] font-mono uppercase text-slate-500">_BASE_PRICE (INR)</label>
+                      <label className="block font-label-mono text-[10px] text-slate-400 uppercase font-bold tracking-wider">Base Price (INR)</label>
                       <input
                         type="number"
                         disabled={form.licensing === "FREE"}
                         value={form.price}
                         onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
-                        className="w-full bg-slate-900 disabled:opacity-40 border border-slate-800 focus:border-brand-500 p-2.5 rounded-lg text-xs text-slate-200 outline-none transition-all font-mono"
+                        className="w-full bg-[#0B120D] disabled:opacity-30 border border-brand-500/12 rounded-lg focus:border-brand-500/60 focus:shadow-[0_0_12px_rgba(57,255,136,0.12)] p-2.5 text-xs text-slate-200 outline-none transition-all font-sans"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Native Staged File Uploaders */}
-                <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-6 space-y-4">
-                  <div className="border-b border-slate-800 pb-3">
-                    <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-slate-400">
-                      Media Assets
+                <div className="bg-[#0D1410]/30 pixel-border p-6 space-y-4">
+                  <div className="border-b border-brand-500/10 pb-3">
+                    <h3 className="font-label-mono text-[10px] font-bold uppercase text-primary flex items-center gap-2 tracking-widest">
+                      <UploadCloud size={14} /> Asset Uplink
                     </h3>
                   </div>
 
-                  {/* Cover image file picker */}
+                  {/* Media Files */}
+                  {[
+                    { key: "cover", label: "Cover Art (2:3 Ratio)", file: coverFile, setFile: setCoverFile },
+                    { key: "banner", label: "Hero Banner (16:9 Ratio)", file: bannerFile, setFile: setBannerFile },
+                    { key: "trailer", label: "Trailer (.mp4 video file)", file: trailerFile, setFile: setTrailerFile }
+                  ].map((asset) => (
+                    <div key={asset.key} className="space-y-1.5">
+                      <label className="block font-label-mono text-[10px] text-slate-400 uppercase font-bold tracking-wider">{asset.label}</label>
+                      <div className="flex items-center gap-2">
+                        <label className="flex-1 bg-[#0B120D] border border-brand-500/12 hover:border-brand-500/40 cursor-pointer p-2.5 rounded-lg flex items-center justify-between text-xs transition-all text-slate-300">
+                          <span className="truncate">{asset.file ? asset.file.name : "Select Asset File..."}</span>
+                          <input type="file" accept={asset.key === "trailer" ? "video/mp4" : "image/*"} className="hidden" onChange={(e) => asset.setFile(e.target.files?.[0] || null)} />
+                        </label>
+                        {asset.file && (
+                          <button onClick={() => asset.setFile(null)} className="text-slate-400 hover:text-error p-1">
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Screenshots Files Upload slot */}
                   <div className="space-y-1.5">
-                    <label className="block text-[9px] font-mono uppercase text-slate-500">Project Cover Art (2:3)</label>
-                    <div className="flex items-center gap-3">
-                      <label className="flex-1 bg-slate-900 border border-slate-800 hover:border-brand-500 cursor-pointer p-3 rounded-lg flex items-center justify-between text-xs font-mono transition-all text-slate-400">
-                        <span className="truncate">{coverFile ? coverFile.name : "Choose Cover Image..."}</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => setCoverFile(e.target.files?.[0] || null)}
+                    <label className="block font-label-mono text-[10px] text-slate-400 uppercase font-bold tracking-wider">Screenshots (Up to 10 Images)</label>
+                    <div className="flex flex-col gap-2">
+                      <label className="bg-[#0B120D] border border-brand-500/12 hover:border-brand-500/40 cursor-pointer p-2.5 rounded-lg flex items-center justify-between text-xs transition-all text-slate-300">
+                        <span className="truncate">
+                          {screenshotsFiles.length > 0 
+                            ? `${screenshotsFiles.length} Screenshot(s) Selected` 
+                            : "Select Screenshot Files..."}
+                        </span>
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          multiple 
+                          className="hidden" 
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files || []);
+                            setScreenshotsFiles((prev) => [...prev, ...files].slice(0, 10));
+                          }} 
                         />
                       </label>
-                      {coverFile && (
-                        <button onClick={() => setCoverFile(null)} className="text-slate-500 hover:text-red-400 p-2">
-                          <Trash2 size={16} />
-                        </button>
+                      {screenshotsFiles.length > 0 && (
+                        <div className="flex flex-wrap gap-2 p-2 bg-[#0B120D]/60 border border-brand-500/10 rounded-lg">
+                          {screenshotsFiles.map((file, idx) => (
+                            <div key={idx} className="flex items-center gap-1.5 bg-[#0D1410] border border-brand-500/10 px-2 py-1 rounded text-[10px] text-slate-300">
+                              <span className="truncate max-w-[120px]">{file.name}</span>
+                              <button 
+                                type="button"
+                                onClick={() => setScreenshotsFiles((prev) => prev.filter((_, i) => i !== idx))} 
+                                className="text-slate-500 hover:text-error"
+                              >
+                                <Trash2 size={10} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </div>
                   </div>
 
-                  {/* Banner Image file picker */}
-                  <div className="space-y-1.5">
-                    <label className="block text-[9px] font-mono uppercase text-slate-500">Hero Banner Art (16:9)</label>
-                    <div className="flex items-center gap-3">
-                      <label className="flex-1 bg-slate-900 border border-slate-800 hover:border-brand-500 cursor-pointer p-3 rounded-lg flex items-center justify-between text-xs font-mono transition-all text-slate-400">
-                        <span className="truncate">{bannerFile ? bannerFile.name : "Choose Banner Image..."}</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => setBannerFile(e.target.files?.[0] || null)}
-                        />
-                      </label>
-                      {bannerFile && (
-                        <button onClick={() => setBannerFile(null)} className="text-slate-500 hover:text-red-400 p-2">
-                          <Trash2 size={16} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Trailer Video file picker */}
-                  <div className="space-y-1.5">
-                    <label className="block text-[9px] font-mono uppercase text-slate-500">Trailer Video (.MP4)</label>
-                    <div className="flex items-center gap-3">
-                      <label className="flex-1 bg-slate-900 border border-slate-800 hover:border-brand-500 cursor-pointer p-3 rounded-lg flex items-center justify-between text-xs font-mono transition-all text-slate-400">
-                        <span className="truncate">{trailerFile ? trailerFile.name : "Choose Video File..."}</span>
-                        <input
-                          type="file"
-                          accept="video/mp4"
-                          className="hidden"
-                          onChange={(e) => setTrailerFile(e.target.files?.[0] || null)}
-                        />
-                      </label>
-                      {trailerFile && (
-                        <button onClick={() => setTrailerFile(null)} className="text-slate-500 hover:text-red-400 p-2">
-                          <Trash2 size={16} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Platform Specific Build and Launch Configuration Grid */}
+                  {/* Build Targets */}
                   {form.hardwareSpecs.length > 0 && (
-                    <div className="space-y-4 pt-4 mt-4 border-t border-slate-800/60">
-                      <h4 className="text-[10px] font-mono uppercase text-brand-500 font-bold tracking-widest flex items-center gap-2">
-                        <TerminalIcon size={12} className="animate-pulse" />
-                        Target Platforms & Builds
-                      </h4>
-                      <div className="space-y-3.5">
+                    <div className="space-y-4 pt-4 mt-4 border-t border-brand-500/10">
+                      <h4 className="font-label-mono text-[10px] text-slate-400 uppercase font-bold tracking-wider">Target Builds</h4>
+                      <div className="space-y-3">
                         {form.hardwareSpecs.map((platform) => {
                           const binaryPath = binaryFiles[platform];
                           return (
-                            <div key={platform} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3 bg-slate-900/40 border border-slate-800/60 rounded-xl items-center animate-in fade-in duration-200">
-                              
-                              {/* Left Column: Platform Entry Point Input */}
-                              <div className="space-y-1.5">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[9px] font-mono font-black px-1.5 py-0.5 rounded bg-brand-500/10 text-brand-500 uppercase">
-                                    {platform}
-                                  </span>
-                                  <span className="text-[8px] font-mono text-slate-400 uppercase tracking-wide">
-                                    Entrypoint
-                                  </span>
-                                </div>
-                                <div className="flex items-center bg-slate-950 border border-slate-800 focus-within:border-brand-500 transition-all p-2.5 rounded-lg">
-                                  <span className="text-slate-600 font-mono text-[10px] mr-2">&gt;</span>
-                                  <input
-                                    className="bg-transparent border-none p-0 focus:ring-0 w-full text-[10px] font-mono text-slate-300 placeholder:text-slate-700 outline-none"
-                                    placeholder={platform === "WEB" ? "index.html" : "game.exe"}
-                                    type="text"
-                                    value={form.platformEntrypoints?.[platform] || ""}
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      setForm({
-                                        ...form,
-                                        platformEntrypoints: {
-                                          ...(form.platformEntrypoints || {}),
-                                          [platform]: val
-                                        }
-                                      });
-                                    }}
-                                  />
-                                </div>
-                              </div>
-
-                              {/* Right Column: Platform Directory Picker */}
-                              <div className="space-y-1.5">
-                                <span className="block text-[8px] font-mono text-slate-400 uppercase tracking-wide">
-                                  Build Directory
+                            <div key={platform} className="bg-[#0B120D]/60 border border-brand-500/10 p-3 rounded-lg space-y-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-label-mono font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary uppercase border border-primary/20">
+                                  {platform}
                                 </span>
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={async () => {
-                                      if (window.lazplayAPI?.selectFolder) {
-                                        const path = await window.lazplayAPI.selectFolder();
-                                        if (path) {
-                                          setBinaryFiles((prev) => ({
-                                            ...prev,
-                                            [platform]: path
-                                          }));
-                                        }
-                                      }
-                                    }}
-                                    className="flex-1 bg-slate-950 border border-emerald-500/20 hover:border-emerald-500 cursor-pointer p-2.5 rounded-lg flex items-center justify-between text-[10px] font-mono transition-all text-emerald-500/70 text-left"
-                                  >
-                                    <span className="truncate font-bold text-emerald-500/90 max-w-[85%]">
-                                      {binaryPath ? binaryPath : `Choose Directory...`}
-                                    </span>
-                                  </button>
-                                  {binaryPath && (
-                                    <button
-                                      onClick={() =>
-                                        setBinaryFiles((prev) => ({
-                                          ...prev,
-                                          [platform]: null
-                                        }))
-                                      }
-                                      className="text-slate-500 hover:text-red-400 p-2"
-                                    >
-                                      <Trash2 size={14} />
-                                    </button>
-                                  )}
-                                </div>
+                                <input
+                                  className="bg-[#0B120D] border border-brand-500/12 focus:border-brand-500/60 rounded-md w-full px-2 py-1 text-xs font-sans text-slate-200 outline-none"
+                                  placeholder={platform === "WEB" ? "index.html" : "game.exe"}
+                                  value={form.platformEntrypoints?.[platform] || ""}
+                                  onChange={(e) => setForm({ ...form, platformEntrypoints: { ...(form.platformEntrypoints || {}), [platform]: e.target.value } })}
+                                />
                               </div>
-
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    if (window.lazplayAPI?.selectFolder) {
+                                      const path = await window.lazplayAPI.selectFolder();
+                                      if (path) setBinaryFiles((prev) => ({ ...prev, [platform]: path }));
+                                    }
+                                  }}
+                                  className="flex-1 bg-[#0B120D] border border-secondary/20 hover:border-secondary/50 rounded-md p-2 text-xs font-sans transition-all text-secondary text-left"
+                                >
+                                  <span className="truncate">{binaryPath || `Select Local Directory`}</span>
+                                </button>
+                                {binaryPath && (
+                                  <button onClick={() => setBinaryFiles((prev) => ({ ...prev, [platform]: null }))} className="text-slate-400 hover:text-error p-1">
+                                    <Trash2 size={12} />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           );
                         })}
                       </div>
                     </div>
                   )}
+
+                  {/* Actions */}
+                  <div className="pt-4 border-t border-brand-500/10 space-y-3">
+                    <button
+                      onClick={handleExecuteDeployment}
+                      disabled={isDeploying || !form.title}
+                      className="w-full bg-brand-500 text-slate-950 hover:bg-brand-500/80 active:scale-[0.98] disabled:opacity-40 transition-all py-3 rounded-lg font-sans font-bold text-sm tracking-wide flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(57,255,136,0.12)]"
+                    >
+                      {isDeploying ? "Transmitting..." : (selectedGame ? "Update Project" : "Initialize Deployment")}
+                    </button>
+
+                    {selectedGame && (
+                      <button
+                        onClick={async () => {
+                          if (window.confirm("CRITICAL WARNING: Terminate this project permanently?")) {
+                            try {
+                              setIsDeploying(true);
+                              await axios.delete(`https://play.lazplay.tech/api/v1/developer/games/${selectedGame.id}`, { headers: { Authorization: `Bearer ${token}` } });
+                              fetchDeveloperGames(token);
+                              setView("dashboard");
+                            } catch (err: any) {
+                              alert(err.response?.data?.message || "Failed to terminate project.");
+                            } finally {
+                              setIsDeploying(false);
+                            }
+                          }
+                        }}
+                        disabled={isDeploying}
+                        className="w-full border border-error/35 text-error hover:bg-error/5 hover:border-error rounded-lg transition-all py-2 font-sans text-xs flex items-center justify-center gap-2"
+                      >
+                        <Trash2 size={14} /> Terminate Project
+                      </button>
+                    )}
+                  </div>
                 </div>
-
-                {/* Big Deploy action button */}
-                <button
-                  onClick={handleExecuteDeployment}
-                  disabled={isDeploying || !form.title}
-                  className="w-full bg-brand-600 hover:bg-brand-500 disabled:opacity-40 active:scale-[0.98] transition-all py-4 rounded-xl text-slate-950 font-bold text-sm tracking-wider flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(0,246,246,0.2)]"
-                >
-                  {isDeploying ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></div>
-                      <span>Deploying Project...</span>
-                    </>
-                  ) : (
-                    <>
-                      <UploadCloud size={18} />
-                      <span>{selectedGame ? "Update Project" : "Deploy Project"}</span>
-                    </>
-                  )}
-                </button>
-
-                {/* Terminate Project Button */}
-                {selectedGame && (
-                  <button
-                    onClick={async () => {
-                      if (window.confirm("Are you sure you want to terminate this project? This will permanently delete the game, its builds, and all assets.")) {
-                        try {
-                          setIsDeploying(true);
-                          await axios.delete(`https://play.lazplay.tech/api/v1/developer/games/${selectedGame.id}`, {
-                            headers: { Authorization: `Bearer ${token}` }
-                          });
-                          alert("Project successfully terminated.");
-                          fetchDeveloperGames(token);
-                          setView("dashboard");
-                        } catch (err: any) {
-                          alert(err.response?.data?.message || "Failed to terminate project.");
-                        } finally {
-                          setIsDeploying(false);
-                        }
-                      }
-                    }}
-                    disabled={isDeploying}
-                    className="w-full mt-4 bg-transparent border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-all py-3 rounded-xl font-bold text-xs tracking-wider flex items-center justify-center gap-2"
-                  >
-                    <Trash2 size={16} />
-                    <span>Terminate Project</span>
-                  </button>
-                )}
               </div>
             </div>
           </div>

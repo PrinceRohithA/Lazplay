@@ -72,6 +72,15 @@ export function setupIpcHandlers(
     log.info("clear-session: Logging out user, clearing SQLite tokens...");
     db.setTokens("", "");
 
+    if (storeView && mainWindow) {
+      try {
+        mainWindow.contentView.removeChildView(storeView);
+        log.info("clear-session: Detached storeView from mainWindow");
+      } catch (e) {
+        log.warn("clear-session: Failed to detach storeView:", e);
+      }
+    }
+
     if (storeView && !storeView.webContents.isDestroyed()) {
       try {
         await storeView.webContents.executeJavaScript(`
@@ -229,9 +238,6 @@ export function setupIpcHandlers(
     return { success: false, error: "Storefront view not available" };
   });
 
-  ipcMain.handle("get-access-token", () => {
-    return db.getTokens().token || null;
-  });
 
   ipcMain.handle("sync-remote-library", async () => {
     // Strategy 1: Read token directly from the store WebContentsView's localStorage.
