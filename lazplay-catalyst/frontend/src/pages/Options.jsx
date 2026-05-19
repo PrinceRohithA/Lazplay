@@ -139,30 +139,6 @@ export default function Options() {
         </section>
       </div>
 
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="bg-surface-container border-2 border-outline-variant p-8 opacity-50 cursor-not-allowed">
-           <h3 className="font-headline-md text-headline-md text-on-surface mb-4 flex items-center gap-2">
-            <span className="material-symbols-outlined">monitor</span>
-            SCANLINE_DENSITY
-          </h3>
-          <div className="h-2 bg-outline-variant w-full rounded-full overflow-hidden">
-            <div className="h-full bg-primary-container w-1/2"></div>
-          </div>
-          <div className="mt-2 text-[10px] font-label-mono text-outline-variant text-right">MODULE_LOCKED_FOR_V1.1</div>
-        </div>
-
-        <div className="bg-surface-container border-2 border-outline-variant p-8 opacity-50 cursor-not-allowed">
-           <h3 className="font-headline-md text-headline-md text-on-surface mb-4 flex items-center gap-2">
-            <span className="material-symbols-outlined">animation</span>
-            CRT_FLICKER_INTENSITY
-          </h3>
-          <div className="h-2 bg-outline-variant w-full rounded-full overflow-hidden">
-            <div className="h-full bg-primary-container w-3/4"></div>
-          </div>
-          <div className="mt-2 text-[10px] font-label-mono text-outline-variant text-right">MODULE_LOCKED_FOR_V1.1</div>
-        </div>
-      </section>
-
       <div className="mt-12 pt-8 border-t-2 border-outline-variant flex justify-between items-center">
         <div className="text-[10px] font-label-mono text-outline-variant">
           SESSION_ID: {Math.random().toString(36).substring(7).toUpperCase()}
