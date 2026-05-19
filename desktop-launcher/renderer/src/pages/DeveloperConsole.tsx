@@ -1341,6 +1341,7 @@ export default function DeveloperConsole() {
                                 slot.setFile!(selected[0]);
                               }
                             }
+                            e.target.value = "";
                           }}
                         />
                         <span className={`material-symbols-outlined text-4xl group-hover:text-primary mb-2 transition-transform group-hover:scale-110 ${hasFile ? 'text-primary animate-pulse' : 'text-slate-400'}`}>{slot.icon}</span>
@@ -1522,7 +1523,7 @@ export default function DeveloperConsole() {
                     {isDeploying ? 'sync' : 'rocket_launch'}
                   </span>
                   <span className="uppercase tracking-tighter font-extrabold text-lg text-primary glow-text-primary">
-                    {isDeploying ? 'TRANSMITTING...' : (selectedGame ? 'UPDATE_&_DEPLOY' : 'INITIATE_DEPLOY')}
+                    {isDeploying ? 'WE_ARE_PROCESSING...' : (selectedGame ? 'UPDATE_&_DEPLOY' : 'INITIATE_DEPLOY')}
                   </span>
                   <span className="font-label-mono text-[9px] opacity-70 uppercase text-slate-400">
                     {selectedGame ? 'FORCE_OVERWRITE_ACTIVE' : 'CONFIRM_GRID_UPLOAD'}

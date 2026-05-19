@@ -4,6 +4,8 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { blake3 } from 'hash-wasm';
+import JSZip from 'jszip';
+
 
 const calculateFileBlake3 = async (file) => {
   return new Promise((resolve, reject) => {
@@ -107,6 +109,34 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     GAME_BINARIES_WEB: useRef(null)
   };
 
+  const [cleanForm, setCleanForm] = useState(null);
+  const [cleanPlatformSpecs, setCleanPlatformSpecs] = useState({});
+
+  const checkIfDirty = () => {
+    if (!cleanForm) return false;
+    if (form.title !== cleanForm.title) return true;
+    if (form.version !== cleanForm.version) return true;
+    if (form.entrypoint !== cleanForm.entrypoint) return true;
+    if (form.description !== cleanForm.description) return true;
+    if (form.licensing !== cleanForm.licensing) return true;
+    if (form.price !== cleanForm.price) return true;
+    if (Number(form.storeCut) !== Number(cleanForm.storeCut)) return true;
+
+    if (JSON.stringify(form.hardwareSpecs) !== JSON.stringify(cleanForm.hardwareSpecs)) return true;
+    if (JSON.stringify(form.genres) !== JSON.stringify(cleanForm.genres)) return true;
+    if (JSON.stringify(form.customTags) !== JSON.stringify(cleanForm.customTags)) return true;
+    if (JSON.stringify(form.platformEntrypoints) !== JSON.stringify(cleanForm.platformEntrypoints)) return true;
+
+    if (JSON.stringify(platformSpecs) !== JSON.stringify(cleanPlatformSpecs)) return true;
+
+    if (files.COVER_IMAGE || files.HERO_BANNER || files.SCREENSHOTS.length > 0 || files.VIDEO_TRAILER) return true;
+    if (files.GAME_BINARIES_WINDOWS || files.GAME_BINARIES_LINUX || files.GAME_BINARIES_ANDROID || files.GAME_BINARIES_WEB) return true;
+
+    return false;
+  };
+  const isDirty = checkIfDirty();
+
+
   const addLog = useCallback((msg) => {
     setLogs(prev => [...prev, { time: new Date().toLocaleTimeString(), msg }]);
   }, []);
@@ -147,8 +177,9 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         }
       });
       setPlatformSpecs(initialSpecs);
+      setCleanPlatformSpecs(initialSpecs);
 
-      setForm({
+      const loadedForm = {
         title: game.title,
         version: game.version || builds[0]?.version || 'v1.0.0',
         entrypoint: game.entrypoint || builds[0]?.entrypoint || '',
@@ -163,7 +194,10 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         status: game.status || 'DRAFT',
         minSpecs: game.systemRequirements?.minimum || { os: 'WINDOWS_10_X64', processor: 'I5-6600K', memory: '8GB', graphics: 'GTX 1060', storage: '50GB' },
         recSpecs: game.systemRequirements?.recommended || { os: 'WINDOWS_11_X64', processor: 'I7-9700K', memory: '16GB', graphics: 'RTX 2070', storage: '50GB' }
-      });
+      };
+
+      setForm(loadedForm);
+      setCleanForm(loadedForm);
 
       // Fetch media
       // Note: Backend might not have devApi.media, let's check if we have it or if it's gamesApi.media
@@ -181,6 +215,28 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     authApi.me().then(res => setUser(res.data)).catch(() => { });
     fetchGameData();
   }, [fetchGameData]);
+
+  useEffect(() => {
+    if (!gameIdParam) {
+      setCleanForm({
+        title: '',
+        version: 'v1.0.0',
+        entrypoint: '',
+        platformEntrypoints: { WINDOWS: 'game.exe' },
+        description: '',
+        hardwareSpecs: ['WINDOWS'],
+        genres: ['ACTION'],
+        customTags: [],
+        licensing: 'PAID',
+        price: '999',
+        storeCut: 10,
+        status: 'DRAFT',
+        minSpecs: { os: 'WINDOWS_10_X64', processor: 'I5-6600K', memory: '8GB', graphics: 'GTX 1060', storage: '50GB' },
+        recSpecs: { os: 'WINDOWS_11_X64', processor: 'I7-9700K', memory: '16GB', graphics: 'RTX 2070', storage: '50GB' }
+      });
+      setCleanPlatformSpecs({});
+    }
+  }, [gameIdParam]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -209,7 +265,10 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
 
   const handleFileSelect = (type, e) => {
     const selectedFiles = Array.from(e.target.files);
-    if (!selectedFiles.length) return;
+    if (!selectedFiles.length) {
+      if (e.target) e.target.value = '';
+      return;
+    }
 
     if (type === 'GAME_BINARIES' || type.startsWith('GAME_BINARIES_')) {
       if (type === 'GAME_BINARIES_WINDOWS') {
@@ -224,22 +283,83 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
 
       const file = selectedFiles[0];
       const isAndroid = type === 'GAME_BINARIES_ANDROID';
-      const maxSizeBytes = isAndroid ? 5 * 1024 * 1024 * 1024 : 500 * 1024 * 1024; // 5GB for Android, 500MB for others
-      const limitLabel = isAndroid ? '5GB' : '500MB';
+      const isWeb = type === 'GAME_BINARIES_WEB';
+      
+      let maxSizeBytes = 500 * 1024 * 1024; // 500MB for others
+      let limitLabel = '500MB';
+      if (isAndroid) {
+        maxSizeBytes = 5 * 1024 * 1024 * 1024;
+        limitLabel = '5GB';
+      } else if (isWeb) {
+        maxSizeBytes = 2 * 1024 * 1024 * 1024;
+        limitLabel = '2GB';
+      }
 
       if (file.size > maxSizeBytes) {
         alert(
-          `UPLOAD_BLOCKED: The selected build "${file.name}" is ${(file.size / 1024 / 1024).toFixed(2)}MB, which exceeds the ${limitLabel} browser upload limit for ${isAndroid ? 'Android' : 'Web/Linux'} games.`
+          `UPLOAD_BLOCKED: The selected build "${file.name}" is ${(file.size / 1024 / 1024).toFixed(2)}MB, which exceeds the ${limitLabel} browser upload limit for ${isAndroid ? 'Android' : (isWeb ? 'Web' : 'Linux')} games.`
         );
         addLog(`BLOCKED: ${type} is too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Limit is ${limitLabel}.`);
         if (e.target) e.target.value = '';
         return;
+      }
+
+      if (isWeb && file) {
+        addLog(`VALIDATING_WEB_BUILD_ARCHIVE: ${file.name}...`);
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          try {
+            const zip = await JSZip.loadAsync(event.target.result);
+            const zipFiles = Object.values(zip.files).filter(f => !f.dir);
+
+            // 1. Check max files limit (1,000 files)
+            if (zipFiles.length > 1000) {
+              alert(`UPLOAD_BLOCKED: Web game builds are strictly limited to a maximum of 1,000 files/items to ensure optimal browser execution performance. Your build contains ${zipFiles.length} items. Please compress, pack textures, or bundle assets.`);
+              addLog(`BLOCKED: Web build file count exceeded (${zipFiles.length} items).`);
+              if (e.target) e.target.value = '';
+              return;
+            }
+
+            // 2. Check for entrypoint index.html
+            let entrypointFound = false;
+            for (const f of zipFiles) {
+              const name = f.name.toLowerCase();
+              if (name === 'index.html' || name.endsWith('/index.html')) {
+                entrypointFound = true;
+                break;
+              }
+            }
+
+            if (!entrypointFound) {
+              alert('UPLOAD_BLOCKED: index.html was not found in the build archive. A valid web game must contain a root or sub-folder index.html file.');
+              addLog('BLOCKED: Web build entrypoint (index.html) is missing.');
+              if (e.target) e.target.value = '';
+              return;
+            }
+
+            // 3. Stage the file if validation passed
+            setFiles(prev => ({ ...prev, [type]: file }));
+            addLog(`ASSET_STAGED: ${type} (${file.name}) [CLIENT-SIDE VALIDATION PASSED ✓]`);
+          } catch (err) {
+            alert(`UPLOAD_BLOCKED: Invalid ZIP file or build archive is corrupted.`);
+            addLog(`BLOCKED: Web build archive is invalid.`);
+            if (e.target) e.target.value = '';
+          }
+        };
+        reader.onerror = () => {
+          alert('UPLOAD_BLOCKED: Failed to read the selected file.');
+          addLog('BLOCKED: Failed to read selected file.');
+          if (e.target) e.target.value = '';
+        };
+        reader.readAsArrayBuffer(file);
+        return; // Async staging will happen in onload
       }
     }
 
     if (type === 'COVER_IMAGE') {
       const existingCover = existingMedia.filter((m) => m.alt === 'COVER_IMAGE');
       if (existingCover.length > 0 && !window.confirm('COVER_IMAGE_ALREADY_EXISTS. REPLACE_IT? THIS WILL DELETE THE CURRENT ONE.')) {
+        if (e.target) e.target.value = '';
         return;
       }
     }
@@ -247,6 +367,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     if (type === 'HERO_BANNER') {
       const existingHero = existingMedia.filter((m) => m.alt === 'HERO_BANNER');
       if (existingHero.length > 0 && !window.confirm('HERO_BANNER_ALREADY_EXISTS. REPLACE_IT? THIS WILL DELETE THE CURRENT ONE.')) {
+        if (e.target) e.target.value = '';
         return;
       }
     }
@@ -254,12 +375,14 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     if (type === 'VIDEO_TRAILER') {
       const existingVideos = existingMedia.filter((m) => m.type === 'VIDEO' || m.alt === 'VIDEO_TRAILER');
       if (existingVideos.length > 0 && !window.confirm('VIDEO_TRAILER_ALREADY_EXISTS. REPLACE_IT? THIS WILL DELETE THE CURRENT ONE.')) {
+        if (e.target) e.target.value = '';
         return;
       }
     }
 
     if (type === 'GAME_BINARIES') {
       if (existingBuilds.length > 0 && !window.confirm('BUILD_ALREADY_EXISTS. REPLACE_IT? THIS WILL DELETE THE CURRENT BUILD.')) {
+        if (e.target) e.target.value = '';
         return;
       }
     }
@@ -271,6 +394,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
       setFiles(prev => ({ ...prev, [type]: selectedFiles[0] }));
       addLog(`ASSET_STAGED: ${type} (${selectedFiles[0].name})`);
     }
+    if (e.target) e.target.value = '';
   };
 
   const uploadBuildArtifact = useCallback((file, uploadUrl) => new Promise((resolve, reject) => {
@@ -555,6 +679,17 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         addLog('WARN: NO_NEW_BUILDS_STAGED. SKIPPING_BINARY_UPLOAD.');
       }
 
+      setFiles({
+        COVER_IMAGE: null,
+        HERO_BANNER: null,
+        SCREENSHOTS: [],
+        VIDEO_TRAILER: null,
+        GAME_BINARIES_WINDOWS: null,
+        GAME_BINARIES_LINUX: null,
+        GAME_BINARIES_ANDROID: null,
+        GAME_BINARIES_WEB: null
+      });
+
       if (!gameIdParam) {
         setTimeout(() => navigate(`/deployment?id=${gameId}`), 2000);
       } else {
@@ -685,9 +820,6 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         <div className="flex items-center gap-4">
           {gameIdParam && (
             <div className="flex gap-2">
-              {user?.roles?.includes('ADMIN') && form.status === 'PENDING_REVIEW' && (
-                <button onClick={() => handleLifecycleAction('publish')} className="px-3 py-1 border border-primary-container text-primary-container font-label-mono text-[10px] hover:bg-primary-container/10">PUBLISH_LIVE</button>
-              )}
               {form.status === 'PUBLISHED' && (
                 <button onClick={() => handleLifecycleAction('unpublish')} className="px-3 py-1 border border-error text-error font-label-mono text-[10px] hover:bg-error/10">UNPUBLISH</button>
               )}
@@ -1249,18 +1381,18 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         {/*  Action Area  */}
         <div className="col-span-12 lg:col-span-4 flex flex-col gap-gutter">
           <button
-            onClick={form.status === 'DRAFT' && existingBuilds.length > 0 ? () => handleLifecycleAction('submit') : handleDeploy}
+            onClick={isDirty ? handleDeploy : (form.status === 'DRAFT' && existingBuilds.length > 0 ? () => handleLifecycleAction('submit') : handleDeploy)}
             disabled={loading}
-            className={`w-full h-full font-headline-md p-6 pixel-border-active hover:scale-[1.02] active:scale-95 transition-all flex flex-col items-center justify-center gap-4 group min-h-[150px] ${loading ? 'bg-surface-container-highest text-on-surface-variant cursor-wait' : (form.status === 'DRAFT' && existingBuilds.length > 0 ? 'bg-secondary-container text-on-secondary-container' : 'bg-primary-container text-on-primary-container')}`}
+            className={`w-full h-full font-headline-md p-6 pixel-border-active hover:scale-[1.02] active:scale-95 transition-all flex flex-col items-center justify-center gap-4 group min-h-[150px] ${loading ? 'bg-surface-container-highest text-on-surface-variant cursor-wait' : (isDirty ? 'bg-amber-500 text-slate-950 border-amber-500' : (form.status === 'DRAFT' && existingBuilds.length > 0 ? 'bg-secondary-container text-on-secondary-container' : 'bg-primary-container text-on-primary-container'))}`}
           >
             <span className={`material-symbols-outlined text-headline-xl group-hover:scale-110 transition-transform ${loading ? 'animate-spin' : ''}`}>
-              {loading ? 'sync' : (form.status === 'DRAFT' && existingBuilds.length > 0 ? 'assignment_turned_in' : 'rocket_launch')}
+              {loading ? 'sync' : (isDirty ? 'save' : (form.status === 'DRAFT' && existingBuilds.length > 0 ? 'assignment_turned_in' : 'rocket_launch'))}
             </span>
             <span className="uppercase tracking-tighter font-extrabold">
-              {loading ? 'SYNCING...' : (form.status === 'DRAFT' && existingBuilds.length > 0 ? 'SUBMIT_FOR_REVIEW' : (gameIdParam ? 'UPDATE_&_DEPLOY' : 'INITIATE_DEPLOY'))}
+              {loading ? 'WE_ARE_PROCESSING...' : (isDirty ? 'UPDATE_PROJECT' : (form.status === 'DRAFT' && existingBuilds.length > 0 ? 'SUBMIT_FOR_REVIEW' : (gameIdParam ? 'UPDATE_&_DEPLOY' : 'INITIATE_DEPLOY')))}
             </span>
             <span className="font-label-mono text-[10px] opacity-70 uppercase">
-              {form.status === 'DRAFT' && existingBuilds.length > 0 ? 'SYSTEM_READY_FOR_INSPECTION' : (gameIdParam ? 'FORCE_OVERWRITE_ACTIVE' : 'CONFIRM_GRID_UPLOAD')}
+              {loading ? 'WE_ARE_PROCESSING...' : (isDirty ? 'UNSAVED_CHANGES_DETECTED' : (form.status === 'DRAFT' && existingBuilds.length > 0 ? 'SYSTEM_READY_FOR_INSPECTION' : (gameIdParam ? 'FORCE_OVERWRITE_ACTIVE' : 'CONFIRM_GRID_UPLOAD')))}
             </span>
           </button>
 

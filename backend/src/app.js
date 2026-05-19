@@ -925,75 +925,94 @@ async function scanAndPrepareBuild(build, game) {
   assertR2Config(bucket);
   const runtimeBucket = getRuntimeBucketForGame(game, build);
 
-  // Only download if we are actually going to extract it (Free + Web)
-  let archiveBuffer;
+  // Stream ZIP file straight to a temp file on disk to avoid loading it in backend heap memory
+  const randomId = crypto.randomBytes(16).toString('hex');
+  const tempZipPath = path.join(os.tmpdir(), `lazplay_web_build_${build.id}_${randomId}.zip`);
+  const writeStream = fs.createWriteStream(tempZipPath);
+
   try {
     const response = await r2.send(new GetObjectCommand({ Bucket: bucket, Key: objectKey }));
     const bodyStream = response.Body;
-    const chunks = [];
-    for await (const chunk of bodyStream) {
-      chunks.push(Buffer.from(chunk));
-    }
-    archiveBuffer = Buffer.concat(chunks);
+    await new Promise((resolve, reject) => {
+      bodyStream.pipe(writeStream);
+      bodyStream.on('error', (err) => {
+        writeStream.destroy();
+        reject(err);
+      });
+      writeStream.on('finish', resolve);
+      writeStream.on('error', reject);
+    });
   } catch (error) {
     console.error('[build-download-failed]', { buildId: build.id, objectKey, message: error?.message });
+    try {
+      await fs.promises.unlink(tempZipPath);
+    } catch {}
     throw new HttpError(502, 'BUILD_DOWNLOAD_FAILED', 'Failed to download build artifact');
   }
 
   let zip;
   try {
-    zip = new AdmZip(archiveBuffer);
+    zip = new AdmZip(tempZipPath);
   } catch {
+    try {
+      await fs.promises.unlink(tempZipPath);
+    } catch {}
     throw new HttpError(400, 'BUILD_ARCHIVE_INVALID', 'Build archive is invalid or not a zip file');
   }
 
-  const entries = zip.getEntries().filter((entry) => !entry.isDirectory);
-  if (isWeb && entries.length > 2000) {
-    throw new HttpError(400, 'BUILD_FILE_COUNT_EXCEEDED', `Web game builds are strictly limited to a maximum of 2,000 files/items to ensure optimal browser execution performance. Your build contains ${entries.length} items. Please compress, pack textures, or bundle assets.`);
-  }
-  const normalizedEntries = [];
-  let entrypoint = null;
-
-  for (const entry of entries) {
-    const normalized = normalizeArchivePath(entry.entryName);
-    if (!normalized) continue;
-    normalizedEntries.push({ entry, normalized });
-    if (normalized.toLowerCase() === 'index.html') entrypoint = normalized;
-    if (!entrypoint && normalized.toLowerCase().endsWith('/index.html')) entrypoint = normalized;
-  }
-
-  if (!entrypoint) {
-    // If no root index.html, try to find any index.html or game.exe in the archive
-    const backup = normalizedEntries.find(e =>
-      e.normalized.toLowerCase().endsWith('index.html') ||
-      e.normalized.toLowerCase().endsWith('game.exe') ||
-      e.normalized.toLowerCase().endsWith('.exe')
-    );
-
-    if (backup) {
-      entrypoint = backup.normalized;
-      console.log('[build-entrypoint-fallback]', { buildId: build.id, entrypoint });
-    } else if (isWeb) {
-      // For web, if we really can't find anything, we must fail
-      console.error('[build-entrypoint-missing]', { buildId: build.id, objectKey });
-      throw new HttpError(400, 'BUILD_ENTRYPOINT_MISSING', 'index.html was not found in the build archive');
-    } else {
-      // For native, we can default to game.exe and let the launcher handle it
-      entrypoint = 'game.exe';
+  try {
+    const entries = zip.getEntries().filter((entry) => !entry.isDirectory);
+    if (isWeb && entries.length > 2000) {
+      throw new HttpError(400, 'BUILD_FILE_COUNT_EXCEEDED', `Web game builds are strictly limited to a maximum of 2,000 files/items to ensure optimal browser execution performance. Your build contains ${entries.length} items. Please compress, pack textures, or bundle assets.`);
     }
+    const normalizedEntries = [];
+    let entrypoint = null;
+
+    for (const entry of entries) {
+      const normalized = normalizeArchivePath(entry.entryName);
+      if (!normalized) continue;
+      normalizedEntries.push({ entry, normalized });
+      if (normalized.toLowerCase() === 'index.html') entrypoint = normalized;
+      if (!entrypoint && normalized.toLowerCase().endsWith('/index.html')) entrypoint = normalized;
+    }
+
+    if (!entrypoint) {
+      // If no root index.html, try to find any index.html or game.exe in the archive
+      const backup = normalizedEntries.find(e =>
+        e.normalized.toLowerCase().endsWith('index.html') ||
+        e.normalized.toLowerCase().endsWith('game.exe') ||
+        e.normalized.toLowerCase().endsWith('.exe')
+      );
+
+      if (backup) {
+        entrypoint = backup.normalized;
+        console.log('[build-entrypoint-fallback]', { buildId: build.id, entrypoint });
+      } else if (isWeb) {
+        // For web, if we really can't find anything, we must fail
+        console.error('[build-entrypoint-missing]', { buildId: build.id, objectKey });
+        throw new HttpError(400, 'BUILD_ENTRYPOINT_MISSING', 'index.html was not found in the build archive');
+      } else {
+        // For native, we can default to game.exe and let the launcher handle it
+        entrypoint = 'game.exe';
+      }
+    }
+
+    console.log('[build-zip-entries]', { buildId: build.id, entries: normalizedEntries.length, entrypoint });
+
+    for (const { entry, normalized } of normalizedEntries) {
+      const runtimeKey = `runtime/${game.id}/${build.id}/${normalized}`;
+      await uploadRuntimeObject(runtimeKey, entry.getData(), contentTypeForPath(normalized), runtimeBucket);
+    }
+
+    return await prisma.gameBuild.update({
+      where: { id: build.id },
+      data: { status: 'SCANNED', scanStatus: 'PASSED', entrypoint }
+    });
+  } finally {
+    try {
+      await fs.promises.unlink(tempZipPath);
+    } catch {}
   }
-
-  console.log('[build-zip-entries]', { buildId: build.id, entries: normalizedEntries.length, entrypoint });
-
-  for (const { entry, normalized } of normalizedEntries) {
-    const runtimeKey = `runtime/${game.id}/${build.id}/${normalized}`;
-    await uploadRuntimeObject(runtimeKey, entry.getData(), contentTypeForPath(normalized), runtimeBucket);
-  }
-
-  return prisma.gameBuild.update({
-    where: { id: build.id },
-    data: { status: 'SCANNED', scanStatus: 'PASSED', entrypoint }
-  });
 }
 
 async function deleteStorageObject(objectKey, bucket = resolveBucketForKey(objectKey)) {
