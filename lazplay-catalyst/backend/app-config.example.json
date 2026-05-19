@@ -28,7 +28,7 @@
     "LAZPLAY_RAZORPAY_KEY_ID": "",
     "LAZPLAY_RAZORPAY_KEY_SECRET": "",
     "LAZPLAY_RAZORPAY_WEBHOOK_SECRET": "",
-    "LAZPLAY_RESEND_API_KEY": "resend_key"
+    "LAZPLAY_BREVO_API_KEY": "your_brevo_api_key"
   },
   "scripts": {
     "preserve": "npm install --omit=dev",

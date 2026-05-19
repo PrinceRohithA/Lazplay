@@ -60,7 +60,7 @@ const config = {
   razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET || 'lazplay-razorpay-dev-secret',
   razorpayWebhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || 'lazplay-webhook-dev-secret',
   allowMockPayments: (process.env.ALLOW_MOCK_PAYMENTS || 'true') === 'true',
-  resendApiKey: process.env.RESEND_API_KEY || process.env.LAZPLAY_RESEND_API_KEY || 'resend_key'
+  brevoApiKey: process.env.BREVO_API_KEY || process.env.LAZPLAY_BREVO_API_KEY || 'brevo_key'
 };
 
 const r2 = new S3Client({
@@ -1033,27 +1033,31 @@ function assertRazorpayWebhook(req) {
 }
 
 async function sendEmail({ to, subject, html }) {
-  if (!config.resendApiKey) {
-    throw new Error('Resend API key not configured');
+  if (!config.brevoApiKey) {
+    throw new Error('Brevo API key not configured');
   }
   try {
-    const response = await fetch('https://api.resend.com/emails', {
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${config.resendApiKey}`,
-        'Content-Type': 'application/json'
+        'api-key': config.brevoApiKey,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
       body: JSON.stringify({
-        from: 'LazPlay <noreply@mail.lazplay.tech>',
-        to,
+        sender: {
+          name: 'LazPlay',
+          email: 'noreply@mail.lazplay.tech'
+        },
+        to: [{ email: to }],
         subject,
-        html
+        htmlContent: html
       })
     });
     const data = await response.json();
     if (!response.ok) {
       console.error('[email-failed]', data);
-      throw new Error(data.message || 'Failed to send email');
+      throw new Error(data.message || 'Failed to send email via Brevo');
     }
     return data;
   } catch (error) {
@@ -1061,6 +1065,7 @@ async function sendEmail({ to, subject, html }) {
     throw error;
   }
 }
+
 
 async function createOTP(email, purpose) {
   const code = Math.floor(100000 + Math.random() * 900000).toString();
