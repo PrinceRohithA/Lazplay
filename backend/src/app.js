@@ -1067,8 +1067,8 @@ async function sendEmail({ to, subject, html }) {
       },
       body: JSON.stringify({
         sender: {
-          name: 'LazPlay',
-          email: 'noreply@mail.lazplay.tech'
+          name: 'Lazplay',
+          email: 'noreply@mail.lazplay.in'
         },
         to: [{ email: to }],
         subject,
