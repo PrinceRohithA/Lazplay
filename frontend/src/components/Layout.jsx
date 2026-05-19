@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { auth as authApi } from '../api';
+import Footer from './Footer';
 
 export default function Layout() {
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -178,10 +179,13 @@ export default function Layout() {
         </nav>
 
         {/* Main Content Area */}
-        <main className={`flex-1 transition-all duration-300 min-h-[calc(100vh-64px)] 
+        <main className={`flex-1 transition-all duration-300 min-h-[calc(100vh-64px)] flex flex-col
           ${isCollapsed ? 'md:ml-20' : 'md:ml-64'}
         `}>
-          <Outlet />
+          <div className="flex-1">
+            <Outlet />
+          </div>
+          <Footer />
         </main>
       </div>
     </div>

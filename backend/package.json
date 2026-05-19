@@ -27,7 +27,8 @@
     "@lazplay/distribution": "file:../packages/distribution",
     "@prisma/client": "^6.7.0",
     "adm-zip": "^0.5.12",
-    "razorpay": "^2.9.6"
+    "razorpay": "^2.9.6",
+    "resend": "^6.12.3"
   },
   "devDependencies": {
     "prisma": "^6.7.0"

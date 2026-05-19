@@ -12,6 +12,9 @@ import DeveloperWorkspaceAdvancedDeploymentSuite from './pages/DeveloperWorkspac
 import Options from './pages/Options';
 import LauncherDownloadPage from './pages/LauncherDownloadPage';
 import Profile from './pages/Profile';
+import TermsOfService from './pages/TermsOfService';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import RefundPolicy from './pages/RefundPolicy';
 import Layout from './components/Layout';
 
 const isInsideLauncher = typeof window !== 'undefined' && !!window.electron;
@@ -33,6 +36,9 @@ function App() {
           <Route path="profile" element={<Profile />} />
           <Route path="deployment" element={<DeveloperWorkspaceAdvancedDeploymentSuite />} />
           <Route path="download-launcher" element={<LauncherDownloadPage />} />
+          <Route path="terms-and-conditions" element={<TermsOfService />} />
+          <Route path="privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="refund-policy" element={<RefundPolicy />} />
         </Route>
       </Routes>
     </Router>
