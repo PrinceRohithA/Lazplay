@@ -1054,8 +1054,8 @@ function assertRazorpayWebhook(req) {
 }
 
 async function sendEmail({ to, subject, html }) {
-  if (!config.resendApiKey) {
-    console.warn('[email-skipped] Resend API key not configured', { to, subject });
+  if (!config.resendApiKey || config.resendApiKey === 'resend_key') {
+    console.warn('[email-skipped] Resend API key not configured or placeholder detected', { to, subject });
     return null;
   }
   try {
@@ -1080,6 +1080,10 @@ async function sendEmail({ to, subject, html }) {
     return data;
   } catch (error) {
     console.error('[email-error]', error);
+    if (config.appEnv !== 'production') {
+      console.warn('[email-suppressed-error] Continuing registration flow in non-production environment despite email delivery failure.');
+      return null;
+    }
     throw error;
   }
 }
@@ -1111,6 +1115,7 @@ async function verifyOTP(email, purpose, code) {
 
 async function sendOTP(email, purpose, subjectPrefix = 'LazPlay') {
   const code = await createOTP(email, purpose);
+  console.log(`[OTP-GENERATED] Verification code for ${email} [${purpose}]: ${code}`);
   const subject = purpose === 'VERIFY_EMAIL' 
     ? `[${subjectPrefix}] Verify your email` 
     : `[${subjectPrefix}] Reset your password`;
