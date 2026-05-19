@@ -1054,16 +1054,14 @@ async function sendEmail({ to, subject, html }) {
     const data = await response.json();
     if (!response.ok) {
       console.error('[email-failed]', data);
-      throw new Error(data.message || 'Failed to send email');
+      console.warn('[email-error-suppressed] Resend API returned an error:', data.message || 'Failed to send email');
+      return null;
     }
     return data;
   } catch (error) {
     console.error('[email-error]', error);
-    if (config.appEnv !== 'production') {
-      console.warn('[email-suppressed-error] Continuing registration flow in non-production environment despite email delivery failure.');
-      return null;
-    }
-    throw error;
+    console.warn('[email-error-suppressed] Continuing despite email delivery failure.');
+    return null;
   }
 }
 
