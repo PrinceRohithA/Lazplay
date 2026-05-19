@@ -280,12 +280,20 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
       const file = selectedFiles[0];
       const isAndroid = type === 'GAME_BINARIES_ANDROID';
       const isWeb = type === 'GAME_BINARIES_WEB';
-      const maxSizeBytes = isAndroid ? 5 * 1024 * 1024 * 1024 : 500 * 1024 * 1024; // 5GB for Android, 500MB for others
-      const limitLabel = isAndroid ? '5GB' : '500MB';
+      
+      let maxSizeBytes = 500 * 1024 * 1024; // 500MB for others
+      let limitLabel = '500MB';
+      if (isAndroid) {
+        maxSizeBytes = 5 * 1024 * 1024 * 1024;
+        limitLabel = '5GB';
+      } else if (isWeb) {
+        maxSizeBytes = 2 * 1024 * 1024 * 1024;
+        limitLabel = '2GB';
+      }
 
       if (file.size > maxSizeBytes) {
         alert(
-          `UPLOAD_BLOCKED: The selected build "${file.name}" is ${(file.size / 1024 / 1024).toFixed(2)}MB, which exceeds the ${limitLabel} browser upload limit for ${isAndroid ? 'Android' : 'Web/Linux'} games.`
+          `UPLOAD_BLOCKED: The selected build "${file.name}" is ${(file.size / 1024 / 1024).toFixed(2)}MB, which exceeds the ${limitLabel} browser upload limit for ${isAndroid ? 'Android' : (isWeb ? 'Web' : 'Linux')} games.`
         );
         addLog(`BLOCKED: ${type} is too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Limit is ${limitLabel}.`);
         if (e.target) e.target.value = '';
@@ -300,9 +308,9 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
             const zip = await JSZip.loadAsync(event.target.result);
             const zipFiles = Object.values(zip.files).filter(f => !f.dir);
 
-            // 1. Check max files limit (2,000 files)
-            if (zipFiles.length > 2000) {
-              alert(`UPLOAD_BLOCKED: Web game builds are strictly limited to a maximum of 2,000 files/items to ensure optimal browser execution performance. Your build contains ${zipFiles.length} items. Please compress, pack textures, or bundle assets.`);
+            // 1. Check max files limit (1,000 files)
+            if (zipFiles.length > 1000) {
+              alert(`UPLOAD_BLOCKED: Web game builds are strictly limited to a maximum of 1,000 files/items to ensure optimal browser execution performance. Your build contains ${zipFiles.length} items. Please compress, pack textures, or bundle assets.`);
               addLog(`BLOCKED: Web build file count exceeded (${zipFiles.length} items).`);
               if (e.target) e.target.value = '';
               return;

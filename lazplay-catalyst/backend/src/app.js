@@ -946,8 +946,8 @@ async function scanAndPrepareBuild(build, game) {
   }
 
   const entries = zip.getEntries().filter((entry) => !entry.isDirectory);
-  if (isWeb && entries.length > 2000) {
-    throw new HttpError(400, 'BUILD_FILE_COUNT_EXCEEDED', `Web game builds are strictly limited to a maximum of 2,000 files/items to ensure optimal browser execution performance. Your build contains ${entries.length} items. Please compress, pack textures, or bundle assets.`);
+  if (isWeb && entries.length > 1000) {
+    throw new HttpError(400, 'BUILD_FILE_COUNT_EXCEEDED', `Web game builds are strictly limited to a maximum of 1,000 files/items to ensure optimal browser execution performance. Your build contains ${entries.length} items. Please compress, pack textures, or bundle assets.`);
   }
   const normalizedEntries = [];
   let entrypoint = null;

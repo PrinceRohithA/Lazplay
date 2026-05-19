@@ -624,8 +624,8 @@ router.add('POST', '/developer/builds/:buildId/upload-url', async (req) => {
     }
 
     const isWeb = build.platform?.toUpperCase() === 'WEB' || build.runtime?.toUpperCase() === 'WEB';
-    if (isWeb && body.sizeBytes > 500n * 1024n * 1024n) {
-      throw new HttpError(400, 'BUILD_LIMIT_EXCEEDED', 'Web game builds are strictly limited to a maximum size of 500MB (524,288,000 bytes)');
+    if (isWeb && body.sizeBytes > 2n * 1024n * 1024n * 1024n) {
+      throw new HttpError(400, 'BUILD_LIMIT_EXCEEDED', 'Web game builds are strictly limited to a maximum size of 2GB (2,147,483,648 bytes)');
     }
 
     const objectKey = `games/${build.gameId}/builds/${build.id}/${body.fileName}`;

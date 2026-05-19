@@ -189,8 +189,22 @@ export function createApp() {
     return ok({ game }, 201);
   });
 
-  router.add('POST', '/developer/builds/:buildId/upload-url', async (req, { db }) => {
-    await requireUser(req, db, ['DEVELOPER', 'ADMIN']);
+  router.add('POST', '/developer/builds/:buildId/upload-url', async (req, { db, cache }) => {
+    const user = await requireUser(req, db, ['DEVELOPER', 'ADMIN']);
+    
+    // Rate limit: Max 20 upload sessions per hour per developer
+    const rlKey = `upload_rate:${user.id}`;
+    const currentRate = await cache.getJson('rateLimit', rlKey) || { count: 0, firstRequest: Date.now() };
+    if (Date.now() - currentRate.firstRequest > 60 * 60 * 1000) {
+      currentRate.count = 0;
+      currentRate.firstRequest = Date.now();
+    }
+    if (currentRate.count >= 20) {
+      throw new HttpError(429, 'RATE_LIMIT_EXCEEDED', 'You have requested too many upload sessions. Please try again later.');
+    }
+    currentRate.count += 1;
+    await cache.setJson('rateLimit', rlKey, currentRate, config.cacheTtlHours.rateLimit);
+
     requireFields(req.body, ['objectKey']);
     const purpose = req.body.public ? 'publicGame' : 'privateGame';
     const url = await signedR2Url({
