@@ -575,8 +575,8 @@ const getGameBucket = () => getPrivateGameBucket();
 const getRuntimeBucketForPriceType = (priceType) =>
   String(priceType || '').toUpperCase() === 'FREE' ? getPublicGameBucket() : getPrivateGameBucket();
 const getRuntimeBucketForGame = (game, build = null) => {
-  const isWebBuild = (build && isWebRuntime(build.runtime || build.platform)) || 
-                isWebRuntime(game?.platform || game?.runtime);
+  const isWebBuild = (build && isWebRuntime(build.runtime || build.platform)) ||
+    isWebRuntime(game?.platform || game?.runtime);
   return isWebBuild ? getPublicGameBucket() : getPrivateGameBucket();
 };
 
@@ -946,7 +946,7 @@ async function scanAndPrepareBuild(build, game) {
     console.error('[build-download-failed]', { buildId: build.id, objectKey, message: error?.message });
     try {
       await fs.promises.unlink(tempZipPath);
-    } catch {}
+    } catch { }
     throw new HttpError(502, 'BUILD_DOWNLOAD_FAILED', 'Failed to download build artifact');
   }
 
@@ -956,7 +956,7 @@ async function scanAndPrepareBuild(build, game) {
   } catch {
     try {
       await fs.promises.unlink(tempZipPath);
-    } catch {}
+    } catch { }
     throw new HttpError(400, 'BUILD_ARCHIVE_INVALID', 'Build archive is invalid or not a zip file');
   }
 
@@ -1011,7 +1011,7 @@ async function scanAndPrepareBuild(build, game) {
   } finally {
     try {
       await fs.promises.unlink(tempZipPath);
-    } catch {}
+    } catch { }
   }
 }
 
@@ -1054,9 +1054,8 @@ function assertRazorpayWebhook(req) {
 }
 
 async function sendEmail({ to, subject, html }) {
-  if (!config.resendApiKey || config.resendApiKey === 'resend_key') {
-    console.warn('[email-skipped] Resend API key not configured or placeholder detected', { to, subject });
-    return null;
+  if (!config.resendApiKey) {
+    throw new Error('Resend API key not configured');
   }
   try {
     const response = await fetch('https://api.resend.com/emails', {
@@ -1075,14 +1074,12 @@ async function sendEmail({ to, subject, html }) {
     const data = await response.json();
     if (!response.ok) {
       console.error('[email-failed]', data);
-      console.warn('[email-error-suppressed] Resend API returned an error:', data.message || 'Failed to send email');
-      return null;
+      throw new Error(data.message || 'Failed to send email');
     }
     return data;
   } catch (error) {
     console.error('[email-error]', error);
-    console.warn('[email-error-suppressed] Continuing despite email delivery failure.');
-    return null;
+    throw error;
   }
 }
 
@@ -1090,11 +1087,11 @@ async function createOTP(email, purpose) {
   const code = Math.floor(100000 + Math.random() * 900000).toString();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
   const id = createId('otp');
-  
+
   await prisma.otp.create({
     data: { id, email, code, purpose, expiresAt }
   });
-  
+
   return code;
 }
 
@@ -1103,9 +1100,9 @@ async function verifyOTP(email, purpose, code) {
     where: { email, purpose, code, expiresAt: { gt: new Date() } },
     orderBy: { createdAt: 'desc' }
   });
-  
+
   if (!otp) return false;
-  
+
   // Mark as used by deleting it
   await prisma.otp.delete({ where: { id: otp.id } });
   return true;
@@ -1113,11 +1110,10 @@ async function verifyOTP(email, purpose, code) {
 
 async function sendOTP(email, purpose, subjectPrefix = 'LazPlay') {
   const code = await createOTP(email, purpose);
-  console.log(`[OTP-GENERATED] Verification code for ${email} [${purpose}]: ${code}`);
-  const subject = purpose === 'VERIFY_EMAIL' 
-    ? `[${subjectPrefix}] Verify your email` 
+  const subject = purpose === 'VERIFY_EMAIL'
+    ? `[${subjectPrefix}] Verify your email`
     : `[${subjectPrefix}] Reset your password`;
-    
+
   const html = `
     <div style="font-family: sans-serif; padding: 20px; color: #333; background: #fff; border-radius: 8px;">
       <h2 style="color: #000;">${subject}</h2>
@@ -1129,7 +1125,7 @@ async function sendOTP(email, purpose, subjectPrefix = 'LazPlay') {
       <p style="font-size: 12px; color: #999;">If you didn't request this, please ignore this email.</p>
     </div>
   `;
-  
+
   return sendEmail({ to: email, subject, html });
 }
 

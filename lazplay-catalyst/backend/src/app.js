@@ -60,7 +60,7 @@ const config = {
   razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET || 'lazplay-razorpay-dev-secret',
   razorpayWebhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || 'lazplay-webhook-dev-secret',
   allowMockPayments: (process.env.ALLOW_MOCK_PAYMENTS || 'true') === 'true',
-  resendApiKey: process.env.RESEND_API_KEY || 'resend_key'
+  resendApiKey: process.env.RESEND_API_KEY || process.env.LAZPLAY_RESEND_API_KEY || 'resend_key'
 };
 
 const r2 = new S3Client({
@@ -1033,9 +1033,8 @@ function assertRazorpayWebhook(req) {
 }
 
 async function sendEmail({ to, subject, html }) {
-  if (!config.resendApiKey || config.resendApiKey === 'resend_key') {
-    console.warn('[email-skipped] Resend API key not configured or placeholder detected', { to, subject });
-    return null;
+  if (!config.resendApiKey) {
+    throw new Error('Resend API key not configured');
   }
   try {
     const response = await fetch('https://api.resend.com/emails', {
@@ -1054,14 +1053,12 @@ async function sendEmail({ to, subject, html }) {
     const data = await response.json();
     if (!response.ok) {
       console.error('[email-failed]', data);
-      console.warn('[email-error-suppressed] Resend API returned an error:', data.message || 'Failed to send email');
-      return null;
+      throw new Error(data.message || 'Failed to send email');
     }
     return data;
   } catch (error) {
     console.error('[email-error]', error);
-    console.warn('[email-error-suppressed] Continuing despite email delivery failure.');
-    return null;
+    throw error;
   }
 }
 
@@ -1092,7 +1089,6 @@ async function verifyOTP(email, purpose, code) {
 
 async function sendOTP(email, purpose, subjectPrefix = 'LazPlay') {
   const code = await createOTP(email, purpose);
-  console.log(`[OTP-GENERATED] Verification code for ${email} [${purpose}]: ${code}`);
   const subject = purpose === 'VERIFY_EMAIL' 
     ? `[${subjectPrefix}] Verify your email` 
     : `[${subjectPrefix}] Reset your password`;
