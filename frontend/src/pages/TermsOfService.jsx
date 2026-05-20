@@ -9,7 +9,7 @@ const TermsOfService = () => {
   }, []);
 
   return (
-    <LegalLayout title="TERMS_AND_CONDITIONS" lastUpdated="MAY_19_2026">
+    <LegalLayout title="TERMS_AND_CONDITIONS" lastUpdated="MAY_20_2026">
       <section>
         <h2>1. AGREEMENT_TO_TERMS</h2>
         <p>
@@ -78,7 +78,7 @@ const TermsOfService = () => {
       <section>
         <h2>6. PAYMENTS_AND_COMMERCE</h2>
         <p>
-          Lazplay supports digital purchases, including games and cosmetics.
+          Lazplay supports digital purchases of games and software.
         </p>
         <ul>
           <li>Transactions are processed via third-party providers (e.g., Razorpay).</li>
@@ -97,7 +97,7 @@ const TermsOfService = () => {
           <li><strong>Not a Gambling Platform:</strong> This platform is not a gambling, betting, or wagering service. We do not host games that involve real-money gambling.</li>
           <li><strong>No Monetary Winnings:</strong> There are no systems within Lazplay that allow users to win real money, cash prizes, or any form of currency that can be exchanged for real money.</li>
           <li><strong>No Withdrawals:</strong> Lazplay does not support the withdrawal of funds. Payments made on the platform are solely for the purchase of digital games and content for personal entertainment.</li>
-          <li><strong>Entertainment Only:</strong> All virtual items, cosmetics, or platform-specific credits have no real-world monetary value and cannot be "cashed out" or transferred for value outside the platform.</li>
+          <li><strong>Entertainment Only:</strong> All platform-specific credits have no real-world monetary value and cannot be "cashed out" or transferred for value outside the platform.</li>
         </ul>
       </section>
 

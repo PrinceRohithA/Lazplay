@@ -9,7 +9,7 @@ const PrivacyPolicy = () => {
   }, []);
 
   return (
-    <LegalLayout title="PRIVACY_POLICY" lastUpdated="MAY_19_2026">
+    <LegalLayout title="PRIVACY_POLICY" lastUpdated="MAY_20_2026">
       <section>
         <h2>1. DATA_COLLECTION_OVERVIEW</h2>
         <p>
@@ -62,7 +62,7 @@ const PrivacyPolicy = () => {
         <ul>
           <li><strong>Authentication:</strong> Managing your secure access to the platform.</li>
           <li><strong>Distribution:</strong> Delivering game chunks and updates via Cloudflare R2.</li>
-          <li><strong>Personalization:</strong> Displaying your library, progress, and cosmetics.</li>
+          <li><strong>Personalization:</strong> Displaying your library and progress.</li>
           <li><strong>Analytics:</strong> Understanding platform usage to improve performance.</li>
           <li><strong>Security:</strong> Detecting and preventing fraudulent activity, piracy, or abuse.</li>
         </ul>

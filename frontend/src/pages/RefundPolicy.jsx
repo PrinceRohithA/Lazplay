@@ -5,15 +5,15 @@ const RefundPolicy = () => {
   useEffect(() => {
     document.title = "REFUND POLICY | LAZPLAY";
     const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.setAttribute("content", "Understand our refund criteria for digital games and cosmetics on the Lazplay platform.");
+    if (metaDesc) metaDesc.setAttribute("content", "Understand our refund criteria for digital games on the Lazplay platform.");
   }, []);
 
   return (
-    <LegalLayout title="REFUND_POLICY" lastUpdated="MAY_19_2026">
+    <LegalLayout title="REFUND_POLICY" lastUpdated="MAY_20_2026">
       <section>
         <h2>1. DIGITAL_GOODS_NATURE</h2>
         <p>
-          At <strong>Lazplay</strong>, we primarily distribute digital goods, including video games, software, and virtual cosmetics. Due to the nature of digital content which can be consumed or downloaded immediately upon purchase, our refund policy is designed to be fair to both players and independent developers.
+          At <strong>Lazplay</strong>, we primarily distribute digital goods, including video games and software. Due to the nature of digital content which can be consumed or downloaded immediately upon purchase, our refund policy is designed to be fair to both players and independent developers.
         </p>
       </section>
 
@@ -27,9 +27,6 @@ const RefundPolicy = () => {
           <li><strong>Playtime/Usage:</strong> The game has been played for less than <strong>2 hours</strong> (total combined playtime across all sessions).</li>
           <li><strong>Download Status:</strong> For large assets or specific software, significant portions of the content must not have been downloaded.</li>
         </ul>
-        <p>
-          <strong>Virtual Cosmetics and In-Game Items:</strong> Virtual cosmetics, character skins, and other consumable digital goods are generally <strong>non-refundable</strong> once they have been applied, consumed, or if the transaction was completed more than 48 hours ago.
-        </p>
       </section>
 
       <section>
