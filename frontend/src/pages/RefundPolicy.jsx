@@ -11,82 +11,76 @@ const RefundPolicy = () => {
   return (
     <LegalLayout title="REFUND_POLICY" lastUpdated="MAY_20_2026">
       <section>
-        <h2>1. DIGITAL_GOODS_NATURE</h2>
+        <h2>1. Digital Products</h2>
         <p>
-          At <strong>Lazplay</strong>, we primarily distribute digital goods, including video games and software. Due to the nature of digital content which can be consumed or downloaded immediately upon purchase, our refund policy is designed to be fair to both players and independent developers.
+          Lazplay primarily distributes digital products including games and software.
+        </p>
+        <p>
+          Due to the nature of digital goods, refunds are subject to eligibility requirements.
         </p>
       </section>
 
       <section>
-        <h2>2. ELIGIBILITY_CRITERIA</h2>
-        <p>
-          You may be eligible for a refund for a digital game purchase if you meet the following requirements:
-        </p>
+        <h2>2. Refund Eligibility</h2>
+        <p>Refund requests may be considered if:</p>
         <ul>
-          <li><strong>Request Window:</strong> The refund request is submitted within <strong>14 days</strong> of purchase.</li>
-          <li><strong>Playtime/Usage:</strong> The game has been played for less than <strong>2 hours</strong> (total combined playtime across all sessions).</li>
-          <li><strong>Download Status:</strong> For large assets or specific software, significant portions of the content must not have been downloaded.</li>
+          <li>The request is submitted within 14 days of purchase</li>
+          <li>The product has minimal usage or playtime</li>
+          <li>The purchase was accidental or duplicated</li>
+          <li>Technical issues prevent reasonable use of the product</li>
+        </ul>
+        <p>
+          Refund approval is subject to review.
+        </p>
+      </section>
+
+      <section>
+        <h2>3. Non-Refundable Situations</h2>
+        <p>Refunds may not be provided for:</p>
+        <ul>
+          <li>Extensive product usage</li>
+          <li>Abuse of refund systems</li>
+          <li>Violations of platform policies</li>
+          <li>Fraudulent transactions</li>
         </ul>
       </section>
 
       <section>
-        <h2>3. ACCIDENTAL_AND_DUPLICATE_PURCHASES</h2>
-        <p>
-          We understand that mistakes happen. If you accidentally purchased the same content twice or made a purchase in error:
-        </p>
+        <h2>4. Refund Process</h2>
+        <p>To request a refund, users may contact:</p>
+        <p><strong>support@lazplay.com</strong></p>
+        <p>Please include:</p>
         <ul>
-          <li>Contact support immediately (within 24 hours).</li>
-          <li>Do not download or launch the accidentally purchased content.</li>
-          <li>We will review technical logs to verify the duplicate transaction and process a refund to your original payment method.</li>
+          <li>Transaction details</li>
+          <li>Account information</li>
+          <li>Reason for the request</li>
         </ul>
       </section>
 
       <section>
-        <h2>4. DEVELOPER_PAYOUT_CONSIDERATIONS</h2>
+        <h2>5. Processing Time</h2>
         <p>
-          Lazplay is a community-driven platform. When you purchase a game, a significant portion of the funds is allocated to the developer. 
+          Approved refunds may require several business days to process depending on the payment provider and financial institution.
         </p>
+      </section>
+
+      <section>
+        <h2>6. Fraud Prevention</h2>
+        <p>Lazplay reserves the right to:</p>
         <ul>
-          <li>Refunds may be delayed if the developer's payout cycle has already been initiated.</li>
-          <li>In cases where a developer has already been paid, Lazplay may issue the refund as platform credit (LazCredits) instead of a direct reversal to the original payment method.</li>
+          <li>Investigate suspicious activity</li>
+          <li>Limit refund abuse</li>
+          <li>Suspend fraudulent accounts</li>
         </ul>
       </section>
 
       <section>
-        <h2>5. ABUSE_PREVENTION</h2>
+        <h2>7. Policy Updates</h2>
         <p>
-          To protect our developers and the platform from exploitation:
+          This policy may be updated periodically.
         </p>
-        <ul>
-          <li><strong>Manual Review:</strong> All refund requests are subject to manual review by the Lazplay Moderation Team.</li>
-          <li><strong>Refund Limits:</strong> Users who exhibit a pattern of excessive refunding (e.g., "serial refunding" to play games for free) may have their refund privileges suspended.</li>
-          <li><strong>Fraudulent Activity:</strong> Any attempt to use stolen cards or engage in chargeback fraud will result in permanent account suspension and reporting to relevant financial authorities.</li>
-        </ul>
-      </section>
-
-      <section>
-        <h2>6. HOW_TO_REQUEST_A_REFUND</h2>
         <p>
-          To initiate a refund request:
-        </p>
-        <ol>
-          <li>Email <strong>support@lazplay.com</strong> with your Transaction ID, Username, and reason for the request.</li>
-          <li>Alternatively, you can contact us via our official social channels or support Discord if available.</li>
-          <li>We will review technical logs to verify the transaction and process the refund to your original payment method if eligible.</li>
-        </ol>
-      </section>
-
-      <section>
-        <h2>7. PROCESSING_TIME</h2>
-        <p>
-          Once a refund is approved, it may take <strong>5-10 business days</strong> for the funds to appear in your bank account or on your credit card statement, depending on your financial institution and the payment processor (e.g., Razorpay).
-        </p>
-      </section>
-
-      <section>
-        <h2>8. DISCRETIONARY_REFUNDS</h2>
-        <p>
-          Lazplay reserves the right to issue refunds at its sole discretion, even if the above criteria are not met, in exceptional circumstances such as severe technical failures of a game that prevent it from running on supported hardware.
+          Continued use of Lazplay after updates constitutes acceptance of the revised policy.
         </p>
       </section>
     </LegalLayout>
