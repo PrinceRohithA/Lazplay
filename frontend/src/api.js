@@ -88,16 +88,10 @@ async function request(method, path, body, options = {}) {
           processQueue(err, null);
           isRefreshing = false;
           clearTokens();
-          if (!['/login', '/signup'].includes(window.location.pathname)) {
-            window.location.href = '/login';
-          }
           throw err;
         }
       } else {
         clearTokens();
-        if (!['/login', '/signup'].includes(window.location.pathname)) {
-          window.location.href = '/login';
-        }
       }
     }
 
