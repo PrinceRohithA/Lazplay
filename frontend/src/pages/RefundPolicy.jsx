@@ -73,10 +73,9 @@ const RefundPolicy = () => {
           To initiate a refund request:
         </p>
         <ol>
-          <li>Navigate to your <strong>Purchase History</strong> in your Profile settings.</li>
-          <li>Select the transaction you wish to refund.</li>
-          <li>Click the <strong>"REQUEST_REFUND"</strong> button and provide a brief reason for your request.</li>
-          <li>Alternatively, email <strong>support@lazplay.com</strong> with your Transaction ID and account details.</li>
+          <li>Email <strong>support@lazplay.com</strong> with your Transaction ID, Username, and reason for the request.</li>
+          <li>Alternatively, you can contact us via our official social channels or support Discord if available.</li>
+          <li>We will review technical logs to verify the transaction and process the refund to your original payment method if eligible.</li>
         </ol>
       </section>
 

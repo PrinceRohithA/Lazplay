@@ -89,7 +89,20 @@ const TermsOfService = () => {
       </section>
 
       <section>
-        <h2>7. LAUNCHER_AND_SYSTEM_USAGE</h2>
+        <h2>7. NO_GAMBLING_OR_WITHDRAWAL_POLICY</h2>
+        <p>
+          <strong>Lazplay is strictly a game distribution and entertainment platform.</strong>
+        </p>
+        <ul>
+          <li><strong>Not a Gambling Platform:</strong> This platform is not a gambling, betting, or wagering service. We do not host games that involve real-money gambling.</li>
+          <li><strong>No Monetary Winnings:</strong> There are no systems within Lazplay that allow users to win real money, cash prizes, or any form of currency that can be exchanged for real money.</li>
+          <li><strong>No Withdrawals:</strong> Lazplay does not support the withdrawal of funds. Payments made on the platform are solely for the purchase of digital games and content for personal entertainment.</li>
+          <li><strong>Entertainment Only:</strong> All virtual items, cosmetics, or platform-specific credits have no real-world monetary value and cannot be "cashed out" or transferred for value outside the platform.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>8. LAUNCHER_AND_SYSTEM_USAGE</h2>
         <p>
           The Lazplay Desktop and Android launchers are provided "as-is". They may collect telemetry and system information required for game execution and platform functionality as detailed in our <strong>Privacy Policy</strong>.
         </p>

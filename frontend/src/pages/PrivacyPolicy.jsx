@@ -102,7 +102,7 @@ const PrivacyPolicy = () => {
         <ul>
           <li>Access the personal data we hold about you.</li>
           <li>Request correction of inaccurate data.</li>
-          <li><strong>Request Account Deletion:</strong> You may request the permanent removal of your account and associated personal data by contacting our support team or using the deletion tools in your profile settings.</li>
+          <li><strong>Request Account Deletion:</strong> You may request the permanent removal of your account and associated personal data by contacting our support team at <strong>support@lazplay.com</strong>.</li>
         </ul>
         <p>
           Please note that some data may be retained for legal, audit, or anti-fraud purposes even after account deletion.
