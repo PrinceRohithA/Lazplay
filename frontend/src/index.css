@@ -37,6 +37,78 @@
   --secondary: #ffabf3;
   --secondary-container: #500050;
   --on-secondary-container: #ffabf3;
+
+  /* Fonts */
+  --font-family-base: "Space Grotesk", sans-serif;
+  --font-family-mono: "Space Grotesk", monospace;
+  --font-family-heading: "Space Grotesk", sans-serif;
+  
+  --theme-border-radius: 0px;
+  
+  /* Scanlines visibility */
+  --scanlines-display: block;
+  --scanlines-opacity: 0.2;
+  
+  /* Grid background */
+  --grid-bg-image: linear-gradient(rgba(var(--primary-rgb), 0.1) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(var(--primary-rgb), 0.1) 1px, transparent 1px);
+  --grid-bg-color: transparent;
+  --grid-bg-size: 40px 40px;
+  
+  /* Retro border */
+  --retro-border-shadow: -2px -2px 0 0 var(--primary), 2px 2px 0 0 #131313;
+  --retro-border-border: none;
+  --retro-border-radius: 0;
+  
+  --retro-border-hover-shadow: 0 0 15px var(--glow-primary), -2px -2px 0 0 var(--primary);
+  --retro-border-hover-border-color: transparent;
+  
+  /* Pixel border */
+  --pixel-border-color: var(--primary);
+  --pixel-border-shadow: 0 0 8px rgba(var(--primary-rgb), 0.3);
+  --pixel-border-radius: 0px;
+  
+  /* Neon glow */
+  --neon-glow-shadow: 0 0 20px var(--glow-primary);
+  
+  /* Glow text */
+  --glow-text-primary-shadow: 0 0 10px var(--glow-primary), 0 0 20px rgba(var(--primary-rgb), 0.3);
+  --glow-text-secondary-shadow: 0 0 10px var(--glow-secondary), 0 0 20px rgba(var(--secondary-rgb), 0.3);
+  
+  /* Cyber button */
+  --btn-bg: rgba(var(--primary-rgb), 0.4);
+  --btn-border: 2px solid var(--primary);
+  --btn-color: #ffffff;
+  --btn-text-shadow: 0 0 5px var(--glow-primary);
+  --btn-box-shadow: inset 0 0 15px rgba(var(--primary-rgb), 0.2);
+  --btn-text-transform: uppercase;
+  --btn-font-weight: bold;
+  --btn-radius: 0px;
+  --btn-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  --btn-hover-bg: rgba(var(--primary-rgb), 0.2);
+  --btn-hover-border-color: var(--primary);
+  --btn-hover-box-shadow: 0 0 25px var(--glow-primary), inset 0 0 10px rgba(0, 0, 0, 0.3);
+  --btn-hover-transform: translateY(-1px);
+  
+  --btn-active-bg: rgba(var(--primary-rgb), 0.1);
+  --btn-active-transform: translateY(1px);
+  
+  /* Inputs */
+  --input-bg: #201f1f;
+  --input-border-color: var(--primary-container);
+  --input-color: #e5e2e1;
+  --input-radius: 0px;
+  --input-focus-border-color: var(--primary);
+  --input-focus-shadow: 0 0 5px var(--primary);
+  
+  /* Scrollbars - Default Cyber */
+  --scrollbar-track-bg: #1c1b1b;
+  --scrollbar-track-border: 1px solid var(--primary-container);
+  --scrollbar-thumb-bg: var(--primary-container);
+  --scrollbar-thumb-border: 2px solid #1c1b1b;
+  --scrollbar-thumb-shadow: inset -1px -1px 0px 0px rgba(0, 0, 0, 0.5);
+  --scrollbar-thumb-hover-bg: var(--primary);
 }
 
 /* Custom Scrollbar */
@@ -46,44 +118,44 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #1c1b1b;
-  border-left: 1px solid var(--primary-container);
+  background: var(--scrollbar-track-bg);
+  border-left: var(--scrollbar-track-border);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--primary-container);
-  border: 2px solid #1c1b1b;
-  box-shadow: inset -1px -1px 0px 0px rgba(0, 0, 0, 0.5);
+  background: var(--scrollbar-thumb-bg);
+  border: var(--scrollbar-thumb-border);
+  box-shadow: var(--scrollbar-thumb-shadow);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--primary);
+  background: var(--scrollbar-thumb-hover-bg);
 }
 
 /* Global Input Styling */
 input:not([type="color"]),
 textarea,
 select {
-  background-color: #201f1f !important;
-  border: 1px solid var(--primary-container);
-  color: #e5e2e1 !important;
-  font-family: "Space Grotesk", sans-serif !important;
+  background-color: var(--input-bg) !important;
+  border: 1px solid var(--input-border-color) !important;
+  color: var(--input-color) !important;
+  font-family: var(--font-family-base) !important;
   padding: 8px 12px !important;
   outline: none !important;
   transition: all 0.2s ease;
-  border-radius: 0 !important;
+  border-radius: var(--input-radius) !important;
 }
 
 input:not([type="color"]):focus,
 textarea:focus,
 select:focus {
-  border-color: var(--primary) !important;
-  box-shadow: 0 0 5px var(--primary) !important;
+  border-color: var(--input-focus-border-color) !important;
+  box-shadow: var(--input-focus-shadow) !important;
 }
 
 input[type="color"] {
-  border-radius: 0;
-  border: 2px solid var(--primary-container);
+  border-radius: var(--input-radius);
+  border: 2px solid var(--input-border-color);
 }
 
 @theme {
@@ -144,12 +216,12 @@ input[type="color"] {
   --spacing-margin: 24px;
   --spacing-container-max: 1440px;
 
-  --font-body-md: "Space Grotesk";
-  --font-label-mono: "Space Grotesk";
-  --font-headline-xl: "Space Grotesk";
-  --font-headline-md: "Space Grotesk";
-  --font-body-lg: "Space Grotesk";
-  --font-headline-lg: "Space Grotesk";
+  --font-body-md: var(--font-family-base);
+  --font-label-mono: var(--font-family-mono);
+  --font-headline-xl: var(--font-family-heading);
+  --font-headline-md: var(--font-family-heading);
+  --font-body-lg: var(--font-family-base);
+  --font-headline-lg: var(--font-family-heading);
 }
 
 @utility scanlines {
@@ -160,27 +232,67 @@ input[type="color"] {
       rgba(0, 0, 0, 0.2));
   background-size: 100% 4px;
   pointer-events: none;
+  display: var(--scanlines-display);
+  opacity: var(--scanlines-opacity);
 }
 
 @utility retro-border {
-  box-shadow: -2px -2px 0 0 var(--color-on-primary-container), 2px 2px 0 0 #131313;
+  box-shadow: var(--retro-border-shadow);
+  border: var(--retro-border-border);
+  border-radius: var(--retro-border-radius);
 }
 
 @utility retro-border-hover {
   &:hover {
-    box-shadow: -2px -2px 0 0 var(--color-primary-container), 2px 2px 0 0 var(--color-on-primary-container);
+    box-shadow: var(--retro-border-hover-shadow);
+    border-color: var(--retro-border-hover-border-color);
   }
 }
 
 @utility pixel-border {
-  border: 1px solid var(--primary);
-  box-shadow: 0 0 8px rgba(var(--primary-rgb), 0.3);
+  border: 1px solid var(--pixel-border-color);
+  box-shadow: var(--pixel-border-shadow);
+  border-radius: var(--pixel-border-radius);
   position: relative;
   overflow: hidden;
 }
 
 @utility neon-glow {
-  box-shadow: 0 0 15px var(--glow-primary);
+  box-shadow: var(--neon-glow-shadow);
+}
+
+.glow-text-primary {
+  text-shadow: var(--glow-text-primary-shadow);
+}
+
+.glow-text-secondary {
+  text-shadow: var(--glow-text-secondary-shadow);
+}
+
+.cyber-btn {
+  position: relative;
+  background: var(--btn-bg);
+  border: var(--btn-border);
+  color: var(--btn-color);
+  overflow: hidden;
+  transition: var(--btn-transition);
+  text-shadow: var(--btn-text-shadow);
+  box-shadow: var(--btn-box-shadow);
+  text-transform: var(--btn-text-transform);
+  font-weight: var(--btn-font-weight);
+  border-radius: var(--btn-radius);
+}
+
+.cyber-btn:hover {
+  background: var(--btn-hover-bg);
+  color: var(--btn-color);
+  box-shadow: var(--btn-hover-box-shadow);
+  transform: var(--btn-hover-transform);
+}
+
+.cyber-btn:active {
+  transform: var(--btn-active-transform);
+  background: var(--btn-active-bg);
 }
 
 /* Autofill Override */
@@ -274,7 +386,7 @@ body {
   padding: 0;
   background: var(--color-background);
   color: var(--color-on-background);
-  font-family: "Space Grotesk", sans-serif;
+  font-family: var(--font-family-base);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
@@ -288,7 +400,18 @@ body {
 * {
   box-sizing: border-box;
   scrollbar-width: thin;
-  scrollbar-color: var(--primary-container) #1c1b1b;
+  scrollbar-color: var(--scrollbar-thumb-bg) var(--scrollbar-track-bg);
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family-heading);
 }
 
 button,
@@ -312,39 +435,63 @@ canvas {
    Standard Theme Overrides (itch.io style)
    ========================================================================== */
 
+/* ==========================================================================
+   Standard Theme Overrides (itch.io style)
+   ========================================================================== */
+
 .ui-standard {
   /* Fonts */
-  --font-body-md: "Inter", sans-serif;
-  --font-label-mono: "Inter", sans-serif;
-  --font-headline-xl: "Inter", sans-serif;
-  --font-headline-md: "Inter", sans-serif;
-  --font-body-lg: "Inter", sans-serif;
-  --font-headline-lg: "Inter", sans-serif;
+  --font-family-base: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-family-mono: "Inter", monospace;
+  --font-family-heading: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  --theme-border-radius: 4px;
+
+  --scanlines-display: none;
+  --scanlines-opacity: 0;
+
+  --grid-bg-image: none;
+  --grid-bg-color: var(--color-background);
+
+  --retro-border-shadow: none;
+  --retro-border-border: 1px solid var(--color-outline-variant);
+  --retro-border-radius: var(--theme-border-radius);
+
+  --retro-border-hover-shadow: none;
+  --retro-border-hover-border-color: var(--color-primary);
+
+  --pixel-border-color: var(--color-outline-variant);
+  --pixel-border-shadow: none;
+  --pixel-border-radius: var(--theme-border-radius);
+
+  --neon-glow-shadow: none;
+
+  --glow-text-primary-shadow: none;
+  --glow-text-secondary-shadow: none;
+
+  --btn-bg: #2ea44f;
+  --btn-border: 1px solid #2ea44f;
+  --btn-color: #ffffff;
+  --btn-text-shadow: none;
+  --btn-box-shadow: none;
+  --btn-text-transform: none;
+  --btn-font-weight: 500;
+  --btn-radius: var(--theme-border-radius);
+  --btn-transition: background-color 0.15s ease, border-color 0.15s ease;
+
+  --btn-hover-bg: #2c974b;
+  --btn-hover-border-color: #2c974b;
+  --btn-hover-box-shadow: none;
+  --btn-hover-transform: none;
+
+  --btn-active-bg: #21783b;
+  --btn-active-transform: translateY(1px);
 }
 
-/* Override Tailwind uppercase utilities */
+/* Override Tailwind uppercase utilities for Standard theme */
 .ui-standard .uppercase,
 .ui-standard [class*="uppercase"] {
-  text-transform: none !important;
-}
-
-/* Force standard font across all elements */
-.ui-standard,
-.ui-standard body,
-.ui-standard button,
-.ui-standard input,
-.ui-standard textarea,
-.ui-standard select,
-.ui-standard a,
-.ui-standard p,
-.ui-standard span,
-.ui-standard h1,
-.ui-standard h2,
-.ui-standard h3,
-.ui-standard h4,
-.ui-standard h5,
-.ui-standard h6 {
-  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  text-transform: var(--uppercase-transform, none) !important;
 }
 
 .ui-standard .material-symbols-outlined {
@@ -370,6 +517,22 @@ canvas {
   
   --primary-container: rgba(46, 164, 79, 0.2);
   --on-primary-container: #ffffff;
+
+  /* Inputs */
+  --input-bg: #2a2a2d;
+  --input-border-color: #374151;
+  --input-color: #ffffff;
+  --input-radius: var(--theme-border-radius);
+  --input-focus-border-color: #2ea44f;
+  --input-focus-shadow: 0 0 0 1px #2ea44f;
+
+  /* Scrollbars */
+  --scrollbar-track-bg: #18181a;
+  --scrollbar-track-border: 1px solid #2d2d31;
+  --scrollbar-thumb-bg: #3f3f46;
+  --scrollbar-thumb-border: 2px solid #18181a;
+  --scrollbar-thumb-shadow: none;
+  --scrollbar-thumb-hover-bg: #52525b;
 }
 
 /* Standard Light Theme Variables */
@@ -391,6 +554,22 @@ canvas {
 
   --primary-container: rgba(46, 164, 79, 0.15);
   --on-primary-container: #2ea44f;
+
+  /* Inputs */
+  --input-bg: #ffffff;
+  --input-border-color: #d1d5db;
+  --input-color: #111111;
+  --input-radius: var(--theme-border-radius);
+  --input-focus-border-color: #2ea44f;
+  --input-focus-shadow: 0 0 0 1px #2ea44f;
+
+  /* Scrollbars */
+  --scrollbar-track-bg: #f4f4f7;
+  --scrollbar-track-border: 1px solid #e5e7eb;
+  --scrollbar-thumb-bg: #d1d5db;
+  --scrollbar-thumb-border: 2px solid #f4f4f7;
+  --scrollbar-thumb-shadow: none;
+  --scrollbar-thumb-hover-bg: #9ca3af;
 }
 
 /* Apply Standard Theme colors directly to body and layout wrapper */
@@ -402,143 +581,4 @@ canvas {
 /* Custom Webkit scrollbar for light theme standard UI */
 .ui-standard:not(.dark) * {
   scrollbar-color: #d1d5db #f4f4f7;
-}
-
-.ui-standard:not(.dark) ::-webkit-scrollbar-track {
-  background: #f4f4f7 !important;
-  border-left: 1px solid #e5e7eb !important;
-}
-
-.ui-standard:not(.dark) ::-webkit-scrollbar-thumb {
-  background: #d1d5db !important;
-  border: 2px solid #f4f4f7 !important;
-}
-
-.ui-standard:not(.dark) ::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af !important;
-}
-
-/* Hide cyber components & overlays */
-.ui-standard .scanlines,
-.ui-standard [class*="scanlines"] {
-  display: none !important;
-  opacity: 0 !important;
-}
-
-.ui-standard .grid-glow-bg,
-.ui-standard [class*="grid-glow-bg"] {
-  background-image: none !important;
-  background-color: var(--color-background) !important;
-}
-
-/* Override Cyber Borders to Clean Rounded Borders */
-.ui-standard .retro-border,
-.ui-standard [class*="retro-border"] {
-  box-shadow: none !important;
-  border: 1px solid var(--color-outline-variant) !important;
-}
-
-.ui-standard .retro-border:not([class*="rounded-"]),
-.ui-standard [class*="retro-border"]:not([class*="rounded-"]) {
-  border-radius: 4px !important;
-}
-
-.ui-standard .retro-border-hover:hover,
-.ui-standard [class*="retro-border-hover"]:hover {
-  box-shadow: none !important;
-  border-color: var(--color-primary) !important;
-}
-
-.ui-standard .pixel-border,
-.ui-standard [class*="pixel-border"] {
-  border: 1px solid var(--color-outline-variant) !important;
-  box-shadow: none !important;
-}
-
-.ui-standard .pixel-border:not([class*="rounded-"]),
-.ui-standard [class*="pixel-border"]:not([class*="rounded-"]) {
-  border-radius: 4px !important;
-}
-
-.ui-standard .neon-glow,
-.ui-standard [class*="neon-glow"] {
-  box-shadow: none !important;
-}
-
-.ui-standard .glow-text-primary,
-.ui-standard .glow-text-secondary,
-.ui-standard [class*="glow-text"] {
-  text-shadow: none !important;
-}
-
-/* Itch.io style standard green button */
-.ui-standard .cyber-btn,
-.ui-standard [class*="cyber-btn"] {
-  position: relative !important;
-  background-color: #2ea44f !important; /* Itch-like standard green button */
-  border: 1px solid #2ea44f !important;
-  color: #ffffff !important;
-  overflow: visible !important;
-  box-shadow: none !important;
-  text-shadow: none !important;
-  text-transform: none !important;
-  font-weight: 500 !important;
-  border-radius: 4px !important;
-  transition: background-color 0.15s ease, border-color 0.15s ease !important;
-}
-
-.ui-standard .cyber-btn:hover,
-.ui-standard [class*="cyber-btn"]:hover {
-  background-color: #2c974b !important; /* Slightly darker green */
-  border-color: #2c974b !important;
-  color: #ffffff !important;
-  box-shadow: none !important;
-  transform: none !important;
-}
-
-.ui-standard .cyber-btn:active,
-.ui-standard [class*="cyber-btn"]:active {
-  transform: translateY(1px) !important;
-}
-
-/* Options/Settings Specific Styling Overrides */
-.ui-standard input:not([type="color"]),
-.ui-standard textarea,
-.ui-standard select {
-  font-family: "Inter", sans-serif !important;
-  border-radius: 4px !important;
-  padding: 8px 12px !important;
-  outline: none !important;
-  box-shadow: none !important;
-  text-transform: none !important;
-}
-
-.ui-standard.dark input:not([type="color"]),
-.ui-standard.dark textarea,
-.ui-standard.dark select {
-  background-color: #2a2a2d !important;
-  border: 1px solid #374151 !important;
-  color: #ffffff !important;
-}
-
-.ui-standard.dark input:not([type="color"]):focus,
-.ui-standard.dark textarea:focus,
-.ui-standard.dark select:focus {
-  border-color: #2ea44f !important;
-  box-shadow: 0 0 0 1px #2ea44f !important;
-}
-
-.ui-standard:not(.dark) input:not([type="color"]),
-.ui-standard:not(.dark) textarea,
-.ui-standard:not(.dark) select {
-  background-color: #ffffff !important;
-  border: 1px solid #d1d5db !important;
-  color: #111111 !important;
-}
-
-.ui-standard:not(.dark) input:not([type="color"]):focus,
-.ui-standard:not(.dark) textarea:focus,
-.ui-standard:not(.dark) select:focus {
-  border-color: #2ea44f !important;
-  box-shadow: 0 0 0 1px #2ea44f !important;
 }

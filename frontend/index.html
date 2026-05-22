@@ -119,60 +119,66 @@
             position: fixed;
             inset: 0;
             z-index: 9999;
-            opacity: 0.2;
+            display: var(--scanlines-display, block);
+            opacity: var(--scanlines-opacity, 0.2);
         }
 
         .grid-glow-bg {
-            background-image: 
+            background-image: var(--grid-bg-image, 
                 linear-gradient(rgba(var(--primary-rgb), 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(var(--primary-rgb), 0.1) 1px, transparent 1px);
-            background-size: 40px 40px;
+                linear-gradient(90deg, rgba(var(--primary-rgb), 0.1) 1px, transparent 1px));
+            background-size: var(--grid-bg-size, 40px 40px);
             background-position: center center;
+            background-color: var(--grid-bg-color, transparent);
         }
 
         .retro-border {
-            box-shadow: -2px -2px 0 0 var(--primary), 2px 2px 0 0 #000;
+            box-shadow: var(--retro-border-shadow, -2px -2px 0 0 var(--primary), 2px 2px 0 0 #000);
+            border: var(--retro-border-border, none);
+            border-radius: var(--retro-border-radius, 0);
         }
 
         .retro-border-hover:hover {
-            box-shadow: 0 0 15px var(--glow-primary), -2px -2px 0 0 var(--primary);
+            box-shadow: var(--retro-border-hover-shadow, 0 0 15px var(--glow-primary), -2px -2px 0 0 var(--primary));
+            border-color: var(--retro-border-hover-border-color, transparent);
         }
 
         .neon-glow {
-            box-shadow: 0 0 20px var(--glow-primary);
+            box-shadow: var(--neon-glow-shadow, 0 0 20px var(--glow-primary));
         }
 
         .glow-text-primary {
-            text-shadow: 0 0 10px var(--glow-primary), 0 0 20px rgba(var(--primary-rgb), 0.3);
+            text-shadow: var(--glow-text-primary-shadow, 0 0 10px var(--glow-primary), 0 0 20px rgba(var(--primary-rgb), 0.3));
         }
 
         .glow-text-secondary {
-            text-shadow: 0 0 10px var(--glow-secondary), 0 0 20px rgba(var(--secondary-rgb), 0.3);
+            text-shadow: var(--glow-text-secondary-shadow, 0 0 10px var(--glow-secondary), 0 0 20px rgba(var(--secondary-rgb), 0.3));
         }
 
         .cyber-btn {
             position: relative;
-            background: rgba(var(--primary-rgb), 0.4); /* Lighter/Brighter base */
-            border: 2px solid var(--primary);
-            color: #ffffff; /* Light text */
+            background: var(--btn-bg, rgba(var(--primary-rgb), 0.4));
+            border: var(--btn-border, 2px solid var(--primary));
+            color: var(--btn-color, #ffffff);
             overflow: hidden;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            text-shadow: 0 0 5px var(--glow-primary);
-            box-shadow: inset 0 0 15px rgba(var(--primary-rgb), 0.2);
-            text-transform: uppercase;
-            font-weight: bold;
+            transition: var(--btn-transition, all 0.3s cubic-bezier(0.4, 0, 0.2, 1));
+            text-shadow: var(--btn-text-shadow, 0 0 5px var(--glow-primary));
+            box-shadow: var(--btn-box-shadow, inset 0 0 15px rgba(var(--primary-rgb), 0.2));
+            text-transform: var(--btn-text-transform, uppercase);
+            font-weight: var(--btn-font-weight, bold);
+            border-radius: var(--btn-radius, 0px);
         }
         
         .cyber-btn:hover {
-            background: rgba(var(--primary-rgb), 0.2); /* Slightly darker/more transparent on hover */
-            color: #ffffff;
-            box-shadow: 0 0 25px var(--glow-primary), inset 0 0 10px rgba(0,0,0,0.3);
-            transform: translateY(-1px);
+            background: var(--btn-hover-bg, rgba(var(--primary-rgb), 0.2));
+            color: var(--btn-color, #ffffff);
+            box-shadow: var(--btn-hover-box-shadow, 0 0 25px var(--glow-primary), inset 0 0 10px rgba(0,0,0,0.3));
+            transform: var(--btn-hover-transform, translateY(-1px));
         }
 
         .cyber-btn:active {
-            transform: translateY(1px);
-            background: rgba(var(--primary-rgb), 0.1);
+            transform: var(--btn-active-transform, translateY(1px));
+            background: var(--btn-active-bg, rgba(var(--primary-rgb), 0.1));
         }
 
         /* Autofill Override to prevent white background */
