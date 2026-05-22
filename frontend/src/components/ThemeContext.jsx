@@ -135,7 +135,7 @@ const translations = {
 
 export function ThemeProvider({ children }) {
   const [uiMode, setUiMode] = useState(() => {
-    return localStorage.getItem('lazplay-ui-mode') || 'cyber';
+    return localStorage.getItem('lazplay-ui-mode') || 'standard';
   });
 
   const [colorTheme, setColorTheme] = useState(() => {

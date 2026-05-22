@@ -17,7 +17,7 @@
     <script id="theme-logic">
         const updateThemeColors = (primaryHex, secondaryHex) => {
             const root = document.documentElement;
-            const uiMode = localStorage.getItem('lazplay-ui-mode') || 'cyber';
+            const uiMode = localStorage.getItem('lazplay-ui-mode') || 'standard';
             
             let p, s;
             if (uiMode === 'standard') {
@@ -60,7 +60,7 @@
         };
 
         // Initial application of classes to avoid FOUC
-        const uiMode = localStorage.getItem('lazplay-ui-mode') || 'cyber';
+        const uiMode = localStorage.getItem('lazplay-ui-mode') || 'standard';
         const colorTheme = localStorage.getItem('lazplay-color-theme') || 'system';
         const root = document.documentElement;
 
