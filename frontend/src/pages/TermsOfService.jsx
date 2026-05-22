@@ -9,123 +9,199 @@ const TermsOfService = () => {
   }, []);
 
   return (
-    <LegalLayout title="TERMS_AND_CONDITIONS" lastUpdated="MAY_19_2026">
+    <LegalLayout title="TERMS_AND_CONDITIONS" lastUpdated="MAY_20_2026">
       <section>
-        <h2>1. AGREEMENT_TO_TERMS</h2>
+        <h2>1. Introduction</h2>
         <p>
-          Welcome to <strong>Lazplay</strong>. By accessing our platform, website, or using our launcher systems, you agree to be bound by these Terms and Conditions. If you do not agree with any part of these terms, you must immediately terminate your use of our services.
+          Welcome to <strong>Lazplay</strong>. These Terms and Conditions govern your access to and use of the Lazplay platform, website, launcher applications, and related services.
         </p>
         <p>
-          Lazplay is an indie game distribution platform providing services for web, Windows, Android, and Linux games. We facilitate the distribution, discovery, and purchase of digital content created by independent developers.
+          By accessing or using Lazplay, you agree to comply with these Terms. If you do not agree, you must discontinue use of the platform immediately.
+        </p>
+        <p>
+          Lazplay is a digital entertainment and game distribution platform that allows users to discover, download, and access digital games and interactive software created by independent developers.
         </p>
       </section>
 
       <section>
-        <h2>2. PLATFORM_ROLE_AND_LIABILITY</h2>
+        <h2>2. Platform Services</h2>
         <p>
-          <strong>Lazplay is a distribution platform.</strong> We provide the infrastructure for independent developers to host and distribute their software. 
+          Lazplay provides infrastructure and services for the hosting, discovery, distribution, and delivery of digital entertainment content.
         </p>
+        <p>We may offer:</p>
         <ul>
-          <li><strong>Developer Responsibility:</strong> All games, software, and content uploaded to Lazplay are the sole responsibility of the respective developers who uploaded them.</li>
-          <li><strong>No Guarantee of Safety:</strong> While we implement automated security measures, Lazplay does not and cannot guarantee that all uploaded software is free from bugs, malware, or security vulnerabilities.</li>
-          <li><strong>Assumption of Risk:</strong> You acknowledge that downloading and executing software from independent developers involves inherent risks. You use the platform and its hosted content at your own discretion and risk.</li>
-        </ul>
-      </section>
-
-      <section>
-        <h2>3. USER_RESPONSIBILITIES</h2>
-        <p>
-          As a user of Lazplay, you agree to:
-        </p>
-        <ul>
-          <li>Provide accurate information during account registration.</li>
-          <li>Maintain the security of your account credentials.</li>
-          <li>Use the platform only for lawful purposes.</li>
-          <li>Refrain from attempting to bypass any platform security, DRM, or access controls.</li>
-          <li>Not engage in any activity that interferes with or disrupts the platform services.</li>
-        </ul>
-      </section>
-
-      <section>
-        <h2>4. DEVELOPER_RESPONSIBILITIES_AND_CONTENT</h2>
-        <p>
-          Developers uploading content to Lazplay must:
-        </p>
-        <ul>
-          <li>Own or have the necessary licenses for all content uploaded.</li>
-          <li>Ensure content does not contain malware, spyware, or malicious code.</li>
-          <li>Comply with all applicable laws and intellectual property rights.</li>
-          <li>Accurately represent their games and software in descriptions and metadata.</li>
+          <li>Digital game downloads</li>
+          <li>Launcher applications</li>
+          <li>User accounts and libraries</li>
+          <li>Community and discovery features</li>
+          <li>Developer publishing tools</li>
         </ul>
         <p>
-          <strong>Ownership:</strong> Developers retain ownership of their uploaded content. By uploading to Lazplay, developers grant us a non-exclusive, worldwide, royalty-free license to host, distribute, and display the content for platform operations.
+          Lazplay does not guarantee uninterrupted availability of the platform or any uploaded content.
         </p>
       </section>
 
       <section>
-        <h2>5. PROHIBITED_UPLOADS_AND_CONDUCT</h2>
+        <h2>3. User Accounts</h2>
         <p>
-          The following are strictly prohibited on Lazplay:
+          Users may be required to create an account to access certain features.
+        </p>
+        <p>You agree to:</p>
+        <ul>
+          <li>Provide accurate registration information</li>
+          <li>Maintain the confidentiality of your account credentials</li>
+          <li>Accept responsibility for activity occurring under your account</li>
+          <li>Notify us immediately of unauthorized access or security issues</li>
+        </ul>
+        <p>
+          Lazplay reserves the right to suspend or terminate accounts that violate these Terms.
+        </p>
+      </section>
+
+      <section>
+        <h2>4. Developer Content</h2>
+        <p>
+          Developers are solely responsible for the games, software, media, and content they upload to Lazplay.
+        </p>
+        <p>Developers must:</p>
+        <ul>
+          <li>Own or possess rights to uploaded content</li>
+          <li>Ensure content complies with applicable laws</li>
+          <li>Avoid uploading malicious, harmful, or infringing material</li>
+          <li>Accurately describe their products and services</li>
+        </ul>
+        <p>
+          Lazplay may remove content that violates these Terms or presents security or legal concerns.
+        </p>
+      </section>
+
+      <section>
+        <h2>5. Acceptable Use</h2>
+        <p>Users may not:</p>
+        <ul>
+          <li>Upload malicious software or harmful code</li>
+          <li>Attempt unauthorized access to systems or accounts</li>
+          <li>Distribute pirated or infringing material</li>
+          <li>Harass other users or developers</li>
+          <li>Disrupt platform operations</li>
+          <li>Use the platform for unlawful activities</li>
+        </ul>
+        <p>
+          Violation of these rules may result in account suspension or permanent removal.
+        </p>
+      </section>
+
+      <section>
+        <h2>6. Payments and Digital Purchases</h2>
+        <p>
+          Lazplay may provide paid digital content and services.
+        </p>
+        <p>
+          Payments are processed through third-party payment providers. Lazplay does not directly store full payment card information.
+        </p>
+        <p>
+          Prices, offers, and availability may change without prior notice.
+        </p>
+        <p>
+          All purchases are subject to our Refund Policy.
+        </p>
+      </section>
+
+      <section>
+        <h2>7. No Gambling or Real-Money Services</h2>
+        <p>
+          Lazplay is a digital entertainment platform only.
+        </p>
+        <p>The platform does not provide:</p>
+        <ul>
+          <li>Gambling services</li>
+          <li>Betting or wagering systems</li>
+          <li>Cash-withdrawable rewards</li>
+          <li>Real-money gaming services</li>
+        </ul>
+        <p>
+          Users cannot withdraw money, convert platform activity into cash, or exchange platform features for real-world monetary value.
+        </p>
+      </section>
+
+      <section>
+        <h2>8. Intellectual Property</h2>
+        <p>
+          All trademarks, branding, platform assets, and original Lazplay materials are protected under applicable intellectual property laws.
+        </p>
+        <p>
+          Developers retain ownership of their uploaded content.
+        </p>
+        <p>
+          By uploading content, developers grant Lazplay a non-exclusive license to host, distribute, and display content for platform operations.
+        </p>
+      </section>
+
+      <section>
+        <h2>9. Privacy</h2>
+        <p>
+          Our collection and use of personal data is governed by the Lazplay Privacy Policy.
+        </p>
+        <p>
+          By using Lazplay, you consent to the processing of information as described in the Privacy Policy.
+        </p>
+      </section>
+
+      <section>
+        <h2>10. Limitation of Liability</h2>
+        <p>
+          To the maximum extent permitted by law, Lazplay and its operators shall not be liable for indirect, incidental, special, or consequential damages arising from:
         </p>
         <ul>
-          <li><strong>Piracy:</strong> Uploading or distributing cracked software or content you do not own.</li>
-          <li><strong>Malware:</strong> Any software intended to damage, disrupt, or gain unauthorized access to systems.</li>
-          <li><strong>Hate Speech & Illegal Content:</strong> Content that violates Indian laws or international human rights standards.</li>
-          <li><strong>Abuse:</strong> Harassment of other users or developers via comments or social features.</li>
+          <li>Use of the platform</li>
+          <li>Downloaded software</li>
+          <li>Platform interruptions</li>
+          <li>User-generated content</li>
+          <li>Third-party integrations</li>
         </ul>
+        <p>
+          Users access and use the platform at their own discretion and risk.
+        </p>
       </section>
 
       <section>
-        <h2>6. PAYMENTS_AND_COMMERCE</h2>
-        <p>
-          Lazplay supports digital purchases, including games and cosmetics.
-        </p>
+        <h2>11. Suspension and Termination</h2>
+        <p>Lazplay reserves the right to:</p>
         <ul>
-          <li>Transactions are processed via third-party providers (e.g., Razorpay).</li>
-          <li>Pricing is determined by the developers or the platform.</li>
-          <li>You are responsible for any taxes associated with your purchases.</li>
-          <li>Refer to our <strong>Refund Policy</strong> for details on digital goods returns.</li>
+          <li>Remove content</li>
+          <li>Restrict access</li>
+          <li>Suspend accounts</li>
+          <li>Terminate services</li>
         </ul>
-      </section>
-
-      <section>
-        <h2>7. LAUNCHER_AND_SYSTEM_USAGE</h2>
         <p>
-          The Lazplay Desktop and Android launchers are provided "as-is". They may collect telemetry and system information required for game execution and platform functionality as detailed in our <strong>Privacy Policy</strong>.
+          for violations of these Terms, security concerns, abuse, or legal compliance requirements.
         </p>
       </section>
 
       <section>
-        <h2>8. MODERATION_AND_TERMINATION</h2>
+        <h2>12. Changes to Terms</h2>
         <p>
-          Lazplay reserves the right to:
+          We may update these Terms periodically.
         </p>
-        <ul>
-          <li>Remove any content that violates these terms.</li>
-          <li>Suspend or terminate accounts for fraudulent activity, abuse, or repeated violations.</li>
-          <li>Modify platform features or availability at any time without prior notice.</li>
-        </ul>
-      </section>
-
-      <section>
-        <h2>9. INTELLECTUAL_PROPERTY_AND_DMCA</h2>
         <p>
-          If you believe your intellectual property has been infringed upon by content on our platform, please contact our legal team with a formal takedown request including proof of ownership and specific identification of the infringing material.
+          Continued use of Lazplay after updates constitutes acceptance of the revised Terms.
         </p>
       </section>
 
       <section>
-        <h2>10. LIMITATION_OF_LIABILITY</h2>
+        <h2>13. Governing Law</h2>
         <p>
-          To the maximum extent permitted by law, Lazplay (including its operators and affiliates) shall not be liable for any indirect, incidental, special, or consequential damages arising out of your use of the platform or any software downloaded through it.
+          These Terms shall be governed by the laws of India.
+        </p>
+        <p>
+          Any disputes arising from these Terms shall be subject to the jurisdiction of the courts of India.
         </p>
       </section>
 
       <section>
-        <h2>11. GOVERNING_LAW</h2>
-        <p>
-          These terms are governed by the laws of India. Any disputes arising from these terms shall be subject to the exclusive jurisdiction of the courts located in India.
-        </p>
+        <h2>14. Contact</h2>
+        <p>For support or legal inquiries, contact:</p>
+        <p><strong>support@lazplay.com</strong></p>
       </section>
     </LegalLayout>
   );

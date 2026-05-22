@@ -55,7 +55,6 @@ export default function Layout() {
         { name: 'LIBRARY', path: '/library', icon: 'inventory_2' },
         { name: 'DEV_CONSOLE', path: '/developer', icon: 'terminal' },
       ]),
-      { name: 'PROFILE', path: '/profile', icon: 'account_circle' },
       { name: 'ADMIN', path: '/admin', icon: 'shield_person', roles: ['ADMIN'] },
       { name: 'OPTIONS', path: '/options', icon: 'settings' },
     ];
