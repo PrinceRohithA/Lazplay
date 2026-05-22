@@ -8,15 +8,24 @@
     <title>LAZPLAY OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap"
         rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         rel="stylesheet" />
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script id="theme-logic">
         const updateThemeColors = (primaryHex, secondaryHex) => {
             const root = document.documentElement;
+            const uiMode = localStorage.getItem('lazplay-ui-mode') || 'cyber';
             
-            const p = primaryHex || localStorage.getItem('lazplay-theme-color') || '#39ff14';
-            const s = secondaryHex || localStorage.getItem('lazplay-secondary-color') || '#ffabf3';
+            let p, s;
+            if (uiMode === 'standard') {
+                p = '#2ea44f'; // standard green color
+                s = '#47c96d';
+            } else {
+                p = primaryHex || localStorage.getItem('lazplay-theme-color') || '#39ff14';
+                s = secondaryHex || localStorage.getItem('lazplay-secondary-color') || '#ffabf3';
+            }
 
             const hexToRgb = (hex) => {
                 const r = parseInt(hex.slice(1, 3), 16);
@@ -42,10 +51,42 @@
             root.style.setProperty('--on-secondary-container', '#ffffff'); // Lighter text
             root.style.setProperty('--glow-secondary', `rgba(${sRgb.r}, ${sRgb.g}, ${sRgb.b}, 0.5)`);
             
-            // Global surface text
-            root.style.setProperty('--on-surface', '#ffffff');
-            root.style.setProperty('--on-background', '#ffffff');
+            // Global surface text (overridden for standard light mode in css)
+            if (uiMode === 'cyber') {
+                root.style.setProperty('--on-surface', '#ffffff');
+                root.style.setProperty('--on-background', '#ffffff');
+            }
         };
+
+        // Initial application of classes to avoid FOUC
+        const uiMode = localStorage.getItem('lazplay-ui-mode') || 'cyber';
+        const colorTheme = localStorage.getItem('lazplay-color-theme') || 'system';
+        const root = document.documentElement;
+
+        if (uiMode === 'standard') {
+            root.classList.add('ui-standard');
+            root.classList.remove('ui-cyber');
+            
+            let isDark = true;
+            if (colorTheme === 'light') {
+                isDark = false;
+            } else if (colorTheme === 'system') {
+                isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            }
+            
+            if (isDark) {
+                root.classList.add('dark');
+                root.classList.remove('light');
+            } else {
+                root.classList.add('light');
+                root.classList.remove('dark');
+            }
+        } else {
+            root.classList.add('ui-cyber');
+            root.classList.remove('ui-standard');
+            root.classList.add('dark');
+            root.classList.remove('light');
+        }
 
         // Initial apply
         updateThemeColors();
@@ -58,6 +99,11 @@
         window.setSecondaryColor = (color) => {
             localStorage.setItem('lazplay-secondary-color', color);
             updateThemeColors(null, color);
+        };
+
+        // Hook up custom theme change notifier
+        window.notifyThemeChange = () => {
+            updateThemeColors();
         };
     </script>
     <style>

@@ -3,8 +3,10 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { games as gamesApi, payments, library as libraryApi } from '../api';
 import DOMPurify from 'dompurify';
 import RazorpayCheckout from '../components/RazorpayCheckout';
+import { useTheme } from '../components/ThemeContext';
 
 export default function GameDetailsSteamStyleLayout() {
+  const { t, isStandard } = useTheme();
   const [params] = useSearchParams();
   const gameId = params.get('id');
   const [game, setGame] = useState(null);
@@ -200,20 +202,20 @@ export default function GameDetailsSteamStyleLayout() {
 
   return (
     <div className="flex flex-col min-w-0 p-4 md:p-margin gap-4 md:gap-6 grid-glow-bg overflow-x-hidden">
-      {loading && <div className="text-center py-24 font-label-mono text-primary animate-pulse">LOADING_GAME_DATA...</div>}
-      {error && <div className="p-4 border border-error text-error font-label-mono bg-error/10 pixel-border">&gt; ERROR: {error}</div>}
-      {successMsg && <div className="p-4 border border-primary-container text-primary font-label-mono bg-primary-container/10 pixel-border">&gt; SUCCESS: {successMsg}</div>}
-      {!loading && !game && <div className="text-center py-24 font-label-mono text-on-surface-variant">GAME_NOT_FOUND</div>}
+      {loading && <div className="text-center py-24 font-label-mono text-primary animate-pulse">{t('LOADING_GAME_DATA...')}</div>}
+      {error && <div className="p-4 border border-error text-error font-label-mono bg-error/10 pixel-border">{isStandard ? '' : '> '}{t('ERROR')}: {t(error)}</div>}
+      {successMsg && <div className="p-4 border border-primary-container text-primary font-label-mono bg-primary-container/10 pixel-border">{isStandard ? '' : '> '}{t('SUCCESS') || 'SUCCESS'}: {t(successMsg)}</div>}
+      {!loading && !game && <div className="text-center py-24 font-label-mono text-on-surface-variant">{t('GAME_NOT_FOUND')}</div>}
       {!loading && game && (
         <>
-        {/*  Hero Section (Modern Layout)  */}
-        <section className="flex flex-col gap-4 bg-surface-container-low pixel-border p-2 max-w-screen-xl mx-auto w-full">
+        {/*  Hero Section  */}
+        <section className="flex flex-col gap-4 bg-surface-container-low pixel-border p-2 max-w-screen-xl mx-auto w-full rounded-lg">
           {/*  Main Media  */}
-          <div className="relative aspect-video w-full max-h-[500px] overflow-hidden bg-black pixel-border group self-center">
+          <div className="relative aspect-video w-full max-h-[500px] overflow-hidden bg-black pixel-border group self-center rounded-md">
             {playingGame && launchData ? (
               <div ref={gameContainerRef} className="absolute inset-0 z-50 bg-black flex flex-col">
                 <div className="flex items-center justify-between p-2 bg-surface-container-highest border-b border-outline-variant h-10 px-4">
-                  <span className="font-label-mono text-[10px] text-primary uppercase truncate">{game.title} // ONLINE_SESSION</span>
+                  <span className="font-label-mono text-[10px] text-primary uppercase truncate">{game.title} {isStandard ? ' - Online Session' : ' // ONLINE_SESSION'}</span>
                   <div className="flex gap-2">
                     <button onClick={handleFullscreen} className="text-on-surface-variant hover:text-white transition-colors">
                       <span className="material-symbols-outlined text-[18px]">{isFullscreen ? 'fullscreen_exit' : 'fullscreen'}</span>
@@ -241,7 +243,7 @@ export default function GameDetailsSteamStyleLayout() {
                   />
                   <button 
                       onClick={() => setPlayingTrailer(false)}
-                      className="absolute top-4 right-4 bg-surface/50 text-on-surface p-1 pixel-border hover:bg-surface transition-all z-10 opacity-0 group-hover:opacity-100"
+                      className="absolute top-4 right-4 bg-surface/50 text-on-surface p-1 pixel-border hover:bg-surface transition-all z-10 opacity-0 group-hover:opacity-100 rounded"
                   >
                       <span className="material-symbols-outlined text-[18px]">close</span>
                   </button>
@@ -253,7 +255,7 @@ export default function GameDetailsSteamStyleLayout() {
                   className={`absolute inset-0 flex items-center justify-center ${(game.trailerUrl || videos.length > 0) ? 'cursor-pointer hover:bg-black/20 pointer-events-auto' : 'pointer-events-none'} transition-colors`}
                   onClick={() => { if (game.trailerUrl || videos.length > 0) setPlayingTrailer(true); }}
                 >
-                  <div className={`bg-surface/80 p-4 pixel-border ${(game.trailerUrl || videos.length > 0) ? 'hover:bg-surface pointer-events-none' : ''} transition-colors`}>
+                  <div className={`bg-surface/80 p-4 pixel-border ${(game.trailerUrl || videos.length > 0) ? 'hover:bg-surface pointer-events-none' : ''} transition-colors rounded-full`}>
                     <span className="material-symbols-outlined text-primary text-6xl">play_circle</span>
                   </div>
                 </div>
@@ -269,20 +271,20 @@ export default function GameDetailsSteamStyleLayout() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-3 text-[11px] uppercase">
                 <div className="flex justify-between border-b border-outline-variant/20 pb-1">
-                  <span className="text-on-surface-variant">RECENT_REVIEWS:</span>
-                  <span className="text-primary font-bold">OVERWHELMINGLY_POSITIVE</span>
+                  <span className="text-on-surface-variant">{t('RECENT_REVIEWS:')}</span>
+                  <span className="text-primary font-bold">{t('OVERWHELMINGLY_POSITIVE')}</span>
                 </div>
                 <div className="flex justify-between border-b border-outline-variant/20 pb-1">
-                  <span className="text-on-surface-variant">RELEASE_DATE:</span>
+                  <span className="text-on-surface-variant">{t('RELEASE_DATE:')}</span>
                   <span className="text-on-surface">{game.releaseDate || new Date(game.createdAt).toLocaleDateString()}</span>
                 </div>
                 <div className="flex justify-between border-b border-outline-variant/20 pb-1">
-                  <span className="text-on-surface-variant">DEVELOPER:</span>
-                  <span className="text-secondary truncate">{game.developer?.displayName || 'UNKNOWN_DEV'}</span>
+                  <span className="text-on-surface-variant">{t('DEVELOPER:')}</span>
+                  <span className="text-secondary truncate">{game.developer?.displayName || t('UNKNOWN_DEV')}</span>
                 </div>
                 <div className="flex justify-between border-b border-outline-variant/20 pb-1">
-                  <span className="text-on-surface-variant">PUBLISHER:</span>
-                  <span className="text-secondary truncate">{game.publisher || 'LAZPLAY_STUDIOS'}</span>
+                  <span className="text-on-surface-variant">{t('PUBLISHER:')}</span>
+                  <span className="text-secondary truncate">{game.publisher || t('LAZPLAY_STUDIOS')}</span>
                 </div>
               </div>
             </div>
@@ -290,34 +292,34 @@ export default function GameDetailsSteamStyleLayout() {
             {/* Right Side: Actions */}
             <div className="flex flex-col justify-center items-center lg:items-end gap-4 min-w-[280px]">
               <div className="text-3xl font-bold text-primary mb-2">
-                {isWebGame ? 'DEMO / FREE' : (game.priceType === 'FREE' ? 'FREE_TO_PLAY' : `₹${(game.price / 100).toFixed(2)}`)}
+                {isWebGame ? t('DEMO / FREE') : (game.priceType === 'FREE' ? t('FREE_TO_PLAY') : `₹${(game.price / 100).toFixed(2)}`)}
               </div>
               
               <div className="w-full flex flex-col gap-3">
                 {isWebGame ? (
                   <>
-                    <div className="p-3 border border-error/30 text-error bg-error/10 font-label-mono text-[9px] uppercase tracking-wider text-center pixel-border leading-normal animate-in fade-in duration-200">
-                      ⚠ SYSTEM NOTICE: WEB BUILDS ARE STRICTLY FOR FREE PLAY & DEMO PURPOSES. NOT FOR SALE.
+                    <div className="p-3 border border-error/30 text-error bg-error/10 font-label-mono text-[9px] uppercase tracking-wider text-center pixel-border leading-normal animate-in fade-in duration-200 rounded">
+                      {isStandard ? 'Notice: Web builds are for play/demo purposes and are not for sale.' : '⚠ SYSTEM NOTICE: WEB BUILDS ARE STRICTLY FOR FREE PLAY & DEMO PURPOSES. NOT FOR SALE.'}
                     </div>
                     <button 
                       onClick={handlePlay}
-                      className="w-full bg-primary-container text-primary py-4 pixel-border neon-glow hover:bg-primary-fixed hover:text-black transition-all uppercase flex justify-center items-center gap-3 font-bold text-lg animate-in slide-in-from-bottom duration-300"
+                      className="w-full bg-primary-container text-primary py-4 pixel-border neon-glow hover:bg-primary-fixed hover:text-black transition-all uppercase flex justify-center items-center gap-3 font-bold text-lg animate-in slide-in-from-bottom duration-300 cyber-btn"
                     >
                       <span className="material-symbols-outlined text-2xl">play_circle</span>
-                      PLAY_NOW
+                      {t('PLAY_NOW')}
                     </button>
                     {game.isOwned ? (
-                      <div className="w-full bg-surface-container/50 border border-outline-variant/30 text-on-surface-variant py-2 uppercase flex justify-center items-center gap-2 text-xs font-mono select-none">
+                      <div className="w-full bg-surface-container/50 border border-outline-variant/30 text-on-surface-variant py-2 uppercase flex justify-center items-center gap-2 text-xs font-mono select-none rounded">
                         <span className="material-symbols-outlined text-[16px] text-primary">check_circle</span>
-                        IN_LIBRARY
+                        {t('IN_LIBRARY')}
                       </div>
                     ) : (
                       <button 
                         onClick={handleClaim}
-                        className="w-full bg-surface text-primary py-2 border border-primary/30 hover:border-primary-container hover:bg-primary-container/10 transition-all uppercase flex justify-center items-center gap-2 font-bold text-sm"
+                        className="w-full bg-surface text-primary py-2 border border-primary/30 hover:border-primary-container hover:bg-primary-container/10 transition-all uppercase flex justify-center items-center gap-2 font-bold text-sm rounded"
                       >
                         <span className="material-symbols-outlined text-[18px]">add_circle</span>
-                        ADD_TO_LIBRARY
+                        {t('ADD_TO_LIBRARY')}
                       </button>
                     )}
                   </>
@@ -325,26 +327,26 @@ export default function GameDetailsSteamStyleLayout() {
                   <>
                     <button 
                       onClick={handlePlay}
-                      className="w-full bg-primary-container text-primary py-4 pixel-border neon-glow hover:bg-primary-fixed hover:text-black transition-all uppercase flex justify-center items-center gap-3 font-bold text-lg"
+                      className="w-full bg-primary-container text-primary py-4 pixel-border neon-glow hover:bg-primary-fixed hover:text-black transition-all uppercase flex justify-center items-center gap-3 font-bold text-lg cyber-btn"
                     >
                       <span className="material-symbols-outlined text-2xl">play_circle</span>
-                      PLAY_NOW
+                      {t('PLAY_NOW')}
                     </button>
                     <Link 
                       to="/library"
-                      className="w-full bg-surface text-on-surface py-2 pixel-border hover:bg-surface-variant transition-all uppercase flex justify-center items-center gap-2 text-sm"
+                      className="w-full bg-surface text-on-surface py-2 pixel-border hover:bg-surface-variant transition-all uppercase flex justify-center items-center gap-2 text-sm rounded"
                     >
                       <span className="material-symbols-outlined text-[18px]">inventory_2</span>
-                      ACCESS_LIBRARY
+                      {t('ACCESS_LIBRARY')}
                     </Link>
                   </>
                 ) : (game.priceType === 'FREE' || game.hasEntitlement) ? (
                   <button 
                     onClick={handleClaim}
-                    className="w-full bg-primary-container text-primary py-4 pixel-border neon-glow hover:bg-primary-fixed hover:text-black transition-all uppercase flex justify-center items-center gap-3 font-bold text-lg"
+                    className="w-full bg-primary-container text-primary py-4 pixel-border neon-glow hover:bg-primary-fixed hover:text-black transition-all uppercase flex justify-center items-center gap-3 font-bold text-lg cyber-btn"
                   >
                     <span className="material-symbols-outlined text-2xl">add_circle</span>
-                    {game.hasEntitlement ? 'ADD_TO_LIBRARY' : 'CLAIM_FREE_GAME'}
+                    {game.hasEntitlement ? t('ADD_TO_LIBRARY') : t('CLAIM_FREE_GAME')}
                   </button>
                 ) : (
                   <div className="w-full">
@@ -362,7 +364,7 @@ export default function GameDetailsSteamStyleLayout() {
         </section>
 
       {/*  Horizontal Navigation Bar  */}
-      <nav className="flex overflow-x-auto no-scrollbar bg-surface-container-high pixel-border font-label-mono text-[11px] uppercase sticky top-16 z-30">
+      <nav className="flex overflow-x-auto no-scrollbar bg-surface-container-high pixel-border font-label-mono text-[11px] uppercase sticky top-16 z-30 rounded-md">
         <a className="px-6 py-3 bg-primary-container text-on-primary-container font-bold whitespace-nowrap" href="#overview">Overview</a>
         <a className="px-6 py-3 text-on-surface-variant hover:text-primary transition-colors border-l border-outline-variant/30 whitespace-nowrap" href="#screenshots">Screenshots</a>
         <a className="px-6 py-3 text-on-surface-variant hover:text-primary transition-colors border-l border-outline-variant/30 whitespace-nowrap" href="#reviews">Reviews</a>
@@ -372,9 +374,9 @@ export default function GameDetailsSteamStyleLayout() {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
         {/*  Left Column: Detailed Content  */}
         <div className="space-y-6">
-          <section id="overview" className="bg-surface-container pixel-border p-gutter">
+          <section id="overview" className="bg-surface-container pixel-border p-gutter rounded-lg">
             <div className="bg-surface-variant text-on-surface border-b-2 border-outline-variant -mx-gutter -mt-gutter mb-gutter px-gutter py-2 font-label-mono text-label-mono">
-              &gt;_ README.TXT
+              {isStandard ? 'Description' : '>_ README.TXT'}
             </div>
             <div className="font-body-md text-on-surface quill-content break-words overflow-hidden w-full">
               <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(game.description) }} />
@@ -384,10 +386,10 @@ export default function GameDetailsSteamStyleLayout() {
           {/* SCREENSHOTS SECTION */}
           <section
             id="screenshots"
-            className="bg-surface-container pixel-border p-4 md:p-6 overflow-hidden"
+            className="bg-surface-container pixel-border p-4 md:p-6 overflow-hidden rounded-lg"
           >
             <div className="bg-surface-variant text-on-surface border-b-2 border-outline-variant -mx-4 md:-mx-6 -mt-4 md:-mt-6 mb-4 md:mb-6 px-4 md:px-6 py-3 font-label-mono text-[12px] uppercase tracking-wider">
-              &gt;_ MEDIA_ARCHIVE
+              {isStandard ? 'Media Gallery' : '>_ MEDIA_ARCHIVE'}
             </div>
 
             {/* VIDEOS */}
@@ -470,7 +472,8 @@ export default function GameDetailsSteamStyleLayout() {
               </div>
             )}
           </section>
-          <section className="bg-surface-container pixel-border p-gutter font-label-mono">
+
+          <section className="bg-surface-container pixel-border p-gutter font-label-mono rounded-lg">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-outline-variant pb-2 mb-4 gap-2">
               <div className="text-on-surface-variant text-[12px] uppercase">System Requirements</div>
               
@@ -481,7 +484,7 @@ export default function GameDetailsSteamStyleLayout() {
                     <button
                       key={platform}
                       onClick={() => setActiveSpecPlatform(platform)}
-                      className={`px-2.5 py-0.5 text-[9px] font-label-mono uppercase border transition-all ${
+                      className={`px-2.5 py-0.5 text-[9px] font-label-mono uppercase border transition-all rounded ${
                         activeSpecPlatform === platform
                           ? 'bg-primary-container/20 text-primary border-primary font-bold'
                           : 'bg-surface border-outline-variant text-on-surface-variant hover:text-on-surface'
@@ -495,74 +498,75 @@ export default function GameDetailsSteamStyleLayout() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-[11px]">
               <div>
-                <div className="text-primary mb-2">MINIMUM_SPECS:</div>
+                <div className="text-primary mb-2">{isStandard ? 'Minimum Requirements:' : 'MINIMUM_SPECS:'}</div>
                 <ul className="space-y-1 text-on-surface-variant">
-                  <li>OS: {minSpecs.os || 'SYSTEM_OS V_1.0.4'}</li>
-                  <li>PROC: {minSpecs.processor || '8-BIT ZILOG Z80'}</li>
-                  <li>MEMORY: {minSpecs.memory || '64 KB RAM'}</li>
+                  <li>OS: {minSpecs.os || (isStandard ? 'Windows 10/11' : 'SYSTEM_OS V_1.0.4')}</li>
+                  <li>PROC: {minSpecs.processor || (isStandard ? 'Intel/AMD Dual Core' : '8-BIT ZILOG Z80')}</li>
+                  <li>MEMORY: {minSpecs.memory || (isStandard ? '4 GB RAM' : '64 KB RAM')}</li>
                   {minSpecs.graphics && <li>GRAPHICS: {minSpecs.graphics}</li>}
                   {minSpecs.storage && <li>STORAGE: {minSpecs.storage}</li>}
                 </ul>
               </div>
               <div>
-                <div className="text-secondary mb-2">RECOMMENDED_SPECS:</div>
+                <div className="text-secondary mb-2">{isStandard ? 'Recommended Requirements:' : 'RECOMMENDED_SPECS:'}</div>
                 <ul className="space-y-1 text-on-surface-variant">
-                  <li>OS: {recSpecs.os || 'SYSTEM_OS V_1.0.4+'}</li>
-                  <li>PROC: {recSpecs.processor || '16-BIT MOTOROLA 68000'}</li>
-                  <li>MEMORY: {recSpecs.memory || '128 KB RAM'}</li>
+                  <li>OS: {recSpecs.os || (isStandard ? 'Windows 10/11' : 'SYSTEM_OS V_1.0.4+')}</li>
+                  <li>PROC: {recSpecs.processor || (isStandard ? 'Intel/AMD Quad Core' : '16-BIT MOTOROLA 68000')}</li>
+                  <li>MEMORY: {recSpecs.memory || (isStandard ? '8 GB RAM' : '128 KB RAM')}</li>
                   {recSpecs.graphics && <li>GRAPHICS: {recSpecs.graphics}</li>}
                   {recSpecs.storage && <li>STORAGE: {recSpecs.storage}</li>}
                 </ul>
               </div>
             </div>
           </section>
-          <section id="reviews" className="bg-surface-container-lowest pixel-border p-gutter">
+
+          <section id="reviews" className="bg-surface-container-lowest pixel-border p-gutter rounded-lg">
             <div className="bg-surface text-primary border-b-2 border-primary-container -mx-gutter -mt-gutter mb-gutter px-gutter py-2 font-label-mono text-label-mono uppercase">
-              COMM_LINK_ESTABLISHED // USER_FEEDBACK
+              {isStandard ? 'User Reviews' : 'COMM_LINK_ESTABLISHED // USER_FEEDBACK'}
             </div>
             
             <div className="mb-6 flex flex-wrap gap-4">
-              <div className="w-10 h-10 bg-surface pixel-border flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 bg-surface pixel-border flex items-center justify-center shrink-0 rounded">
                 <span className="material-symbols-outlined text-on-surface-variant">face</span>
               </div>
               <div className="flex-1 flex flex-col gap-2">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-on-surface-variant text-[11px] font-label-mono uppercase">RATING:</span>
+                  <span className="text-on-surface-variant text-[11px] font-label-mono uppercase">{t('RATING')}:</span>
                   <select 
                     value={reviewRating} 
                     onChange={e => setReviewRating(Number(e.target.value))}
-                    className="bg-surface border border-outline-variant text-primary text-[11px] p-1 pixel-border focus:outline-none font-label-mono uppercase"
+                    className="bg-surface border border-outline-variant text-primary text-[11px] p-1 pixel-border focus:outline-none font-label-mono uppercase rounded"
                   >
-                    <option value="5">5 - OVERWHELMINGLY_POSITIVE</option>
-                    <option value="4">4 - POSITIVE</option>
-                    <option value="3">3 - MIXED</option>
-                    <option value="2">2 - NEGATIVE</option>
-                    <option value="1">1 - OVERWHELMINGLY_NEGATIVE</option>
+                    <option value="5">5 - {t('OVERWHELMINGLY_POSITIVE')}</option>
+                    <option value="4">4 - {t('POSITIVE')}</option>
+                    <option value="3">3 - {t('MIXED')}</option>
+                    <option value="2">2 - {t('NEGATIVE')}</option>
+                    <option value="1">1 - {t('OVERWHELMINGLY_NEGATIVE')}</option>
                   </select>
                 </div>
                 <textarea 
                   value={reviewBody}
                   onChange={(e) => setReviewBody(e.target.value)}
                   disabled={reviewSubmitting}
-                  className="w-full bg-surface pixel-border border-outline-variant p-2 font-label-mono text-primary focus:border-primary-container focus:ring-0 resize-none h-20 placeholder-on-surface-variant" 
-                  placeholder="&gt; ENTER_TRANSMISSION..."
+                  className="w-full bg-surface pixel-border border-outline-variant p-2 font-label-mono text-primary focus:border-primary-container focus:ring-0 resize-none h-20 placeholder-on-surface-variant rounded-md" 
+                  placeholder={isStandard ? "Write your review..." : "> ENTER_TRANSMISSION..."}
                 />
                 <button 
                   onClick={handleSubmitReview}
                   disabled={reviewSubmitting}
-                  className="self-end bg-surface-variant text-on-surface font-label-mono text-label-mono px-4 py-2 pixel-border-hover uppercase disabled:opacity-50"
+                  className="self-end bg-surface-variant text-on-surface font-label-mono text-label-mono px-4 py-2 pixel-border-hover uppercase disabled:opacity-50 rounded"
                 >
-                  {reviewSubmitting ? 'TRANSMITTING...' : 'SEND_DATA'}
+                  {reviewSubmitting ? t('TRANSMITTING...') : t('SEND_DATA')}
                 </button>
               </div>
             </div>
 
             <div className="space-y-4">
               {reviews.map(review => (
-                <div key={review.id} className="bg-surface pixel-border p-4">
+                <div key={review.id} className="bg-surface pixel-border p-4 rounded-md">
                   <div className="flex items-center justify-between mb-2 border-b border-outline-variant pb-2">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-surface-variant pixel-border flex items-center justify-center">
+                      <div className="w-6 h-6 bg-surface-variant pixel-border flex items-center justify-center rounded">
                          <span className="material-symbols-outlined text-[12px]">person</span>
                       </div>
                       <span className="text-[11px] font-label-mono text-secondary uppercase">{review.author?.username || 'ANONYMOUS'}</span>
@@ -578,34 +582,34 @@ export default function GameDetailsSteamStyleLayout() {
                 </div>
               ))}
               {reviews.length === 0 && (
-                <div className="text-center font-label-mono text-on-surface-variant text-[11px] py-4 uppercase">NO_TRANSMISSIONS_FOUND</div>
+                <div className="text-center font-label-mono text-on-surface-variant text-[11px] py-4 uppercase">{t('NO_TRANSMISSIONS_FOUND')}</div>
               )}
             </div>
           </section>
         </div>
         <div className="flex flex-col md:flex-row lg:flex-col gap-6 font-label-mono">
-          <div className="terminal-bg pixel-border p-4 flex-1 min-w-[240px]">
-            <div className="text-[11px] text-on-surface-variant mb-4 uppercase">Friend Activity</div>
+          <div className="terminal-bg pixel-border p-4 flex-1 min-w-[240px] rounded-lg">
+            <div className="text-[11px] text-on-surface-variant mb-4 uppercase">{t('FRIEND_ACTIVITY') || 'Friend Activity'}</div>
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-surface-variant pixel-border flex items-center justify-center">
+              <div className="w-8 h-8 bg-surface-variant pixel-border flex items-center justify-center rounded">
                 <span className="material-symbols-outlined text-[16px]">person</span>
               </div>
               <div className="text-[11px]">
-                <div className="text-on-surface">CYBER_PUNK_99</div>
-                <div className="text-primary-container">Currently Playing</div>
+                <div className="text-on-surface">{isStandard ? 'Gamer99' : 'CYBER_PUNK_99'}</div>
+                <div className="text-primary-container">{t('Currently Playing') || 'Currently Playing'}</div>
               </div>
             </div>
           </div>
-          <div className="terminal-bg pixel-border p-4 space-y-4 flex-1 min-w-[240px]">
+          <div className="terminal-bg pixel-border p-4 space-y-4 flex-1 min-w-[240px] rounded-lg">
             <div className="border-t border-outline-variant pt-4">
-              <div className="text-[11px] text-on-surface-variant mb-2 uppercase">Tags</div>
+              <div className="text-[11px] text-on-surface-variant mb-2 uppercase">{t('TAGS') || 'Tags'}</div>
               <div className="flex flex-wrap gap-2">
                 {game.tags && game.tags.length > 0 ? (
                   game.tags.map(tag => (
-                    <span key={tag} className="bg-surface px-2 py-1 text-[10px] text-tertiary-container pixel-border uppercase">{tag}</span>
+                    <span key={tag} className="bg-surface px-2 py-1 text-[10px] text-tertiary-container pixel-border uppercase rounded">{tag}</span>
                   ))
                 ) : (
-                  <span className="text-[10px] text-on-surface-variant font-label-mono uppercase">NO_TAGS_FOUND</span>
+                  <span className="text-[10px] text-on-surface-variant font-label-mono uppercase">{t('NO_TAGS_FOUND') || 'No Tags Found'}</span>
                 )}
               </div>
             </div>

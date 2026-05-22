@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { library as libraryApi } from '../api';
+import { useTheme } from '../components/ThemeContext';
 
 export default function GameLibraryCyberEdition() {
+  const { t, isStandard } = useTheme();
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,26 +55,30 @@ export default function GameLibraryCyberEdition() {
       <div className="mb-8 md:mb-12 flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6 py-4 border-b-2 border-outline-variant">
         <div className="min-w-0">
           <h1 className="font-headline-lg md:font-headline-xl text-headline-md md:text-headline-xl text-primary-container mb-1 uppercase tracking-tighter drop-shadow-[0_0_10px_rgba(var(--primary-container-rgb),0.4)] truncate">
-            USER_ARCHIVE // LIBRARY
+            {t('USER_ARCHIVE // LIBRARY')}
           </h1>
           <p className="font-label-mono text-[10px] md:text-label-mono text-on-surface-variant uppercase tracking-widest flex items-center gap-2">
             <span className={`w-2 h-2 ${loading ? 'bg-primary-container animate-pulse' : 'bg-primary-container'}`}></span>
-            {loading ? 'SYNCHRONIZING...' : `GRID_STATUS: ${items.length}_TITLES`}
+            {loading ? t('SYNCHRONIZING...') : (isStandard ? `${items.length} Games` : `GRID_STATUS: ${items.length}_TITLES`)}
           </p>
         </div>
         <div className="relative group w-full md:w-auto">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary-container font-label-mono group-focus-within:animate-pulse">&gt;</span>
+          {isStandard ? (
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-[16px] text-on-surface-variant">search</span>
+          ) : (
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary-container font-label-mono group-focus-within:animate-pulse">&gt;</span>
+          )}
           <input 
             type="text" 
             className="bg-surface border-2 border-outline-variant text-primary-container font-label-mono pl-8 pr-4 py-2 text-[12px] uppercase placeholder:text-outline/40 focus:border-primary-container outline-none transition-all w-full md:w-64" 
-            placeholder="SEARCH_MANIFEST..." 
+            placeholder={t('SEARCH_MANIFEST...')} 
             value={search} 
             onChange={e => setSearch(e.target.value)} 
           />
         </div>
       </div>
 
-      {error && <div className="mb-8 p-4 border-2 border-error/50 bg-error/10 text-error font-label-mono text-[12px] animate-pulse">&gt; SYSTEM_FAILURE: {error}</div>}
+      {error && <div className="mb-8 p-4 border-2 border-error/50 bg-error/10 text-error font-label-mono text-[12px] animate-pulse">{isStandard ? '' : '> '}{t('ERROR')}: {error}</div>}
 
       {loading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
@@ -81,12 +87,12 @@ export default function GameLibraryCyberEdition() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-20 md:py-32 font-label-mono text-on-surface-variant border-2 border-dashed border-outline-variant bg-surface-container/30 px-4">
+        <div className="text-center py-20 md:py-32 font-label-mono text-on-surface-variant border-2 border-dashed border-outline-variant bg-surface-container/30 px-4 rounded-lg">
           <span className="material-symbols-outlined text-[32px] md:text-[48px] mb-4 opacity-20">inventory_2</span>
-          <p className="tracking-widest text-[12px] md:text-base">{search ? 'NO_MATCHING_SIGNALS' : 'CORE_LIBRARY_EMPTY'}</p>
+          <p className="tracking-widest text-[12px] md:text-base">{search ? t('NO_MATCHING_SIGNALS') : t('CORE_LIBRARY_EMPTY')}</p>
           {!search && (
             <Link to="/games" className="text-primary-container hover:text-primary-fixed mt-4 inline-block font-bold group text-[12px] md:text-base">
-              &gt; ACCESS_DISCOVERY <span className="group-hover:translate-x-1 transition-transform inline-block">→</span>
+              {isStandard ? '' : '> '}{t('ACCESS_DISCOVERY')} <span className="group-hover:translate-x-1 transition-transform inline-block">→</span>
             </Link>
           )}
         </div>
@@ -95,13 +101,13 @@ export default function GameLibraryCyberEdition() {
           {filtered.map(item => (
             <div 
               key={item.gameId} 
-              className="bg-surface-container-low border-2 border-outline-variant hover:border-primary-container transition-all group flex flex-col relative overflow-hidden"
+              className="bg-surface-container-low border-2 border-outline-variant hover:border-primary-container transition-all group flex flex-col relative overflow-hidden rounded-md"
             >
-              {/* Box Header/Badge */}
+              {/* Box Badge */}
               <div className="absolute top-0 right-0 z-20">
                 <button 
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(item.gameId, item.favorite); }} 
-                  className={`p-1.5 md:p-2 transition-all ${item.favorite ? 'text-primary-container bg-surface/80' : 'text-on-surface-variant hover:text-primary-container'}`}
+                  className={`p-1.5 md:p-2 transition-all rounded-bl ${item.favorite ? 'text-primary-container bg-surface/80' : 'text-on-surface-variant hover:text-primary-container'}`}
                 >
                   <span className="material-symbols-outlined text-[18px] md:text-[20px]" style={{ fontVariationSettings: item.favorite ? "'FILL' 1" : "'FILL' 0" }}>
                     {item.favorite ? 'bookmark' : 'bookmark_add'}
@@ -144,11 +150,13 @@ export default function GameLibraryCyberEdition() {
               <div className="p-3 md:p-4 flex-1 flex flex-col gap-2 md:gap-3 bg-surface border-t-2 border-outline-variant min-w-0">
                 <div className="flex flex-col min-w-0">
                   <h3 className="font-label-mono text-[12px] md:text-[14px] font-bold text-on-surface uppercase truncate group-hover:text-primary-container transition-colors">
-                    {(item.title||'').replace(/\s/g,'_')}
+                    {isStandard ? item.title : (item.title||'').replace(/\s/g,'_')}
                   </h3>
                   <div className="flex justify-between items-center mt-1">
                     <span className="font-label-mono text-[8px] md:text-[9px] text-on-surface-variant">
-                      {item.playtimeSeconds ? `${Math.round(item.playtimeSeconds/3600)}H_LOGGED` : 'INITIALIZING...'}
+                      {item.playtimeSeconds 
+                        ? (isStandard ? `${Math.round(item.playtimeSeconds/3600)} hours played` : `${Math.round(item.playtimeSeconds/3600)}H_LOGGED`) 
+                        : t('INITIALIZING...')}
                     </span>
                     <span className="text-[8px] md:text-[10px] font-label-mono text-primary-fixed-dim opacity-60">
                       V.{item.version || '1.0.0'}
@@ -159,23 +167,25 @@ export default function GameLibraryCyberEdition() {
                 <div className="flex flex-col gap-1.5 md:gap-2 mt-auto">
                   <button 
                     onClick={() => handlePlayNow(item)}
-                    className="w-full bg-primary-container text-on-primary-fixed-variant font-label-mono text-[11px] md:text-[12px] font-bold py-2 md:py-2.5 hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-1 md:gap-2 shadow-[2px_2px_0_0_rgba(var(--primary-container-rgb),0.3)] md:shadow-[4px_4px_0_0_rgba(var(--primary-container-rgb),0.3)]"
+                    className="w-full bg-primary-container text-on-primary-fixed-variant font-label-mono text-[11px] md:text-[12px] font-bold py-2 md:py-2.5 hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-1 md:gap-2 shadow-[2px_2px_0_0_rgba(var(--primary-container-rgb),0.3)] md:shadow-[4px_4px_0_0_rgba(var(--primary-container-rgb),0.3)] cyber-btn"
                   >
-                    <span className="material-symbols-outlined text-[14px] md:text-sm">play_arrow</span>
-                    PLAY
+                    <span className="material-symbols-outlined text-[14px] md:sm">play_arrow</span>
+                    {t('EXECUTE_PLAY')}
                   </button>
                   <Link 
                     to={`/game?id=${item.gameId}`}
-                    className="w-full text-center border-2 border-outline-variant text-on-surface-variant font-label-mono text-[9px] md:text-[10px] py-1 md:py-1.5 hover:bg-surface-container-high transition-all flex items-center justify-center gap-1 md:gap-2"
+                    className="w-full text-center border-2 border-outline-variant text-on-surface-variant font-label-mono text-[9px] md:text-[10px] py-1 md:py-1.5 hover:bg-surface-container-high transition-all flex items-center justify-center gap-1 md:gap-2 rounded"
                   >
                     <span className="material-symbols-outlined text-[12px] md:text-[14px]">info</span>
-                    DETAILS
+                    {t('DETAILS')}
                   </Link>
                 </div>
               </div>
 
               {/* Decorative scanline on hover */}
-              <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-10 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] transition-opacity"></div>
+              {!isStandard && (
+                <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-10 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] transition-opacity"></div>
+              )}
             </div>
           ))}
         </div>

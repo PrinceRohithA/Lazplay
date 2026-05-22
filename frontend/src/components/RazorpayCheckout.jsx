@@ -1,5 +1,6 @@
 import React, { useState, useCallback, memo } from 'react';
 import { payments } from '../api';
+import { useTheme } from './ThemeContext';
 
 /**
  * RazorpayCheckout Component
@@ -10,6 +11,7 @@ import { payments } from '../api';
  * 3. Verifies the payment signature on the backend
  */
 const RazorpayCheckout = memo(({ game, onSuccess, onError }) => {
+  const { t } = useTheme();
   const [loading, setLoading] = useState(false);
 
   const handlePayment = useCallback(async () => {
@@ -105,16 +107,16 @@ const RazorpayCheckout = memo(({ game, onSuccess, onError }) => {
     <button
       onClick={handlePayment}
       disabled={loading}
-      className="w-full bg-primary-container text-on-primary-container py-3 pixel-border neon-glow hover:bg-primary-fixed transition-all uppercase flex justify-center items-center gap-2 font-bold disabled:opacity-50 disabled:cursor-not-allowed group"
+      className="w-full bg-primary-container text-on-primary-container py-3 pixel-border neon-glow hover:bg-primary-fixed transition-all uppercase flex justify-center items-center gap-2 font-bold disabled:opacity-50 disabled:cursor-not-allowed group cyber-btn"
     >
       <span className={`material-symbols-outlined ${loading ? 'animate-spin' : 'group-hover:scale-110 transition-transform'}`}>
         {loading ? 'sync' : (game.priceType === 'FREE' ? 'download' : 'shopping_cart')}
       </span>
       {loading 
-        ? 'PROCESSING...' 
+        ? t('PROCESSING...') 
         : (game.priceType === 'FREE' 
-            ? 'GET FOR FREE' 
-            : `PURCHASE - ₹${(game.price / 100).toFixed(2)}`
+            ? t('GET_FOR_FREE') 
+            : `${t('PURCHASE')} - ₹${(game.price / 100).toFixed(2)}`
           )
       }
     </button>

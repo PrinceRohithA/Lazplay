@@ -2,8 +2,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { auth as authApi } from '../api';
 import Footer from './Footer';
+import { useTheme } from './ThemeContext';
 
 export default function Layout() {
+  const { t, isStandard } = useTheme();
   const [isCollapsed, setIsCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {
       return window.innerWidth < 768;
@@ -68,9 +70,9 @@ export default function Layout() {
   }, [user, isInsideLauncher]);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col grid-glow-bg">
+    <div className={`min-h-screen bg-background flex flex-col ${isStandard ? '' : 'grid-glow-bg'}`}>
       {/* CRT Scanline Overlay */}
-      <div className="fixed inset-0 scanlines z-[60] pointer-events-none opacity-20"></div>
+      {!isStandard && <div className="fixed inset-0 scanlines z-[60] pointer-events-none opacity-20"></div>}
 
       {/* Mobile Sidebar Overlay */}
       {!isCollapsed && (
@@ -81,7 +83,9 @@ export default function Layout() {
       )}
 
       {/* TopAppBar */}
-      <header className="bg-surface text-primary font-label-mono text-label-mono uppercase tracking-widest border-b-2 border-outline-variant shadow-[0_0_15px_rgba(0,0,0,0.5)] flex justify-between items-center px-4 md:px-gutter py-2 w-full z-50 fixed top-0 h-16">
+      <header className={`bg-surface text-primary border-b-2 border-outline-variant flex justify-between items-center px-4 md:px-gutter py-2 w-full z-50 fixed top-0 h-16 ${
+        isStandard ? '' : 'font-label-mono text-label-mono uppercase tracking-widest shadow-[0_0_15px_rgba(0,0,0,0.5)]'
+      }`}>
         <div className="flex items-center gap-2 md:gap-4 h-full">
           <button 
             onClick={() => setIsCollapsed(!isCollapsed)}
@@ -89,13 +93,17 @@ export default function Layout() {
           >
             <span className="material-symbols-outlined">{isCollapsed ? 'menu' : 'close'}</span>
           </button>
-          <Link to="/" className="font-headline-md text-headline-sm md:text-headline-md font-bold text-primary drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.6)]">LAZPLAY</Link>
+          <Link to="/" className={`font-headline-md text-headline-sm md:text-headline-md font-bold text-primary ${
+            isStandard ? '' : 'drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.6)]'
+          }`}>LAZPLAY</Link>
         </div>
         
         <div className="flex-1 max-w-md mx-8 hidden lg:block">
           <div className="relative w-full border-2 border-outline-variant bg-surface flex items-center px-3 py-1">
-            <span className="text-primary mr-2 font-label-mono">&gt;</span>
-            <input className="w-full bg-transparent border-none text-primary focus:ring-0 placeholder:text-outline-variant/50 focus:outline-none font-label-mono text-label-mono !border-none !ring-0" placeholder="SEARCH_DATABASE..." type="text"/>
+            {!isStandard && <span className="text-primary mr-2 font-label-mono">&gt;</span>}
+            <input className={`w-full bg-transparent border-none text-primary focus:ring-0 placeholder:text-outline-variant/50 focus:outline-none !border-none !ring-0 ${
+              isStandard ? '' : 'font-label-mono text-label-mono !border-none !ring-0'
+            }`} placeholder={t('SEARCH_DATABASE...')} type="text"/>
             <span className="material-symbols-outlined text-primary" style={{fontVariationSettings: "'FILL' 0"}}>search</span>
           </div>
         </div>
@@ -105,10 +113,10 @@ export default function Layout() {
             <Link 
               to="/download-launcher" 
               className="hidden sm:flex w-10 h-10 hover:text-primary-fixed hover:bg-surface-variant transition-colors items-center justify-center border-2 border-transparent hover:border-primary-container group relative"
-              title="DOWNLOAD_LAUNCHER"
+              title={t('DOWNLOAD_LAUNCHER')}
             >
               <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 0"}}>download</span>
-              <span className="absolute -bottom-8 right-0 bg-surface border border-outline-variant px-2 py-1 text-[8px] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">GET_LAUNCHER</span>
+              <span className="absolute -bottom-8 right-0 bg-surface border border-outline-variant px-2 py-1 text-[8px] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">{t('GET_LAUNCHER')}</span>
             </Link>
           )}
           <button className="w-10 h-10 hover:text-primary-fixed hover:bg-surface-variant transition-colors flex items-center justify-center border-2 border-transparent hover:border-primary-container">
@@ -131,14 +139,14 @@ export default function Layout() {
             <div className={`px-6 py-8 border-b-2 border-outline-variant mb-4 overflow-hidden transition-all duration-300 ${isCollapsed ? 'opacity-0 h-0 p-0 border-0 mb-0' : 'opacity-100'}`}>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 border-2 border-primary bg-surface flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-primary" style={{fontVariationSettings: "'FILL' 1"}}>terminal</span>
+                  <span className="material-symbols-outlined text-primary" style={{fontVariationSettings: "'FILL' 1"}}>{isStandard ? 'person' : 'terminal'}</span>
                 </div>
                 <div className="overflow-hidden">
                   <div className="font-headline-md text-headline-sm font-bold text-primary truncate max-w-[140px]">
-                    {user ? user.displayName.toUpperCase() : 'GUEST_USER'}
+                    {user ? (isStandard ? user.displayName : user.displayName.toUpperCase()) : t('GUEST_USER')}
                   </div>
                   <div className="text-[10px] text-on-surface-variant uppercase">
-                    {user ? `${user.roles[user.roles.length - 1]}_MODE` : 'OFFLINE_MODE'}
+                    {user ? t(`${user.roles[user.roles.length - 1]}_MODE`) : t('OFFLINE_MODE')}
                   </div>
                 </div>
               </div>
@@ -152,7 +160,9 @@ export default function Layout() {
                 to={item.path}
                 onClick={() => { if (window.innerWidth < 768) setIsCollapsed(true); }}
                 end={item.path === '/'}
-                className={({ isActive }) => `flex items-center gap-3 py-3 transition-all font-label-mono text-label-mono border-l-4 w-full ${isCollapsed ? 'px-0 justify-center' : 'px-6 justify-start'} ${
+                className={({ isActive }) => `flex items-center gap-3 py-3 transition-all border-l-4 w-full ${isCollapsed ? 'px-0 justify-center' : 'px-6 justify-start'} ${
+                  isStandard ? '' : 'font-label-mono text-label-mono'
+                } ${
                   isActive
                   ? 'bg-primary-container text-on-primary-fixed-variant font-bold border-primary-fixed shadow-[4px_0_0_0_var(--primary-container)]'
                   : 'text-on-surface-variant opacity-80 hover:opacity-100 hover:bg-surface-bright hover:text-primary border-transparent'
@@ -161,7 +171,7 @@ export default function Layout() {
                 {({ isActive }) => (
                   <>
                     <span className="material-symbols-outlined shrink-0" style={{fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0"}}>{item.icon}</span>
-                    <span className={`whitespace-nowrap transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 invisible' : 'opacity-100 w-auto'}`}>{item.name}</span>
+                    <span className={`whitespace-nowrap transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 invisible' : 'opacity-100 w-auto'}`}>{t(item.name)}</span>
                   </>
                 )}
               </NavLink>
@@ -172,7 +182,7 @@ export default function Layout() {
             <div className="mt-auto border-t-2 border-outline-variant pt-4">
               <Link className="flex items-center gap-3 px-6 py-3 text-error opacity-80 hover:opacity-100 hover:bg-surface-bright hover:text-error transition-all border-l-4 border-transparent w-full" to="/login">
                 <span className="material-symbols-outlined shrink-0">power_settings_new</span>
-                <span className={`font-label-mono text-label-mono transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 invisible' : 'opacity-100 w-auto'}`}>LOGOUT</span>
+                <span className={`transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 invisible' : 'opacity-100 w-auto'} ${isStandard ? '' : 'font-label-mono text-label-mono'}`}>{t('LOGOUT')}</span>
               </Link>
             </div>
           )}

@@ -1,16 +1,16 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import AdminMainframe from './pages/AdminMainframe';
-import SystemLoginCyberEdition from './pages/SystemLoginCyberEdition';
-import DeveloperWorkspace from './pages/DeveloperWorkspace';
-import GameDetailsSteamStyleLayout from './pages/GameDetailsSteamStyleLayout';
-import PlayerDiscoveryHub from './pages/PlayerDiscoveryHub';
-import UserRegistrationCyberEdition from './pages/UserRegistrationCyberEdition';
-import GameLibraryCyberEdition from './pages/GameLibraryCyberEdition';
-import GamesDiscoveryRetroEdition from './pages/GamesDiscoveryRetroEdition';
-import DeveloperWorkspaceAdvancedDeploymentSuite from './pages/DeveloperWorkspaceAdvancedDeploymentSuite';
-import Options from './pages/Options';
-import LauncherDownloadPage from './pages/LauncherDownloadPage';
+import AdminDashboard from './pages/AdminDashboard';
+import Login from './pages/Login';
+import DeveloperDashboard from './pages/DeveloperDashboard';
+import GameDetails from './pages/GameDetails';
+import Home from './pages/Home';
+import Register from './pages/Register';
+import GameLibrary from './pages/GameLibrary';
+import GamesDiscovery from './pages/GamesDiscovery';
+import DeveloperDeployment from './pages/DeveloperDeployment';
+import Settings from './pages/Settings';
+import DownloadLauncher from './pages/DownloadLauncher';
 import Profile from './pages/Profile';
 import TermsOfService from './pages/TermsOfService';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -23,19 +23,19 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={isInsideLauncher ? <Navigate to="/" replace /> : <SystemLoginCyberEdition />} />
-        <Route path="/signup" element={isInsideLauncher ? <Navigate to="/" replace /> : <UserRegistrationCyberEdition />} />
+        <Route path="/login" element={isInsideLauncher ? <Navigate to="/" replace /> : <Login />} />
+        <Route path="/signup" element={isInsideLauncher ? <Navigate to="/" replace /> : <Register />} />
         <Route element={<Layout />}>
-          <Route index element={<PlayerDiscoveryHub />} />
-          <Route path="game" element={<GameDetailsSteamStyleLayout />} />
-          <Route path="admin" element={<AdminMainframe />} />
-          <Route path="developer" element={<DeveloperWorkspace />} />
-          <Route path="library" element={<GameLibraryCyberEdition />} />
-          <Route path="games" element={<GamesDiscoveryRetroEdition />} />
-          <Route path="options" element={<Options />} />
+          <Route index element={<Home />} />
+          <Route path="game" element={<GameDetails />} />
+          <Route path="admin" element={<AdminDashboard />} />
+          <Route path="developer" element={<DeveloperDashboard />} />
+          <Route path="library" element={<GameLibrary />} />
+          <Route path="games" element={<GamesDiscovery />} />
+          <Route path="options" element={<Settings />} />
           <Route path="profile" element={<Profile />} />
-          <Route path="deployment" element={<DeveloperWorkspaceAdvancedDeploymentSuite />} />
-          <Route path="download-launcher" element={<LauncherDownloadPage />} />
+          <Route path="deployment" element={<DeveloperDeployment />} />
+          <Route path="download-launcher" element={<DownloadLauncher />} />
           <Route path="terms-and-conditions" element={<TermsOfService />} />
           <Route path="privacy-policy" element={<PrivacyPolicy />} />
           <Route path="refund-policy" element={<RefundPolicy />} />
