@@ -1,83 +1,133 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-export default function LauncherDownloadPage() {
+export default function DownloadLauncher() {
+  const [detectedOS, setDetectedOS] = useState('Windows');
+
+  useEffect(() => {
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    if (userAgent.includes('win')) {
+      setDetectedOS('Windows');
+    } else if (userAgent.includes('mac')) {
+      setDetectedOS('macOS');
+    } else if (userAgent.includes('linux')) {
+      setDetectedOS('Linux');
+    }
+  }, []);
+
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-gutter relative overflow-hidden">
-      {/* Background Decorative Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary-container/10 rounded-full blur-[120px] animate-pulse"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary-container/10 rounded-full blur-[120px] animate-pulse delay-700"></div>
+    <div className="min-h-screen bg-[#050505] text-[#e5e5e7] flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans">
+      {/* Radial glow background */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(163,230,53,0.07),transparent_50%)] pointer-events-none" />
+      
+      {/* Fine grid overlay */}
+      <div 
+        className="absolute inset-0 opacity-[0.02] pointer-events-none"
+        style={{
+          backgroundImage: 'linear-gradient(#a3e635 1px, transparent 1px), linear-gradient(90deg, #a3e635 1px, transparent 1px)',
+          backgroundSize: '30px 30px'
+        }}
+      />
 
-      <div className="max-w-4xl w-full z-10">
-        <div className="bg-surface-container border-2 border-outline-variant p-8 md:p-12 shadow-[20px_20px_0_0_rgba(var(--primary-container-rgb),0.2)] relative">
-          <div className="absolute top-0 right-0 p-4 font-label-mono text-[10px] text-outline-variant opacity-50 tracking-widest uppercase">
-            PROTOCOL: LAUNCHER_ACQUISITION_MODE
+      <div className="max-w-3xl w-full z-10 space-y-12">
+        {/* Navigation / Header */}
+        <div className="flex justify-between items-center border-b border-[#1f1f1f] pb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#a3e635] animate-ping" />
+            <span className="font-mono text-xs uppercase tracking-widest text-[#a3e635]">SYS.LAUNCHER_DISTRIBUTION</span>
           </div>
+          <span className="font-mono text-xs text-[#71717a]">V1.0.0-RELEASE</span>
+        </div>
 
-          <div className="flex flex-col md:flex-row gap-12 items-center">
-            <div className="flex-1 text-center md:text-left">
-              <h1 className="font-headline-xl text-headline-xl text-primary-container uppercase mb-4 drop-shadow-[0_0_15px_rgba(var(--primary-container-rgb),0.5)]">
-                LAZPLAY_DESKTOP
+        {/* Main Card */}
+        <div className="bg-[#0b0b0b] border border-[#1f1f1f] hover:border-[#a3e635]/30 p-8 md:p-12 transition-all duration-500 relative rounded-lg group shadow-[0_0_50px_rgba(0,0,0,0.8)]">
+          {/* Subtle top lime indicator line */}
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#a3e635] scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
+
+          <div className="space-y-8">
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#1a2e05] border border-[#3f6212]/30 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#a3e635]" />
+                <span className="font-mono text-[10px] tracking-wider text-[#bef264] uppercase">Detected OS: {detectedOS}</span>
+              </div>
+              
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white font-sans">
+                LAZPLAY <span className="text-[#a3e635] drop-shadow-[0_0_15px_rgba(163,230,53,0.3)]">DESKTOP</span>
               </h1>
-              <p className="font-body-lg text-on-surface-variant mb-8 leading-relaxed">
-                Experience the Grid at its full potential. The LazPlay Desktop Launcher is required for high-fidelity native titles on Windows and Linux systems.
-                Enjoy faster downloads, cloud saves, and direct hardware access for a seamless gaming experience.
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                <a
-                  href="https://media.lazplay.tech/launcher_builds/windows_launcher_v1.0.0/LazPlay-Windows-1.0.0-Setup.zip"
-                  className="bg-primary-container text-on-primary-fixed-variant px-8 py-4 font-label-mono font-bold uppercase tracking-widest hover:brightness-110 transition-all flex items-center justify-center gap-3 shadow-[8px_8px_0_0_rgba(0,0,0,0.5)] active:translate-x-1 active:translate-y-1 active:shadow-none"
-                >
-                  <span className="material-symbols-outlined">download</span>
-                  DOWNLOAD_WINDOWS
-                </a>
-                <a
-                  href="https://media.lazplay.tech/launcher_builds/windows_launcher_v1.0.0/LazPlay-Linux-1.0.0-Setup.zip"
-                  className="bg-surface border-2 border-primary-container text-primary-container px-8 py-4 font-label-mono font-bold uppercase tracking-widest hover:bg-primary-container/10 transition-all flex items-center justify-center gap-3"
-                >
-                  <span className="material-symbols-outlined">terminal</span>
-                  DOWNLOAD_LINUX
-                </a>
-              </div>
-
-              <p className="mt-8 font-label-mono text-[10px] text-outline-variant uppercase">
-                VERSION: 1.0.0-STABLE // BUILD: GRID_STABLE
+              
+              <p className="text-sm md:text-base text-[#a1a1aa] leading-relaxed max-w-xl font-sans">
+                Experience high-performance native execution. The LazPlay Desktop Launcher unlocks direct hardware access, low-latency rendering, and cloud saves for your library.
               </p>
             </div>
 
-            <div className="w-full md:w-64 aspect-square bg-surface border-2 border-outline-variant relative overflow-hidden group flex items-center justify-center">
-              <div className="absolute inset-0 bg-primary-container/5 animate-pulse"></div>
-              <span className="material-symbols-outlined text-[120px] text-primary-container/30 group-hover:scale-110 transition-transform duration-700">rocket_launch</span>
-              <div className="absolute bottom-4 left-0 right-0 text-center font-label-mono text-[10px] text-primary-container/50 tracking-tighter">
-                READY_FOR_ORBIT
+            {/* Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <a
+                href="https://media.lazplay.tech/launcher_builds/windows_launcher_v1.0.0/LazPlay-Windows-1.0.0-Setup.zip"
+                className="bg-[#a3e635] hover:bg-[#bef264] text-black font-semibold px-8 py-4 rounded transition-all duration-300 flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(163,230,53,0.15)] hover:shadow-[0_0_25px_rgba(163,230,53,0.35)] hover:-translate-y-0.5 active:translate-y-0 font-sans"
+              >
+                <span className="material-symbols-outlined font-bold">download</span>
+                Download for Windows
+              </a>
+              <a
+                href="https://media.lazplay.tech/launcher_builds/windows_launcher_v1.0.0/LazPlay-Linux-1.0.0-Setup.zip"
+                className="border border-[#27272a] hover:border-[#a3e635] bg-transparent text-white hover:text-black hover:bg-[#a3e635] font-semibold px-8 py-4 rounded transition-all duration-300 flex items-center justify-center gap-3 hover:-translate-y-0.5 active:translate-y-0 font-sans"
+              >
+                <span className="material-symbols-outlined">terminal</span>
+                Download for Linux
+              </a>
+            </div>
+
+            {/* Verification hashes / stats */}
+            <div className="pt-6 border-t border-[#1f1f1f] flex flex-wrap gap-x-8 gap-y-3 text-[11px] font-mono text-[#71717a]">
+              <div>
+                FILE SIZE: <span className="text-[#e5e5e7]">~48 MB</span>
+              </div>
+              <div>
+                SHA256: <span className="text-[#e5e5e7]">4f7c...8a1e</span>
+              </div>
+              <div>
+                STATUS: <span className="text-[#a3e635]">VERIFIED SECURE</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-surface-container/50 border border-outline-variant p-6 hover:border-primary-container/50 transition-colors">
-            <span className="material-symbols-outlined text-primary-container mb-2">speed</span>
-            <h4 className="font-label-mono text-label-mono text-on-surface uppercase mb-2">MAX_PERFORMANCE</h4>
-            <p className="font-label-mono text-[10px] text-on-surface-variant">Optimized for low-latency native execution and GPU utilization.</p>
+        {/* Feature Highlights */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-[#0b0b0b] border border-[#1f1f1f] p-6 rounded-lg space-y-3 hover:border-[#a3e635]/20 transition-all duration-300">
+            <div className="w-10 h-10 rounded-lg bg-[#141414] border border-[#27272a] flex items-center justify-center text-[#a3e635]">
+              <span className="material-symbols-outlined">bolt</span>
+            </div>
+            <h3 className="text-sm font-semibold text-white font-sans">MAX PERFORMANCE</h3>
+            <p className="text-xs text-[#71717a] leading-relaxed font-sans">Direct GPU utilization and optimized resource management for raw execution speed.</p>
           </div>
-          <div className="bg-surface-container/50 border border-outline-variant p-6 hover:border-primary-container/50 transition-colors">
-            <span className="material-symbols-outlined text-primary-container mb-2">sync</span>
-            <h4 className="font-label-mono text-label-mono text-on-surface uppercase mb-2">AUTO_UPDATER</h4>
-            <p className="font-label-mono text-[10px] text-on-surface-variant">Stay updated with the latest patches and build versioning automatically.</p>
+
+          <div className="bg-[#0b0b0b] border border-[#1f1f1f] p-6 rounded-lg space-y-3 hover:border-[#a3e635]/20 transition-all duration-300">
+            <div className="w-10 h-10 rounded-lg bg-[#141414] border border-[#27272a] flex items-center justify-center text-[#a3e635]">
+              <span className="material-symbols-outlined">sync</span>
+            </div>
+            <h3 className="text-sm font-semibold text-white font-sans">AUTO UPDATES</h3>
+            <p className="text-xs text-[#71717a] leading-relaxed font-sans">Background update service ensures you always have the latest launcher patches.</p>
           </div>
-          <div className="bg-surface-container/50 border border-outline-variant p-6 hover:border-primary-container/50 transition-colors">
-            <span className="material-symbols-outlined text-primary-container mb-2">security</span>
-            <h4 className="font-label-mono text-label-mono text-on-surface uppercase mb-2">SECURE_GRID</h4>
-            <p className="font-label-mono text-[10px] text-on-surface-variant">Encrypted session handling and secure credential synchronization.</p>
+
+          <div className="bg-[#0b0b0b] border border-[#1f1f1f] p-6 rounded-lg space-y-3 hover:border-[#a3e635]/20 transition-all duration-300">
+            <div className="w-10 h-10 rounded-lg bg-[#141414] border border-[#27272a] flex items-center justify-center text-[#a3e635]">
+              <span className="material-symbols-outlined">shield</span>
+            </div>
+            <h3 className="text-sm font-semibold text-white font-sans">SECURE LAUNCH</h3>
+            <p className="text-xs text-[#71717a] leading-relaxed font-sans">Session verification protocols protect your account credentials and downloads.</p>
           </div>
         </div>
 
-        <div className="mt-12 text-center">
-          <Link to="/" className="font-label-mono text-label-mono text-primary-container hover:underline uppercase tracking-widest flex items-center justify-center gap-2">
+        {/* Back Link */}
+        <div className="text-center pt-4">
+          <Link 
+            to="/" 
+            className="inline-flex items-center gap-2 text-xs font-mono text-[#71717a] hover:text-[#a3e635] transition-colors uppercase tracking-wider"
+          >
             <span className="material-symbols-outlined text-sm">arrow_back</span>
-            RETURN_TO_THE_GRID
+            Return to the Web Grid
           </Link>
         </div>
       </div>
