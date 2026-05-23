@@ -18,6 +18,7 @@ export function registerLibraryRoutes(router, ctx) {
 
 router.add('GET', '/library', async (req) => {
     const user = await requireAuth(req);
+    const platform = req.query?.platform || null;
     const items = await prisma.libraryItem.findMany({
       where: { userId: user.id },
       include: { game: true },
@@ -26,7 +27,7 @@ router.add('GET', '/library', async (req) => {
     
     // Transform items to include public game data at the root
     const formatted = await Promise.all(items.map(async (item) => {
-      const g = await publicGame(item.game, user);
+      const g = await publicGame(item.game, user, platform);
       return {
         ...item,
         ...g,

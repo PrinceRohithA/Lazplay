@@ -84,6 +84,13 @@ export const initStorage = () => {
   if (!columnNames.includes("bannerUrl")) {
     sqliteDb.exec("ALTER TABLE games ADD COLUMN bannerUrl TEXT");
   }
+
+  // Reset any game status stuck in 'downloading' to 'paused'
+  try {
+    sqliteDb.prepare("UPDATE games SET status = 'paused' WHERE status = 'downloading'").run();
+  } catch (e) {
+    // console.error
+  }
 };
 
 export const storageDb = {
@@ -104,12 +111,46 @@ export const storageDb = {
 
   getGame: (id: string): GameRecord | null => {
     const stmt = sqliteDb.prepare("SELECT * FROM games WHERE id = ?");
-    return stmt.get(id) as GameRecord | null;
+    const game = stmt.get(id) as GameRecord | null;
+    if (game) {
+      try {
+        const stateStmt = sqliteDb.prepare(
+          "SELECT progress, downloadedBytes, totalBytes FROM download_state WHERE gameId = ?"
+        );
+        const state = stateStmt.get(game.id) as any;
+        if (state) {
+          return {
+            ...game,
+            progress: state.progress || 0,
+            downloadedBytes: state.downloadedBytes || 0,
+            totalBytes: state.totalBytes || 0,
+          };
+        }
+      } catch (_) {}
+    }
+    return game;
   },
 
   getInstalledGames: (): GameRecord[] => {
-    const stmt = sqliteDb.prepare("SELECT * FROM games WHERE status = ?");
-    return stmt.all("installed") as GameRecord[];
+    const stmt = sqliteDb.prepare("SELECT * FROM games");
+    const games = stmt.all() as GameRecord[];
+    return games.map((game) => {
+      try {
+        const stateStmt = sqliteDb.prepare(
+          "SELECT progress, downloadedBytes, totalBytes FROM download_state WHERE gameId = ?"
+        );
+        const state = stateStmt.get(game.id) as any;
+        if (state) {
+          return {
+            ...game,
+            progress: state.progress || 0,
+            downloadedBytes: state.downloadedBytes || 0,
+            totalBytes: state.totalBytes || 0,
+          };
+        }
+      } catch (_) {}
+      return game;
+    });
   },
 
   setGameStatus: (
@@ -165,6 +206,42 @@ export const storageDb = {
       WHERE id = ?
     `);
     stmt.run(durationSeconds, Date.now(), id);
+  },
+
+  saveDownloadOptions: (gameId: string, options: any) => {
+    const stmt = sqliteDb.prepare(
+      "INSERT OR REPLACE INTO download_state (gameId, manifestData) VALUES (?, ?)"
+    );
+    stmt.run(gameId, JSON.stringify(options));
+  },
+
+  saveDownloadProgress: (gameId: string, progress: number, downloadedBytes: number, totalBytes: number) => {
+    try {
+      const stmt = sqliteDb.prepare(
+        "UPDATE download_state SET progress = ?, downloadedBytes = ?, totalBytes = ? WHERE gameId = ?"
+      );
+      stmt.run(progress, downloadedBytes, totalBytes, gameId);
+    } catch (_) {}
+  },
+
+  getDownloadOptions: (gameId: string) => {
+    const stmt = sqliteDb.prepare(
+      "SELECT manifestData FROM download_state WHERE gameId = ?"
+    );
+    const row = stmt.get(gameId) as any;
+    if (row && row.manifestData) {
+      try {
+        return JSON.parse(row.manifestData);
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
+  },
+
+  removeDownloadState: (gameId: string) => {
+    const stmt = sqliteDb.prepare("DELETE FROM download_state WHERE gameId = ?");
+    stmt.run(gameId);
   },
 };
 

@@ -351,7 +351,7 @@ export default function DeveloperConsole() {
     try {
       // Step 1: Create or Update game metadata
       setDeployStep(1);
-      addLog(isUpdate ? `UPDATING_GAME_METADATA_FOR_ID: ${gameId}...` : "INITIALIZING_NEW_GAME_CONTAINER...");
+      addLog(isUpdate ? `Updating game metadata...` : "Initializing new game entry...");
 
       // Prepare the multi-platform systemRequirements payload
       const systemRequirements: Record<string, any> = {};
@@ -390,20 +390,20 @@ export default function DeveloperConsole() {
         await axios.patch(`https://play.lazplay.tech/api/v1/developer/games/${gameId}`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        addLog("GAME_METADATA_UPDATED_SUCCESSFULLY ✓");
+        addLog("Game metadata updated successfully ✓");
       } else {
         const res = await axios.post("https://play.lazplay.tech/api/v1/developer/games", payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const created = res.data.data || res.data;
         gameId = created.id || created.gameId;
-        addLog(`GAME_CONTAINER_INITIALIZED_WITH_ID: ${gameId} ✓`);
+        addLog(`Game entry created successfully ✓`);
       }
 
       // Step 2: Upload Cover Image
       if (coverFile) {
         setDeployStep(2);
-        addLog("REQUESTING_PRESIGNED_URL_FOR_COVER_IMAGE...");
+        addLog("Requesting upload url for cover image...");
         const presignRes = await axios.post(
           "https://play.lazplay.tech/api/v1/storage/presign-upload",
           {
@@ -416,11 +416,11 @@ export default function DeveloperConsole() {
         );
         const { uploadUrl, publicUrl } = presignRes.data.data || presignRes.data;
 
-        addLog(`UPLOADING_COVER_IMAGE: ${coverFile.name} (${Math.round(coverFile.size / 1024)} KB) TO CLOUDFLARE_R2...`);
+        addLog(`Uploading cover image: ${coverFile.name} (${Math.round(coverFile.size / 1024)} KB)...`);
         await uploadToR2(uploadUrl, coverFile, (pct) => setUploadProgress(pct));
-        addLog("COVER_IMAGE_UPLOADED_TO_R2_SUCCESSFULLY ✓");
+        addLog("Cover image uploaded successfully ✓");
 
-        addLog("REGISTERING_COVER_ASSET_WITH_BACKEND...");
+        addLog("Registering cover image with backend...");
         await axios.post(
           `https://play.lazplay.tech/api/v1/developer/games/${gameId}/media`,
           {
@@ -430,22 +430,22 @@ export default function DeveloperConsole() {
           },
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        addLog("COVER_ASSET_REGISTERED ✓");
+        addLog("Cover image registered ✓");
 
-        addLog("SYNCHRONIZING_DIRECT_COVER_URL_FIELD...");
+        addLog("Syncing cover image url...");
         await axios.patch(`https://play.lazplay.tech/api/v1/developer/games/${gameId}`, {
           coverUrl: publicUrl
         }, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        addLog("DIRECT_COVER_URL_SYNCHRONIZED ✓");
+        addLog("Cover url synced ✓");
         setUploadProgress(0);
       }
 
       // Step 3: Upload Hero Banner
       if (bannerFile) {
         setDeployStep(3);
-        addLog("REQUESTING_PRESIGNED_URL_FOR_HERO_BANNER...");
+        addLog("Requesting upload url for hero banner...");
         const presignRes = await axios.post(
           "https://play.lazplay.tech/api/v1/storage/presign-upload",
           {
@@ -458,11 +458,11 @@ export default function DeveloperConsole() {
         );
         const { uploadUrl, publicUrl } = presignRes.data.data || presignRes.data;
 
-        addLog(`UPLOADING_HERO_BANNER: ${bannerFile.name} (${Math.round(bannerFile.size / 1024)} KB)...`);
+        addLog(`Uploading hero banner: ${bannerFile.name} (${Math.round(bannerFile.size / 1024)} KB)...`);
         await uploadToR2(uploadUrl, bannerFile, (pct) => setUploadProgress(pct));
-        addLog("HERO_BANNER_UPLOADED_TO_R2 ✓");
+        addLog("Hero banner uploaded successfully ✓");
 
-        addLog("REGISTERING_BANNER_ASSET...");
+        addLog("Registering hero banner...");
         await axios.post(
           `https://play.lazplay.tech/api/v1/developer/games/${gameId}/media`,
           {
@@ -472,14 +472,14 @@ export default function DeveloperConsole() {
           },
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        addLog("BANNER_ASSET_REGISTERED ✓");
+        addLog("Hero banner registered ✓");
         setUploadProgress(0);
       }
 
       // Step 4: Upload Trailer Video
       if (trailerFile) {
         setDeployStep(4);
-        addLog("REQUESTING_PRESIGNED_URL_FOR_TRAILER...");
+        addLog("Requesting upload url for video trailer...");
         const presignRes = await axios.post(
           "https://play.lazplay.tech/api/v1/storage/presign-upload",
           {
@@ -492,11 +492,11 @@ export default function DeveloperConsole() {
         );
         const { uploadUrl, publicUrl } = presignRes.data.data || presignRes.data;
 
-        addLog(`UPLOADING_TRAILER: ${trailerFile.name} (${Math.round(trailerFile.size / (1024 * 1024))} MB)...`);
+        addLog(`Uploading video trailer: ${trailerFile.name} (${Math.round(trailerFile.size / (1024 * 1024))} MB)...`);
         await uploadToR2(uploadUrl, trailerFile, (pct) => setUploadProgress(pct));
-        addLog("TRAILER_UPLOADED_TO_R2 ✓");
+        addLog("Video trailer uploaded successfully ✓");
 
-        addLog("REGISTERING_TRAILER_ASSET...");
+        addLog("Registering video trailer...");
         await axios.post(
           `https://play.lazplay.tech/api/v1/developer/games/${gameId}/media`,
           {
@@ -506,17 +506,17 @@ export default function DeveloperConsole() {
           },
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        addLog("TRAILER_ASSET_REGISTERED ✓");
+        addLog("Video trailer registered ✓");
         setUploadProgress(0);
       }
 
       // Step 4B: Upload Screenshots
       if (screenshotsFiles.length > 0) {
         setDeployStep(4);
-        addLog(`TRANSMITTING_SCREENSHOTS (${screenshotsFiles.length} files)...`);
+        addLog(`Uploading screenshots (${screenshotsFiles.length} files)...`);
         for (let i = 0; i < screenshotsFiles.length; i++) {
           const file = screenshotsFiles[i];
-          addLog(`[SCREENSHOT ${i + 1}/${screenshotsFiles.length}] REQUESTING_PRESIGNED_URL...`);
+          addLog(`[Screenshot ${i + 1}/${screenshotsFiles.length}] Requesting upload url...`);
           const presignRes = await axios.post(
             "https://play.lazplay.tech/api/v1/storage/presign-upload",
             {
@@ -529,10 +529,10 @@ export default function DeveloperConsole() {
           );
           const { uploadUrl, publicUrl } = presignRes.data.data || presignRes.data;
 
-          addLog(`[SCREENSHOT ${i + 1}/${screenshotsFiles.length}] UPLOADING: ${file.name} (${Math.round(file.size / 1024)} KB) TO CLOUDFLARE_R2...`);
+          addLog(`[Screenshot ${i + 1}/${screenshotsFiles.length}] Uploading: ${file.name} (${Math.round(file.size / 1024)} KB)...`);
           await uploadToR2(uploadUrl, file, (pct) => setUploadProgress(pct));
 
-          addLog(`[SCREENSHOT ${i + 1}/${screenshotsFiles.length}] REGISTERING ASSET WITH BACKEND...`);
+          addLog(`[Screenshot ${i + 1}/${screenshotsFiles.length}] Registering screenshot...`);
           await axios.post(
             `https://play.lazplay.tech/api/v1/developer/games/${gameId}/media`,
             {
@@ -544,7 +544,7 @@ export default function DeveloperConsole() {
             { headers: { Authorization: `Bearer ${token}` } }
           );
         }
-        addLog("SCREENSHOTS_UPLOADED_TO_R2_SUCCESSFULLY ✓");
+        addLog("Screenshots uploaded successfully ✓");
         setUploadProgress(0);
       }
 
@@ -553,7 +553,7 @@ export default function DeveloperConsole() {
         const folderPath = binaryFiles[platform];
         if (folderPath) {
           setDeployStep(5);
-          addLog(`CREATING_NEW_DEVELOPER_BUILD_RECORD_FOR_${platform}...`);
+          addLog(`Creating new build entry for ${platform}...`);
           const buildRes = await axios.post(
             `https://play.lazplay.tech/api/v1/developer/games/${gameId}/builds`,
             {
@@ -566,10 +566,10 @@ export default function DeveloperConsole() {
           );
           const build = buildRes.data.data || buildRes.data;
           const buildId = build.id;
-          addLog(`${platform}_BUILD_RECORD_INITIALIZED_ID: ${buildId} ✓`);
+          addLog(`Build entry initialized for ${platform} ✓`);
 
-          addLog(`LAUNCHING_HIGH_PERFORMANCE_CLIENT_SIDE_CHUNKED_UPLOADER_FOR_${platform}...`);
-          addLog(`[UPLOADER] SCANNING_DIRECTORY_AND_CREATING_BUNDLES...`);
+          addLog(`Starting upload helper for ${platform}...`);
+          addLog(`[Uploader] Scanning directory and staging files...`);
           
           setUploadProgress(0);
 
@@ -578,7 +578,7 @@ export default function DeveloperConsole() {
             removeProgress = window.lazplayAPI.onUploadProgress((data: any) => {
               if (data.buildId === buildId) {
                 setUploadProgress(data.progress);
-                addLog(`[UPLOADER] ${data.status}`);
+                addLog(`[Uploader] ${data.status}`);
               }
             });
           }
@@ -598,42 +598,42 @@ export default function DeveloperConsole() {
           }
 
           setUploadProgress(100);
-          addLog(`${platform}_LOCAL_CHUNKING_AND_COMPRESSION_COMPLETED_SUCCESSFULLY ✓`);
-          addLog(`${platform}_MANIFEST_PUBLISHED: ${uploadResult.manifestObjectKey} ✓`);
+          addLog(`Build folder processed and compressed for ${platform} ✓`);
+          addLog(`Manifest published for ${platform} ✓`);
           setUploadProgress(0);
 
           // Step 6: Antivirus & validation sandbox scanning
           setDeployStep(6);
-          addLog(`TRIGGERING_${platform}_ANTI_MALWARE_SANDBOX_SCAN...`);
+          addLog(`Triggering security scan for ${platform}...`);
           await axios.post(
             `https://play.lazplay.tech/api/v1/developer/builds/${buildId}/scan`,
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          addLog(`${platform}_SCAN_TRIGGERED: CONTAINER_VERIFIED_SECURE ✓`);
+          addLog(`Scan triggered: package verified secure for ${platform} ✓`);
 
           // Step 7: Publishing/Deploying build
           setDeployStep(7);
-          addLog(`DEPLOYING_${platform}_BUILD_TO_PRODUCTION_GATEWAY...`);
+          addLog(`Deploying build for ${platform} to store...`);
           await axios.post(
             `https://play.lazplay.tech/api/v1/developer/builds/${buildId}/deploy`,
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          addLog(`${platform}_PRODUCTION_DEPLOYMENT_COMPLETE ✓`);
+          addLog(`Deployment complete for ${platform} ✓`);
         } else {
-          addLog(`WARN: NO_BUILD_STAGED_FOR_${platform}. SKIPPING.`);
+          addLog(`Warning: No build staged for ${platform}. Skipping.`);
         }
       }
 
       setDeployStep(8);
-      addLog("DECRYPT_&_DEPLOY: PROCESS_COMPLETED_SUCCESSFULLY ✓");
-      setSuccessMessage(isUpdate ? "GAME_PROJECT_UPDATED_AND_DEPLOYED_SUCCESSFULLY!" : "NEW_GAME_PROJECT_DEPLOYED_SUCCESSFULLY!");
+      addLog("Deployment process completed successfully ✓");
+      setSuccessMessage(isUpdate ? "Game project updated and deployed successfully!" : "New game project deployed successfully!");
       fetchDeveloperGames(token);
     } catch (err: any) {
       console.error(err);
       const errMsg = err.response?.data?.message || err.message || "An unknown deployment error occurred.";
-      addLog(`[SYSTEM_FAILURE] DEPLOY_FAILED: ${errMsg}`);
+      addLog(`[Error] Deployment failed: ${errMsg}`);
       setErrorMessage(errMsg);
     } finally {
       setIsDeploying(false);
@@ -645,9 +645,9 @@ export default function DeveloperConsole() {
     return (
       <div className="w-full h-full bg-transparent flex items-center justify-center font-sans">
         <div className="flex flex-col items-center opacity-70">
-          <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <span className="text-slate-400 font-mono text-xs uppercase tracking-widest animate-pulse">
-            LOADING_CREATOR_WORKSPACE...
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+          <span className="text-on-surface-variant font-mono text-xs uppercase tracking-widest animate-pulse">
+            Loading Creator Workspace...
           </span>
         </div>
       </div>
@@ -658,10 +658,10 @@ export default function DeveloperConsole() {
   if (!token) {
     return (
       <div className="w-full h-full bg-transparent flex items-center justify-center p-8">
-        <div className="max-w-md w-full bg-slate-950/80 border border-slate-800 rounded-xl p-6 text-center select-none shadow-2xl">
+        <div className="max-w-md w-full bg-surface-container border border-outline-variant rounded-xl p-6 text-center select-none shadow-2xl">
           <AlertTriangle className="text-amber-500 mx-auto mb-4" size={48} />
-          <h3 className="text-xl font-bold mb-2 uppercase tracking-wide text-slate-100">ACCESS_RESTRICTED</h3>
-          <p className="text-slate-400 text-sm mb-6">
+          <h3 className="text-xl font-bold mb-2 uppercase tracking-wide text-on-surface">Access Restricted</h3>
+          <p className="text-on-surface-variant text-sm mb-6">
             We couldn't detect an active authenticated user session. Please log in through the Store page first.
           </p>
         </div>
@@ -676,59 +676,57 @@ export default function DeveloperConsole() {
   if (!isDeveloper) {
     return (
       <div className="w-full h-full bg-transparent overflow-y-auto p-8 font-sans">
-        <div className="max-w-xl mx-auto bg-slate-950/90 border border-brand-500/30 rounded-xl p-8 shadow-[0_0_30px_rgba(59,130,246,0.15)] relative overflow-hidden">
-          {/* Cyber scanline & grid effects */}
-          <div className="absolute inset-0 pointer-events-none opacity-5 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,6px_100%]"></div>
+        <div className="max-w-xl mx-auto bg-surface-container border border-outline-variant rounded-xl p-8 shadow-2xl relative overflow-hidden">
           
           <div className="relative z-10">
-            <div className="flex items-center gap-3 text-brand-500 font-mono text-xs uppercase tracking-widest mb-3">
+            <div className="flex items-center gap-3 text-primary font-mono text-xs uppercase tracking-widest mb-3">
               <Shield size={16} />
-              <span>Creator Registration</span>
+              <span>Developer Registration</span>
             </div>
 
-            <h2 className="text-3xl font-black text-slate-100 mb-2 uppercase tracking-tight">Become a LazPlay Creator</h2>
-            <p className="text-slate-400 text-sm mb-8 leading-relaxed">
-              Register as a verified LazPlay Creator to submit, build, and deploy native games directly into our high-speed global digital distribution grid.
+            <h2 className="text-3xl font-black text-on-surface mb-2 uppercase tracking-tight">Become a LazPlay Developer</h2>
+            <p className="text-on-surface-variant text-sm mb-8 leading-relaxed">
+              Register as a verified developer to publish and manage games on LazPlay.
             </p>
 
             <form onSubmit={handleRegisterDeveloper} className="space-y-5">
               <div className="space-y-2">
-                <label className="block text-xs font-mono uppercase text-slate-400">DisplayName / Creator Alias *</label>
+                <label className="block text-xs font-mono uppercase text-on-surface-variant">Display Name / Developer Name *</label>
                 <input
                   required
                   placeholder="e.g. RetroByte Games"
                   value={registerForm.displayName}
                   onChange={(e) => setRegisterForm({ ...registerForm, displayName: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-800 focus:border-brand-500 p-3 rounded-lg text-sm text-slate-200 outline-none transition-all font-mono"
+                  className="w-full bg-surface border border-outline-variant focus:border-primary p-3 rounded-lg text-sm text-on-surface outline-none transition-all font-mono"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="block text-xs font-mono uppercase text-slate-400">Support / Developer Email *</label>
+                <label className="block text-xs font-mono uppercase text-on-surface-variant">Support / Developer Email *</label>
                 <input
                   required
                   type="email"
                   placeholder="e.g. support@retrobyte.tech"
                   value={registerForm.supportEmail}
                   onChange={(e) => setRegisterForm({ ...registerForm, supportEmail: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-800 focus:border-brand-500 p-3 rounded-lg text-sm text-slate-200 outline-none transition-all font-mono"
+                  className="w-full bg-surface border border-outline-variant focus:border-primary p-3 rounded-lg text-sm text-on-surface outline-none transition-all font-mono"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="block text-xs font-mono uppercase text-slate-400">Portfolio Website (Optional)</label>
+                <label className="block text-xs font-mono uppercase text-on-surface-variant">Portfolio Website (Optional)</label>
                 <input
                   placeholder="https://retrobyte.tech"
                   value={registerForm.website}
                   onChange={(e) => setRegisterForm({ ...registerForm, website: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-800 focus:border-brand-500 p-3 rounded-lg text-sm text-slate-200 outline-none transition-all font-mono"
+                  className="w-full bg-surface border border-outline-variant focus:border-primary p-3 rounded-lg text-sm text-on-surface outline-none transition-all font-mono"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={registering}
-                className="w-full mt-6 bg-brand-600 hover:bg-brand-500 active:scale-[0.98] transition-all text-white font-mono text-sm py-3.5 rounded-lg font-bold flex items-center justify-center gap-2 tracking-wider shadow-[0_0_15px_rgba(59,130,246,0.3)]"
+                className="w-full mt-6 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all text-white font-mono text-sm py-3.5 rounded-lg font-bold flex items-center justify-center gap-2 tracking-wider shadow-md"
               >
                 {registering ? (
                   <>
@@ -738,7 +736,7 @@ export default function DeveloperConsole() {
                 ) : (
                   <>
                     <UserCheck size={18} />
-                    <span>Register as Creator</span>
+                    <span>Register as Developer</span>
                   </>
                 )}
               </button>
@@ -800,14 +798,13 @@ export default function DeveloperConsole() {
       `}</style>
       
       {/* Upper Navigation Header */}
-      <header className="flex-shrink-0 flex items-center justify-between p-6 border-b-2 border-outline-variant relative z-20">
+      <header className="flex-shrink-0 flex items-center justify-between p-6 border-b border-outline-variant relative z-20">
         <div>
-          <h1 className="font-headline-lg text-2xl text-on-surface uppercase mb-1 flex items-center gap-3 glow-text-primary font-bold">
-            <span className="w-4 h-4 bg-primary-container animate-pulse shadow-[0_0_8px_var(--primary-container)]"></span>
+          <h1 className="font-headline-lg text-2xl text-on-surface mb-1 flex items-center gap-3 font-bold">
             Creator Workspace
           </h1>
-          <p className="font-label-mono text-xs text-on-surface-variant uppercase tracking-widest">
-            OPERATOR: {userProfile.displayName || userProfile.email} // NODE: ALPHA_TANGO // STATUS: ONLINE
+          <p className="font-label-mono text-xs text-on-surface-variant uppercase tracking-wider">
+            Developer: {userProfile.displayName || userProfile.email} | Status: Online
           </p>
         </div>
 
@@ -815,26 +812,26 @@ export default function DeveloperConsole() {
           {view !== "dashboard" ? (
             <button
               onClick={() => setView("dashboard")}
-              className="bg-surface-container border-2 border-outline-variant px-4 py-2 font-label-mono text-xs text-on-surface hover:border-primary hover:text-primary transition-colors flex items-center gap-2 group"
+              className="bg-surface-container border border-outline-variant px-4 py-2 font-label-mono text-xs text-on-surface hover:border-primary hover:text-primary transition-colors flex items-center gap-2 group"
             >
               <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-              RETURN_TO_DASHBOARD
+              Return to Dashboard
             </button>
           ) : (
             <>
               <button 
                 onClick={() => fetchDeveloperGames(token!)}
-                className="bg-surface-container border-2 border-outline-variant px-4 py-2 font-label-mono text-xs text-on-surface hover:border-primary hover:text-primary transition-colors flex items-center gap-2 group"
+                className="bg-surface-container border border-outline-variant px-4 py-2 font-label-mono text-xs text-on-surface hover:border-primary hover:text-primary transition-colors flex items-center gap-2 group"
               >
                 <Activity size={16} className="group-hover:animate-spin" />
-                REFRESH_DATA
+                Refresh
               </button>
               <button 
                 onClick={enterCreateMode}
-                className="bg-primary-container/10 border-2 border-primary-container text-primary-container hover:bg-primary-container hover:text-on-primary-container transition-all px-4 py-2 font-label-mono font-bold text-xs flex items-center gap-2 shadow-[4px_4px_0_0_var(--primary-container)]"
+                className="bg-primary/10 border border-primary text-primary hover:bg-primary hover:text-white transition-all px-4 py-2 font-label-mono font-bold text-xs flex items-center gap-2 rounded-lg"
               >
                 <Plus size={16} />
-                CREATE_PROJECT
+                Create Project
               </button>
             </>
           )}
@@ -850,10 +847,10 @@ export default function DeveloperConsole() {
             
             {/* Bento Grid Analytics */}
             <div className="grid grid-cols-12 gap-4">
-              {/* Analytics: Revenue (8-bit style) */}
-              <div className="col-span-12 lg:col-span-8 bg-surface border-2 border-outline-variant hover:border-secondary-container transition-colors group relative overflow-hidden flex flex-col">
-                <div className="bg-surface-container border-b-2 border-outline-variant px-3 py-1.5 flex justify-between items-center group-hover:bg-surface-container-high transition-colors">
-                  <span className="font-label-mono text-xs text-secondary drop-shadow-[0_0_4px_var(--secondary)]">REVENUE_ANALYTICS.exe</span>
+              {/* Analytics: Revenue */}
+              <div className="col-span-12 lg:col-span-8 bg-surface border border-outline-variant hover:border-primary/40 transition-colors group relative overflow-hidden flex flex-col rounded-xl">
+                <div className="bg-surface-container border-b border-outline-variant px-3 py-1.5 flex justify-between items-center group-hover:bg-surface-container-high transition-colors">
+                  <span className="font-label-mono text-xs text-on-surface-variant">Revenue Analytics</span>
                   <div className="flex gap-1">
                     <div className="w-3 h-3 border border-outline-variant"></div>
                     <div className="w-3 h-3 border border-outline-variant"></div>
@@ -863,33 +860,33 @@ export default function DeveloperConsole() {
                 <div className="p-4 flex-1 flex flex-col gap-4 relative">
                   <div className="flex justify-between items-baseline">
                     <div>
-                      <span className="font-label-mono text-xs text-on-surface-variant block mb-1">TOTAL_GROSS_REVENUE</span>
-                      <span className="font-headline-lg text-4xl text-secondary glow-text-secondary block">
+                      <span className="font-label-mono text-xs text-on-surface-variant block mb-1">Total Gross Revenue</span>
+                      <span className="font-headline-lg text-4xl text-primary block font-bold">
                         ₹0.00
                       </span>
                     </div>
-                    <span className="bg-surface-container border-2 border-secondary-container text-on-secondary-container font-label-mono text-xs px-2 py-1 flex items-center gap-1 shadow-[2px_2px_0_0_var(--secondary)]">
-                      SALES: 0
+                    <span className="bg-surface-container border border-outline-variant text-on-surface font-label-mono text-xs px-2 py-1 flex items-center gap-1">
+                      Sales: 0
                     </span>
                   </div>
-                  <div className="flex-1 flex items-end gap-1 mt-4 h-32 w-full border-b-2 border-l-2 border-outline-variant pt-2 pr-2 relative">
-                    <div className="absolute inset-0 bg-[linear-gradient(rgba(0,246,246,0.1)_1px,transparent_1px)] bg-[length:100%_20px] pointer-events-none"></div>
+                  <div className="flex-1 flex items-end gap-1 mt-4 h-32 w-full border-b border-l border-outline-variant pt-2 pr-2 relative">
+                    <div className="absolute inset-0 bg-[linear-gradient(rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[length:100%_20px] pointer-events-none"></div>
                     {/* Placeholder Bar Chart */}
-                    <div className="flex-1 group/bar relative border-t-2 transition-all bg-surface-container border-outline-variant" style={{ height: "10%" }}></div>
-                    <div className="flex-1 group/bar relative border-t-2 transition-all bg-surface-container border-outline-variant" style={{ height: "30%" }}></div>
-                    <div className="flex-1 group/bar relative border-t-2 transition-all bg-surface-container border-outline-variant" style={{ height: "15%" }}></div>
-                    <div className="flex-1 group/bar relative border-t-2 transition-all bg-surface-container border-outline-variant" style={{ height: "5%" }}></div>
+                    <div className="flex-1 group/bar relative border-t transition-all bg-surface-container border-outline-variant" style={{ height: "10%" }}></div>
+                    <div className="flex-1 group/bar relative border-t transition-all bg-surface-container border-outline-variant" style={{ height: "30%" }}></div>
+                    <div className="flex-1 group/bar relative border-t transition-all bg-surface-container border-outline-variant" style={{ height: "15%" }}></div>
+                    <div className="flex-1 group/bar relative border-t transition-all bg-surface-container border-outline-variant" style={{ height: "5%" }}></div>
                   </div>
                 </div>
               </div>
 
               <div className="col-span-12 lg:col-span-4 flex flex-col gap-4">
-                <div className="bg-surface border-2 border-outline-variant p-4 hover:border-primary-container transition-all group flex-1 flex flex-col justify-center">
+                <div className="bg-surface border border-outline-variant p-4 hover:border-primary transition-all group flex-1 flex flex-col justify-center rounded-xl">
                   <span className="font-label-mono text-xs text-on-surface-variant flex justify-between">
-                    PLAYERS (C/T)
-                    <span className="text-on-primary-container animate-pulse">●</span>
+                    Active Players
+                    <span className="text-primary animate-pulse">●</span>
                   </span>
-                  <span className="font-headline-md text-2xl text-on-surface mt-2 block group-hover:text-on-primary-container transition-colors">
+                  <span className="font-headline-md text-2xl text-on-surface mt-2 block group-hover:text-primary transition-colors">
                     0 / 0
                   </span>
                   <div className="flex gap-1 mt-4 h-3 w-full">
@@ -898,24 +895,24 @@ export default function DeveloperConsole() {
                     <div className="flex-1 bg-surface-container border border-outline-variant"></div>
                   </div>
                 </div>
-                <div className="bg-surface border-2 border-outline-variant p-4 hover:border-secondary-fixed transition-all group flex-1 flex flex-col justify-center">
+                <div className="bg-surface border border-outline-variant p-4 hover:border-primary transition-all group flex-1 flex flex-col justify-center rounded-xl">
                   <span className="font-label-mono text-xs text-on-surface-variant flex justify-between">
-                    TOTAL_PROJECTS 
-                    <span className="text-secondary-fixed font-bold block">LINKED</span>
+                    Total Projects
+                    <span className="text-primary font-bold block">Linked</span>
                   </span>
-                  <span className="font-headline-md text-2xl text-secondary-fixed mt-2 block drop-shadow-[0_0_5px_var(--secondary-fixed)]">
+                  <span className="font-headline-md text-2xl text-primary mt-2 block font-bold">
                     {games.length}
                   </span>
                   <p className="font-label-mono text-[10px] text-on-surface-variant mt-4 uppercase">
-                    VERSION_CONTROL: ACTIVE
+                    Version Control: Active
                   </p>
                 </div>
               </div>
             </div>
 
             {/* Games Listing Workspace */}
-            <div className="bg-surface-container-lowest border-2 border-outline-variant flex flex-col shadow-[8px_8px_0_0_rgba(0,55,55,0.5)] mb-8">
-              <div className="bg-surface-container border-b-2 border-outline-variant px-4 py-2 flex justify-between items-center">
+            <div className="bg-surface border border-outline-variant flex flex-col shadow-md mb-8 rounded-xl overflow-hidden">
+              <div className="bg-surface-container border-b border-outline-variant/30 px-4 py-2 flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <TerminalIcon className="text-primary" size={16} />
                   <span className="font-label-mono text-xs text-on-surface font-bold uppercase">Projects List</span>
@@ -927,20 +924,20 @@ export default function DeveloperConsole() {
 
               {games.length === 0 ? (
                 <div className="p-16 text-center text-on-surface-variant font-label-mono italic">
-                  NO_PROJECTS_FOUND_IN_WORKSPACE
+                  No projects found in workspace
                 </div>
               ) : (
                 <div className="p-4 overflow-x-auto">
                   <div className="min-w-[600px]">
-                    <div className="grid grid-cols-12 gap-2 text-on-surface-variant border-b border-outline-variant pb-1 mb-1 text-[10px] font-label-mono">
-                      <div className="col-span-4">PROJECT_TITLE</div>
-                      <div className="col-span-2 text-center">VERSION</div>
-                      <div className="col-span-2 text-center">STATUS</div>
-                      <div className="col-span-2 text-center">PRICE</div>
-                      <div className="col-span-2 text-right">ACTION</div>
+                    <div className="grid grid-cols-12 gap-2 text-on-surface-variant border-b border-outline-variant/20 pb-2 mb-2 text-[10px] font-label-mono uppercase tracking-wider">
+                      <div className="col-span-4">Project Title</div>
+                      <div className="col-span-2 text-center">Version</div>
+                      <div className="col-span-2 text-center">Status</div>
+                      <div className="col-span-2 text-center">Price</div>
+                      <div className="col-span-2 text-right">Actions</div>
                     </div>
                     {games.map((game) => (
-                      <div key={game.id || game.gameId} className="grid grid-cols-12 gap-2 text-primary hover:bg-surface-container cursor-pointer transition-colors py-2 group items-center border-b border-outline-variant/10">
+                      <div key={game.id || game.gameId} className="grid grid-cols-12 gap-2 text-on-surface hover:bg-surface-container cursor-pointer transition-colors py-2 group items-center border-b border-outline-variant/10 last:border-b-0">
                         <div className="col-span-4 flex items-center gap-3 font-bold">
                           {game.coverUrl ? (
                             <img src={game.coverUrl} className="w-8 h-8 object-cover border border-outline-variant" alt="" />
@@ -949,7 +946,7 @@ export default function DeveloperConsole() {
                               <Layers size={14} className="text-outline-variant" />
                             </div>
                           )}
-                          <span className="truncate">{game.title}</span>
+                          <span className="truncate text-primary">{game.title}</span>
                         </div>
                         <div className="col-span-2 text-center font-label-mono text-[10px]">
                           V.{game.version || "1.0.0"}
@@ -990,11 +987,11 @@ export default function DeveloperConsole() {
             {/* Header Section */}
             <section className="flex flex-col md:flex-row md:items-end justify-between gap-4 py-4 border-b border-outline-variant/10">
               <div>
-                <h1 className="font-headline-xl text-4xl text-primary glow-text-primary uppercase leading-none tracking-tighter">
-                  {selectedGame ? 'PROJECT_CORE_MANAGEMENT' : 'ADVANCED_DEPLOYMENT_SUITE'}
+                <h1 className="font-headline-xl text-4xl text-primary leading-none tracking-tighter">
+                  {selectedGame ? 'Project Management' : 'Project Deployment Suite'}
                 </h1>
-                <p className="font-label-mono text-slate-400 text-xs mt-2 tracking-widest">
-                  &gt; STATUS: {selectedGame?.status || 'DRAFT'} // ID: {selectedGame?.id || 'NEW_PROJECT'}
+                <p className="font-label-mono text-on-surface-variant text-xs mt-2 tracking-widest">
+                  &gt; Status: {selectedGame?.status || 'Draft'} | ID: {selectedGame?.id || 'New Project'}
                 </p>
               </div>
               <div className="flex items-center gap-4">
@@ -1002,7 +999,7 @@ export default function DeveloperConsole() {
                   <div className={`w-4 h-4 ${isDeploying ? 'bg-primary animate-pulse' : 'bg-primary'}`}></div>
                   <div className={`w-4 h-4 ${isDeploying ? 'bg-primary animate-pulse delay-75' : 'bg-primary'}`}></div>
                   <div className={`w-4 h-4 ${isDeploying ? 'bg-primary animate-pulse delay-150' : 'bg-primary'}`}></div>
-                  <div className="w-4 h-4 bg-slate-800"></div>
+                  <div className="w-4 h-4 bg-surface-variant"></div>
                 </div>
               </div>
             </section>
@@ -1011,52 +1008,52 @@ export default function DeveloperConsole() {
             <div className="grid grid-cols-12 gap-6">
               
               {/* Metadata Card */}
-              <div className="col-span-12 lg:col-span-7 bg-zinc-900/25 pixel-border p-6 flex flex-col gap-6">
+              <div className="col-span-12 lg:col-span-7 bg-surface-container/25 pixel-border p-6 flex flex-col gap-6">
                 <div className="flex items-center justify-between border-b border-outline-variant/20 pb-3">
                   <h3 className="font-label-mono text-primary text-xs font-bold flex items-center gap-2 uppercase tracking-widest">
-                    <span className="material-symbols-outlined text-[16px]">info</span> GAME_METADATA
+                    <span className="material-symbols-outlined text-[16px]">info</span> Game Metadata
                   </h3>
-                  <span className="text-[9px] font-label-mono text-slate-500 uppercase tracking-widest">ENCRYPTION: ENABLED</span>
+                  <span className="text-[9px] font-label-mono text-on-surface-variant uppercase tracking-widest">Security: Active</span>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
-                    <label className="block font-label-mono text-[10px] text-slate-400">_TITLE</label>
-                    <div className="flex items-center bg-zinc-950 text-primary p-3 border border-outline-variant/20 focus-within:border-primary group">
+                    <label className="block font-label-mono text-[10px] text-on-surface-variant">Title</label>
+                    <div className="flex items-center bg-surface-container-lowest text-primary p-3 border border-outline-variant/20 focus-within:border-primary group">
                       <span className="mr-2 group-focus-within:animate-pulse font-mono text-xs">&gt;</span>
                       <input
-                        placeholder="ENTER_PROJECT_NAME"
+                        placeholder="Enter Project Name"
                         value={form.title}
                         onChange={(e) => setForm({ ...form, title: e.target.value })}
-                        className="bg-transparent border-none focus:ring-0 p-0 w-full font-label-mono text-sm text-slate-200 outline-none uppercase placeholder:opacity-30"
+                        className="bg-transparent border-none focus:ring-0 p-0 w-full font-label-mono text-sm text-on-surface outline-none uppercase placeholder:opacity-30"
                         autoComplete="off"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="block font-label-mono text-[10px] text-slate-400">_VERSION</label>
-                    <div className="flex items-center bg-zinc-950 text-primary p-3 border border-outline-variant/20 focus-within:border-primary group">
+                    <label className="block font-label-mono text-[10px] text-on-surface-variant">Version</label>
+                    <div className="flex items-center bg-surface-container-lowest text-primary p-3 border border-outline-variant/20 focus-within:border-primary group">
                       <span className="mr-2 group-focus-within:animate-pulse font-mono text-xs">&gt;</span>
                       <input
                         placeholder="1.0.0"
                         value={form.version}
                         onChange={(e) => setForm({ ...form, version: e.target.value })}
-                        className="bg-transparent border-none focus:ring-0 p-0 w-full font-label-mono text-sm text-slate-200 outline-none"
+                        className="bg-transparent border-none focus:ring-0 p-0 w-full font-label-mono text-sm text-on-surface outline-none"
                         autoComplete="off"
                       />
                     </div>
                   </div>
 
                   <div className="col-span-full space-y-2">
-                    <label className="block font-label-mono text-[10px] text-slate-400">_DESCRIPTION_MANIFEST</label>
-                    <div className="bg-zinc-950 border border-outline-variant/20">
+                    <label className="block font-label-mono text-[10px] text-on-surface-variant">Description</label>
+                    <div className="bg-surface-container-lowest border border-outline-variant/20">
                       <ReactQuill
                         theme="snow"
                         value={form.description}
                         onChange={(content) => setForm({ ...form, description: content })}
                         modules={quillModules}
-                        placeholder="DECRYPT_CONTENT_SYNOPSIS..."
+                        placeholder="Describe your game here..."
                       />
                     </div>
                   </div>
@@ -1064,10 +1061,10 @@ export default function DeveloperConsole() {
               </div>
 
               {/* Hardware Specs Card */}
-              <div className="col-span-12 lg:col-span-5 bg-zinc-900/25 pixel-border p-6 flex flex-col gap-6">
+              <div className="col-span-12 lg:col-span-5 bg-surface-container/25 pixel-border p-6 flex flex-col gap-6">
                 <div className="flex items-center justify-between border-b border-outline-variant/20 pb-3">
                   <h3 className="font-label-mono text-primary text-xs font-bold flex items-center gap-2 uppercase tracking-widest">
-                    <span className="material-symbols-outlined text-[16px]">settings_input_component</span> PLATFORM_SPECS
+                    <span className="material-symbols-outlined text-[16px]">settings_input_component</span> Supported Platforms
                   </h3>
                 </div>
 
@@ -1080,34 +1077,34 @@ export default function DeveloperConsole() {
                   ].map((spec) => {
                     const isSelected = form.hardwareSpecs.includes(spec.id);
                     return (
-                      <label key={spec.id} className={`group flex items-center gap-3 p-3 bg-zinc-950/60 border transition-all cursor-pointer ${isSelected ? 'border-primary bg-primary/10' : 'border-outline-variant/20 hover:border-primary/50'}`}>
+                      <label key={spec.id} className={`group flex items-center gap-3 p-3 bg-surface-container-lowest/60 border transition-all cursor-pointer ${isSelected ? 'border-primary bg-primary/10' : 'border-outline-variant/20 hover:border-primary/50'}`}>
                         <input
                           checked={isSelected}
                           onChange={() => handleHardwareToggle(spec.id)}
-                          className="form-checkbox bg-transparent border-2 border-outline-variant/30 text-primary rounded-none focus:ring-0"
+                          className="form-checkbox bg-transparent border border-outline-variant/30 text-primary rounded-none focus:ring-0"
                           type="checkbox"
                         />
-                        <span className={`font-label-mono text-[11px] ${isSelected ? 'text-primary' : 'group-hover:text-primary text-slate-400'}`}>{spec.label}</span>
+                        <span className={`font-label-mono text-[11px] ${isSelected ? 'text-primary' : 'group-hover:text-primary text-on-surface-variant'}`}>{spec.label}</span>
                       </label>
                     );
                   })}
                 </div>
 
                 {form.hardwareSpecs.includes('WEB') && (
-                  <div className="p-3 border border-amber-500/30 bg-amber-500/10 text-amber-400 font-label-mono text-[9px] uppercase tracking-wider text-center leading-normal animate-in fade-in duration-200">
-                    ⚠️ WARNING: WEB BUILDS ARE STRICTLY FOR FREE PLAY & DEMO PURPOSES ONLY. THEY CANNOT BE SOLD FOR A PRICE.
+                  <div className="p-3 border border-amber-500/30 bg-amber-500/10 text-amber-500 font-label-mono text-[9px] uppercase tracking-wider text-center leading-normal animate-in fade-in duration-200">
+                    ⚠️ Web builds are strictly for free play and demo purposes. They cannot be sold.
                   </div>
                 )}
 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="font-label-mono text-[10px] text-primary uppercase font-bold tracking-wider">HARDWARE_REQUIREMENTS</span>
+                    <span className="font-label-mono text-[10px] text-primary uppercase font-bold tracking-wider">System Requirements</span>
                     <div className="h-[1px] flex-1 mx-4 bg-outline-variant/10"></div>
                   </div>
 
                   {form.hardwareSpecs.filter(h => h !== 'WEB').length === 0 ? (
-                    <div className="p-4 text-center border border-dashed border-outline-variant/20 bg-zinc-950/30 rounded font-label-mono text-[10px] text-slate-500 italic uppercase">
-                      NO_HARDWARE_SPECIFICATIONS_REQUIRED_FOR_WEB_ONLY_BUILD
+                    <div className="p-4 text-center border border-dashed border-outline-variant/20 bg-surface-container-lowest/30 rounded font-label-mono text-[10px] text-on-surface-variant italic uppercase">
+                      No system requirements required for Web-only build
                     </div>
                   ) : (
                     <div className="space-y-6 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
@@ -1119,22 +1116,22 @@ export default function DeveloperConsole() {
                             recommended: { os: '', processor: '', memory: '', graphics: '', storage: '' }
                           };
                           return (
-                            <div key={platform} className="p-4 bg-zinc-950/40 border border-outline-variant/15 rounded space-y-4">
+                            <div key={platform} className="p-4 bg-surface-container-lowest/40 border border-outline-variant/15 rounded space-y-4">
                               <div className="flex items-center gap-2 border-b border-outline-variant/20 pb-2">
                                 <span className="text-[9px] font-label-mono font-black px-2 py-0.5 rounded bg-primary/10 text-primary uppercase tracking-wider">
-                                  {platform} SPECIFICATIONS
+                                  {platform} System Requirements
                                 </span>
                               </div>
 
                               <div className="grid grid-cols-2 gap-4">
                                 {/* Minimum Specs */}
-                                <div className="space-y-3 bg-zinc-950/60 p-3 border border-outline-variant/10">
-                                  <p className="font-label-mono text-[8px] text-secondary uppercase mb-1 underline underline-offset-2">MINIMUM_SPECS</p>
+                                <div className="space-y-3 bg-surface-container-lowest/60 p-3 border border-outline-variant/10">
+                                  <p className="font-label-mono text-[8px] text-secondary uppercase mb-1 underline underline-offset-2">Minimum Requirements</p>
                                   {['os', 'processor', 'memory', 'graphics', 'storage'].map(field => (
                                     <div key={field} className="space-y-1">
-                                      <label className="block font-label-mono text-[7px] text-slate-500 uppercase">{field}</label>
+                                      <label className="block font-label-mono text-[7px] text-on-surface-variant uppercase">{field}</label>
                                       <input
-                                        className="w-full bg-zinc-950 border border-outline-variant/20 p-1.5 text-[9px] font-label-mono text-slate-200 focus:border-primary outline-none"
+                                        className="w-full bg-surface-container-lowest border border-outline-variant/20 p-1.5 text-[9px] font-label-mono text-on-surface focus:border-primary outline-none"
                                         value={specs.minimum[field] || ''}
                                         onChange={(e) => {
                                           setPlatformSpecs(prev => ({
@@ -1152,13 +1149,13 @@ export default function DeveloperConsole() {
                                 </div>
 
                                 {/* Recommended Specs */}
-                                <div className="space-y-3 bg-zinc-950/60 p-3 border border-outline-variant/10">
-                                  <p className="font-label-mono text-[8px] text-primary uppercase mb-1 underline underline-offset-2">RECOMMENDED_SPECS</p>
+                                <div className="space-y-3 bg-surface-container-lowest/60 p-3 border border-outline-variant/10">
+                                  <p className="font-label-mono text-[8px] text-primary uppercase mb-1 underline underline-offset-2">Recommended Requirements</p>
                                   {['os', 'processor', 'memory', 'graphics', 'storage'].map(field => (
                                     <div key={field} className="space-y-1">
-                                      <label className="block font-label-mono text-[7px] text-slate-500 uppercase">{field}</label>
+                                      <label className="block font-label-mono text-[7px] text-on-surface-variant uppercase">{field}</label>
                                       <input
-                                        className="w-full bg-zinc-950 border border-outline-variant/20 p-1.5 text-[9px] font-label-mono text-slate-200 focus:border-primary outline-none"
+                                        className="w-full bg-surface-container-lowest border border-outline-variant/20 p-1.5 text-[9px] font-label-mono text-on-surface focus:border-primary outline-none"
                                         value={specs.recommended[field] || ''}
                                         onChange={(e) => {
                                           setPlatformSpecs(prev => ({
@@ -1184,22 +1181,22 @@ export default function DeveloperConsole() {
               </div>
 
               {/* Categorization Module */}
-              <div className="col-span-12 lg:col-span-6 bg-zinc-900/25 pixel-border p-6 flex flex-col gap-6">
+              <div className="col-span-12 lg:col-span-6 bg-surface-container/25 pixel-border p-6 flex flex-col gap-6">
                 <div className="flex items-center justify-between border-b border-outline-variant/20 pb-3">
                   <h3 className="font-label-mono text-primary text-xs font-bold flex items-center gap-2 uppercase tracking-widest">
-                    <span className="material-symbols-outlined text-[16px]">label</span> CATEGORIZATION
+                    <span className="material-symbols-outlined text-[16px]">label</span> Categorization
                   </h3>
                 </div>
                 <div className="space-y-5">
                   <div>
-                    <label className="block font-label-mono text-[10px] text-slate-400 mb-2 uppercase">_GENRE_TAGS</label>
+                    <label className="block font-label-mono text-[10px] text-on-surface-variant mb-2 uppercase">Genre Tags</label>
                     <div className="flex flex-wrap gap-2">
                       {GENRES.map((tag) => (
                         <button
                           key={tag}
                           type="button"
                           onClick={() => handleGenreToggle(tag)}
-                          className={`px-3 py-1.5 border font-label-mono text-[9px] transition-all uppercase ${form.genres.includes(tag) ? 'border-primary text-primary bg-primary/10' : 'border-outline-variant/20 text-slate-400 hover:border-primary/50'}`}
+                          className={`px-3 py-1.5 border font-label-mono text-[9px] transition-all uppercase ${form.genres.includes(tag) ? 'border-primary text-primary bg-primary/10' : 'border-outline-variant/20 text-on-surface-variant hover:border-primary/50'}`}
                         >
                           {tag}
                         </button>
@@ -1207,12 +1204,12 @@ export default function DeveloperConsole() {
                     </div>
                   </div>
                   <div>
-                    <label className="block font-label-mono text-[10px] text-slate-400 mb-2 uppercase">_CUSTOM_VECTORS</label>
-                    <div className="flex items-center bg-zinc-950 text-primary p-3 border border-outline-variant/20 focus-within:border-primary group">
+                    <label className="block font-label-mono text-[10px] text-on-surface-variant mb-2 uppercase">Custom Tags</label>
+                    <div className="flex items-center bg-surface-container-lowest text-primary p-3 border border-outline-variant/20 focus-within:border-primary group">
                       <span className="mr-2 group-focus-within:animate-pulse font-mono text-xs">&gt;</span>
                       <input
-                        className="bg-transparent border-none focus:ring-0 p-0 w-full font-label-mono text-[12px] uppercase placeholder:opacity-30 outline-none text-slate-200"
-                        placeholder="ADD_TAG_AND_PRESS_ENTER"
+                        className="bg-transparent border-none focus:ring-0 p-0 w-full font-label-mono text-[12px] uppercase placeholder:opacity-30 outline-none text-on-surface"
+                        placeholder="Add tag and press Enter"
                         type="text"
                         autoComplete="off"
                         onKeyDown={(e: any) => {
@@ -1228,7 +1225,7 @@ export default function DeveloperConsole() {
                     </div>
                     <div className="flex flex-wrap gap-2 mt-3">
                       {form.customTags.map(tag => (
-                        <span key={tag} className="flex items-center gap-2 px-3 py-1 bg-zinc-950 text-primary font-label-mono text-[10px] border border-primary/30">
+                        <span key={tag} className="flex items-center gap-2 px-3 py-1 bg-surface-container-lowest text-primary font-label-mono text-[10px] border border-primary/30">
                           {tag}
                           <span onClick={() => setForm(prev => ({ ...prev, customTags: prev.customTags.filter(t => t !== tag) }))} className="material-symbols-outlined text-[14px] cursor-pointer hover:text-error transition-colors">close</span>
                         </span>
@@ -1239,33 +1236,33 @@ export default function DeveloperConsole() {
               </div>
 
               {/* Store Info Module */}
-              <div className="col-span-12 lg:col-span-6 bg-zinc-900/25 pixel-border p-6 flex flex-col gap-6">
+              <div className="col-span-12 lg:col-span-6 bg-surface-container/25 pixel-border p-6 flex flex-col gap-6">
                 <div className="flex items-center justify-between border-b border-outline-variant/20 pb-3">
                   <h3 className="font-label-mono text-primary text-xs font-bold flex items-center gap-2 uppercase tracking-widest">
-                    <span className="material-symbols-outlined text-[16px]">storefront</span> STORE_INTEGRATION
+                    <span className="material-symbols-outlined text-[16px]">storefront</span> Store Integration
                   </h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
-                    <label className="block font-label-mono text-[10px] text-slate-400 uppercase">_LICENSING_MODEL</label>
-                    <div className="relative bg-zinc-950 border border-outline-variant/20 focus-within:border-primary">
+                    <label className="block font-label-mono text-[10px] text-on-surface-variant uppercase">Licensing Model</label>
+                    <div className="relative bg-surface-container-lowest border border-outline-variant/20 focus-within:border-primary">
                       <select
                         value={form.licensing}
                         onChange={(e) => setForm({ ...form, licensing: e.target.value as "FREE" | "PAID", price: e.target.value === "FREE" ? 0 : form.price })}
-                        className="w-full bg-zinc-950 border-none text-primary font-label-mono p-3 appearance-none focus:ring-0 cursor-pointer text-[12px] outline-none uppercase"
+                        className="w-full bg-surface-container-lowest border-none text-primary font-label-mono p-3 appearance-none focus:ring-0 cursor-pointer text-[12px] outline-none uppercase"
                       >
-                        <option value="PAID">PREMIUM (PAID)</option>
-                        <option value="FREE">FREE_TO_PLAY (F2P)</option>
+                        <option value="PAID">Premium (Paid)</option>
+                        <option value="FREE">Free to Play (F2P)</option>
                       </select>
                       <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-primary">expand_more</span>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="block font-label-mono text-[10px] text-slate-400 uppercase">_BASE_PRICE (INR)</label>
-                    <div className={`flex items-center p-3 border transition-all group ${form.licensing === 'FREE' ? 'bg-zinc-950/30 border-outline-variant/10 grayscale opacity-40' : 'bg-zinc-950 text-primary border-outline-variant/20 focus-within:border-primary'}`}>
-                      <span className="mr-2 text-slate-400 font-label-mono">₹</span>
+                    <label className="block font-label-mono text-[10px] text-on-surface-variant uppercase">Base Price (INR)</label>
+                    <div className={`flex items-center p-3 border transition-all group ${form.licensing === 'FREE' ? 'bg-surface-container-lowest/30 border-outline-variant/10 grayscale opacity-40' : 'bg-surface-container-lowest text-primary border-outline-variant/20 focus-within:border-primary'}`}>
+                      <span className="mr-2 text-on-surface-variant font-label-mono">₹</span>
                       <input
-                        className="bg-transparent border-none focus:ring-0 p-0 w-full font-label-mono text-[12px] outline-none text-slate-200"
+                        className="bg-transparent border-none focus:ring-0 p-0 w-full font-label-mono text-[12px] outline-none text-on-surface"
                         type="number"
                         value={form.price}
                         onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
@@ -1278,52 +1275,52 @@ export default function DeveloperConsole() {
 
                 <div className="space-y-3 mt-2">
                   <div className="flex justify-between items-center">
-                    <label className="block font-label-mono text-[10px] text-slate-400 uppercase">_STORE_COMMISSION_CUT</label>
+                    <label className="block font-label-mono text-[10px] text-on-surface-variant uppercase">Store Commission</label>
                     <span className="font-label-mono text-xs text-primary font-bold bg-primary/10 px-2 py-0.5 border border-primary/20 rounded shadow-[0_0_10px_rgba(var(--primary-rgb),0.1)]">
                       {form.storeCut || 10}%
                     </span>
                   </div>
-                  <div className="flex items-center gap-4 bg-zinc-950 p-4 border border-outline-variant/20 focus-within:border-primary">
-                    <span className="font-label-mono text-[10px] text-slate-500">5%</span>
+                  <div className="flex items-center gap-4 bg-surface-container-lowest p-4 border border-outline-variant/20 focus-within:border-primary">
+                    <span className="font-label-mono text-[10px] text-on-surface-variant">5%</span>
                     <input
                       type="range"
                       min="5"
                       max="50"
                       value={form.storeCut || 10}
                       onChange={(e) => setForm({ ...form, storeCut: Number(e.target.value) })}
-                      className="flex-1 accent-primary h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer focus:outline-none"
+                      className="flex-1 accent-primary h-1 bg-surface-variant rounded-lg appearance-none cursor-pointer focus:outline-none"
                     />
-                    <span className="font-label-mono text-[10px] text-slate-500">50%</span>
+                    <span className="font-label-mono text-[10px] text-on-surface-variant">50%</span>
                   </div>
-                  <p className="font-label-mono text-[8px] text-slate-400 opacity-60">
-                    THE SYSTEM ALLOCATES A PERCENTAGE OF SALES REVENUE TO SECURING MAINFRAME OPERATIONS.
+                  <p className="font-label-mono text-[8px] text-on-surface-variant opacity-60">
+                    The platform takes a standard cut of sales revenue to fund server hosting and distribution.
                   </p>
                 </div>
               </div>
 
               {/* Asset Deployment Card */}
-              <div className="col-span-12 bg-zinc-900/25 pixel-border p-6">
+              <div className="col-span-12 bg-surface-container/25 pixel-border p-6 rounded-xl">
                 <div className="flex items-center justify-between border-b border-outline-variant/20 pb-3 mb-6">
                   <h3 className="font-label-mono text-primary text-xs font-bold flex items-center gap-2 uppercase tracking-widest">
-                    <span className="material-symbols-outlined text-[16px]">cloud_upload</span> ASSET_DEPLOYMENT
+                    <span className="material-symbols-outlined text-[16px]">cloud_upload</span> Asset Uploads
                   </h3>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                   {[
-                    { id: 'COVER_IMAGE', icon: 'auto_stories', label: 'PROJECT_COVER', sub: '600x900 (2:3 RATIO)', accept: 'image/*', file: coverFile, setFile: setCoverFile },
-                    { id: 'HERO_BANNER', icon: 'image', label: 'HERO_BANNER', sub: '1920x1080 (16:9)', accept: 'image/*', file: bannerFile, setFile: setBannerFile },
-                    { id: 'SCREENSHOTS', icon: 'collections', label: 'SCREENSHOTS', sub: '1920x1080 (MAX 10)', accept: 'image/*', files: screenshotsFiles, setFiles: setScreenshotsFiles, multiple: true },
-                    { id: 'VIDEO_TRAILER', icon: 'movie', label: 'VIDEO_TRAILER', sub: '.MP4 (MAX 1GB)', accept: 'video/*', file: trailerFile, setFile: setTrailerFile }
+                    { id: 'COVER_IMAGE', icon: 'auto_stories', label: 'Project Cover', sub: '600x900 (2:3 RATIO)', accept: 'image/*', file: coverFile, setFile: setCoverFile },
+                    { id: 'HERO_BANNER', icon: 'image', label: 'Hero Banner', sub: '1920x1080 (16:9)', accept: 'image/*', file: bannerFile, setFile: setBannerFile },
+                    { id: 'SCREENSHOTS', icon: 'collections', label: 'Screenshots', sub: '1920x1080 (MAX 10)', accept: 'image/*', files: screenshotsFiles, setFiles: setScreenshotsFiles, multiple: true },
+                    { id: 'VIDEO_TRAILER', icon: 'movie', label: 'Video Trailer', sub: '.MP4 (MAX 1GB)', accept: 'video/*', file: trailerFile, setFile: setTrailerFile }
                   ].map(slot => {
                     const hasFile = slot.multiple ? slot.files && slot.files.length > 0 : !!slot.file;
                     return (
                       <label
                         key={slot.id}
-                        className={`relative border-2 border-dashed p-6 flex flex-col items-center justify-center text-center bg-zinc-950/60 transition-all group cursor-pointer min-h-[160px] ${
+                        className={`relative border border-dashed p-6 flex flex-col items-center justify-center text-center bg-surface-container-lowest/60 transition-all group cursor-pointer min-h-[160px] rounded-xl ${
                           hasFile 
                             ? 'border-primary bg-primary/5 shadow-[0_0_15px_rgba(var(--primary-rgb),0.1)]' 
-                            : 'border-outline-variant/20 hover:border-primary hover:bg-zinc-950/80'
+                            : 'border-outline-variant/20 hover:border-primary hover:bg-surface-container-lowest'
                         }`}
                       >
                         <input
@@ -1344,16 +1341,16 @@ export default function DeveloperConsole() {
                             e.target.value = "";
                           }}
                         />
-                        <span className={`material-symbols-outlined text-4xl group-hover:text-primary mb-2 transition-transform group-hover:scale-110 ${hasFile ? 'text-primary animate-pulse' : 'text-slate-400'}`}>{slot.icon}</span>
-                        <p className={`font-label-mono text-[11px] font-bold uppercase tracking-wider mb-1 ${hasFile ? 'text-primary' : 'text-slate-200'}`}>{slot.label}</p>
-                        <p className="font-label-mono text-[8px] text-slate-400 opacity-70 group-hover:opacity-100 transition-opacity">
+                        <span className={`material-symbols-outlined text-4xl group-hover:text-primary mb-2 transition-transform group-hover:scale-110 ${hasFile ? 'text-primary animate-pulse' : 'text-on-surface-variant'}`}>{slot.icon}</span>
+                        <p className={`font-label-mono text-[11px] font-bold uppercase tracking-wider mb-1 ${hasFile ? 'text-primary' : 'text-on-surface'}`}>{slot.label}</p>
+                        <p className="font-label-mono text-[8px] text-on-surface-variant opacity-70 group-hover:opacity-100 transition-opacity">
                           {slot.multiple 
-                            ? (slot.files && slot.files.length > 0 ? `${slot.files.length}_FILES_STAGED` : slot.sub)
+                            ? (slot.files && slot.files.length > 0 ? `${slot.files.length} files staged` : slot.sub)
                             : (slot.file ? `${slot.file.name.slice(0, 15)}...` : slot.sub)}
                         </p>
                         {hasFile && (
                           <div 
-                            className="absolute top-2 right-2 p-1 bg-slate-900 border border-outline-variant/20 hover:bg-error/20 transition-colors cursor-pointer group/close z-10" 
+                            className="absolute top-2 right-2 p-1 bg-surface-container border border-outline-variant/20 hover:bg-error/20 transition-colors cursor-pointer group/close z-10" 
                             onClick={(e) => { 
                               e.preventDefault(); 
                               e.stopPropagation(); 
@@ -1364,7 +1361,7 @@ export default function DeveloperConsole() {
                               }
                             }}
                           >
-                            <span className="material-symbols-outlined text-[14px] text-slate-400 group-hover/close:text-error transition-colors">close</span>
+                            <span className="material-symbols-outlined text-[14px] text-on-surface-variant group-hover/close:text-error transition-colors">close</span>
                           </div>
                         )}
                       </label>
@@ -1375,29 +1372,29 @@ export default function DeveloperConsole() {
                 {/* Target Builds */}
                 {form.hardwareSpecs.length > 0 && (
                   <div className="space-y-4 mt-8 pt-8 border-t border-outline-variant/20">
-                    <h4 className="font-label-mono text-[10px] text-primary uppercase tracking-widest flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[14px]">terminal</span> TARGET_PLATFORM_BUILDS_AND_ENTRYPOINTS
+                    <h4 className="font-label-mono text-[10px] text-primary uppercase tracking-widest flex items-center gap-2 font-bold">
+                      <span className="material-symbols-outlined text-[14px]">terminal</span> Target Platform Builds & Entry Points
                     </h4>
                     <div className="space-y-4">
                       {form.hardwareSpecs.map(platform => {
                         const binaryPath = binaryFiles[platform];
                         return (
-                          <div key={platform} className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-zinc-950/40 border border-outline-variant/20 rounded items-center">
+                          <div key={platform} className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-surface-container-lowest/40 border border-outline-variant/20 rounded-xl items-center">
                             
                             {/* Left Column: Platform Entry Point Input */}
                             <div className="space-y-2">
                               <div className="flex items-center gap-2">
-                                <span className="font-label-mono text-[10px] text-slate-200 bg-primary/20 px-2 py-0.5 rounded font-black tracking-widest uppercase">
+                                <span className="font-label-mono text-[10px] text-on-surface bg-primary/20 px-2 py-0.5 rounded font-black tracking-widest uppercase">
                                   {platform}
                                 </span>
-                                <span className="font-label-mono text-[9px] text-slate-400 uppercase tracking-wider">
-                                  ENTRYPOINT (E.G. {platform === 'WEB' ? 'INDEX.HTML' : 'GAME.EXE'})
+                                <span className="font-label-mono text-[9px] text-on-surface-variant uppercase tracking-wider">
+                                  Entry Point (e.g. {platform === 'WEB' ? 'index.html' : 'game.exe'})
                                 </span>
                               </div>
-                              <div className="flex items-center bg-zinc-950 text-primary p-2.5 border border-outline-variant/20 focus-within:border-primary group">
+                              <div className="flex items-center bg-surface-container-lowest text-primary p-2.5 border border-outline-variant/20 focus-within:border-primary group">
                                 <span className="mr-2 group-focus-within:animate-pulse text-primary font-mono text-[10px]">&gt;</span>
                                 <input
-                                  className="bg-transparent border-none focus:ring-0 p-0 w-full font-label-mono text-[11px] placeholder:opacity-30 text-slate-200 outline-none"
+                                  className="bg-transparent border-none focus:ring-0 p-0 w-full font-label-mono text-[11px] placeholder:opacity-30 text-on-surface outline-none"
                                   placeholder={platform === 'WEB' ? 'index.html' : 'game.exe'}
                                   type="text"
                                   value={form.platformEntrypoints?.[platform] || ''}
@@ -1425,32 +1422,32 @@ export default function DeveloperConsole() {
                                     if (path) setBinaryFiles((prev) => ({ ...prev, [platform]: path }));
                                   }
                                 }}
-                                className={`relative border-2 border-dashed p-4 flex flex-col items-center justify-center text-center bg-zinc-950/60 transition-all group cursor-pointer min-h-[90px] ${
+                                className={`relative border border-dashed p-4 flex flex-col items-center justify-center text-center bg-surface-container/60 transition-all group cursor-pointer min-h-[90px] rounded-xl ${
                                   binaryPath
                                     ? 'border-primary bg-primary/5 shadow-[0_0_15px_rgba(var(--primary-rgb),0.1)]'
-                                    : 'border-outline-variant/20 hover:border-primary hover:bg-zinc-950/80'
+                                    : 'border-outline-variant/20 hover:border-primary hover:bg-surface-container'
                                 }`}
                               >
                                 <div className="flex items-center gap-2">
-                                  <span className={`material-symbols-outlined text-headline-sm transition-transform group-hover:scale-110 ${binaryPath ? 'text-primary' : 'text-slate-400'}`}>
+                                  <span className={`material-symbols-outlined text-headline-sm transition-transform group-hover:scale-110 ${binaryPath ? 'text-primary' : 'text-on-surface-variant'}`}>
                                     folder
                                   </span>
-                                  <p className={`font-label-mono text-[10px] font-bold uppercase tracking-wider ${binaryPath ? 'text-primary' : 'text-slate-300'}`}>
-                                    {binaryPath ? 'BUILD_DIRECTORY_STAGED' : `SELECT_${platform}_BUILD_DIRECTORY`}
+                                  <p className={`font-label-mono text-[10px] font-bold uppercase tracking-wider ${binaryPath ? 'text-primary' : 'text-on-surface'}`}>
+                                    {binaryPath ? 'Build folder staged' : `Select ${platform} Build Folder`}
                                   </p>
                                 </div>
-                                <p className="font-label-mono text-[8px] text-slate-400 opacity-70 mt-1 max-w-[90%] truncate">
-                                  {binaryPath ? binaryPath : 'CHOOSE THE LOCAL BUILD DIRECTORY'}
+                                <p className="font-label-mono text-[8px] text-on-surface-variant/70 mt-1 max-w-[90%] truncate font-medium">
+                                  {binaryPath ? binaryPath : 'Choose the local folder containing your build'}
                                 </p>
                                 {binaryPath && (
                                   <div 
-                                    className="absolute top-2 right-2 p-1 bg-slate-900 border border-outline-variant/20 hover:bg-error/20 transition-colors cursor-pointer group/close" 
+                                    className="absolute top-2 right-2 p-1 bg-surface-container border border-outline-variant/20 hover:bg-error/20 transition-colors cursor-pointer group/close" 
                                     onClick={(e) => { 
                                       e.stopPropagation(); 
                                       setBinaryFiles(prev => ({ ...prev, [platform]: null })); 
                                     }}
                                   >
-                                    <span className="material-symbols-outlined text-[12px] text-slate-400 group-hover/close:text-error transition-colors">close</span>
+                                    <span className="material-symbols-outlined text-[12px] text-on-surface-variant group-hover/close:text-error transition-colors">close</span>
                                   </div>
                                 )}
                               </div>
@@ -1465,11 +1462,11 @@ export default function DeveloperConsole() {
               </div>
 
               {/* Terminal Feed / Console Output */}
-              <div className="col-span-12 lg:col-span-8 bg-[#050505] border-2 border-outline-variant/20 h-[300px] flex flex-col relative overflow-hidden group shadow-[0_0_20px_rgba(var(--primary-rgb),0.1)]">
+              <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest border-2 border-outline-variant/20 h-[300px] flex flex-col relative overflow-hidden group shadow-[0_0_20px_rgba(var(--primary-rgb),0.1)] rounded-xl">
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[length:100%_4px] pointer-events-none"></div>
-                <div className="bg-zinc-950 border-b border-outline-variant/20 px-3 py-1.5 flex justify-between items-center">
-                  <span className="font-label-mono text-[10px] text-primary flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[14px]">terminal</span> DEPLOYMENT_LOGS.txt {isDeploying && `:: STAGE_${deployStep}_OF_8`}
+                <div className="bg-surface-container border-b border-outline-variant/20 px-3 py-1.5 flex justify-between items-center">
+                  <span className="font-label-mono text-[10px] text-primary flex items-center gap-2 font-bold">
+                    <span className="material-symbols-outlined text-[14px]">terminal</span> Deployment Logs {isDeploying && `:: Step ${deployStep} of 8`}
                   </span>
                   <div className="flex gap-1">
                     <div className="w-2 h-2 border border-outline-variant/20"></div>
@@ -1481,15 +1478,15 @@ export default function DeveloperConsole() {
                 <div className="flex-1 p-4 overflow-y-auto font-label-mono text-[10px] space-y-1">
                   {logs.map((log, i) => (
                     <div key={i} className="flex gap-4">
-                      <span className="text-slate-500 opacity-40">[{new Date().toLocaleTimeString()}]</span>
-                      <span className={log.includes('SYSTEM_FAILURE') || log.includes('FAILED') ? 'text-error' : (log.includes('SUCCESS') || log.includes('✓') ? 'text-primary' : 'text-slate-300')}>
+                      <span className="text-on-surface-variant opacity-40">[{new Date().toLocaleTimeString()}]</span>
+                      <span className={log.includes('Error') || log.includes('FAILED') ? 'text-error' : (log.includes('successfully') || log.includes('✓') ? 'text-primary' : 'text-on-surface')}>
                         {log.startsWith('STEP') ? `>> ${log}` : `> ${log}`}
                       </span>
                     </div>
                   ))}
                   {isDeploying && (
                     <div className="flex items-center gap-2 pt-2">
-                      <span className="text-primary animate-pulse">&gt; UPLOADING_PAYLOAD_STAGE...</span>
+                      <span className="text-primary animate-pulse">&gt; Uploading build files...</span>
                       <span className="w-2 h-4 bg-primary animate-blink"></span>
                     </div>
                   )}
@@ -1497,12 +1494,12 @@ export default function DeveloperConsole() {
                 </div>
 
                 {uploadProgress > 0 && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-zinc-950 border-t border-primary/20 p-4 animate-slide-up">
-                    <div className="flex justify-between font-label-mono text-[10px] text-primary mb-2">
-                      <span>UPLOADING_PAYLOAD_STAGE</span>
+                  <div className="absolute bottom-0 left-0 right-0 bg-surface-container border-t border-primary/20 p-4 animate-slide-up">
+                    <div className="flex justify-between font-label-mono text-[10px] text-primary mb-2 font-bold">
+                      <span>Uploading build files...</span>
                       <span>{uploadProgress}%</span>
                     </div>
-                    <div className="h-1 bg-[#050505] border border-outline-variant/20 relative overflow-hidden">
+                    <div className="h-1 bg-surface-container-lowest border border-outline-variant/20 relative overflow-hidden">
                       <div 
                         className="absolute inset-y-0 left-0 bg-primary shadow-[0_0_10px_var(--primary)] transition-all duration-300" 
                         style={{ width: `${uploadProgress}%` }}
@@ -1517,61 +1514,61 @@ export default function DeveloperConsole() {
                 <button
                   onClick={handleExecuteDeployment}
                   disabled={isDeploying || !form.title}
-                  className={`w-full h-full font-headline-md p-6 border-2 border-primary bg-primary/10 hover:bg-primary/20 active:scale-[0.98] transition-all flex flex-col items-center justify-center gap-4 group min-h-[150px] disabled:opacity-40 disabled:cursor-not-allowed`}
+                  className={`w-full h-full font-headline-md p-6 border-2 border-primary bg-primary/10 hover:bg-primary/20 active:scale-[0.98] transition-all flex flex-col items-center justify-center gap-4 group min-h-[150px] disabled:opacity-40 disabled:cursor-not-allowed rounded-xl`}
                 >
                   <span className={`material-symbols-outlined text-4xl group-hover:scale-110 transition-transform ${isDeploying ? 'animate-spin' : ''}`}>
                     {isDeploying ? 'sync' : 'rocket_launch'}
                   </span>
                   <span className="uppercase tracking-tighter font-extrabold text-lg text-primary glow-text-primary">
-                    {isDeploying ? 'WE_ARE_PROCESSING...' : (selectedGame ? 'UPDATE_&_DEPLOY' : 'INITIATE_DEPLOY')}
+                    {isDeploying ? 'Processing...' : (selectedGame ? 'Update & Deploy' : 'Initiate Deploy')}
                   </span>
-                  <span className="font-label-mono text-[9px] opacity-70 uppercase text-slate-400">
-                    {selectedGame ? 'FORCE_OVERWRITE_ACTIVE' : 'CONFIRM_GRID_UPLOAD'}
+                  <span className="font-label-mono text-[9px] opacity-70 uppercase text-on-surface-variant font-medium">
+                    {selectedGame ? 'Overwrite Existing Build' : 'Confirm Upload'}
                   </span>
                 </button>
 
                 {errorMessage && (
-                  <div className="bg-error/10 border border-error text-error p-3 font-label-mono text-[10px] uppercase flex items-center gap-2">
+                  <div className="bg-error/10 border border-error text-error p-3 font-label-mono text-[10px] uppercase flex items-center gap-2 rounded-lg font-bold">
                     <span className="material-symbols-outlined text-sm">warning</span>
-                    <span>FAILURE: {errorMessage}</span>
+                    <span>Error: {errorMessage}</span>
                   </div>
                 )}
 
                 {successMessage && (
-                  <div className="bg-primary/10 border border-primary text-primary p-3 font-label-mono text-[10px] uppercase flex items-center gap-2">
+                  <div className="bg-primary/10 border border-primary text-primary p-3 font-label-mono text-[10px] uppercase flex items-center gap-2 rounded-lg font-bold">
                     <span className="material-symbols-outlined text-sm">check_circle</span>
-                    <span>VERIFIED: {successMessage}</span>
+                    <span>Success: {successMessage}</span>
                   </div>
                 )}
 
                 {selectedGame && (
                   <button
                     onClick={async () => {
-                      if (window.confirm("CRITICAL WARNING: Terminate this project permanently?")) {
+                      if (window.confirm("Are you sure you want to delete this project permanently?")) {
                         try {
                           setIsDeploying(true);
                           await axios.delete(`https://play.lazplay.tech/api/v1/developer/games/${selectedGame.id}`, { headers: { Authorization: `Bearer ${token}` } });
                           fetchDeveloperGames(token);
                           setView("dashboard");
                         } catch (err: any) {
-                          alert(err.response?.data?.message || "Failed to terminate project.");
+                          alert(err.response?.data?.message || "Failed to delete project.");
                         } finally {
                           setIsDeploying(false);
                         }
                       }
                     }}
                     disabled={isDeploying}
-                    className="w-full py-4 border-2 border-error/50 text-error font-label-mono hover:bg-error/10 transition-all uppercase tracking-widest text-[10px]"
+                    className="w-full py-4 border-2 border-error/50 text-error font-label-mono hover:bg-error/10 transition-all uppercase tracking-widest text-[10px] rounded-lg font-bold"
                   >
-                    TERMINATE_PROJECT
+                    Delete Project
                   </button>
                 )}
 
                 <button 
                   onClick={() => setView('dashboard')} 
-                  className="w-full py-4 border-2 border-outline-variant/30 text-slate-300 font-label-mono hover:bg-slate-800 transition-all uppercase tracking-widest text-[10px]"
+                  className="w-full py-4 border-2 border-outline-variant/30 text-on-surface font-label-mono hover:bg-surface-container-high transition-all uppercase tracking-widest text-[10px] rounded-lg font-bold"
                 >
-                  EXIT_WORKSPACE
+                  Exit Workspace
                 </button>
               </div>
 

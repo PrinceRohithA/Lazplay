@@ -3,7 +3,7 @@ import Tobbar from "./components/tobbar";
 import Library from "./pages/Library";
 import Login from "./pages/Login";
 import DeveloperConsole from "./pages/DeveloperConsole";
-import Settings, { applyThemeColor } from "./pages/Settings";
+import Settings, { applyTheme } from "./pages/Settings";
 import { useLauncherStore } from "./store/useLauncherStore";
 
 function App() {
@@ -25,17 +25,26 @@ function App() {
   } | null>(null);
 
   useEffect(() => {
-    // Apply saved colors or default storefront LIME_MINIMAL on startup
-    const savedPrimary = localStorage.getItem("lazplay-launcher-color") || "#a3e635";
-    const savedSecondary = localStorage.getItem("lazplay-launcher-secondary") || "#bef264";
-    applyThemeColor(savedPrimary, savedSecondary);
+    // Apply saved launcher theme preference on startup
+    const savedTheme = (localStorage.getItem("lazplay-launcher-theme") || "system") as "system" | "light" | "dark";
+    applyTheme(savedTheme);
+
+    // Dynamic system prefers-color-scheme change listener
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleSystemThemeChange = () => {
+      const currentTheme = localStorage.getItem("lazplay-launcher-theme") || "system";
+      if (currentTheme === "system") {
+        applyTheme("system");
+      }
+    };
+    mediaQuery.addEventListener("change", handleSystemThemeChange);
+    return () => mediaQuery.removeEventListener("change", handleSystemThemeChange);
   }, []);
 
   useEffect(() => {
     if (isAuthenticated && activePage === "store" && window.lazplayAPI) {
       console.log("[App] Initializing storefront visibility on login/startup...");
       window.lazplayAPI.setStoreVisibility(true);
-      window.lazplayAPI.navigateStorePath("/");
     }
   }, [isAuthenticated, activePage]);
 

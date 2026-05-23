@@ -269,7 +269,8 @@ export function setupIpcHandlers(
     }
 
     try {
-      const libRes = await fetch("https://play.lazplay.tech/api/v1/library", {
+      const platformParam = process.platform === "win32" ? "WINDOWS" : "LINUX";
+      const libRes = await fetch(`https://play.lazplay.tech/api/v1/library?platform=${platformParam}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

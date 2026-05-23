@@ -154,9 +154,17 @@ export function registerChunkRoutes(router, ctx) {
       throw new HttpError(403, 'NOT_OWNED', 'You must own this game to download it');
     }
 
-    const build = game.latestBuildId
-      ? await prisma.gameBuild.findUnique({ where: { id: game.latestBuildId } })
-      : null;
+    const platform = req.query?.platform || null;
+    const build = platform
+      ? (await prisma.gameBuild.findFirst({
+          where: {
+            gameId: game.id,
+            platform: { equals: platform, mode: 'insensitive' },
+            status: 'READY'
+          },
+          orderBy: { createdAt: 'desc' }
+        }) || (game.latestBuildId ? await prisma.gameBuild.findUnique({ where: { id: game.latestBuildId } }) : null))
+      : (game.latestBuildId ? await prisma.gameBuild.findUnique({ where: { id: game.latestBuildId } }) : null);
 
     if (!build || build.distributionType !== 'CHUNKED') {
       throw new HttpError(404, 'CHUNK_MANIFEST_NOT_AVAILABLE', 'This game uses legacy ZIP distribution');
@@ -189,12 +197,21 @@ export function registerChunkRoutes(router, ctx) {
     }
 
     const body = validateBody(req.body, {
-      hashes: validators.stringArray({ minItems: 1, maxItems: 500, maxLength: 128 })
+      hashes: validators.stringArray({ minItems: 1, maxItems: 500, maxLength: 128 }),
+      platform: validators.string({ required: false, min: 2, max: 80, upper: true })
     });
 
-    const build = game.latestBuildId
-      ? await prisma.gameBuild.findUnique({ where: { id: game.latestBuildId } })
-      : null;
+    const platform = body.platform || req.query?.platform || null;
+    const build = platform
+      ? (await prisma.gameBuild.findFirst({
+          where: {
+            gameId: game.id,
+            platform: { equals: platform, mode: 'insensitive' },
+            status: 'READY'
+          },
+          orderBy: { createdAt: 'desc' }
+        }) || (game.latestBuildId ? await prisma.gameBuild.findUnique({ where: { id: game.latestBuildId } }) : null))
+      : (game.latestBuildId ? await prisma.gameBuild.findUnique({ where: { id: game.latestBuildId } }) : null);
 
     if (!build || build.distributionType !== 'CHUNKED') {
       throw new HttpError(404, 'CHUNK_DISTRIBUTION_NOT_AVAILABLE', 'Chunk distribution not available');

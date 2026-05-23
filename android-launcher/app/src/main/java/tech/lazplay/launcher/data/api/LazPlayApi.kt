@@ -49,7 +49,7 @@ class LazPlayApi(private val tokenStore: TokenStore) {
     }
 
     suspend fun library(): List<LibraryItemDto> {
-        val response = service.library(authHeader())
+        val response = service.library(authHeader(), "ANDROID")
         return unwrap(response).orEmpty()
     }
 

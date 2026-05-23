@@ -85,19 +85,25 @@ export const useLauncherStore = create<LauncherStore>((set, get) => ({
   },
 
   updateDownloadProgress: (data) => {
-    set((prev) => ({
-      games: {
-        ...prev.games,
-        [data.gameId]: {
-          ...prev.games[data.gameId],
-          id: data.gameId,
-          status: data.status,
-          progress: data.progress,
-          downloadedBytes: data.downloadedBytes,
-          totalBytes: data.totalBytes,
+    set((prev) => {
+      const existingGame = prev.games[data.gameId];
+      const progress = (data.status === "paused" && existingGame) ? existingGame.progress : data.progress;
+      const downloadedBytes = (data.status === "paused" && existingGame) ? existingGame.downloadedBytes : data.downloadedBytes;
+      const totalBytes = (data.status === "paused" && existingGame) ? existingGame.totalBytes : data.totalBytes;
+      return {
+        games: {
+          ...prev.games,
+          [data.gameId]: {
+            ...existingGame,
+            id: data.gameId,
+            status: data.status,
+            progress,
+            downloadedBytes,
+            totalBytes,
+          },
         },
-      },
-    }));
+      };
+    });
   },
 
   setRunningState: (id, isRunning) => {
@@ -114,7 +120,6 @@ export const useLauncherStore = create<LauncherStore>((set, get) => ({
     if (window.lazplayAPI) {
       if (page === "store") {
         window.lazplayAPI.setStoreVisibility(true);
-        window.lazplayAPI.navigateStorePath("/");
       } else {
         window.lazplayAPI.setStoreVisibility(false);
       }

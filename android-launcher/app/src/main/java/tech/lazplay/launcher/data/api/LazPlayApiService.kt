@@ -14,7 +14,10 @@ interface LazPlayApiService {
     suspend fun me(@Header("Authorization") authorization: String): Response<ApiEnvelope<UserDto>>
 
     @GET("library")
-    suspend fun library(@Header("Authorization") authorization: String): Response<ApiEnvelope<List<LibraryItemDto>>>
+    suspend fun library(
+        @Header("Authorization") authorization: String,
+        @retrofit2.http.Query("platform") platform: String,
+    ): Response<ApiEnvelope<List<LibraryItemDto>>>
 
     @POST("library")
     suspend fun claimGame(

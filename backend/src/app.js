@@ -498,7 +498,7 @@ async function addAuditLog(actorId, action, targetType, targetId, metadata = {})
   });
 }
 
-async function publicGame(game, user = null) {
+async function publicGame(game, user = null, platform = null) {
   const developer = await gameDeveloper(game);
   const reviews = await prisma.gameReview.findMany({ where: { gameId: game.id } });
   const rating = reviews.length === 0 ? 0 : Math.round((reviews.reduce((t, r) => t + r.rating, 0) / reviews.length) * 10) / 10;
@@ -532,7 +532,16 @@ async function publicGame(game, user = null) {
   const hasEntitlement = !!entitlement;
   const isWishlisted = user ? !!(await prisma.wishlistItem.findFirst({ where: { userId: user.id, gameId: game.id } })) : false;
 
-  const build = game.latestBuildId ? await prisma.gameBuild.findUnique({ where: { id: game.latestBuildId } }) : null;
+  const build = platform
+    ? (await prisma.gameBuild.findFirst({
+        where: {
+          gameId: game.id,
+          platform: { equals: platform, mode: 'insensitive' },
+          status: 'READY'
+        },
+        orderBy: { createdAt: 'desc' }
+      }) || (game.latestBuildId ? await prisma.gameBuild.findUnique({ where: { id: game.latestBuildId } }) : null))
+    : (game.latestBuildId ? await prisma.gameBuild.findUnique({ where: { id: game.latestBuildId } }) : null);
   const isWeb = isWebRuntime(build?.runtime || build?.platform);
   const entrypoint = build?.entrypoint || (isWeb ? 'index.html' : 'game.exe');
 

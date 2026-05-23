@@ -1,5 +1,5 @@
 import { useLauncherStore } from "../store/useLauncherStore";
-import { Play, Download, Search, LayoutGrid, List, Info, Clock, HardDrive, Gamepad2, RefreshCw, LogIn, Trash2, FolderOpen, Monitor, Smartphone, Globe, Terminal, Terminal as TerminalIcon, AlertTriangle } from "lucide-react";
+import { Play, Pause, Download, Search, LayoutGrid, List, Clock, HardDrive, Gamepad2, RefreshCw, LogIn, Trash2, FolderOpen, Monitor, Smartphone, Globe, Terminal, Terminal as TerminalIcon, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 
 export default function Library() {
@@ -50,7 +50,11 @@ export default function Library() {
 
     if (game.status === "installed") {
       window.lazplayAPI.launchGame(game.id);
-    } else if (game.status === "uninstalled" || !game.status || game.status === "paused") {
+    } else if (game.status === "downloading") {
+      window.lazplayAPI.pauseDownload(game.id);
+    } else if (game.status === "paused") {
+      window.lazplayAPI.resumeDownload(game.id);
+    } else if (game.status === "uninstalled" || !game.status) {
       window.lazplayAPI.installGame(game.id, {
         title: game.title,
         downloadUrl: game.downloadUrl,
@@ -65,7 +69,7 @@ export default function Library() {
   const isEmpty = gameList.length === 0;
 
   return (
-    <div className="flex flex-col h-full bg-background grid-glow-bg text-on-surface overflow-hidden">
+    <div className="flex flex-col h-full bg-background text-on-surface overflow-hidden">
       {/* Hero Banner Section */}
       {!isEmpty && heroGame && (
         <div className="relative w-full h-[240px] shrink-0 overflow-hidden group/hero border-b-2 border-outline-variant">
@@ -78,19 +82,19 @@ export default function Library() {
                 className="w-full h-full object-cover transition-transform duration-700 group-hover/hero:scale-105"
               />
             ) : (
-              <div className="w-full h-full bg-surface-container-lowest grid-glow-bg flex items-center justify-center">
-                <Gamepad2 size={80} className="text-surface-container opacity-50" />
+              <div className="w-full h-full bg-surface-container flex items-center justify-center">
+                <Gamepad2 size={80} className="text-on-surface-variant opacity-50" />
               </div>
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent"></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-background via-background/40 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-[var(--surface)] via-[var(--surface)]/60 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-[var(--surface)] via-[var(--surface)]/40 to-transparent"></div>
           </div>
  
           {/* Hero Content */}
           <div className="absolute bottom-0 left-0 p-8 w-full flex items-center justify-between">
             <div className="flex gap-6 items-center max-w-3xl">
               {/* Game Cover in Hero */}
-              <div className="w-24 aspect-[3/4] bg-zinc-900/40 border border-brand-500/10 rounded-xl hidden md:block shrink-0 relative overflow-hidden shadow-lg">
+              <div className="w-24 aspect-[3/4] bg-surface-container/40 border border-outline-variant rounded-xl hidden md:block shrink-0 relative overflow-hidden shadow-lg">
                 {heroGame.coverUrl ? (
                    <img src={heroGame.coverUrl} className="w-full h-full object-cover" alt="" />
                 ) : (
@@ -99,13 +103,13 @@ export default function Library() {
               </div>
  
               <div className="flex flex-col gap-2">
-                <h2 className="font-headline-xl text-3xl text-on-surface uppercase glow-text-primary drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] font-bold">{heroGame.title}</h2>
-                <div className="flex items-center gap-4 text-xs font-sans text-slate-300 bg-zinc-900/40 border border-brand-500/10 px-3.5 py-1.5 rounded-lg w-fit">
+                <h2 className="font-headline-xl text-3xl text-on-surface uppercase font-bold">{heroGame.title}</h2>
+                <div className="flex items-center gap-4 text-xs font-sans text-on-surface-variant bg-surface-variant/20 border border-outline-variant px-3.5 py-1.5 rounded-lg w-fit">
                   <span className="flex items-center gap-1.5">
                     <Clock size={13} className="text-primary" />
                     {heroGame.playtime ? Math.round(heroGame.playtime / 3600) + " Hours" : "Never Played"}
                   </span>
-                  <span className="w-1 h-1 bg-brand-500/20 rounded-full"></span>
+                  <span className="w-1 h-1 bg-primary/20 rounded-full"></span>
                   <span className="flex items-center gap-1.5">
                     <HardDrive size={13} className="text-primary" />
                     {heroGame.size ? (heroGame.size / (1024**3)).toFixed(1) + " GB" : "Ready to Download"}
@@ -115,22 +119,22 @@ export default function Library() {
                 <div className="flex items-center gap-3 mt-2">
                   <button 
                     onClick={() => handleAction(heroGame)}
-                    className={`px-6 py-2.5 rounded-lg font-sans font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
+                    className={`btn ${
                       heroGame.isRunning
-                        ? "bg-secondary text-slate-950 hover:bg-secondary/90 shadow-[0_0_15px_rgba(255,171,243,0.12)]"
+                        ? "btn-secondary"
                         : heroGame.status === "installed"
-                          ? "bg-brand-500 text-slate-950 hover:bg-brand-500/80 shadow-[0_0_15px_rgba(57,255,136,0.12)]"
-                          : heroGame.status === "paused"
+                          ? "btn-primary"
+                          : (heroGame.status === "paused" || heroGame.status === "downloading")
                             ? "bg-amber-500 text-slate-950 hover:bg-amber-500/80"
-                            : "bg-zinc-900/40 border border-brand-500/20 text-slate-200 hover:border-brand-500/50"
+                            : "btn-outline"
                     }`}
                   >
                     {heroGame.isRunning ? (
                       <><RefreshCw size={14} className="animate-spin" /> Running</>
                     ) : heroGame.status === "downloading" ? (
-                      <><RefreshCw size={14} className="animate-spin" /> Downloading ({Math.round(heroGame.progress || 0)}%)</>
+                      <><Pause size={14} /> Pause ({Math.round(heroGame.progress || 0)}%)</>
                     ) : heroGame.status === "paused" ? (
-                      <><Info size={14} /> Resume Setup</>
+                      <><Play size={14} /> Resume ({Math.round(heroGame.progress || 0)}%)</>
                     ) : heroGame.status === "installed" ? (
                       <><Play size={14} fill="currentColor" /> Play Now</>
                     ) : (
@@ -142,7 +146,7 @@ export default function Library() {
                     <>
                       <button 
                         onClick={() => window.lazplayAPI.openInstallFolder(heroGame.id)}
-                        className="p-2 bg-zinc-900/40 border border-brand-500/10 rounded-lg hover:border-brand-500/40 text-slate-400 hover:text-brand-500 transition-all"
+                        className="p-2 bg-surface-container/45 border border-outline-variant rounded-lg hover:border-primary/40 text-on-surface-variant hover:text-primary transition-all"
                         title="Open Directory"
                       >
                         <FolderOpen size={16} />
@@ -164,35 +168,35 @@ export default function Library() {
       )}
 
       {/* Library Controls */}
-      <div className="px-6 py-3 border-b border-brand-500/10 bg-black/40 z-10">
+      <div className="px-6 py-3 border-b border-outline-variant bg-surface/40 z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-8">
-            <h1 className="font-label-mono text-xs font-bold text-primary flex items-center gap-2 uppercase tracking-widest">
+            <h1 className="font-label-mono text-xs font-bold text-primary flex items-center gap-2 uppercase tracking-wide">
               <TerminalIcon size={14} /> My Library
             </h1>
             <div className="flex gap-5 font-sans text-xs font-medium">
               <button 
                 onClick={() => setLibraryFilter("all")}
-                className={`pb-1 border-b-2 transition-colors ${libraryFilter === "all" ? "border-brand-500 text-brand-500" : "border-transparent text-slate-400 hover:text-slate-200"}`}
+                className={`pb-1 border-b-2 transition-colors ${libraryFilter === "all" ? "border-primary text-primary" : "border-transparent text-on-surface-variant hover:text-on-surface"}`}
               >
                 All Games ({gameList.length})
               </button>
               <button 
                 onClick={() => setLibraryFilter("installed")}
-                className={`pb-1 border-b-2 transition-colors ${libraryFilter === "installed" ? "border-brand-500 text-brand-500" : "border-transparent text-slate-400 hover:text-slate-200"}`}
+                className={`pb-1 border-b-2 transition-colors ${libraryFilter === "installed" ? "border-primary text-primary" : "border-transparent text-on-surface-variant hover:text-on-surface"}`}
               >
                 Installed
               </button>
             </div>
           </div>
- 
+  
           <div className="flex items-center gap-3">
-            <div className="relative group flex items-center bg-zinc-950 border border-brand-500/12 focus-within:border-brand-500/60 rounded-lg transition-all focus-within:shadow-[0_0_12px_rgba(var(--primary-rgb),0.12)]">
-              <span className="absolute left-3 text-slate-500 group-focus-within:text-brand-500 transition-colors"><Search size={13} /></span>
+            <div className="input-wrapper group pl-3">
+              <Search size={13} className="text-on-surface-variant group-focus-within:text-primary transition-colors shrink-0" />
               <input 
                 type="text" 
                 placeholder="Search library..."
-                className="bg-transparent border-none py-1.5 pl-8 pr-4 w-56 text-xs text-slate-200 transition-all outline-none font-sans"
+                className="launcher-input pl-2 pr-4 w-44 !py-1.5"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -200,13 +204,13 @@ export default function Library() {
             <button
               onClick={handleSync}
               disabled={isSyncing}
-              className="p-2 bg-zinc-950 border border-brand-500/12 rounded-lg hover:border-brand-500/40 text-slate-400 hover:text-brand-500 transition-all disabled:opacity-50"
+              className="p-2 bg-surface-container-lowest border border-outline-variant rounded-lg hover:border-primary/40 text-on-surface-variant hover:text-primary transition-all disabled:opacity-50"
             >
               <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
             </button>
-            <div className="flex bg-zinc-950 border border-brand-500/12 rounded-lg p-0.5">
-              <button onClick={() => setViewMode("grid")} className={`p-1.5 rounded-md ${viewMode === "grid" ? "bg-zinc-900 text-brand-500" : "text-slate-400 hover:text-slate-200"}`}><LayoutGrid size={14} /></button>
-              <button onClick={() => setViewMode("list")} className={`p-1.5 rounded-md ${viewMode === "list" ? "bg-zinc-900 text-brand-500" : "text-slate-400 hover:text-slate-200"}`}><List size={14} /></button>
+            <div className="flex bg-surface-container-lowest border border-outline-variant rounded-lg p-0.5">
+              <button onClick={() => setViewMode("grid")} className={`p-1.5 rounded-md ${viewMode === "grid" ? "bg-surface-container text-primary" : "text-on-surface-variant hover:text-on-surface"}`}><LayoutGrid size={14} /></button>
+              <button onClick={() => setViewMode("list")} className={`p-1.5 rounded-md ${viewMode === "list" ? "bg-surface-container text-primary" : "text-on-surface-variant hover:text-on-surface"}`}><List size={14} /></button>
             </div>
           </div>
         </div>
@@ -215,9 +219,9 @@ export default function Library() {
       {/* Content Area */}
       <div className="flex-1 overflow-y-auto p-6 pt-6 custom-scrollbar relative">
         {syncError && (
-          <div className="mb-4 p-3 bg-error-container/10 border border-error/20 rounded-lg text-error font-label-mono text-[10px] uppercase flex items-center gap-3">
+          <div className="mb-4 p-3 bg-red-950/10 border border-red-500/20 rounded-lg text-red-400 font-label-mono text-[10px] uppercase flex items-center gap-3">
             <AlertTriangle size={14} />
-            [SYS_ERROR]: {syncError}. Verify uplink.
+            Error: {syncError}. Verify network connection.
           </div>
         )}
  
@@ -227,13 +231,13 @@ export default function Library() {
               <LogIn size={40} className="text-primary opacity-50" />
             </div>
             <div className="text-center max-w-sm">
-              <h3 className="font-headline-md text-xl text-on-surface mb-2 uppercase glow-text-primary">Empty Manifest</h3>
-              <p className="font-sans text-xs text-slate-400">Initialize a session via the Store tab and synchronize your encrypted library records.</p>
+              <h3 className="font-headline-md text-xl text-on-surface mb-2 uppercase">Empty Library</h3>
+              <p className="font-sans text-xs text-slate-400">Initialize a session via the Storefront tab and synchronize your library records.</p>
             </div>
             <button
               onClick={handleSync}
               disabled={isSyncing}
-              className="px-6 py-3 bg-brand-500 hover:bg-brand-500/80 active:scale-[0.98] text-slate-950 rounded-lg font-sans font-bold text-sm tracking-wide shadow-[0_0_15px_rgba(var(--primary-rgb),0.12)] transition-all flex items-center gap-2"
+              className="btn btn-primary px-6 py-3"
             >
               <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
               {isSyncing ? "Syncing..." : "Sync Library"}
@@ -280,8 +284,8 @@ function GameCard({ game, isSelected, onSelect, onAction, onUninstall }: { game:
   return (
     <div 
       onClick={onSelect}
-      className={`group relative flex flex-col bg-zinc-900/30 pixel-border overflow-hidden transition-all duration-300 cursor-pointer rounded-2xl hover:scale-[1.02] shadow-[0_8px_24px_rgba(0,0,0,0.5)] ${
-        isSelected ? "border-brand-500 shadow-[0_0_15px_rgba(var(--primary-rgb),0.08)]" : "border-brand-500/10 hover:border-brand-500/35"
+      className={`group relative flex flex-col bg-zinc-900/30 pixel-border overflow-hidden transition-all duration-300 cursor-pointer rounded-2xl hover:scale-[1.02] shadow-md ${
+        isSelected ? "border-brand-500 shadow-none" : "border-brand-500/10 hover:border-brand-500/35"
       }`}
     >
       <div className="aspect-[3/4] bg-black relative overflow-hidden">
@@ -305,16 +309,40 @@ function GameCard({ game, isSelected, onSelect, onAction, onUninstall }: { game:
         <div className="absolute inset-0 bg-background/90 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3 p-4 text-center backdrop-blur-md">
           <button 
             onClick={(e) => { e.stopPropagation(); onAction(); }}
-            className={`w-full py-2.5 rounded-lg font-sans font-bold text-[10px] uppercase flex items-center justify-center gap-2 shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 ${
+            className={`w-full btn transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 ${
               !game.isOwned 
-                ? "bg-secondary text-slate-950" 
-                : game.isRunning
-                  ? "bg-secondary text-slate-950"
-                  : "bg-brand-500 text-slate-950 hover:bg-brand-500/80 shadow-[0_0_12px_rgba(var(--primary-rgb),0.12)]"
+                ? "btn-secondary" 
+                : (game.isRunning || game.status === "downloading")
+                  ? "btn-secondary"
+                  : game.status === "paused"
+                    ? "bg-amber-500 text-slate-950 hover:bg-amber-500/80"
+                    : "btn-primary"
             }`}
           >
-            {!game.isOwned ? <Gamepad2 size={14} /> : (game.status === "downloading" || game.isRunning) ? <RefreshCw size={14} className="animate-spin" /> : game.status === "installed" ? <Play size={14} fill="currentColor" /> : <Download size={14} />}
-            {!game.isOwned ? "Claim Access" : game.isRunning ? "Active" : game.status === "downloading" ? "Downloading" : game.status === "paused" ? "Resume Setup" : game.status === "installed" ? "Play Now" : "Install Game"}
+            {!game.isOwned ? (
+              <Gamepad2 size={14} />
+            ) : game.isRunning ? (
+              <RefreshCw size={14} className="animate-spin" />
+            ) : game.status === "downloading" ? (
+              <Pause size={14} />
+            ) : game.status === "paused" ? (
+              <Play size={14} />
+            ) : game.status === "installed" ? (
+              <Play size={14} fill="currentColor" />
+            ) : (
+              <Download size={14} />
+            )}
+            {!game.isOwned
+              ? "Claim Access"
+              : game.isRunning
+                ? "Active"
+                : game.status === "downloading"
+                  ? `Pause (${Math.round(game.progress || 0)}%)`
+                  : game.status === "paused"
+                    ? `Resume (${Math.round(game.progress || 0)}%)`
+                    : game.status === "installed"
+                      ? "Play Now"
+                      : "Install Game"}
           </button>
 
           {game.status === "installed" && !game.isRunning && (
@@ -337,7 +365,7 @@ function GameCard({ game, isSelected, onSelect, onAction, onUninstall }: { game:
           )}
         </div>
       </div>
-      <div className="p-3.5 bg-zinc-900/20 border-t border-brand-500/5">
+      <div className="p-3.5 bg-zinc-900/10 border-t border-zinc-800/40">
         <h3 className={`font-sans font-bold text-xs truncate mb-2 uppercase tracking-wide transition-colors ${isSelected ? "text-brand-500" : "text-slate-200 group-hover:text-brand-500"}`}>{game.title}</h3>
         <div className="flex items-center justify-between text-[10px] text-slate-400 font-sans">
           <div className="flex items-center gap-3">
@@ -417,15 +445,27 @@ function GameListRow({ game, isSelected, onSelect, onAction, onUninstall }: { ga
         )}
         <button 
           onClick={(e) => { e.stopPropagation(); onAction(); }}
-          className={`px-5 py-2 rounded-lg font-sans text-[11px] font-bold transition-all active:scale-[0.98] ${
+          className={`btn ${
             game.isRunning 
-              ? "bg-secondary text-slate-950"
+              ? "btn-secondary"
               : !game.isOwned 
-                ? "bg-secondary text-slate-950" 
-                : "bg-brand-500 text-slate-950 hover:bg-brand-500/80 shadow-[0_0_12px_rgba(var(--primary-rgb),0.1)]"
+                ? "btn-secondary" 
+                : game.status === "paused"
+                  ? "bg-amber-500 text-slate-950 hover:bg-amber-500/80"
+                  : "btn-primary"
           }`}
         >
-          {game.isRunning ? "Running" : !game.isOwned ? "Claim" : game.status === "installed" ? "Play" : "Install"}
+          {game.isRunning
+            ? "Running"
+            : !game.isOwned
+              ? "Claim"
+              : game.status === "downloading"
+                ? `Pause (${Math.round(game.progress || 0)}%)`
+                : game.status === "paused"
+                  ? `Resume (${Math.round(game.progress || 0)}%)`
+                  : game.status === "installed"
+                    ? "Play"
+                    : "Install"}
         </button>
       </div>
     </div>

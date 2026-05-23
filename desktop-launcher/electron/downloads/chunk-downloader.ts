@@ -20,11 +20,13 @@ export interface ChunkInstallOptions {
   coverUrl?: string | null;
   bannerUrl?: string | null;
   onProgress?: (progress: number, downloaded: number, total: number) => void;
+  signal?: AbortSignal;
 }
 
 export class ChunkDownloader {
   async fetchManifest(gameId: string, token: string): Promise<{ manifest: any; entrypoint?: string }> {
-    const res = await axios.get(`${API_BASE}/games/${gameId}/distribution-manifest`, {
+    const platform = process.platform === "win32" ? "WINDOWS" : "LINUX";
+    const res = await axios.get(`${API_BASE}/games/${gameId}/distribution-manifest?platform=${platform}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const data = res.data?.data ?? res.data;
@@ -36,9 +38,10 @@ export class ChunkDownloader {
     token: string,
     hashes: string[],
   ): Promise<Map<string, string>> {
+    const platform = process.platform === "win32" ? "WINDOWS" : "LINUX";
     const res = await axios.post(
       `${API_BASE}/games/${gameId}/chunks/download-urls`,
-      { hashes },
+      { hashes, platform },
       { headers: { Authorization: `Bearer ${token}` } },
     );
     const urls = res.data?.data?.urls ?? res.data?.urls ?? [];
@@ -71,6 +74,7 @@ export class ChunkDownloader {
         url,
         method: "GET",
         responseType: "stream",
+        signal: options.signal,
       });
 
       const writer = fs.createWriteStream(destPath);
@@ -78,7 +82,16 @@ export class ChunkDownloader {
 
       await new Promise<void>((resolve, reject) => {
         writer.on("finish", () => resolve());
-        writer.on("error", reject);
+        writer.on("error", (err) => {
+          writer.close();
+          reject(err);
+        });
+        if (options.signal) {
+          options.signal.addEventListener("abort", () => {
+            writer.close();
+            reject(new Error("Aborted"));
+          });
+        }
       });
     };
 
@@ -99,7 +112,7 @@ export class ChunkDownloader {
   }
 
   /** Verify local install and re-download corrupted chunks only (repair). */
-  async repair(gameId: string, token: string, installPath: string): Promise<void> {
+  async repair(gameId: string, token: string, installPath: string, signal?: AbortSignal): Promise<void> {
     const chunkDir = getChunksCacheDir();
 
     const fetchManifest = async (gId: string) => {
@@ -116,6 +129,7 @@ export class ChunkDownloader {
         url,
         method: "GET",
         responseType: "stream",
+        signal,
       });
 
       const writer = fs.createWriteStream(destPath);
@@ -123,7 +137,16 @@ export class ChunkDownloader {
 
       await new Promise<void>((resolve, reject) => {
         writer.on("finish", () => resolve());
-        writer.on("error", reject);
+        writer.on("error", (err) => {
+          writer.close();
+          reject(err);
+        });
+        if (signal) {
+          signal.addEventListener("abort", () => {
+            writer.close();
+            reject(new Error("Aborted"));
+          });
+        }
       });
     };
 
