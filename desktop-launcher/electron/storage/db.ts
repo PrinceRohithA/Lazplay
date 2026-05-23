@@ -209,10 +209,14 @@ export const storageDb = {
   },
 
   saveDownloadOptions: (gameId: string, options: any) => {
-    const stmt = sqliteDb.prepare(
-      "INSERT OR REPLACE INTO download_state (gameId, manifestData) VALUES (?, ?)"
-    );
-    stmt.run(gameId, JSON.stringify(options));
+    // INSERT OR IGNORE so we don't clobber existing progress columns
+    sqliteDb.prepare(
+      "INSERT OR IGNORE INTO download_state (gameId, manifestData) VALUES (?, ?)"
+    ).run(gameId, JSON.stringify(options));
+    // Then update just the manifest data, leaving progress/bytes intact
+    sqliteDb.prepare(
+      "UPDATE download_state SET manifestData = ? WHERE gameId = ?"
+    ).run(JSON.stringify(options), gameId);
   },
 
   saveDownloadProgress: (gameId: string, progress: number, downloadedBytes: number, totalBytes: number) => {

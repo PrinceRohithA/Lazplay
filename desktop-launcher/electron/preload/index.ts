@@ -15,6 +15,8 @@ contextBridge.exposeInMainWorld("lazplayAPI", {
     ipcRenderer.invoke("pause-download", gameId),
   resumeDownload: (gameId: string) =>
     ipcRenderer.invoke("resume-download", gameId),
+  cancelDownload: (gameId: string) =>
+    ipcRenderer.invoke("cancel-download", gameId),
   getDownloadProgress: (gameId: string) =>
     ipcRenderer.invoke("get-download-progress", gameId),
 

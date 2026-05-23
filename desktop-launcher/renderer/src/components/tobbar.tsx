@@ -9,6 +9,7 @@ import {
   Play,
   Pause,
   LogOut,
+  Trash2,
   Terminal,
 } from "lucide-react";
 
@@ -25,6 +26,12 @@ export default function tobbar() {
     if (window.lazplayAPI) {
       if (isPaused) window.lazplayAPI.resumeDownload(id);
       else window.lazplayAPI.pauseDownload(id);
+    }
+  };
+
+  const handleCancelDownload = (id: string) => {
+    if (window.lazplayAPI) {
+      window.lazplayAPI.cancelDownload(id);
     }
   };
 
@@ -147,18 +154,30 @@ export default function tobbar() {
                     <span className="text-xs font-mono font-bold text-on-surface truncate pr-2">
                       {game.title}
                     </span>
-                    <button
-                      onClick={() =>
-                        handlePauseResume(game.id, game.status === "paused")
-                      }
-                      className="text-on-surface-variant hover:text-on-surface transition-colors"
-                    >
-                      {game.status === "paused" ? (
-                        <Play size={12} />
-                      ) : (
-                        <Pause size={12} />
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() =>
+                          handlePauseResume(game.id, game.status === "paused")
+                        }
+                        className="text-on-surface-variant hover:text-on-surface transition-colors"
+                        title={game.status === "paused" ? "Resume" : "Pause"}
+                      >
+                        {game.status === "paused" ? (
+                          <Play size={12} />
+                        ) : (
+                          <Pause size={12} />
+                        )}
+                      </button>
+                      {game.status === "paused" && (
+                        <button
+                          onClick={() => handleCancelDownload(game.id)}
+                          className="text-red-400 hover:text-red-300 transition-colors"
+                          title="Delete paused download"
+                        >
+                          <Trash2 size={12} />
+                        </button>
                       )}
-                    </button>
+                    </div>
                   </div>
                   <div className="w-full bg-surface-container-high rounded-full h-1.5 mb-1 overflow-hidden">
                     <div

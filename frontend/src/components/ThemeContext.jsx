@@ -134,32 +134,28 @@ const translations = {
 };
 
 export function ThemeProvider({ children }) {
-  const [uiMode, setUiMode] = useState(() => {
-    return localStorage.getItem('lazplay-ui-mode') || 'standard';
-  });
+  const [uiModeState, setUiModeState] = useState('standard');
 
   const [colorTheme, setColorTheme] = useState(() => {
     return localStorage.getItem('lazplay-color-theme') || 'system';
   });
 
+  const setUiMode = () => {
+    setUiModeState('standard');
+  };
+
   // Apply UI mode class and Dark/Light mode class
   useEffect(() => {
     const root = document.documentElement;
 
-    // Apply UI Mode Class
-    if (uiMode === 'standard') {
-      root.classList.remove('ui-cyber');
-      root.classList.add('ui-standard');
-    } else {
-      root.classList.remove('ui-standard');
-      root.classList.add('ui-cyber');
-    }
+    root.classList.remove('ui-cyber');
+    root.classList.add('ui-standard');
 
-    localStorage.setItem('lazplay-ui-mode', uiMode);
+    localStorage.setItem('lazplay-ui-mode', 'standard');
     if (window.notifyThemeChange) {
       window.notifyThemeChange();
     }
-  }, [uiMode]);
+  }, []);
 
   // Apply Color Theme (Light / Dark)
   useEffect(() => {
@@ -174,32 +170,25 @@ export function ThemeProvider({ children }) {
       root.classList.add('light');
     };
 
-    if (uiMode === 'cyber') {
-      // Cyber mode is always dark theme
+    if (colorTheme === 'dark') {
       applyDark();
+    } else if (colorTheme === 'light') {
+      applyLight();
     } else {
-      // Standard mode can be light or dark
-      if (colorTheme === 'dark') {
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (systemPrefersDark) {
         applyDark();
-      } else if (colorTheme === 'light') {
-        applyLight();
       } else {
-        // System preference
-        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (systemPrefersDark) {
-          applyDark();
-        } else {
-          applyLight();
-        }
+        applyLight();
       }
     }
 
     localStorage.setItem('lazplay-color-theme', colorTheme);
-  }, [colorTheme, uiMode]);
+  }, [colorTheme]);
 
   // Listen to system theme changes if set to system
   useEffect(() => {
-    if (uiMode !== 'standard' || colorTheme !== 'system') return;
+    if (colorTheme !== 'system') return;
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = (e) => {
@@ -215,11 +204,11 @@ export function ThemeProvider({ children }) {
 
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [colorTheme, uiMode]);
+  }, [colorTheme]);
 
   // Helper to translate keys
   const t = (key) => {
-    if (uiMode === 'cyber') return key;
+    if (uiModeState !== 'standard') return key;
 
     // Standard translation
     if (translations[key]) return translations[key];
@@ -245,10 +234,10 @@ export function ThemeProvider({ children }) {
     return cleanKey;
   };
 
-  const isStandard = uiMode === 'standard';
+  const isStandard = uiModeState === 'standard';
 
   return (
-    <ThemeContext.Provider value={{ uiMode, setUiMode, colorTheme, setColorTheme, t, isStandard }}>
+    <ThemeContext.Provider value={{ uiMode: uiModeState, setUiMode, colorTheme, setColorTheme, t, isStandard }}>
       {children}
     </ThemeContext.Provider>
   );

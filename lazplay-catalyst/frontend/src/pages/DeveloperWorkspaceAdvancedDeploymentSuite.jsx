@@ -76,8 +76,8 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
     hardwareSpecs: ['WINDOWS'],
     genres: ['ACTION'],
     customTags: [],
-    licensing: 'PAID',
-    price: '999',
+    licensing: 'FREE',
+    price: '0',
     status: 'DRAFT',
     minSpecs: { os: 'WINDOWS_10_X64', processor: 'I5-6600K', memory: '8GB', graphics: 'GTX 1060', storage: '50GB' },
     recSpecs: { os: 'WINDOWS_11_X64', processor: 'I7-9700K', memory: '16GB', graphics: 'RTX 2070', storage: '50GB' }
@@ -186,7 +186,7 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         hardwareSpecs: game.platforms || ['WINDOWS'],
         genres: game.genres || ['ACTION'],
         customTags: game.tags || [],
-        licensing: game.priceType || 'PAID',
+        licensing: game.priceType || 'FREE',
         price: ((game.price || 0) / 100).toString(),
         status: game.status || 'DRAFT',
         minSpecs: game.systemRequirements?.minimum || { os: 'WINDOWS_10_X64', processor: 'I5-6600K', memory: '8GB', graphics: 'GTX 1060', storage: '50GB' },
@@ -224,8 +224,8 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         hardwareSpecs: ['WINDOWS'],
         genres: ['ACTION'],
         customTags: [],
-        licensing: 'PAID',
-        price: '999',
+        licensing: 'FREE',
+        price: '0',
         status: 'DRAFT',
         minSpecs: { os: 'WINDOWS_10_X64', processor: 'I5-6600K', memory: '8GB', graphics: 'GTX 1060', storage: '50GB' },
         recSpecs: { os: 'WINDOWS_11_X64', processor: 'I7-9700K', memory: '16GB', graphics: 'RTX 2070', storage: '50GB' }
@@ -1071,13 +1071,19 @@ export default function DeveloperWorkspaceAdvancedDeploymentSuite() {
         </div>
 
         {/*  Store Info Module  */}
-        <div className="col-span-12 lg:col-span-6 bg-surface-container-low pixel-border p-6 flex flex-col gap-6">
-          <div className="flex items-center justify-between border-b border-outline-variant pb-3">
+        <div className="col-span-12 lg:col-span-6 bg-surface-container-low pixel-border p-6 flex flex-col gap-6 relative overflow-hidden">
+          <div className="absolute inset-0 z-10 bg-black/35 backdrop-blur-sm cursor-not-allowed"></div>
+          <div className="absolute inset-0 z-20 flex items-center justify-center">
+            <span className="text-[9px] font-label-mono uppercase tracking-widest text-on-surface-variant border border-outline-variant px-3 py-1 bg-black/40">
+              COMING SOON
+            </span>
+          </div>
+          <div className="flex items-center justify-between border-b border-outline-variant pb-3 relative z-0 opacity-70">
             <h3 className="font-label-mono text-primary-fixed text-label-mono flex items-center gap-2 uppercase">
               <span className="material-symbols-outlined">storefront</span> STORE_INTEGRATION
             </h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter relative z-0 opacity-70">
             <div className="space-y-2">
               <label className="block font-label-mono text-[10px] text-on-surface-variant uppercase">_LICENSING_MODEL</label>
               <div className="relative bg-surface-container border border-outline-variant focus-within:border-primary-container">

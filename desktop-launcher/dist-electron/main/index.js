@@ -193,10 +193,12 @@ const storageDb = {
     stmt.run(durationSeconds, Date.now(), id);
   },
   saveDownloadOptions: (gameId2, options) => {
-    const stmt = sqliteDb.prepare(
-      "INSERT OR REPLACE INTO download_state (gameId, manifestData) VALUES (?, ?)"
-    );
-    stmt.run(gameId2, JSON.stringify(options));
+    sqliteDb.prepare(
+      "INSERT OR IGNORE INTO download_state (gameId, manifestData) VALUES (?, ?)"
+    ).run(gameId2, JSON.stringify(options));
+    sqliteDb.prepare(
+      "UPDATE download_state SET manifestData = ? WHERE gameId = ?"
+    ).run(JSON.stringify(options), gameId2);
   },
   saveDownloadProgress: (gameId2, progress, downloadedBytes, totalBytes) => {
     try {
@@ -14861,14 +14863,7 @@ var _eval = EvalError;
 var range$1 = RangeError;
 var ref = ReferenceError;
 var syntax = SyntaxError;
-var type$1;
-var hasRequiredType;
-function requireType() {
-  if (hasRequiredType) return type$1;
-  hasRequiredType = 1;
-  type$1 = TypeError;
-  return type$1;
-}
+var type$1 = TypeError;
 var uri = URIError;
 var abs$1 = Math.abs;
 var floor$1 = Math.floor;
@@ -15114,7 +15109,7 @@ function requireCallBindApplyHelpers() {
   if (hasRequiredCallBindApplyHelpers) return callBindApplyHelpers;
   hasRequiredCallBindApplyHelpers = 1;
   var bind3 = functionBind;
-  var $TypeError2 = requireType();
+  var $TypeError2 = type$1;
   var $call2 = requireFunctionCall();
   var $actualApply = requireActualApply();
   callBindApplyHelpers = function callBindBasic(args) {
@@ -15187,7 +15182,7 @@ var $EvalError = _eval;
 var $RangeError = range$1;
 var $ReferenceError = ref;
 var $SyntaxError = syntax;
-var $TypeError$1 = requireType();
+var $TypeError$1 = type$1;
 var $URIError = uri;
 var abs = abs$1;
 var floor = floor$1;
@@ -15518,7 +15513,7 @@ var GetIntrinsic = getIntrinsic;
 var $defineProperty = GetIntrinsic("%Object.defineProperty%", true);
 var hasToStringTag = requireShams()();
 var hasOwn$1 = hasown;
-var $TypeError = requireType();
+var $TypeError = type$1;
 var toStringTag = hasToStringTag ? Symbol.toStringTag : null;
 var esSetTostringtag = function setToStringTag2(object2, value) {
   var overrideIfSet = arguments.length > 2 && !!arguments[2] && arguments[2].force;
@@ -27360,8 +27355,8 @@ class ChunkDownloader {
     log.info(`Chunk install complete for ${options.gameId}`);
     return { entrypoint: result2.entrypoint || options.entrypoint || null };
   }
-  /** Verify local install and re-download corrupted chunks only (repair). */
-  async repair(gameId2, token2, installPath, signal) {
+  /** Verify local install and re-download corrupted/missing chunks only (repair/resume). */
+  async repair(gameId2, token2, installPath, signal, onProgress) {
     const chunkDir = getChunksCacheDir();
     const fetchManifest = async (gId) => {
       return this.fetchManifest(gId, token2);
@@ -27389,7 +27384,7 @@ class ChunkDownloader {
           signal.addEventListener("abort", () => {
             writer.close();
             reject(new Error("Aborted"));
-          });
+          }, { once: true });
         }
       });
     };
@@ -27399,7 +27394,10 @@ class ChunkDownloader {
       chunkDir,
       fetchManifest,
       getDownloadUrls,
-      downloadChunk
+      downloadChunk,
+      onProgress: onProgress ? (progress, downloadedCount, totalCount) => {
+        onProgress(progress, downloadedCount, totalCount);
+      } : void 0
     });
     log.info(`Repair complete for ${gameId2}`);
   }
@@ -27408,8 +27406,10 @@ const chunkDownloader = new ChunkDownloader();
 class DownloadManager {
   constructor() {
     __publicField(this, "activeDownloads", /* @__PURE__ */ new Map());
+    // Tracks games currently being paused so the finish handler doesn't override status
+    __publicField(this, "pausingGames", /* @__PURE__ */ new Set());
   }
-  async startInstall(gameId2, options) {
+  startInstall(gameId2, options) {
     const installPath = path$n.join(
       require$$1.app.getPath("userData"),
       "installed-games",
@@ -27435,40 +27435,39 @@ class DownloadManager {
         downloadedBytes: 0,
         totalBytes: 0
       });
-      try {
-        const result2 = await chunkDownloader.installFromChunks(
-          {
-            gameId: gameId2,
-            title: options.title,
-            token: options.token,
-            entrypoint: options.entrypoint,
-            coverUrl: options.coverUrl,
-            bannerUrl: options.bannerUrl,
-            signal: abortController.signal,
-            onProgress: (progress, downloaded, total) => {
-              const active = this.activeDownloads.get(gameId2);
-              if (active) {
-                active.progress = progress;
-                active.downloadedBytes = downloaded;
-                active.totalBytes = total;
-              }
-              this.broadcastProgress({
-                gameId: gameId2,
-                progress,
-                downloadedBytes: downloaded,
-                totalBytes: total,
-                status: "downloading"
-              });
+      chunkDownloader.installFromChunks(
+        {
+          gameId: gameId2,
+          title: options.title,
+          token: options.token,
+          entrypoint: options.entrypoint,
+          coverUrl: options.coverUrl,
+          bannerUrl: options.bannerUrl,
+          signal: abortController.signal,
+          onProgress: (progress, downloaded, total) => {
+            const active = this.activeDownloads.get(gameId2);
+            if (active) {
+              active.progress = progress;
+              active.downloadedBytes = downloaded;
+              active.totalBytes = total;
             }
-          },
-          installPath
-        );
+            this.broadcastProgress({
+              gameId: gameId2,
+              progress,
+              downloadedBytes: downloaded,
+              totalBytes: total,
+              status: "downloading"
+            });
+          }
+        },
+        installPath
+      ).then(async (result2) => {
         this.activeDownloads.delete(gameId2);
         await this.finalizeInstall(gameId2, installPath, {
           ...options,
           entrypoint: result2.entrypoint || options.entrypoint
         });
-      } catch (error2) {
+      }).catch((error2) => {
         this.activeDownloads.delete(gameId2);
         if (abortController.signal.aborted) {
           log.info(`Chunk install for ${gameId2} successfully paused.`);
@@ -27483,8 +27482,7 @@ class DownloadManager {
           totalBytes: 0,
           status: "error"
         });
-        throw error2;
-      }
+      });
       return;
     }
     const cdnUrl = options.downloadUrl;
@@ -27535,6 +27533,7 @@ class DownloadManager {
     });
   }
   async downloadFile(gameId2, url2, destination, options) {
+    var _a2;
     log.info(`Starting download for ${gameId2} to ${destination}`);
     let existingSize = 0;
     let writeStreamFlags = "w";
@@ -27596,6 +27595,11 @@ class DownloadManager {
       response.data.pipe(writer);
       return new Promise((resolve, reject) => {
         writer.on("finish", () => {
+          if (this.pausingGames.has(gameId2)) {
+            log.info(`Download stream finished for ${gameId2} but a pause is in progress — skipping finalize.`);
+            resolve(true);
+            return;
+          }
           this.finishDownload(gameId2, destination, options);
           resolve(true);
         });
@@ -27606,7 +27610,24 @@ class DownloadManager {
         log.info(`Download for ${gameId2} successfully aborted/paused.`);
         return;
       }
+      const status = (_a2 = error2 == null ? void 0 : error2.response) == null ? void 0 : _a2.status;
+      const alreadyRetried = Boolean(options == null ? void 0 : options._retried);
+      if (status === 403 && !alreadyRetried) {
+        const { token: token2 } = storageDb.getTokens();
+        if (token2) {
+          const refreshedUrl = await this.fetchLatestDownloadUrl(gameId2, token2);
+          if (refreshedUrl) {
+            const nextOptions = { ...options, _retried: true, downloadUrl: refreshedUrl };
+            const optionsForDb = { ...nextOptions };
+            delete optionsForDb._retried;
+            storageDb.saveDownloadOptions(gameId2, optionsForDb);
+            log.warn(`Download for ${gameId2} failed with 403. Retrying with refreshed URL.`);
+            return this.downloadFile(gameId2, refreshedUrl, destination, nextOptions);
+          }
+        }
+      }
       log.error(`Download failed for ${gameId2}:`, error2);
+      this.activeDownloads.delete(gameId2);
       this.broadcastProgress({
         gameId: gameId2,
         progress: 0,
@@ -27760,13 +27781,17 @@ class DownloadManager {
   async pauseDownload(gameId2) {
     const active = this.activeDownloads.get(gameId2);
     if (active) {
-      active.abort.abort();
-      if (active.stream) {
-        active.stream.close();
-      }
+      this.pausingGames.add(gameId2);
       const lastProgress = active.progress || 0;
       const lastDownloaded = active.downloadedBytes || 0;
       const lastTotal = active.totalBytes || 0;
+      active.abort.abort();
+      if (active.stream) {
+        try {
+          active.stream.close();
+        } catch (_) {
+        }
+      }
       storageDb.saveDownloadProgress(gameId2, lastProgress, lastDownloaded, lastTotal);
       this.activeDownloads.delete(gameId2);
       storageDb.setGameStatus(gameId2, "paused");
@@ -27778,11 +27803,12 @@ class DownloadManager {
         totalBytes: lastTotal,
         status: "paused"
       });
+      setTimeout(() => this.pausingGames.delete(gameId2), 2e3);
       return true;
     }
     return false;
   }
-  async resumeDownload(gameId2) {
+  resumeDownload(gameId2) {
     const game = storageDb.getGame(gameId2);
     if (game && game.status === "paused") {
       storageDb.setGameStatus(gameId2, "downloading");
@@ -27802,37 +27828,150 @@ class DownloadManager {
       const initialProgress = game.progress || 0;
       const initialDownloaded = game.downloadedBytes || 0;
       const initialTotal = game.totalBytes || 0;
-      try {
+      this.broadcastProgress({
+        gameId: gameId2,
+        progress: initialProgress,
+        downloadedBytes: initialDownloaded,
+        totalBytes: initialTotal,
+        status: "downloading"
+      });
+      let abortController = null;
+      const runResume = async () => {
         if (options.usesChunkDistribution) {
-          const abortController = new AbortController();
+          abortController = new AbortController();
           this.activeDownloads.set(gameId2, {
             abort: abortController,
             progress: initialProgress,
             downloadedBytes: initialDownloaded,
             totalBytes: initialTotal
           });
-          await chunkDownloader.repair(gameId2, token2, game.installPath, abortController.signal);
-          this.activeDownloads.delete(gameId2);
-          await this.finalizeInstall(gameId2, game.installPath, options);
+          try {
+            await chunkDownloader.repair(
+              gameId2,
+              token2,
+              game.installPath,
+              abortController.signal,
+              (progress, downloaded, total) => {
+                const active = this.activeDownloads.get(gameId2);
+                if (active) {
+                  active.progress = progress;
+                  active.downloadedBytes = downloaded;
+                  active.totalBytes = total;
+                }
+                this.broadcastProgress({
+                  gameId: gameId2,
+                  progress,
+                  downloadedBytes: downloaded,
+                  totalBytes: total,
+                  status: "downloading"
+                });
+              }
+            );
+            if (!this.pausingGames.has(gameId2)) {
+              this.activeDownloads.delete(gameId2);
+              await this.finalizeInstall(gameId2, game.installPath, options);
+            }
+          } catch (error2) {
+            const wasPaused = (abortController == null ? void 0 : abortController.signal.aborted) || this.pausingGames.has(gameId2);
+            this.activeDownloads.delete(gameId2);
+            if (wasPaused) {
+              log.info(`Resume of ${gameId2} was interrupted by a pause — that's expected.`);
+              return;
+            }
+            log.error(`Failed to resume chunk download ${gameId2}:`, error2);
+            storageDb.setGameStatus(gameId2, "paused");
+          }
         } else {
+          const refreshedUrl = await this.fetchLatestDownloadUrl(gameId2, token2);
+          if (refreshedUrl) {
+            options.downloadUrl = refreshedUrl;
+            const optionsForDb = { ...options, downloadUrl: refreshedUrl };
+            storageDb.saveDownloadOptions(gameId2, optionsForDb);
+          }
           const cdnUrl = options.downloadUrl;
-          if (!cdnUrl) throw new Error("No download URL provided for game");
+          if (!cdnUrl) {
+            log.error(`Cannot resume ${gameId2}: no download URL`);
+            storageDb.setGameStatus(gameId2, "paused");
+            return;
+          }
           const destination = path$n.join(game.installPath, options.destFileName || "game.zip");
-          this.downloadFile(gameId2, cdnUrl, destination, { ...options, isResume: true });
+          try {
+            await this.downloadFile(gameId2, cdnUrl, destination, { ...options, isResume: true });
+          } catch (error2) {
+            log.error(`Failed to resume direct download ${gameId2}:`, error2);
+          }
         }
-        return true;
-      } catch (error2) {
-        this.activeDownloads.delete(gameId2);
-        const active = this.activeDownloads.get(gameId2);
-        if (active == null ? void 0 : active.abort.signal.aborted) {
-          return true;
-        }
-        log.error(`Failed to resume ${gameId2}:`, error2);
-        storageDb.setGameStatus(gameId2, "paused");
-        return false;
-      }
+      };
+      runResume();
+      return true;
     }
     return false;
+  }
+  async cancelDownload(gameId2) {
+    const game = storageDb.getGame(gameId2);
+    if (!game) return false;
+    if (game.status !== "paused" && game.status !== "downloading") {
+      return false;
+    }
+    const active = this.activeDownloads.get(gameId2);
+    if (active) {
+      this.pausingGames.add(gameId2);
+      active.abort.abort();
+      if (active.stream) {
+        try {
+          active.stream.close();
+        } catch (_) {
+        }
+      }
+      this.activeDownloads.delete(gameId2);
+      setTimeout(() => this.pausingGames.delete(gameId2), 2e3);
+    }
+    if (game.installPath && fs$k.existsSync(game.installPath)) {
+      try {
+        fs$k.rmSync(game.installPath, { recursive: true, force: true });
+      } catch (e) {
+        log.warn(`Failed to remove install folder for ${gameId2}:`, e);
+      }
+    }
+    storageDb.removeDownloadState(gameId2);
+    storageDb.setGameStatus(gameId2, "uninstalled", {
+      statusText: void 0
+    });
+    this.broadcastProgress({
+      gameId: gameId2,
+      progress: 0,
+      downloadedBytes: 0,
+      totalBytes: 0,
+      status: "uninstalled"
+    });
+    log.info(`Canceled download for ${gameId2}`);
+    return true;
+  }
+  async fetchLatestDownloadUrl(gameId2, token2) {
+    try {
+      const platformParam = process.platform === "win32" ? "WINDOWS" : "LINUX";
+      const response = await fetch(`https://play.lazplay.tech/api/v1/library?platform=${platformParam}`, {
+        headers: { Authorization: `Bearer ${token2}` }
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        log.warn(`Failed to refresh download URL (${response.status}): ${text}`);
+        return null;
+      }
+      const data = await response.json();
+      const items = data.data || data.items || (Array.isArray(data) ? data : []);
+      const entry = items.find((item) => {
+        var _a2;
+        const itemId = String(item.gameId || item.id || ((_a2 = item.game) == null ? void 0 : _a2.id) || "");
+        return itemId === gameId2;
+      });
+      if (!entry) return null;
+      const game = entry.game || entry;
+      return game.downloadUrl || game.buildUrl || entry.downloadUrl || entry.buildUrl || null;
+    } catch (error2) {
+      log.warn(`Failed to refresh download URL for ${gameId2}:`, error2);
+      return null;
+    }
   }
   async repairGame(gameId2, token2) {
     const game = storageDb.getGame(gameId2);
@@ -28437,6 +28576,9 @@ function setupIpcHandlers(mainWindow, storeView) {
   });
   require$$1.ipcMain.handle("resume-download", async (event2, gameId2) => {
     return downloadManager.resumeDownload(gameId2);
+  });
+  require$$1.ipcMain.handle("cancel-download", async (event2, gameId2) => {
+    return downloadManager.cancelDownload(gameId2);
   });
   require$$1.ipcMain.handle("set-game-entrypoint", async (event2, gameId2, entrypoint) => {
     log.info(`Setting entrypoint for game ${gameId2}: ${entrypoint}`);

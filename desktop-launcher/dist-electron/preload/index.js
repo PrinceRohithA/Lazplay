@@ -9,6 +9,7 @@ electron.contextBridge.exposeInMainWorld("lazplayAPI", {
   // Download operations
   pauseDownload: (gameId) => electron.ipcRenderer.invoke("pause-download", gameId),
   resumeDownload: (gameId) => electron.ipcRenderer.invoke("resume-download", gameId),
+  cancelDownload: (gameId) => electron.ipcRenderer.invoke("cancel-download", gameId),
   getDownloadProgress: (gameId) => electron.ipcRenderer.invoke("get-download-progress", gameId),
   // Status and System
   getInstalledGames: () => electron.ipcRenderer.invoke("get-installed-games"),

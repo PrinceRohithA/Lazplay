@@ -159,6 +159,10 @@ export function setupIpcHandlers(
     return downloadManager.resumeDownload(gameId);
   });
 
+  ipcMain.handle("cancel-download", async (event, gameId: string) => {
+    return downloadManager.cancelDownload(gameId);
+  });
+
   ipcMain.handle("set-game-entrypoint", async (event, gameId: string, entrypoint: string) => {
     log.info(`Setting entrypoint for game ${gameId}: ${entrypoint}`);
     db.setGameStatus(gameId, "installed", { entrypoint });

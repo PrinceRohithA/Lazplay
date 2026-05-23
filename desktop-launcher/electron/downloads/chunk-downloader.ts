@@ -111,8 +111,14 @@ export class ChunkDownloader {
     return { entrypoint: result.entrypoint || options.entrypoint || null };
   }
 
-  /** Verify local install and re-download corrupted chunks only (repair). */
-  async repair(gameId: string, token: string, installPath: string, signal?: AbortSignal): Promise<void> {
+  /** Verify local install and re-download corrupted/missing chunks only (repair/resume). */
+  async repair(
+    gameId: string,
+    token: string,
+    installPath: string,
+    signal?: AbortSignal,
+    onProgress?: (progress: number, downloaded: number, total: number) => void,
+  ): Promise<void> {
     const chunkDir = getChunksCacheDir();
 
     const fetchManifest = async (gId: string) => {
@@ -145,7 +151,7 @@ export class ChunkDownloader {
           signal.addEventListener("abort", () => {
             writer.close();
             reject(new Error("Aborted"));
-          });
+          }, { once: true });
         }
       });
     };
@@ -156,7 +162,12 @@ export class ChunkDownloader {
       chunkDir,
       fetchManifest,
       getDownloadUrls,
-      downloadChunk
+      downloadChunk,
+      onProgress: onProgress
+        ? (progress: number, downloadedCount: number, totalCount: number) => {
+            onProgress(progress, downloadedCount, totalCount);
+          }
+        : undefined,
     });
 
     log.info(`Repair complete for ${gameId}`);

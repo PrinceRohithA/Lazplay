@@ -13,7 +13,7 @@ interface DownloadProgress {
   progress: number;
   downloadedBytes: number;
   totalBytes: number;
-  status: "downloading" | "paused" | "installed" | "error" | "corrupted";
+  status: "downloading" | "paused" | "installed" | "error" | "corrupted" | "uninstalled";
 }
 
 class DownloadManager {
@@ -28,7 +28,10 @@ class DownloadManager {
     }
   > = new Map();
 
-  async startInstall(
+  // Tracks games currently being paused so the finish handler doesn't override status
+  private pausingGames: Set<string> = new Set();
+
+  startInstall(
     gameId: string,
     options: {
       title: string;
@@ -71,40 +74,40 @@ class DownloadManager {
         totalBytes: 0,
       });
 
-      try {
-        const result = await chunkDownloader.installFromChunks(
-          {
-            gameId,
-            title: options.title,
-            token: options.token,
-            entrypoint: options.entrypoint,
-            coverUrl: options.coverUrl,
-            bannerUrl: options.bannerUrl,
-            signal: abortController.signal,
-            onProgress: (progress, downloaded, total) => {
-              const active = this.activeDownloads.get(gameId);
-              if (active) {
-                active.progress = progress;
-                active.downloadedBytes = downloaded;
-                active.totalBytes = total;
-              }
-              this.broadcastProgress({
-                gameId,
-                progress,
-                downloadedBytes: downloaded,
-                totalBytes: total,
-                status: "downloading",
-              });
-            },
+      // Fire chunk download in background — do NOT await here so IPC returns immediately
+      chunkDownloader.installFromChunks(
+        {
+          gameId,
+          title: options.title,
+          token: options.token,
+          entrypoint: options.entrypoint,
+          coverUrl: options.coverUrl,
+          bannerUrl: options.bannerUrl,
+          signal: abortController.signal,
+          onProgress: (progress, downloaded, total) => {
+            const active = this.activeDownloads.get(gameId);
+            if (active) {
+              active.progress = progress;
+              active.downloadedBytes = downloaded;
+              active.totalBytes = total;
+            }
+            this.broadcastProgress({
+              gameId,
+              progress,
+              downloadedBytes: downloaded,
+              totalBytes: total,
+              status: "downloading",
+            });
           },
-          installPath,
-        );
+        },
+        installPath,
+      ).then(async (result) => {
         this.activeDownloads.delete(gameId);
         await this.finalizeInstall(gameId, installPath, {
           ...options,
           entrypoint: result.entrypoint || options.entrypoint,
         });
-      } catch (error: any) {
+      }).catch((error: any) => {
         this.activeDownloads.delete(gameId);
         if (abortController.signal.aborted) {
           log.info(`Chunk install for ${gameId} successfully paused.`);
@@ -119,8 +122,9 @@ class DownloadManager {
           totalBytes: 0,
           status: "error",
         });
-        throw error;
-      }
+      });
+
+      // Return immediately — progress comes via broadcastProgress events
       return;
     }
 
@@ -141,8 +145,10 @@ class DownloadManager {
     // Store the determined properties back in SQLite options
     db.saveDownloadOptions(gameId, { ...options, isZip, destFileName });
 
+    // Fire in background — do NOT await so IPC returns immediately
     this.downloadFile(gameId, cdnUrl, destination, { ...options, isZip, destFileName });
   }
+
 
   private async finalizeInstall(
     gameId: string,
@@ -193,7 +199,12 @@ class DownloadManager {
     });
   }
 
-  private async downloadFile(gameId: string, url: string, destination: string, options: any) {
+  private async downloadFile(
+    gameId: string,
+    url: string,
+    destination: string,
+    options: any,
+  ): Promise<boolean | void> {
     log.info(`Starting download for ${gameId} to ${destination}`);
 
     let existingSize = 0;
@@ -265,6 +276,12 @@ class DownloadManager {
 
       return new Promise((resolve, reject) => {
         writer.on('finish', () => {
+          // If this game is being paused, do NOT finalize — the pause handler takes over
+          if (this.pausingGames.has(gameId)) {
+            log.info(`Download stream finished for ${gameId} but a pause is in progress — skipping finalize.`);
+            resolve(true);
+            return;
+          }
           this.finishDownload(gameId, destination, options);
           resolve(true);
         });
@@ -276,7 +293,26 @@ class DownloadManager {
         log.info(`Download for ${gameId} successfully aborted/paused.`);
         return;
       }
+
+      const status = error?.response?.status;
+      const alreadyRetried = Boolean(options?._retried);
+      if (status === 403 && !alreadyRetried) {
+        const { token } = db.getTokens();
+        if (token) {
+          const refreshedUrl = await this.fetchLatestDownloadUrl(gameId, token);
+          if (refreshedUrl) {
+            const nextOptions = { ...options, _retried: true, downloadUrl: refreshedUrl };
+            const optionsForDb = { ...nextOptions };
+            delete optionsForDb._retried;
+            db.saveDownloadOptions(gameId, optionsForDb);
+            log.warn(`Download for ${gameId} failed with 403. Retrying with refreshed URL.`);
+            return this.downloadFile(gameId, refreshedUrl, destination, nextOptions);
+          }
+        }
+      }
+
       log.error(`Download failed for ${gameId}:`, error);
+      this.activeDownloads.delete(gameId);
       this.broadcastProgress({
         gameId,
         progress: 0,
@@ -458,15 +494,20 @@ class DownloadManager {
   async pauseDownload(gameId: string) {
     const active = this.activeDownloads.get(gameId);
     if (active) {
-      active.abort.abort();
-      if (active.stream) {
-        active.stream.close();
-      }
+      // Mark as pausing BEFORE calling abort so the stream finish handler skips finalize
+      this.pausingGames.add(gameId);
 
       const lastProgress = active.progress || 0;
       const lastDownloaded = active.downloadedBytes || 0;
       const lastTotal = active.totalBytes || 0;
 
+      // Abort the active request / stream
+      active.abort.abort();
+      if (active.stream) {
+        try { active.stream.close(); } catch (_) {}
+      }
+
+      // Persist progress before clearing state
       db.saveDownloadProgress(gameId, lastProgress, lastDownloaded, lastTotal);
 
       this.activeDownloads.delete(gameId);
@@ -480,13 +521,21 @@ class DownloadManager {
         totalBytes: lastTotal,
         status: "paused",
       });
+
+      // Remove pause guard after a short delay so any in-flight finish events are handled
+      setTimeout(() => this.pausingGames.delete(gameId), 2000);
+
       return true;
     }
     return false;
   }
 
-  async resumeDownload(gameId: string) {
-    const game = db.getGame(gameId);
+  resumeDownload(gameId: string) {
+    const game = db.getGame(gameId) as (ReturnType<typeof db.getGame> & {
+      progress?: number;
+      downloadedBytes?: number;
+      totalBytes?: number;
+    }) | null;
     if (game && game.status === "paused") {
       db.setGameStatus(gameId, "downloading");
       log.info(`Resuming download for ${gameId}`);
@@ -509,41 +558,169 @@ class DownloadManager {
       const initialDownloaded = game.downloadedBytes || 0;
       const initialTotal = game.totalBytes || 0;
 
-      try {
+      // Immediately broadcast the stored progress so the UI picks up from the right place
+      this.broadcastProgress({
+        gameId,
+        progress: initialProgress,
+        downloadedBytes: initialDownloaded,
+        totalBytes: initialTotal,
+        status: "downloading",
+      });
+
+      // Fire resume work in background — do NOT block IPC
+      let abortController: AbortController | null = null;
+
+      const runResume = async () => {
         if (options.usesChunkDistribution) {
-          const abortController = new AbortController();
+          abortController = new AbortController();
           this.activeDownloads.set(gameId, {
             abort: abortController,
             progress: initialProgress,
             downloadedBytes: initialDownloaded,
             totalBytes: initialTotal,
           });
-          
-          await chunkDownloader.repair(gameId, token, game.installPath, abortController.signal);
-          
-          this.activeDownloads.delete(gameId);
-          await this.finalizeInstall(gameId, game.installPath, options);
+
+          try {
+            await chunkDownloader.repair(
+              gameId,
+              token,
+              game.installPath,
+              abortController.signal,
+              (progress, downloaded, total) => {
+                const active = this.activeDownloads.get(gameId);
+                if (active) {
+                  active.progress = progress;
+                  active.downloadedBytes = downloaded;
+                  active.totalBytes = total;
+                }
+                this.broadcastProgress({
+                  gameId,
+                  progress,
+                  downloadedBytes: downloaded,
+                  totalBytes: total,
+                  status: "downloading",
+                });
+              }
+            );
+
+            // Only finalize if NOT paused mid-way
+            if (!this.pausingGames.has(gameId)) {
+              this.activeDownloads.delete(gameId);
+              await this.finalizeInstall(gameId, game.installPath, options);
+            }
+          } catch (error: any) {
+            const wasPaused = abortController?.signal.aborted || this.pausingGames.has(gameId);
+            this.activeDownloads.delete(gameId);
+            if (wasPaused) {
+              log.info(`Resume of ${gameId} was interrupted by a pause — that's expected.`);
+              return;
+            }
+            log.error(`Failed to resume chunk download ${gameId}:`, error);
+            db.setGameStatus(gameId, "paused");
+          }
         } else {
+          const refreshedUrl = await this.fetchLatestDownloadUrl(gameId, token);
+          if (refreshedUrl) {
+            options.downloadUrl = refreshedUrl;
+            const optionsForDb = { ...options, downloadUrl: refreshedUrl };
+            db.saveDownloadOptions(gameId, optionsForDb);
+          }
+
           const cdnUrl = options.downloadUrl;
-          if (!cdnUrl) throw new Error("No download URL provided for game");
+          if (!cdnUrl) {
+            log.error(`Cannot resume ${gameId}: no download URL`);
+            db.setGameStatus(gameId, "paused");
+            return;
+          }
           const destination = path.join(game.installPath, options.destFileName || "game.zip");
-          
-          this.downloadFile(gameId, cdnUrl, destination, { ...options, isResume: true });
+          // downloadFile manages its own activeDownloads entry
+          try {
+            await this.downloadFile(gameId, cdnUrl, destination, { ...options, isResume: true });
+          } catch (error: any) {
+            log.error(`Failed to resume direct download ${gameId}:`, error);
+          }
         }
-        return true;
-      } catch (error: any) {
-        this.activeDownloads.delete(gameId);
-        const active = this.activeDownloads.get(gameId);
-        if (active?.abort.signal.aborted) {
-          return true; // was paused intentionally
-        }
-        log.error(`Failed to resume ${gameId}:`, error);
-        db.setGameStatus(gameId, "paused");
-        return false;
-      }
+      };
+
+      runResume();
+      return true;
     }
     return false;
   }
+
+  async cancelDownload(gameId: string): Promise<boolean> {
+    const game = db.getGame(gameId);
+    if (!game) return false;
+
+    if (game.status !== "paused" && game.status !== "downloading") {
+      return false;
+    }
+
+    const active = this.activeDownloads.get(gameId);
+    if (active) {
+      this.pausingGames.add(gameId);
+      active.abort.abort();
+      if (active.stream) {
+        try { active.stream.close(); } catch (_) {}
+      }
+      this.activeDownloads.delete(gameId);
+      setTimeout(() => this.pausingGames.delete(gameId), 2000);
+    }
+
+    if (game.installPath && fs.existsSync(game.installPath)) {
+      try {
+        fs.rmSync(game.installPath, { recursive: true, force: true });
+      } catch (e) {
+        log.warn(`Failed to remove install folder for ${gameId}:`, e);
+      }
+    }
+
+    db.removeDownloadState(gameId);
+    db.setGameStatus(gameId, "uninstalled", {
+      statusText: undefined,
+    });
+
+    this.broadcastProgress({
+      gameId,
+      progress: 0,
+      downloadedBytes: 0,
+      totalBytes: 0,
+      status: "uninstalled",
+    });
+
+    log.info(`Canceled download for ${gameId}`);
+    return true;
+  }
+
+  private async fetchLatestDownloadUrl(gameId: string, token: string): Promise<string | null> {
+    try {
+      const platformParam = process.platform === "win32" ? "WINDOWS" : "LINUX";
+      const response = await fetch(`https://play.lazplay.tech/api/v1/library?platform=${platformParam}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        log.warn(`Failed to refresh download URL (${response.status}): ${text}`);
+        return null;
+      }
+
+      const data = await response.json();
+      const items: any[] = data.data || data.items || (Array.isArray(data) ? data : []);
+      const entry = items.find((item: any) => {
+        const itemId = String(item.gameId || item.id || item.game?.id || "");
+        return itemId === gameId;
+      });
+
+      if (!entry) return null;
+      const game = entry.game || entry;
+      return game.downloadUrl || game.buildUrl || entry.downloadUrl || entry.buildUrl || null;
+    } catch (error: any) {
+      log.warn(`Failed to refresh download URL for ${gameId}:`, error);
+      return null;
+    }
+  }
+
 
   async repairGame(gameId: string, token: string) {
     const game = db.getGame(gameId);

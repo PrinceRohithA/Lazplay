@@ -141,6 +141,16 @@ export default function Library() {
                       <><Download size={14} /> Install Game</>
                     )}
                   </button>
+
+                    {heroGame.status === "paused" && (
+                      <button
+                        onClick={() => window.lazplayAPI.cancelDownload(heroGame.id)}
+                        className="p-2 bg-error-container/10 border border-error/20 rounded-lg hover:bg-error-container/20 hover:border-error text-error transition-all"
+                        title="Delete paused download"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   
                   {heroGame.status === "installed" && !heroGame.isRunning && (
                     <>
