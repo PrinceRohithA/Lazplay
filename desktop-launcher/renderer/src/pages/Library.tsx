@@ -90,7 +90,7 @@ export default function Library() {
           <div className="absolute bottom-0 left-0 p-8 w-full flex items-center justify-between">
             <div className="flex gap-6 items-center max-w-3xl">
               {/* Game Cover in Hero */}
-              <div className="w-24 aspect-[3/4] bg-[#0D1410]/40 border border-brand-500/10 rounded-xl hidden md:block shrink-0 relative overflow-hidden shadow-lg">
+              <div className="w-24 aspect-[3/4] bg-zinc-900/40 border border-brand-500/10 rounded-xl hidden md:block shrink-0 relative overflow-hidden shadow-lg">
                 {heroGame.coverUrl ? (
                    <img src={heroGame.coverUrl} className="w-full h-full object-cover" alt="" />
                 ) : (
@@ -100,7 +100,7 @@ export default function Library() {
  
               <div className="flex flex-col gap-2">
                 <h2 className="font-headline-xl text-3xl text-on-surface uppercase glow-text-primary drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] font-bold">{heroGame.title}</h2>
-                <div className="flex items-center gap-4 text-xs font-sans text-slate-300 bg-[#0D1410]/40 border border-brand-500/10 px-3.5 py-1.5 rounded-lg w-fit">
+                <div className="flex items-center gap-4 text-xs font-sans text-slate-300 bg-zinc-900/40 border border-brand-500/10 px-3.5 py-1.5 rounded-lg w-fit">
                   <span className="flex items-center gap-1.5">
                     <Clock size={13} className="text-primary" />
                     {heroGame.playtime ? Math.round(heroGame.playtime / 3600) + " Hours" : "Never Played"}
@@ -122,7 +122,7 @@ export default function Library() {
                           ? "bg-brand-500 text-slate-950 hover:bg-brand-500/80 shadow-[0_0_15px_rgba(57,255,136,0.12)]"
                           : heroGame.status === "paused"
                             ? "bg-amber-500 text-slate-950 hover:bg-amber-500/80"
-                            : "bg-[#0D1410]/40 border border-brand-500/20 text-slate-200 hover:border-brand-500/50"
+                            : "bg-zinc-900/40 border border-brand-500/20 text-slate-200 hover:border-brand-500/50"
                     }`}
                   >
                     {heroGame.isRunning ? (
@@ -142,7 +142,7 @@ export default function Library() {
                     <>
                       <button 
                         onClick={() => window.lazplayAPI.openInstallFolder(heroGame.id)}
-                        className="p-2 bg-[#0D1410]/40 border border-brand-500/10 rounded-lg hover:border-brand-500/40 text-slate-400 hover:text-primary transition-all"
+                        className="p-2 bg-zinc-900/40 border border-brand-500/10 rounded-lg hover:border-brand-500/40 text-slate-400 hover:text-brand-500 transition-all"
                         title="Open Directory"
                       >
                         <FolderOpen size={16} />
@@ -164,7 +164,7 @@ export default function Library() {
       )}
 
       {/* Library Controls */}
-      <div className="px-6 py-3 border-b border-brand-500/10 bg-[#070B07]/40 z-10">
+      <div className="px-6 py-3 border-b border-brand-500/10 bg-black/40 z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-8">
             <h1 className="font-label-mono text-xs font-bold text-primary flex items-center gap-2 uppercase tracking-widest">
@@ -187,7 +187,7 @@ export default function Library() {
           </div>
  
           <div className="flex items-center gap-3">
-            <div className="relative group flex items-center bg-[#0B120D] border border-brand-500/12 focus-within:border-brand-500/60 rounded-lg transition-all focus-within:shadow-[0_0_12px_rgba(57,255,136,0.12)]">
+            <div className="relative group flex items-center bg-zinc-950 border border-brand-500/12 focus-within:border-brand-500/60 rounded-lg transition-all focus-within:shadow-[0_0_12px_rgba(var(--primary-rgb),0.12)]">
               <span className="absolute left-3 text-slate-500 group-focus-within:text-brand-500 transition-colors"><Search size={13} /></span>
               <input 
                 type="text" 
@@ -200,13 +200,13 @@ export default function Library() {
             <button
               onClick={handleSync}
               disabled={isSyncing}
-              className="p-2 bg-[#0B120D] border border-brand-500/12 rounded-lg hover:border-brand-500/40 text-slate-400 hover:text-primary transition-all disabled:opacity-50"
+              className="p-2 bg-zinc-950 border border-brand-500/12 rounded-lg hover:border-brand-500/40 text-slate-400 hover:text-brand-500 transition-all disabled:opacity-50"
             >
               <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
             </button>
-            <div className="flex bg-[#0B120D] border border-brand-500/12 rounded-lg p-0.5">
-              <button onClick={() => setViewMode("grid")} className={`p-1.5 rounded-md ${viewMode === "grid" ? "bg-[#0D1410] text-primary" : "text-slate-400 hover:text-slate-200"}`}><LayoutGrid size={14} /></button>
-              <button onClick={() => setViewMode("list")} className={`p-1.5 rounded-md ${viewMode === "list" ? "bg-[#0D1410] text-primary" : "text-slate-400 hover:text-slate-200"}`}><List size={14} /></button>
+            <div className="flex bg-zinc-950 border border-brand-500/12 rounded-lg p-0.5">
+              <button onClick={() => setViewMode("grid")} className={`p-1.5 rounded-md ${viewMode === "grid" ? "bg-zinc-900 text-brand-500" : "text-slate-400 hover:text-slate-200"}`}><LayoutGrid size={14} /></button>
+              <button onClick={() => setViewMode("list")} className={`p-1.5 rounded-md ${viewMode === "list" ? "bg-zinc-900 text-brand-500" : "text-slate-400 hover:text-slate-200"}`}><List size={14} /></button>
             </div>
           </div>
         </div>
@@ -223,7 +223,7 @@ export default function Library() {
  
         {isEmpty ? (
           <div className="flex flex-col items-center justify-center h-full text-on-surface-variant gap-6 relative z-10">
-            <div className="p-6 bg-[#0D1410]/30 pixel-border rounded-2xl">
+            <div className="p-6 bg-zinc-900/30 pixel-border rounded-2xl">
               <LogIn size={40} className="text-primary opacity-50" />
             </div>
             <div className="text-center max-w-sm">
@@ -233,7 +233,7 @@ export default function Library() {
             <button
               onClick={handleSync}
               disabled={isSyncing}
-              className="px-6 py-3 bg-brand-500 hover:bg-brand-500/80 active:scale-[0.98] text-slate-950 rounded-lg font-sans font-bold text-sm tracking-wide shadow-[0_0_15px_rgba(57,255,136,0.12)] transition-all flex items-center gap-2"
+              className="px-6 py-3 bg-brand-500 hover:bg-brand-500/80 active:scale-[0.98] text-slate-950 rounded-lg font-sans font-bold text-sm tracking-wide shadow-[0_0_15px_rgba(var(--primary-rgb),0.12)] transition-all flex items-center gap-2"
             >
               <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
               {isSyncing ? "Syncing..." : "Sync Library"}
@@ -280,11 +280,11 @@ function GameCard({ game, isSelected, onSelect, onAction, onUninstall }: { game:
   return (
     <div 
       onClick={onSelect}
-      className={`group relative flex flex-col bg-[#0D1410]/30 pixel-border overflow-hidden transition-all duration-300 cursor-pointer rounded-2xl hover:scale-[1.02] shadow-[0_8px_24px_rgba(0,0,0,0.5)] ${
-        isSelected ? "border-brand-500 shadow-[0_0_15px_rgba(57,255,136,0.08)]" : "border-brand-500/10 hover:border-brand-500/35"
+      className={`group relative flex flex-col bg-zinc-900/30 pixel-border overflow-hidden transition-all duration-300 cursor-pointer rounded-2xl hover:scale-[1.02] shadow-[0_8px_24px_rgba(0,0,0,0.5)] ${
+        isSelected ? "border-brand-500 shadow-[0_0_15px_rgba(var(--primary-rgb),0.08)]" : "border-brand-500/10 hover:border-brand-500/35"
       }`}
     >
-      <div className="aspect-[3/4] bg-[#0B120D] relative overflow-hidden">
+      <div className="aspect-[3/4] bg-black relative overflow-hidden">
         {game.coverUrl ? (
           <img src={game.coverUrl} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt="" />
         ) : (
@@ -310,7 +310,7 @@ function GameCard({ game, isSelected, onSelect, onAction, onUninstall }: { game:
                 ? "bg-secondary text-slate-950" 
                 : game.isRunning
                   ? "bg-secondary text-slate-950"
-                  : "bg-brand-500 text-slate-950 hover:bg-brand-500/80 shadow-[0_0_12px_rgba(57,255,136,0.12)]"
+                  : "bg-brand-500 text-slate-950 hover:bg-brand-500/80 shadow-[0_0_12px_rgba(var(--primary-rgb),0.12)]"
             }`}
           >
             {!game.isOwned ? <Gamepad2 size={14} /> : (game.status === "downloading" || game.isRunning) ? <RefreshCw size={14} className="animate-spin" /> : game.status === "installed" ? <Play size={14} fill="currentColor" /> : <Download size={14} />}
@@ -321,7 +321,7 @@ function GameCard({ game, isSelected, onSelect, onAction, onUninstall }: { game:
             <div className="flex w-full gap-2 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-[50ms]">
                <button 
                  onClick={(e) => { e.stopPropagation(); window.lazplayAPI.openInstallFolder(game.id); }}
-                 className="flex-1 py-2 bg-[#0D1410]/60 hover:bg-[#0D1410] border border-brand-500/10 hover:border-brand-500/30 text-slate-300 rounded-lg font-sans text-[10px] font-medium flex items-center justify-center gap-1 transition-colors"
+                 className="flex-1 py-2 bg-zinc-900/60 hover:bg-zinc-900 border border-brand-500/10 hover:border-brand-500/30 text-slate-300 rounded-lg font-sans text-[10px] font-medium flex items-center justify-center gap-1 transition-colors"
                  title="Open Directory"
                >
                  <FolderOpen size={12} /> Folder
@@ -337,7 +337,7 @@ function GameCard({ game, isSelected, onSelect, onAction, onUninstall }: { game:
           )}
         </div>
       </div>
-      <div className="p-3.5 bg-[#0D1410]/20 border-t border-brand-500/5">
+      <div className="p-3.5 bg-zinc-900/20 border-t border-brand-500/5">
         <h3 className={`font-sans font-bold text-xs truncate mb-2 uppercase tracking-wide transition-colors ${isSelected ? "text-brand-500" : "text-slate-200 group-hover:text-brand-500"}`}>{game.title}</h3>
         <div className="flex items-center justify-between text-[10px] text-slate-400 font-sans">
           <div className="flex items-center gap-3">
@@ -364,10 +364,10 @@ function GameListRow({ game, isSelected, onSelect, onAction, onUninstall }: { ga
     <div 
       onClick={onSelect}
       className={`flex items-center gap-4 p-3.5 pixel-border border transition-all cursor-pointer rounded-xl group ${
-        isSelected ? "bg-[#0D1410]/50 border-brand-500 shadow-[0_0_15px_rgba(57,255,136,0.06)]" : "bg-[#0D1410]/25 border-brand-500/10 hover:border-brand-500/30"
+        isSelected ? "bg-zinc-900/50 border-brand-500 shadow-[0_0_15px_rgba(var(--primary-rgb),0.06)]" : "bg-zinc-900/25 border-brand-500/10 hover:border-brand-500/30"
       }`}
     >
-      <div className="w-12 h-16 bg-[#0B120D] overflow-hidden shrink-0 border border-brand-500/10 rounded-lg relative">
+      <div className="w-12 h-16 bg-black overflow-hidden shrink-0 border border-brand-500/10 rounded-lg relative">
         {game.coverUrl ? <img src={game.coverUrl} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full flex items-center justify-center bg-surface-container"><Gamepad2 size={16} className="text-slate-500 opacity-50" /></div>}
       </div>
       <div className="flex-1 min-w-0">
@@ -401,7 +401,7 @@ function GameListRow({ game, isSelected, onSelect, onAction, onUninstall }: { ga
           <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
             <button 
               onClick={(e) => { e.stopPropagation(); window.lazplayAPI.openInstallFolder(game.id); }}
-              className="p-2 bg-[#0D1410]/50 hover:bg-[#0D1410] border border-brand-500/10 hover:border-brand-500/40 text-slate-400 hover:text-brand-500 rounded-lg transition-colors"
+              className="p-2 bg-zinc-900/50 hover:bg-zinc-900 border border-brand-500/10 hover:border-brand-500/40 text-slate-400 hover:text-brand-500 rounded-lg transition-colors"
               title="Open Directory"
             >
               <FolderOpen size={16} />
@@ -422,7 +422,7 @@ function GameListRow({ game, isSelected, onSelect, onAction, onUninstall }: { ga
               ? "bg-secondary text-slate-950"
               : !game.isOwned 
                 ? "bg-secondary text-slate-950" 
-                : "bg-brand-500 text-slate-950 hover:bg-brand-500/80 shadow-[0_0_12px_rgba(57,255,136,0.1)]"
+                : "bg-brand-500 text-slate-950 hover:bg-brand-500/80 shadow-[0_0_12px_rgba(var(--primary-rgb),0.1)]"
           }`}
         >
           {game.isRunning ? "Running" : !game.isOwned ? "Claim" : game.status === "installed" ? "Play" : "Install"}

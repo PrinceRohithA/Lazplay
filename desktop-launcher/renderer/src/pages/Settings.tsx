@@ -58,7 +58,7 @@ export const applyThemeColor = (primary: string, secondary: string) => {
   root.style.setProperty("--on-secondary-fixed", adjustColorBrightness(secondary, -90));
   root.style.setProperty("--on-secondary-fixed-variant", adjustColorBrightness(secondary, -20));
 
-  // 3. Tertiary Scales (Dynamic transition based on primary/secondary)
+  // 3. Tertiary Scales
   const tertiary = adjustColorBrightness(primary, 80);
   root.style.setProperty("--tertiary", tertiary);
   root.style.setProperty("--tertiary-container", primary);
@@ -72,21 +72,30 @@ export const applyThemeColor = (primary: string, secondary: string) => {
   root.style.setProperty("--outline", primary);
   root.style.setProperty("--outline-variant", primary);
 
-  // 5. Surfacing & Backgrounds (Dynamically tinted with the primary hue for high premium glassmorphism)
+  // 5. Surfacing & Backgrounds (Neutral Grayscale Dark Theme for extreme minimalism)
   const savedDarkness = Number(localStorage.getItem("lazplay-launcher-bg-darkness") || "93");
-  const baseSurface = adjustColorBrightness(primary, -savedDarkness);
+  const brightnessPercent = 100 - savedDarkness; // e.g. 93% dark = 7% bright
+  const baseValue = Math.max(2, Math.round((brightnessPercent / 100) * 80)); // scale from ~2 to 80
+  
+  const rgbString = (val: number) => {
+    const clamp = Math.max(0, Math.min(255, val));
+    const hex = clamp.toString(16).padStart(2, "0");
+    return `#${hex}${hex}${hex}`;
+  };
+
+  const baseSurface = rgbString(baseValue);
   root.style.setProperty("--surface", baseSurface);
   root.style.setProperty("--bg-primary-dark", baseSurface);
-  root.style.setProperty("--surface-container", adjustColorBrightness(primary, -Math.max(50, savedDarkness - 7)));
-  root.style.setProperty("--surface-container-low", adjustColorBrightness(primary, -Math.max(50, savedDarkness - 4)));
-  root.style.setProperty("--surface-container-high", adjustColorBrightness(primary, -Math.max(50, savedDarkness - 10)));
-  root.style.setProperty("--surface-container-highest", adjustColorBrightness(primary, -Math.max(50, savedDarkness - 13)));
-  root.style.setProperty("--surface-container-lowest", adjustColorBrightness(primary, -Math.min(99, savedDarkness + 3)));
+  root.style.setProperty("--surface-container", rgbString(baseValue + 6));
+  root.style.setProperty("--surface-container-low", rgbString(baseValue + 3));
+  root.style.setProperty("--surface-container-high", rgbString(baseValue + 10));
+  root.style.setProperty("--surface-container-highest", rgbString(baseValue + 15));
+  root.style.setProperty("--surface-container-lowest", rgbString(Math.max(0, baseValue - 3)));
   root.style.setProperty("--surface-dim", baseSurface);
-  root.style.setProperty("--surface-bright", adjustColorBrightness(primary, -Math.max(50, savedDarkness - 18)));
-  root.style.setProperty("--surface-variant", adjustColorBrightness(primary, -Math.max(50, savedDarkness - 13)));
+  root.style.setProperty("--surface-bright", rgbString(baseValue + 20));
+  root.style.setProperty("--surface-variant", rgbString(baseValue + 12));
   root.style.setProperty("--on-surface", "#ffffff");
-  root.style.setProperty("--on-surface-variant", adjustColorBrightness(primary, 75));
+  root.style.setProperty("--on-surface-variant", "#a1a1aa");
 
   // 6. Inverses & Slate Overrides
   root.style.setProperty("--inverse-surface", "#e5e2e1");
@@ -106,14 +115,14 @@ export const applyThemeColor = (primary: string, secondary: string) => {
 };
 
 export default function Settings() {
-  const [primaryColor, setPrimaryColor] = useState("#39ff14");
-  const [secondaryColor, setSecondaryColor] = useState("#ffabf3");
+  const [primaryColor, setPrimaryColor] = useState("#a3e635");
+  const [secondaryColor, setSecondaryColor] = useState("#bef264");
   const [darkness, setDarkness] = useState(93);
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
-    const savedPrimary = localStorage.getItem("lazplay-launcher-color") || "#39ff14";
-    const savedSecondary = localStorage.getItem("lazplay-launcher-secondary") || "#ffabf3";
+    const savedPrimary = localStorage.getItem("lazplay-launcher-color") || "#a3e635";
+    const savedSecondary = localStorage.getItem("lazplay-launcher-secondary") || "#bef264";
     const savedDarkness = Number(localStorage.getItem("lazplay-launcher-bg-darkness") || "93");
     setPrimaryColor(savedPrimary);
     setSecondaryColor(savedSecondary);
@@ -143,6 +152,7 @@ export default function Settings() {
   };
 
   const presetColors = [
+    { name: "LIME_MINIMAL", hex: "#a3e635" },
     { name: "NEON_GREEN", hex: "#39ff14" },
     { name: "CYBER_PINK", hex: "#fe00fe" },
     { name: "RETRO_CYAN", hex: "#00f6f6" },

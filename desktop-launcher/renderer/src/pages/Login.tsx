@@ -37,7 +37,7 @@ export default function Login() {
       <div className="relative z-10 w-full max-w-[440px] px-6">
         {/* Logo and Brand Header */}
         <div className="flex flex-col items-center mb-8 select-none">
-          <div className="w-16 h-16 bg-[#0D1410]/40 border border-brand-500/20 rounded-2xl flex items-center justify-center relative shadow-[0_0_20px_rgba(57,255,136,0.06)]">
+          <div className="w-16 h-16 bg-zinc-900/40 border border-brand-500/20 rounded-2xl flex items-center justify-center relative shadow-[0_0_20px_rgba(var(--primary-rgb),0.06)]">
             <Gamepad2 size={30} className="text-primary drop-shadow-[0_0_8px_var(--primary)]" />
           </div>
           <h1 className="mt-5 text-3xl font-headline-xl text-on-surface uppercase tracking-wider font-bold glow-text-primary">
@@ -49,7 +49,7 @@ export default function Login() {
         </div>
 
         {/* Login Card */}
-        <div className="bg-[#0D1410]/30 pixel-border p-8 relative">
+        <div className="bg-zinc-950/30 pixel-border p-8 relative">
           {/* Subtle neon glowing accent bar */}
           <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
 
@@ -68,7 +68,7 @@ export default function Login() {
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   disabled={loading}
-                  className="w-full bg-[#0B120D] border border-brand-500/12 focus:border-brand-500/60 rounded-lg py-3.5 pl-11 pr-4 text-sm text-slate-200 transition-all outline-none focus:shadow-[0_0_12px_rgba(57,255,136,0.12)] font-sans"
+                  className="w-full bg-black/40 border border-brand-500/12 focus:border-brand-500/60 rounded-lg py-3.5 pl-11 pr-4 text-sm text-slate-200 transition-all outline-none focus:shadow-[0_0_12px_rgba(var(--primary-rgb),0.12)] font-sans"
                   required
                 />
               </div>
@@ -88,7 +88,7 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
-                  className="w-full bg-[#0B120D] border border-brand-500/12 focus:border-brand-500/60 rounded-lg py-3.5 pl-11 pr-4 text-sm text-slate-200 transition-all outline-none focus:shadow-[0_0_12px_rgba(57,255,136,0.12)] font-sans"
+                  className="w-full bg-black/40 border border-brand-500/12 focus:border-brand-500/60 rounded-lg py-3.5 pl-11 pr-4 text-sm text-slate-200 transition-all outline-none focus:shadow-[0_0_12px_rgba(var(--primary-rgb),0.12)] font-sans"
                   required
                 />
               </div>
@@ -106,7 +106,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="relative w-full py-3.5 px-4 bg-brand-500 text-slate-950 hover:bg-brand-500/80 active:scale-[0.98] rounded-lg font-sans font-bold text-sm tracking-wide shadow-[0_0_15px_rgba(57,255,136,0.12)] transition-all flex items-center justify-center gap-2 select-none"
+              className="relative w-full py-3.5 px-4 bg-brand-500 text-slate-950 hover:bg-brand-500/80 active:scale-[0.98] rounded-lg font-sans font-bold text-sm tracking-wide shadow-[0_0_15px_rgba(var(--primary-rgb),0.12)] transition-all flex items-center justify-center gap-2 select-none"
             >
               {loading ? (
                 <>

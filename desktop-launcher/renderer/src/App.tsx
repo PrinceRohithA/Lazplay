@@ -25,9 +25,9 @@ function App() {
   } | null>(null);
 
   useEffect(() => {
-    // Apply saved colors or default storefront NEON_GREEN on startup
-    const savedPrimary = localStorage.getItem("lazplay-launcher-color") || "#39ff14";
-    const savedSecondary = localStorage.getItem("lazplay-launcher-secondary") || "#ffabf3";
+    // Apply saved colors or default storefront LIME_MINIMAL on startup
+    const savedPrimary = localStorage.getItem("lazplay-launcher-color") || "#a3e635";
+    const savedSecondary = localStorage.getItem("lazplay-launcher-secondary") || "#bef264";
     applyThemeColor(savedPrimary, savedSecondary);
   }, []);
 
