@@ -1,1 +1,51 @@
-"use strict";const n=require("electron");n.contextBridge.exposeInMainWorld("lazplayAPI",{installGame:(e,r)=>n.ipcRenderer.invoke("install-game",e,r),launchGame:e=>n.ipcRenderer.invoke("launch-game",e),uninstallGame:e=>n.ipcRenderer.invoke("uninstall-game",e),setGameEntrypoint:(e,r)=>n.ipcRenderer.invoke("set-game-entrypoint",e,r),pauseDownload:e=>n.ipcRenderer.invoke("pause-download",e),resumeDownload:e=>n.ipcRenderer.invoke("resume-download",e),getDownloadProgress:e=>n.ipcRenderer.invoke("get-download-progress",e),getInstalledGames:()=>n.ipcRenderer.invoke("get-installed-games"),getRunningGames:()=>n.ipcRenderer.invoke("get-running-games"),getDiskUsage:()=>n.ipcRenderer.invoke("get-disk-usage"),openInstallFolder:e=>n.ipcRenderer.invoke("open-install-folder",e),setStoreVisibility:e=>n.ipcRenderer.invoke("set-store-visibility",e),navigateStorePath:e=>n.ipcRenderer.invoke("navigate-store-path",e),syncRemoteLibrary:()=>n.ipcRenderer.invoke("sync-remote-library"),claimGame:e=>n.ipcRenderer.invoke("claim-game",e),checkAuth:()=>n.ipcRenderer.invoke("check-auth"),getAccessToken:()=>n.ipcRenderer.invoke("get-access-token"),saveSession:(e,r)=>n.ipcRenderer.invoke("sync-session",{token:e,refreshToken:r}),clearSession:()=>n.ipcRenderer.invoke("clear-session"),onDeepLink:e=>{n.ipcRenderer.on("deep-link",(r,i)=>e(i))},onDownloadProgress:e=>{n.ipcRenderer.on("download-progress",(r,i)=>e(i))},onGameStateChange:e=>{n.ipcRenderer.on("game-state-change",(r,i)=>e(i))},onRequestEntrypoint:e=>{n.ipcRenderer.on("request-entrypoint",(r,i)=>e(i))},onSessionUpdated:e=>{n.ipcRenderer.on("session-updated",(r,i)=>e(i))},selectFolder:()=>n.ipcRenderer.invoke("select-folder"),uploadBuildDirectory:e=>n.ipcRenderer.invoke("upload-build-directory",e),onUploadProgress:e=>{const r=(i,o)=>e(o);return n.ipcRenderer.on("upload-progress",r),()=>n.ipcRenderer.removeListener("upload-progress",r)}});
+"use strict";
+const electron = require("electron");
+electron.contextBridge.exposeInMainWorld("lazplayAPI", {
+  // Game operations
+  installGame: (gameId, options) => electron.ipcRenderer.invoke("install-game", gameId, options),
+  launchGame: (gameId) => electron.ipcRenderer.invoke("launch-game", gameId),
+  uninstallGame: (gameId) => electron.ipcRenderer.invoke("uninstall-game", gameId),
+  setGameEntrypoint: (gameId, entrypoint) => electron.ipcRenderer.invoke("set-game-entrypoint", gameId, entrypoint),
+  // Download operations
+  pauseDownload: (gameId) => electron.ipcRenderer.invoke("pause-download", gameId),
+  resumeDownload: (gameId) => electron.ipcRenderer.invoke("resume-download", gameId),
+  getDownloadProgress: (gameId) => electron.ipcRenderer.invoke("get-download-progress", gameId),
+  // Status and System
+  getInstalledGames: () => electron.ipcRenderer.invoke("get-installed-games"),
+  getRunningGames: () => electron.ipcRenderer.invoke("get-running-games"),
+  getDiskUsage: () => electron.ipcRenderer.invoke("get-disk-usage"),
+  openInstallFolder: (gameId) => electron.ipcRenderer.invoke("open-install-folder", gameId),
+  setStoreVisibility: (visible) => electron.ipcRenderer.invoke("set-store-visibility", visible),
+  navigateStorePath: (path) => electron.ipcRenderer.invoke("navigate-store-path", path),
+  syncRemoteLibrary: () => electron.ipcRenderer.invoke("sync-remote-library"),
+  claimGame: (gameId) => electron.ipcRenderer.invoke("claim-game", gameId),
+  // Auth Operations
+  checkAuth: () => electron.ipcRenderer.invoke("check-auth"),
+  getAccessToken: () => electron.ipcRenderer.invoke("get-access-token"),
+  saveSession: (token, refreshToken) => electron.ipcRenderer.invoke("sync-session", { token, refreshToken }),
+  clearSession: () => electron.ipcRenderer.invoke("clear-session"),
+  // UI Communications
+  onDeepLink: (callback) => {
+    electron.ipcRenderer.on("deep-link", (_event, url) => callback(url));
+  },
+  onDownloadProgress: (callback) => {
+    electron.ipcRenderer.on("download-progress", (_event, data) => callback(data));
+  },
+  onGameStateChange: (callback) => {
+    electron.ipcRenderer.on("game-state-change", (_event, data) => callback(data));
+  },
+  onRequestEntrypoint: (callback) => {
+    electron.ipcRenderer.on("request-entrypoint", (_event, data) => callback(data));
+  },
+  onSessionUpdated: (callback) => {
+    electron.ipcRenderer.on("session-updated", (_event, data) => callback(data));
+  },
+  // Creator Workspace Chunked Upload pipeline
+  selectFolder: () => electron.ipcRenderer.invoke("select-folder"),
+  uploadBuildDirectory: (params) => electron.ipcRenderer.invoke("upload-build-directory", params),
+  onUploadProgress: (callback) => {
+    const handler = (_event, data) => callback(data);
+    electron.ipcRenderer.on("upload-progress", handler);
+    return () => electron.ipcRenderer.removeListener("upload-progress", handler);
+  }
+});
