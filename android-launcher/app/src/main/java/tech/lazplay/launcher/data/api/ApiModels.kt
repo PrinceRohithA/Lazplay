@@ -56,6 +56,10 @@ data class ClaimGameRequest(
     @SerializedName("gameId") val gameId: String,
 )
 
+data class RefreshRequest(
+    @SerializedName("refreshToken") val refreshToken: String,
+)
+
 data class ChunkDownloadUrlsRequest(
     val hashes: List<String>,
 )

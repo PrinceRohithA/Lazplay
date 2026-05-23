@@ -12,6 +12,8 @@ export default function DownloadLauncher() {
       setDetectedOS('macOS');
     } else if (userAgent.includes('linux')) {
       setDetectedOS('Linux');
+    } else if (userAgent.includes('android')) {
+      setDetectedOS('Android');
     }
   }, []);
 
@@ -61,20 +63,39 @@ export default function DownloadLauncher() {
             </div>
 
             {/* Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
               <a
                 href="https://media.lazplay.tech/launcher_builds/windows_launcher_v1.0.0/LazPlay-Windows-1.0.0-Setup.zip"
-                className="bg-[#a3e635] hover:bg-[#bef264] text-black font-semibold px-8 py-4 rounded transition-all duration-300 flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(163,230,53,0.15)] hover:shadow-[0_0_25px_rgba(163,230,53,0.35)] hover:-translate-y-0.5 active:translate-y-0 font-sans"
+                className={`${
+                  detectedOS === 'Windows'
+                    ? 'bg-[#a3e635] hover:bg-[#bef264] text-black shadow-[0_0_20px_rgba(163,230,53,0.15)] hover:shadow-[0_0_25px_rgba(163,230,53,0.35)] font-bold'
+                    : 'border border-[#27272a] hover:border-[#a3e635] bg-transparent text-white hover:text-black hover:bg-[#a3e635] font-semibold'
+                } px-6 py-4 rounded transition-all duration-300 flex items-center justify-center gap-3 hover:-translate-y-0.5 active:translate-y-0 font-sans`}
               >
                 <span className="material-symbols-outlined font-bold">download</span>
                 Download for Windows
               </a>
               <a
                 href="https://media.lazplay.tech/launcher_builds/windows_launcher_v1.0.0/LazPlay-Linux-1.0.0-Setup.zip"
-                className="border border-[#27272a] hover:border-[#a3e635] bg-transparent text-white hover:text-black hover:bg-[#a3e635] font-semibold px-8 py-4 rounded transition-all duration-300 flex items-center justify-center gap-3 hover:-translate-y-0.5 active:translate-y-0 font-sans"
+                className={`${
+                  detectedOS === 'Linux'
+                    ? 'bg-[#a3e635] hover:bg-[#bef264] text-black shadow-[0_0_20px_rgba(163,230,53,0.15)] hover:shadow-[0_0_25px_rgba(163,230,53,0.35)] font-bold'
+                    : 'border border-[#27272a] hover:border-[#a3e635] bg-transparent text-white hover:text-black hover:bg-[#a3e635] font-semibold'
+                } px-6 py-4 rounded transition-all duration-300 flex items-center justify-center gap-3 hover:-translate-y-0.5 active:translate-y-0 font-sans`}
               >
                 <span className="material-symbols-outlined">terminal</span>
                 Download for Linux
+              </a>
+              <a
+                href="https://media.lazplay.tech/launcher_builds/lazplay-launcher-v1.0.0.apk"
+                className={`${
+                  detectedOS === 'Android'
+                    ? 'bg-[#a3e635] hover:bg-[#bef264] text-black shadow-[0_0_20px_rgba(163,230,53,0.15)] hover:shadow-[0_0_25px_rgba(163,230,53,0.35)] font-bold'
+                    : 'border border-[#27272a] hover:border-[#a3e635] bg-transparent text-white hover:text-black hover:bg-[#a3e635] font-semibold'
+                } px-6 py-4 rounded transition-all duration-300 flex items-center justify-center gap-3 hover:-translate-y-0.5 active:translate-y-0 font-sans`}
+              >
+                <span className="material-symbols-outlined">android</span>
+                Download for Android
               </a>
             </div>
 

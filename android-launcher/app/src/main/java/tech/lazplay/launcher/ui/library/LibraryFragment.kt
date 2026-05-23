@@ -21,6 +21,8 @@ class LibraryFragment : Fragment() {
 
     private val adapter = LibraryAdapter(
         onDownload = { viewModel.download(it) },
+        onPause = { viewModel.pause(it) },
+        onResume = { viewModel.resume(it) },
         onInstall = { viewModel.installDownloaded(it) },
         onDelete = { viewModel.deleteGame(it) },
     )
@@ -41,23 +43,57 @@ class LibraryFragment : Fragment() {
 
         // Tint swipe refresh loader ring
         binding.libraryRefresh.setColorSchemeColors(ThemeManager.getThemeColor())
-
         binding.libraryRefresh.setOnRefreshListener {
             viewModel.refresh()
-            binding.libraryRefresh.isRefreshing = false
         }
 
+        // Observe the games list
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.games.collect { list ->
                     adapter.submitList(list)
-                    binding.libraryEmpty.visibility =
-                        if (list.isEmpty()) View.VISIBLE else View.GONE
                 }
             }
         }
 
-        viewModel.refresh()
+        // Observe UI state for loading/error/empty handling
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { state ->
+                    when (state) {
+                        is LibraryUiState.Loading -> {
+                            binding.libraryRefresh.isRefreshing = true
+                            binding.libraryEmpty.visibility = View.GONE
+                        }
+                        is LibraryUiState.Success -> {
+                            binding.libraryRefresh.isRefreshing = false
+                            // Show empty view only after a successful sync with no results
+                            val isEmpty = adapter.currentList.isEmpty()
+                            binding.libraryEmpty.visibility =
+                                if (isEmpty) View.VISIBLE else View.GONE
+                            if (isEmpty) {
+                                binding.libraryEmpty.text = "No Android games in your library.\nClaim games from the Store tab."
+                            }
+                        }
+                        is LibraryUiState.Error -> {
+                            binding.libraryRefresh.isRefreshing = false
+                            // Show error in the empty view only if there is no data to display
+                            if (adapter.currentList.isEmpty()) {
+                                binding.libraryEmpty.text = state.message
+                                binding.libraryEmpty.visibility = View.VISIBLE
+                            } else {
+                                binding.libraryEmpty.visibility = View.GONE
+                            }
+                        }
+                        is LibraryUiState.NotLoggedIn -> {
+                            binding.libraryRefresh.isRefreshing = false
+                            binding.libraryEmpty.text = "Please log in to view your library."
+                            binding.libraryEmpty.visibility = View.VISIBLE
+                        }
+                    }
+                }
+            }
+        }
     }
 
     override fun onResume() {

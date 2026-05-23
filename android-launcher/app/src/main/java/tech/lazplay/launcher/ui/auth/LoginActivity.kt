@@ -38,6 +38,7 @@ class LoginActivity : AppCompatActivity() {
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
+                ServiceLocator.api.clearCache()
                 ServiceLocator.tokenStore.clear()
                 if (!::binding.isInitialized) {
                     binding = ActivityLoginBinding.inflate(layoutInflater)

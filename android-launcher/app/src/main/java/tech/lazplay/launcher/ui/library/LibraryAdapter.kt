@@ -13,6 +13,8 @@ import tech.lazplay.launcher.ui.theme.ThemeManager
 
 class LibraryAdapter(
     private val onDownload: (InstalledGameEntity) -> Unit,
+    private val onPause: (InstalledGameEntity) -> Unit,
+    private val onResume: (InstalledGameEntity) -> Unit,
     private val onInstall: (InstalledGameEntity) -> Unit,
     private val onDelete: (InstalledGameEntity) -> Unit,
 ) : ListAdapter<InstalledGameEntity, LibraryAdapter.VH>(Diff) {
@@ -51,8 +53,9 @@ class LibraryAdapter(
             }
 
             val status = GameInstallStatus.from(game.status)
+            // Progress bar is visible during downloading or when paused
             binding.progressBar.visibility =
-                if (status == GameInstallStatus.DOWNLOADING) android.view.View.VISIBLE
+                if (status == GameInstallStatus.DOWNLOADING || status == GameInstallStatus.PAUSED) android.view.View.VISIBLE
                 else android.view.View.GONE
 
             // Check dynamically if app is installed and if APK exists
@@ -71,7 +74,8 @@ class LibraryAdapter(
                             game.checksumSha256 != game.latestChecksumSha256
 
             binding.actionButton.text = when {
-                status == GameInstallStatus.DOWNLOADING -> "DOWNLOADING…"
+                status == GameInstallStatus.DOWNLOADING -> "PAUSE"
+                status == GameInstallStatus.PAUSED -> "RESUME"
                 hasUpdate -> "UPDATE"
                 isInstalled -> "PLAY"
                 status == GameInstallStatus.DOWNLOADED -> "INSTALL"
@@ -80,12 +84,16 @@ class LibraryAdapter(
             }
 
             binding.actionButton.isEnabled =
-                status != GameInstallStatus.DOWNLOADING &&
-                    (isInstalled || !game.downloadUrl.isNullOrBlank() || hasUpdate)
+                isInstalled || !game.downloadUrl.isNullOrBlank() || hasUpdate ||
+                status == GameInstallStatus.DOWNLOADING || status == GameInstallStatus.PAUSED
 
-            // Show delete button if APK is cached or app is installed, and not currently downloading
+            val partialFile = java.io.File(java.io.File(binding.root.context.filesDir, "downloads"), "${game.gameId}.apk.partial")
+            val partialExists = partialFile.exists()
+
+            // Show delete button if APK is cached, app is installed, or partial download exists (paused/error), and not currently downloading
             binding.deleteButton.visibility =
-                if ((apkExists || isInstalled) && status != GameInstallStatus.DOWNLOADING) {
+                if ((apkExists || isInstalled || partialExists || status == GameInstallStatus.PAUSED || status == GameInstallStatus.ERROR) &&
+                    status != GameInstallStatus.DOWNLOADING) {
                     android.view.View.VISIBLE
                 } else {
                     android.view.View.GONE
@@ -109,6 +117,8 @@ class LibraryAdapter(
                 } else {
                     when (status) {
                         GameInstallStatus.DOWNLOADED -> onInstall(game)
+                        GameInstallStatus.DOWNLOADING -> onPause(game)
+                        GameInstallStatus.PAUSED -> onResume(game)
                         else -> onDownload(game)
                     }
                 }

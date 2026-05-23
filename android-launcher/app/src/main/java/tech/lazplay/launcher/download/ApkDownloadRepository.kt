@@ -4,6 +4,8 @@ import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import tech.lazplay.launcher.data.api.ApiException
@@ -40,6 +42,20 @@ class ApkDownloadRepository(
             }
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+
+        // Clean up stuck DOWNLOADING states
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val games = dao.getAll()
+                for (game in games) {
+                    if (game.status == GameInstallStatus.DOWNLOADING.name) {
+                        dao.upsert(game.copy(status = GameInstallStatus.PAUSED.name))
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
@@ -162,12 +178,21 @@ class ApkDownloadRepository(
         onProgress: (Int) -> Unit,
     ): File = withContext(Dispatchers.IO) {
         val row = dao.get(gameId) ?: throw ApiException("Game not in library cache")
-        val url = row.downloadUrl ?: throw ApiException("No download URL for this game")
+        var url = row.downloadUrl ?: throw ApiException("No download URL for this game")
 
         val dest = File(downloadDir, "$gameId.apk")
         val partial = File(downloadDir, "$gameId.apk.partial")
 
-        dao.upsert(row.copy(status = GameInstallStatus.DOWNLOADING.name, progress = 0))
+        // Compute/preserve initial progress based on existing bytes in partial file
+        val existingBytesAtStart = if (partial.exists()) partial.length() else 0L
+        val initialTotalSize = row.fileSizeBytes
+        val initialProgress = if (initialTotalSize > 0L) {
+            ((existingBytesAtStart * 100) / initialTotalSize).toInt().coerceIn(0, 100)
+        } else {
+            row.progress
+        }
+
+        dao.upsert(row.copy(status = GameInstallStatus.DOWNLOADING.name, progress = initialProgress))
 
         var attempts = 0
         val maxAttempts = 3
@@ -185,6 +210,22 @@ class ApkDownloadRepository(
                 val request = requestBuilder.get().build()
 
                 client.newCall(request).execute().use { response ->
+                    if (response.code == 403) {
+                        // Refresh download URL from backend library
+                        try {
+                            val items = api.library()
+                            val matching = items.find { it.resolvedGameId() == gameId }
+                            if (matching != null && !matching.downloadUrl.isNullOrBlank()) {
+                                url = matching.downloadUrl
+                                val updatedRow = dao.get(gameId) ?: row
+                                dao.upsert(updatedRow.copy(downloadUrl = url))
+                                throw ApiException("URL_EXPIRED")
+                            }
+                        } catch (refreshEx: Exception) {
+                            refreshEx.printStackTrace()
+                        }
+                    }
+
                     if (response.code != 200 && response.code != 206) {
                         throw ApiException("Download failed: HTTP ${response.code}")
                     }
@@ -218,6 +259,7 @@ class ApkDownloadRepository(
                                     row.copy(
                                         status = GameInstallStatus.DOWNLOADING.name,
                                         progress = pct,
+                                        fileSizeBytes = totalSize,
                                     ),
                                 )
                             }
@@ -237,18 +279,15 @@ class ApkDownloadRepository(
         }
 
         if (!success) {
-            if (partial.exists()) {
-                partial.delete()
-            }
+            // Keep partial download file for future resume attempt
             val tempFile = File(downloadDir, "temp_install.apk")
             if (tempFile.exists()) {
                 tempFile.delete()
             }
 
             dao.upsert(row.copy(
-                status = GameInstallStatus.READY.name,
-                progress = 0,
-                apkPath = null
+                status = GameInstallStatus.ERROR.name,
+                // Preserve current progress in Room
             ))
 
             throw exception ?: ApiException("Download failed after $maxAttempts attempts")

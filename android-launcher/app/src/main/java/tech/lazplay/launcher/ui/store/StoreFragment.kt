@@ -24,6 +24,8 @@ class StoreFragment : Fragment() {
     private var _binding: FragmentStoreBinding? = null
     private val binding get() = _binding!!
     private lateinit var bridge: LazPlayJsBridge
+    private var root: View? = null
+    private var isWebViewInitialized = false
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreateView(
@@ -31,13 +33,20 @@ class StoreFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        _binding = FragmentStoreBinding.inflate(inflater, container, false)
-        return binding.root
+        if (root == null) {
+            _binding = FragmentStoreBinding.inflate(inflater, container, false)
+            root = binding.root
+            setupWebView(savedInstanceState)
+        }
+        return root!!
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+    }
 
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun setupWebView(savedInstanceState: Bundle?) {
         // Dynamically style the horizontal WebView progress bar
         binding.storeProgress.indeterminateTintList = ThemeManager.getThemeColorStateList()
 
@@ -92,6 +101,7 @@ class StoreFragment : Fragment() {
         } else {
             binding.storeWebView.loadUrl(BuildConfig.STORE_URL)
         }
+        isWebViewInitialized = true
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -100,8 +110,16 @@ class StoreFragment : Fragment() {
     }
 
     override fun onDestroyView() {
-        binding.storeWebView.destroy()
-        _binding = null
+        val parent = root?.parent as? ViewGroup
+        parent?.removeView(root)
         super.onDestroyView()
+    }
+
+    override fun onDestroy() {
+        if (isWebViewInitialized) {
+            binding.storeWebView.destroy()
+        }
+        _binding = null
+        super.onDestroy()
     }
 }

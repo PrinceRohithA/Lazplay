@@ -38,14 +38,24 @@ class LazPlayApi(private val tokenStore: TokenStore) {
         return "Bearer $token"
     }
 
+    private var cachedUser: UserDto? = null
+
+    fun clearCache() {
+        cachedUser = null
+    }
+
     suspend fun login(identifier: String, password: String): LoginResponse {
+        clearCache()
         val response = service.login(LoginRequest(identifier.trim(), password))
         return unwrap(response) ?: throw ApiException("Empty login response")
     }
 
     suspend fun me(): UserDto {
+        cachedUser?.let { return it }
         val response = service.me(authHeader())
-        return unwrap(response) ?: throw ApiException("Empty profile response")
+        val user = unwrap(response) ?: throw ApiException("Empty profile response")
+        cachedUser = user
+        return user
     }
 
     suspend fun library(): List<LibraryItemDto> {
@@ -77,6 +87,24 @@ class LazPlayApi(private val tokenStore: TokenStore) {
             throw ApiException(body.error?.message ?: "Request failed")
         }
         return body?.data
+    }
+
+    suspend fun tryRefresh(): Boolean {
+        return try {
+            val refreshToken = tokenStore.getRefreshToken()
+                ?: return false
+            val response = service.refresh(RefreshRequest(refreshToken))
+            if (!response.isSuccessful) return false
+            val body = response.body()
+            if (body?.success == false) return false
+            val data = body?.data ?: return false
+            val newAccess = data.accessToken ?: return false
+            val newRefresh = data.refreshToken ?: return false
+            tokenStore.saveSession(newAccess, newRefresh)
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 
     companion object {

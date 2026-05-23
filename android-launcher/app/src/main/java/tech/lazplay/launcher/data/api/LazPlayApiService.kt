@@ -10,6 +10,9 @@ interface LazPlayApiService {
     @POST("auth/login")
     suspend fun login(@Body body: LoginRequest): Response<ApiEnvelope<LoginResponse>>
 
+    @POST("auth/refresh")
+    suspend fun refresh(@Body body: RefreshRequest): Response<ApiEnvelope<LoginResponse>>
+
     @GET("auth/me")
     suspend fun me(@Header("Authorization") authorization: String): Response<ApiEnvelope<UserDto>>
 

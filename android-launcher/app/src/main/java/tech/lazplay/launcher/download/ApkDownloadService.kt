@@ -30,9 +30,9 @@ class ApkDownloadService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val gameId = intent?.getStringExtra(EXTRA_GAME_ID) ?: return START_NOT_STICKY
-        val title = intent?.getStringExtra(EXTRA_TITLE) ?: gameId
+        val title = intent.getStringExtra(EXTRA_TITLE) ?: gameId
 
-        if (intent?.action == ACTION_CANCEL_DOWNLOAD) {
+        if (intent.action == ACTION_CANCEL_DOWNLOAD) {
             activeJobs[gameId]?.cancel()
             activeJobs.remove(gameId)
 
@@ -60,6 +60,35 @@ class ApkDownloadService : Service() {
             return START_NOT_STICKY
         }
 
+        if (intent.action == ACTION_PAUSE_DOWNLOAD) {
+            activeJobs[gameId]?.cancel()
+            activeJobs.remove(gameId)
+
+            scope.launch {
+                try {
+                    val dao = ServiceLocator.database.installedGameDao()
+                    val row = dao.get(gameId)
+                    if (row != null) {
+                        dao.upsert(row.copy(
+                            status = tech.lazplay.launcher.data.local.GameInstallStatus.PAUSED.name
+                        ))
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                } finally {
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                    stopSelf()
+                }
+            }
+            return START_NOT_STICKY
+        }
+
+        // Avoid triggering duplicate download jobs if one is already active
+        val existingJob = activeJobs[gameId]
+        if (existingJob != null && existingJob.isActive) {
+            return START_NOT_STICKY
+        }
+
         createChannel()
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
             startForeground(
@@ -83,7 +112,7 @@ class ApkDownloadService : Service() {
                     installer.openInstallPermissionSettings()
                 }
             } catch (e: Exception) {
-                // Interruptions or cancellation handled gracefully in downstream repo & cancellation receiver
+                // Interruptions or cancellation handled gracefully in downstream repo
             } finally {
                 activeJobs.remove(gameId)
                 stopForeground(STOP_FOREGROUND_REMOVE)
@@ -120,6 +149,18 @@ class ApkDownloadService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
+        val pauseIntent = Intent(this, ApkDownloadService::class.java).apply {
+            action = ACTION_PAUSE_DOWNLOAD
+            putExtra(EXTRA_GAME_ID, gameId)
+            putExtra(EXTRA_TITLE, title)
+        }
+        val pausePendingIntent = PendingIntent.getService(
+            this,
+            gameId.hashCode() + 1,
+            pauseIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(getString(R.string.downloading_game, title))
@@ -127,6 +168,11 @@ class ApkDownloadService : Service() {
             .setProgress(100, progress, progress == 0)
             .setOngoing(true)
             .setContentIntent(open)
+            .addAction(
+                android.R.drawable.ic_media_pause,
+                "PAUSE",
+                pausePendingIntent
+            )
             .addAction(
                 android.R.drawable.ic_menu_close_clear_cancel,
                 "CANCEL",
@@ -147,9 +193,11 @@ class ApkDownloadService : Service() {
     companion object {
         private const val CHANNEL_ID = "lazplay_downloads"
         private const val NOTIFICATION_ID = 1001
-        private const val EXTRA_GAME_ID = "game_id"
-        private const val EXTRA_TITLE = "title"
-        private const val ACTION_CANCEL_DOWNLOAD = "tech.lazplay.launcher.ACTION_CANCEL_DOWNLOAD"
+        
+        const val EXTRA_GAME_ID = "game_id"
+        const val EXTRA_TITLE = "title"
+        const val ACTION_CANCEL_DOWNLOAD = "tech.lazplay.launcher.ACTION_CANCEL_DOWNLOAD"
+        const val ACTION_PAUSE_DOWNLOAD = "tech.lazplay.launcher.ACTION_PAUSE_DOWNLOAD"
 
         fun start(context: Context, gameId: String, title: String) {
             val intent = Intent(context, ApkDownloadService::class.java).apply {
@@ -159,4 +207,5 @@ class ApkDownloadService : Service() {
             context.startForegroundService(intent)
         }
     }
+
 }
