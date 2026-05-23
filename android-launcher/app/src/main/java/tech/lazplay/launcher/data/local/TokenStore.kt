@@ -30,10 +30,20 @@ class TokenStore(context: Context) {
         prefs.edit().putString(KEY_THEME_COLOR, colorHex).apply()
     }
 
+    /** Values: "SYSTEM", "LIGHT", "DARK" — defaults to "SYSTEM" */
+    fun getDarkMode(): String = prefs.getString(KEY_DARK_MODE, "SYSTEM") ?: "SYSTEM"
+
+    fun saveDarkMode(mode: String) {
+        prefs.edit().putString(KEY_DARK_MODE, mode).apply()
+    }
+
     fun clear() {
-        // Retain the theme when logging out to keep preferred branding
         val currentTheme = getThemeColor()
-        prefs.edit().clear().putString(KEY_THEME_COLOR, currentTheme).apply()
+        val currentMode = getDarkMode()
+        prefs.edit().clear()
+            .putString(KEY_THEME_COLOR, currentTheme)
+            .putString(KEY_DARK_MODE, currentMode)
+            .apply()
     }
 
     fun hasSession(): Boolean = getAccessToken() != null
@@ -43,5 +53,6 @@ class TokenStore(context: Context) {
         private const val KEY_ACCESS = "access_token"
         private const val KEY_REFRESH = "refresh_token"
         private const val KEY_THEME_COLOR = "theme_color"
+        private const val KEY_DARK_MODE = "dark_mode"
     }
 }

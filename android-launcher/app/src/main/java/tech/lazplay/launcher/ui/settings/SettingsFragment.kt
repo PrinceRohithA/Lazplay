@@ -34,6 +34,7 @@ class SettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Load profile info
         lifecycleScope.launch {
             try {
                 val user = ServiceLocator.api.me()
@@ -45,6 +46,7 @@ class SettingsFragment : Fragment() {
             }
         }
 
+        // Logout
         binding.logoutButton.setOnClickListener {
             lifecycleScope.launch {
                 try {
@@ -61,33 +63,46 @@ class SettingsFragment : Fragment() {
             }
         }
 
-        // Initialize Theme Color Preset Selectors
-        setupColorPresets()
-        updateColorPickers()
-        
-        // Dynamically load the cached APKs
+        // Theme toggle
+        setupThemeToggle()
+
+        // Apply accent styling
+        applyAccentColors()
+
+        // Load cached APKs
         loadCacheList()
     }
 
-    private fun setupColorPresets() {
-        val presets = mapOf(
-            binding.colorNeonGreen to "#39ff14",
-            binding.colorCyberPink to "#fe00fe",
-            binding.colorRetroCyan to "#00f6f6",
-            binding.colorPlasmaPurple to "#9d00ff",
-            binding.colorLaserRed to "#ff0000",
-            binding.colorGoldenEye to "#ffcc00"
-        )
+    // ── Theme Toggle ──────────────────────────────────────────────────────────
 
-        for ((card, hexColor) in presets) {
-            card.setOnClickListener {
-                ServiceLocator.tokenStore.saveThemeColor(hexColor)
-                updateColorPickers()
-                // Reload list to apply new stroke styling
-                loadCacheList()
+    private fun setupThemeToggle() {
+        // Reflect the current saved mode
+        val currentMode = ServiceLocator.tokenStore.getDarkMode()
+        val chipToCheck = when (currentMode) {
+            "LIGHT"  -> binding.chipLight
+            "DARK"   -> binding.chipDark
+            else     -> binding.chipSystem
+        }
+        chipToCheck.isChecked = true
+
+        binding.themeChipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
+            if (checkedIds.isEmpty()) return@setOnCheckedStateChangeListener
+
+            val mode = when (checkedIds.first()) {
+                binding.chipLight.id  -> "LIGHT"
+                binding.chipDark.id   -> "DARK"
+                else                  -> "SYSTEM"
             }
+
+            ServiceLocator.tokenStore.saveDarkMode(mode)
+            ThemeManager.applyDarkMode(mode)
+
+            // Recreate the Activity so the new night-mode takes effect immediately
+            requireActivity().recreate()
         }
     }
+
+    // ── Cache List ────────────────────────────────────────────────────────────
 
     private fun loadCacheList() {
         lifecycleScope.launch {
@@ -116,29 +131,18 @@ class SettingsFragment : Fragment() {
                     for (game in cachedGames) {
                         val itemBinding = ItemCachedApkBinding.inflate(inflater, binding.cacheContainer, false)
 
-                        // Bind game details
                         itemBinding.gameTitle.text = game.title
-                        itemBinding.gameCover.load(game.coverUrl) {
-                            crossfade(true)
-                        }
+                        itemBinding.gameCover.load(game.coverUrl) { crossfade(true) }
 
-                        // Calculate file size
                         val file = File(game.apkPath!!)
                         val sizeMb = file.length() / (1024 * 1024)
                         itemBinding.cacheSize.text = "${sizeMb} MB // SECURED_PAYLOAD"
-
-                        // Apply theme card styling
                         itemBinding.cardRoot.strokeColor = themeColor
 
-                        // Clear button action
                         itemBinding.clearBtn.setOnClickListener {
                             lifecycleScope.launch {
-                                // 1. Delete physical cache file
-                                if (file.exists()) {
-                                    file.delete()
-                                }
+                                if (file.exists()) file.delete()
 
-                                // 2. Update DB based on if installed
                                 val pkg = game.packageName
                                 val isInstalled = pkg?.let { p ->
                                     try {
@@ -162,7 +166,6 @@ class SettingsFragment : Fragment() {
                                     ))
                                 }
 
-                                // 3. Refresh list and repository
                                 ServiceLocator.downloadRepository.verifyInstallAndApkStates()
                                 loadCacheList()
 
@@ -183,31 +186,14 @@ class SettingsFragment : Fragment() {
         }
     }
 
-    private fun updateColorPickers() {
+    // ── Accent colours (applied to non-chip UI elements) ─────────────────────
+
+    private fun applyAccentColors() {
         if (_binding == null) return
-
-        val activeColor = ThemeManager.getThemeColorHex().lowercase()
-        val cards = mapOf(
-            "#39ff14" to binding.colorNeonGreen,
-            "#fe00fe" to binding.colorCyberPink,
-            "#00f6f6" to binding.colorRetroCyan,
-            "#9d00ff" to binding.colorPlasmaPurple,
-            "#ff0000" to binding.colorLaserRed,
-            "#ffcc00" to binding.colorGoldenEye
-        )
-
-        for ((color, card) in cards) {
-            if (color == activeColor) {
-                card.strokeWidth = 8
-            } else {
-                card.strokeWidth = 0
-            }
-        }
-
-        // Live Apply Theme styling
         val themeColor = ThemeManager.getThemeColor()
+
         binding.settingsHeader.setTextColor(themeColor)
-        binding.colorCalibrationLabel.setTextColor(themeColor)
+        binding.displayModeLabel.setTextColor(themeColor)
         binding.profileCard.strokeColor = themeColor
         binding.cacheManagementLabel.setTextColor(themeColor)
 
@@ -219,7 +205,7 @@ class SettingsFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        updateColorPickers()
+        applyAccentColors()
         loadCacheList()
     }
 

@@ -78,14 +78,14 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Color Accent Calibration -->
+        <!-- Display Mode Section -->
         <TextView
-            android:id="@+id/colorCalibrationLabel"
+            android:id="@+id/displayModeLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:fontFamily="monospace"
-            android:text="PRIMARY_COLOR_CALIBRATION"
+            android:text="DISPLAY_MODE_CONFIG"
             android:textColor="@color/primary"
             android:textSize="13sp"
             android:textStyle="bold" />
@@ -95,78 +95,47 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
             android:fontFamily="monospace"
-            android:text="PRESET_VECTOR_BEAMS // CHOOSE THEME"
+            android:text="RENDER_PIPELINE // LIGHT / DARK / SYSTEM"
             android:textColor="@color/on_surface_variant"
             android:textSize="9sp"
             android:alpha="0.7" />
 
-        <LinearLayout
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/themeChipGroup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:layout_marginTop="12dp">
+            android:layout_marginTop="12dp"
+            app:singleSelection="true"
+            app:selectionRequired="true">
 
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/colorNeonGreen"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_margin="6dp"
-                app:cardCornerRadius="20dp"
-                app:cardBackgroundColor="#39ff14"
-                app:strokeColor="#FFFFFF"
-                app:strokeWidth="0dp" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipSystem"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:text="SYSTEM"
+                android:textSize="11sp" />
 
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/colorCyberPink"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_margin="6dp"
-                app:cardCornerRadius="20dp"
-                app:cardBackgroundColor="#fe00fe"
-                app:strokeColor="#FFFFFF"
-                app:strokeWidth="0dp" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipLight"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:text="LIGHT"
+                android:textSize="11sp" />
 
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/colorRetroCyan"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_margin="6dp"
-                app:cardCornerRadius="20dp"
-                app:cardBackgroundColor="#00f6f6"
-                app:strokeColor="#FFFFFF"
-                app:strokeWidth="0dp" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipDark"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:text="DARK"
+                android:textSize="11sp" />
 
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/colorPlasmaPurple"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_margin="6dp"
-                app:cardCornerRadius="20dp"
-                app:cardBackgroundColor="#9d00ff"
-                app:strokeColor="#FFFFFF"
-                app:strokeWidth="0dp" />
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/colorLaserRed"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_margin="6dp"
-                app:cardCornerRadius="20dp"
-                app:cardBackgroundColor="#ff0000"
-                app:strokeColor="#FFFFFF"
-                app:strokeWidth="0dp" />
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/colorGoldenEye"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_margin="6dp"
-                app:cardCornerRadius="20dp"
-                app:cardBackgroundColor="#ffcc00"
-                app:strokeColor="#FFFFFF"
-                app:strokeWidth="0dp" />
-        </LinearLayout>
+        </com.google.android.material.chip.ChipGroup>
 
         <!-- Cache Management Section -->
         <TextView

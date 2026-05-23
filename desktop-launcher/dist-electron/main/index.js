@@ -14861,7 +14861,14 @@ var _eval = EvalError;
 var range$1 = RangeError;
 var ref = ReferenceError;
 var syntax = SyntaxError;
-var type$1 = TypeError;
+var type$1;
+var hasRequiredType;
+function requireType() {
+  if (hasRequiredType) return type$1;
+  hasRequiredType = 1;
+  type$1 = TypeError;
+  return type$1;
+}
 var uri = URIError;
 var abs$1 = Math.abs;
 var floor$1 = Math.floor;
@@ -15107,7 +15114,7 @@ function requireCallBindApplyHelpers() {
   if (hasRequiredCallBindApplyHelpers) return callBindApplyHelpers;
   hasRequiredCallBindApplyHelpers = 1;
   var bind3 = functionBind;
-  var $TypeError2 = type$1;
+  var $TypeError2 = requireType();
   var $call2 = requireFunctionCall();
   var $actualApply = requireActualApply();
   callBindApplyHelpers = function callBindBasic(args) {
@@ -15180,7 +15187,7 @@ var $EvalError = _eval;
 var $RangeError = range$1;
 var $ReferenceError = ref;
 var $SyntaxError = syntax;
-var $TypeError$1 = type$1;
+var $TypeError$1 = requireType();
 var $URIError = uri;
 var abs = abs$1;
 var floor = floor$1;
@@ -15511,7 +15518,7 @@ var GetIntrinsic = getIntrinsic;
 var $defineProperty = GetIntrinsic("%Object.defineProperty%", true);
 var hasToStringTag = requireShams()();
 var hasOwn$1 = hasown;
-var $TypeError = type$1;
+var $TypeError = requireType();
 var toStringTag = hasToStringTag ? Symbol.toStringTag : null;
 var esSetTostringtag = function setToStringTag2(object2, value) {
   var overrideIfSet = arguments.length > 2 && !!arguments[2] && arguments[2].force;
@@ -15552,9 +15559,9 @@ var asynckit = asynckit$1;
 var setToStringTag = esSetTostringtag;
 var hasOwn = hasown;
 var populate = populate$1;
-function FormData$1(options) {
-  if (!(this instanceof FormData$1)) {
-    return new FormData$1(options);
+function FormData$2(options) {
+  if (!(this instanceof FormData$2)) {
+    return new FormData$2(options);
   }
   this._overheadLength = 0;
   this._valueLength = 0;
@@ -15565,10 +15572,10 @@ function FormData$1(options) {
     this[option] = options[option];
   }
 }
-util$5.inherits(FormData$1, CombinedStream);
-FormData$1.LINE_BREAK = "\r\n";
-FormData$1.DEFAULT_CONTENT_TYPE = "application/octet-stream";
-FormData$1.prototype.append = function(field, value, options) {
+util$5.inherits(FormData$2, CombinedStream);
+FormData$2.LINE_BREAK = "\r\n";
+FormData$2.DEFAULT_CONTENT_TYPE = "application/octet-stream";
+FormData$2.prototype.append = function(field, value, options) {
   options = options || {};
   if (typeof options === "string") {
     options = { filename: options };
@@ -15588,7 +15595,7 @@ FormData$1.prototype.append = function(field, value, options) {
   append2(footer);
   this._trackLength(header, value, options);
 };
-FormData$1.prototype._trackLength = function(header, value, options) {
+FormData$2.prototype._trackLength = function(header, value, options) {
   var valueLength = 0;
   if (options.knownLength != null) {
     valueLength += Number(options.knownLength);
@@ -15598,7 +15605,7 @@ FormData$1.prototype._trackLength = function(header, value, options) {
     valueLength = Buffer.byteLength(value);
   }
   this._valueLength += valueLength;
-  this._overheadLength += Buffer.byteLength(header) + FormData$1.LINE_BREAK.length;
+  this._overheadLength += Buffer.byteLength(header) + FormData$2.LINE_BREAK.length;
   if (!value || !value.path && !(value.readable && hasOwn(value, "httpVersion")) && !(value instanceof Stream$1)) {
     return;
   }
@@ -15606,7 +15613,7 @@ FormData$1.prototype._trackLength = function(header, value, options) {
     this._valuesToMeasure.push(value);
   }
 };
-FormData$1.prototype._lengthRetriever = function(value, callback) {
+FormData$2.prototype._lengthRetriever = function(value, callback) {
   if (hasOwn(value, "fd")) {
     if (value.end != void 0 && value.end != Infinity && value.start != void 0) {
       callback(null, value.end + 1 - (value.start ? value.start : 0));
@@ -15632,7 +15639,7 @@ FormData$1.prototype._lengthRetriever = function(value, callback) {
     callback("Unknown stream");
   }
 };
-FormData$1.prototype._multiPartHeader = function(field, value, options) {
+FormData$2.prototype._multiPartHeader = function(field, value, options) {
   if (typeof options.header === "string") {
     return options.header;
   }
@@ -15659,13 +15666,13 @@ FormData$1.prototype._multiPartHeader = function(field, value, options) {
         header = [header];
       }
       if (header.length) {
-        contents += prop + ": " + header.join("; ") + FormData$1.LINE_BREAK;
+        contents += prop + ": " + header.join("; ") + FormData$2.LINE_BREAK;
       }
     }
   }
-  return "--" + this.getBoundary() + FormData$1.LINE_BREAK + contents + FormData$1.LINE_BREAK;
+  return "--" + this.getBoundary() + FormData$2.LINE_BREAK + contents + FormData$2.LINE_BREAK;
 };
-FormData$1.prototype._getContentDisposition = function(value, options) {
+FormData$2.prototype._getContentDisposition = function(value, options) {
   var filename;
   if (typeof options.filepath === "string") {
     filename = path$m.normalize(options.filepath).replace(/\\/g, "/");
@@ -15678,7 +15685,7 @@ FormData$1.prototype._getContentDisposition = function(value, options) {
     return 'filename="' + filename + '"';
   }
 };
-FormData$1.prototype._getContentType = function(value, options) {
+FormData$2.prototype._getContentType = function(value, options) {
   var contentType = options.contentType;
   if (!contentType && value && value.name) {
     contentType = mime.lookup(value.name);
@@ -15693,13 +15700,13 @@ FormData$1.prototype._getContentType = function(value, options) {
     contentType = mime.lookup(options.filepath || options.filename);
   }
   if (!contentType && value && typeof value === "object") {
-    contentType = FormData$1.DEFAULT_CONTENT_TYPE;
+    contentType = FormData$2.DEFAULT_CONTENT_TYPE;
   }
   return contentType;
 };
-FormData$1.prototype._multiPartFooter = function() {
+FormData$2.prototype._multiPartFooter = function() {
   return (function(next) {
-    var footer = FormData$1.LINE_BREAK;
+    var footer = FormData$2.LINE_BREAK;
     var lastPart = this._streams.length === 0;
     if (lastPart) {
       footer += this._lastBoundary();
@@ -15707,10 +15714,10 @@ FormData$1.prototype._multiPartFooter = function() {
     next(footer);
   }).bind(this);
 };
-FormData$1.prototype._lastBoundary = function() {
-  return "--" + this.getBoundary() + "--" + FormData$1.LINE_BREAK;
+FormData$2.prototype._lastBoundary = function() {
+  return "--" + this.getBoundary() + "--" + FormData$2.LINE_BREAK;
 };
-FormData$1.prototype.getHeaders = function(userHeaders) {
+FormData$2.prototype.getHeaders = function(userHeaders) {
   var header;
   var formHeaders = {
     "content-type": "multipart/form-data; boundary=" + this.getBoundary()
@@ -15722,19 +15729,19 @@ FormData$1.prototype.getHeaders = function(userHeaders) {
   }
   return formHeaders;
 };
-FormData$1.prototype.setBoundary = function(boundary) {
+FormData$2.prototype.setBoundary = function(boundary) {
   if (typeof boundary !== "string") {
     throw new TypeError("FormData boundary must be a string");
   }
   this._boundary = boundary;
 };
-FormData$1.prototype.getBoundary = function() {
+FormData$2.prototype.getBoundary = function() {
   if (!this._boundary) {
     this._generateBoundary();
   }
   return this._boundary;
 };
-FormData$1.prototype.getBuffer = function() {
+FormData$2.prototype.getBuffer = function() {
   var dataBuffer = new Buffer.alloc(0);
   var boundary = this.getBoundary();
   for (var i2 = 0, len = this._streams.length; i2 < len; i2++) {
@@ -15745,16 +15752,16 @@ FormData$1.prototype.getBuffer = function() {
         dataBuffer = Buffer.concat([dataBuffer, Buffer.from(this._streams[i2])]);
       }
       if (typeof this._streams[i2] !== "string" || this._streams[i2].substring(2, boundary.length + 2) !== boundary) {
-        dataBuffer = Buffer.concat([dataBuffer, Buffer.from(FormData$1.LINE_BREAK)]);
+        dataBuffer = Buffer.concat([dataBuffer, Buffer.from(FormData$2.LINE_BREAK)]);
       }
     }
   }
   return Buffer.concat([dataBuffer, Buffer.from(this._lastBoundary())]);
 };
-FormData$1.prototype._generateBoundary = function() {
+FormData$2.prototype._generateBoundary = function() {
   this._boundary = "--------------------------" + crypto.randomBytes(12).toString("hex");
 };
-FormData$1.prototype.getLengthSync = function() {
+FormData$2.prototype.getLengthSync = function() {
   var knownLength = this._overheadLength + this._valueLength;
   if (this._streams.length) {
     knownLength += this._lastBoundary().length;
@@ -15764,14 +15771,14 @@ FormData$1.prototype.getLengthSync = function() {
   }
   return knownLength;
 };
-FormData$1.prototype.hasKnownLength = function() {
+FormData$2.prototype.hasKnownLength = function() {
   var hasKnownLength = true;
   if (this._valuesToMeasure.length) {
     hasKnownLength = false;
   }
   return hasKnownLength;
 };
-FormData$1.prototype.getLength = function(cb) {
+FormData$2.prototype.getLength = function(cb) {
   var knownLength = this._overheadLength + this._valueLength;
   if (this._streams.length) {
     knownLength += this._lastBoundary().length;
@@ -15791,7 +15798,7 @@ FormData$1.prototype.getLength = function(cb) {
     cb(null, knownLength);
   });
 };
-FormData$1.prototype.submit = function(params, cb) {
+FormData$2.prototype.submit = function(params, cb) {
   var request;
   var options;
   var defaults2 = { method: "post" };
@@ -15838,19 +15845,19 @@ FormData$1.prototype.submit = function(params, cb) {
   }).bind(this));
   return request;
 };
-FormData$1.prototype._error = function(err2) {
+FormData$2.prototype._error = function(err2) {
   if (!this.error) {
     this.error = err2;
     this.pause();
     this.emit("error", err2);
   }
 };
-FormData$1.prototype.toString = function() {
+FormData$2.prototype.toString = function() {
   return "[object FormData]";
 };
-setToStringTag(FormData$1.prototype, "FormData");
-var form_data = FormData$1;
-const FormData$2 = /* @__PURE__ */ getDefaultExportFromCjs(form_data);
+setToStringTag(FormData$2.prototype, "FormData");
+var form_data = FormData$2;
+const FormData$1 = /* @__PURE__ */ getDefaultExportFromCjs(form_data);
 function isVisitable(thing) {
   return utils$5.isPlainObject(thing) || utils$5.isArray(thing);
 }
@@ -15874,7 +15881,7 @@ function toFormData$1(obj, formData, options) {
   if (!utils$5.isObject(obj)) {
     throw new TypeError("target must be an object");
   }
-  formData = formData || new (FormData$2 || FormData)();
+  formData = formData || new (FormData$1 || FormData)();
   options = utils$5.toFlatObject(
     options,
     {
@@ -16119,7 +16126,7 @@ const platform$2 = {
   isNode: true,
   classes: {
     URLSearchParams: URLSearchParams$1,
-    FormData: FormData$2,
+    FormData: FormData$1,
     Blob: typeof Blob !== "undefined" && Blob || null
   },
   ALPHABET,
@@ -27278,12 +27285,12 @@ function saveManifest(gameId2, manifest) {
   const filePath = path$n.join(getManifestsCacheDir(), `${gameId2}.json`);
   fs$k.writeFileSync(filePath, JSON.stringify(manifest, null, 2));
 }
-const API_BASE = process.env.LAZPLAY_API_URL || "https://play.lazplay.tech/api/v1";
+const API_BASE$1 = process.env.LAZPLAY_API_URL || "https://play.lazplay.tech/api/v1";
 class ChunkDownloader {
   async fetchManifest(gameId2, token2) {
     var _a2;
     const platform2 = process.platform === "win32" ? "WINDOWS" : "LINUX";
-    const res = await axios.get(`${API_BASE}/games/${gameId2}/distribution-manifest?platform=${platform2}`, {
+    const res = await axios.get(`${API_BASE$1}/games/${gameId2}/distribution-manifest?platform=${platform2}`, {
       headers: { Authorization: `Bearer ${token2}` }
     });
     const data = ((_a2 = res.data) == null ? void 0 : _a2.data) ?? res.data;
@@ -27293,7 +27300,7 @@ class ChunkDownloader {
     var _a2, _b, _c;
     const platform2 = process.platform === "win32" ? "WINDOWS" : "LINUX";
     const res = await axios.post(
-      `${API_BASE}/games/${gameId2}/chunks/download-urls`,
+      `${API_BASE$1}/games/${gameId2}/chunks/download-urls`,
       { hashes, platform: platform2 },
       { headers: { Authorization: `Bearer ${token2}` } }
     );
@@ -28216,6 +28223,98 @@ class CompatibilityManager {
   }
 }
 const compatibilityManager = new CompatibilityManager();
+const API_BASE = "https://play.lazplay.tech/api/v1";
+let isRefreshing = false;
+let refreshQueue = [];
+async function refreshAccessToken() {
+  if (isRefreshing) {
+    return new Promise((resolve) => {
+      refreshQueue.push(resolve);
+    });
+  }
+  isRefreshing = true;
+  const { refreshToken } = storageDb.getTokens();
+  if (!refreshToken) {
+    log.warn("[auth-fetch] No refresh token available — cannot refresh.");
+    isRefreshing = false;
+    refreshQueue.forEach((cb) => cb(null));
+    refreshQueue = [];
+    return null;
+  }
+  try {
+    log.info("[auth-fetch] Access token expired — attempting refresh...");
+    const res = await fetch(`${API_BASE}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken })
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      log.warn("[auth-fetch] Token refresh failed:", res.status, body);
+      isRefreshing = false;
+      refreshQueue.forEach((cb) => cb(null));
+      refreshQueue = [];
+      return null;
+    }
+    const data = await res.json();
+    const result2 = data.data ?? data;
+    const newAccessToken = result2.accessToken;
+    const newRefreshToken = result2.refreshToken;
+    storageDb.setTokens(newAccessToken, newRefreshToken);
+    log.info("[auth-fetch] Token refreshed successfully.");
+    try {
+      const windows = require$$1.BrowserWindow.getAllWindows();
+      for (const win of windows) {
+        if (!win.isDestroyed()) {
+          win.webContents.executeJavaScript(`
+            if (typeof localStorage !== 'undefined') {
+              localStorage.setItem('accessToken', ${JSON.stringify(newAccessToken)});
+              localStorage.setItem('refreshToken', ${JSON.stringify(newRefreshToken)});
+              window.dispatchEvent(new Event('storage'));
+            }
+          `).catch(() => {
+          });
+        }
+      }
+    } catch (_) {
+    }
+    isRefreshing = false;
+    refreshQueue.forEach((cb) => cb(newAccessToken));
+    refreshQueue = [];
+    return newAccessToken;
+  } catch (err2) {
+    log.error("[auth-fetch] Token refresh threw:", err2.message);
+    isRefreshing = false;
+    refreshQueue.forEach((cb) => cb(null));
+    refreshQueue = [];
+    return null;
+  }
+}
+async function authFetch(path2, init = {}) {
+  const makeRequest = (token22) => {
+    const headers2 = {
+      ...init.headers,
+      Authorization: `Bearer ${token22}`
+    };
+    if (init.body && !headers2["Content-Type"]) {
+      headers2["Content-Type"] = "application/json";
+    }
+    return fetch(`${API_BASE}${path2}`, { ...init, headers: headers2 });
+  };
+  const { token: token2 } = storageDb.getTokens();
+  if (!token2) {
+    throw new Error("Not authenticated — no access token stored.");
+  }
+  const res = await makeRequest(token2);
+  if (res.status === 401) {
+    const newToken = await refreshAccessToken();
+    if (!newToken) {
+      return res;
+    }
+    return makeRequest(newToken);
+  }
+  return res;
+}
 function setupIpcHandlers(mainWindow, storeView) {
   require$$1.ipcMain.handle("sync-session", async (event2, { token: token2, refreshToken }) => {
     log.info("Session tokens synced and saved");
@@ -28243,16 +28342,14 @@ function setupIpcHandlers(mainWindow, storeView) {
     }
     try {
       log.info("check-auth: Verifying token with backend...");
-      const response = await fetch("https://play.lazplay.tech/api/v1/auth/me", {
-        headers: { Authorization: `Bearer ${token2}` }
-      });
+      const response = await authFetch("/auth/me");
       if (response.ok) {
         const result2 = await response.json();
         const user = result2.data || result2;
         log.info("check-auth: Token verified successfully for user:", user.username || user.email);
         return { success: true, user };
       } else {
-        log.warn(`check-auth: Token verification failed with status ${response.status}`);
+        log.warn(`check-auth: Auth check failed with status ${response.status} — session cannot be restored.`);
         return { success: false };
       }
     } catch (error2) {
@@ -28405,31 +28502,30 @@ function setupIpcHandlers(mainWindow, storeView) {
     return { success: false, error: "Storefront view not available" };
   });
   require$$1.ipcMain.handle("sync-remote-library", async () => {
-    let token2 = null;
     if (storeView && !storeView.webContents.isDestroyed()) {
       try {
-        token2 = await storeView.webContents.executeJavaScript(
+        const storeToken = await storeView.webContents.executeJavaScript(
           `localStorage.getItem('accessToken')`
         );
-        if (token2) log.info("Token read from storeView localStorage ✓");
+        const storeRefresh = await storeView.webContents.executeJavaScript(
+          `localStorage.getItem('refreshToken')`
+        );
+        if (storeToken) {
+          storageDb.setTokens(storeToken, storeRefresh || storageDb.getTokens().refreshToken || "");
+          log.info("sync-remote-library: Token synced from storeView localStorage ✓");
+        }
       } catch (e) {
-        log.warn("Could not read token from storeView:", e);
+        log.warn("sync-remote-library: Could not read token from storeView:", e);
       }
     }
-    if (!token2) {
-      const stored = storageDb.getTokens();
-      token2 = stored.token || null;
-      if (token2) log.info("Token read from SQLite ✓");
-    }
+    const { token: token2 } = storageDb.getTokens();
     if (!token2) {
       log.warn("sync-remote-library: No token found. User must log in via the Store tab.");
       return { success: false, error: "Not logged in — please log in on the Store tab first." };
     }
     try {
       const platformParam = process.platform === "win32" ? "WINDOWS" : "LINUX";
-      const libRes = await fetch(`https://play.lazplay.tech/api/v1/library?platform=${platformParam}`, {
-        headers: { Authorization: `Bearer ${token2}` }
-      });
+      const libRes = await authFetch(`/library?platform=${platformParam}`);
       if (!libRes.ok) {
         const text = await libRes.text();
         log.error(`Library fetch failed (${libRes.status}):`, text);
@@ -28487,7 +28583,6 @@ function setupIpcHandlers(mainWindow, storeView) {
           });
         }
       });
-      if (token2) storageDb.setTokens(token2, storageDb.getTokens().refreshToken || "");
       return {
         success: true,
         ownedIds: ownedGames.map((g) => g.id),
@@ -28502,12 +28597,9 @@ function setupIpcHandlers(mainWindow, storeView) {
     const { token: token2 } = storageDb.getTokens();
     if (!token2) return { success: false, error: "Not logged in" };
     try {
-      const response = await fetch("https://play.lazplay.tech/api/v1/library", {
+      const response = await authFetch("/library", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token2}`,
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ gameId: gameId2 })
       });
       if (!response.ok) throw new Error("Claim failed");

@@ -3,6 +3,7 @@ import { downloadManager } from "../downloads/manager";
 import { processManager } from "../runtime/process-manager";
 import { compatibilityManager } from "../runtime/compatibility-manager";
 import { db } from "../storage/db";
+import { authFetch, authFetchJson } from "../utils/auth-fetch";
 import log from "electron-log";
 import fs from "fs";
 import path from "path";
@@ -36,7 +37,7 @@ export function setupIpcHandlers(
     return { success: true };
   });
 
-  // Check if session is valid
+  // Check if session is valid — attempts token refresh automatically on 401
   ipcMain.handle("check-auth", async () => {
     const { token } = db.getTokens();
     if (!token) {
@@ -46,9 +47,8 @@ export function setupIpcHandlers(
 
     try {
       log.info("check-auth: Verifying token with backend...");
-      const response = await fetch("https://play.lazplay.tech/api/v1/auth/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      // authFetch will transparently refresh the token if it gets a 401
+      const response = await authFetch("/auth/me");
 
       if (response.ok) {
         const result = await response.json();
@@ -56,13 +56,11 @@ export function setupIpcHandlers(
         log.info("check-auth: Token verified successfully for user:", user.username || user.email);
         return { success: true, user };
       } else {
-        log.warn(`check-auth: Token verification failed with status ${response.status}`);
+        log.warn(`check-auth: Auth check failed with status ${response.status} — session cannot be restored.`);
         return { success: false };
       }
     } catch (error: any) {
       log.error("check-auth: Failed to reach auth endpoint:", error.message);
-      // In case of network errors but we have a token, we might still return the active state or offline state.
-      // For now, let's require successful authentication.
       return { success: false, error: "Network error" };
     }
   });
@@ -240,29 +238,25 @@ export function setupIpcHandlers(
 
 
   ipcMain.handle("sync-remote-library", async () => {
-    // Strategy 1: Read token directly from the store WebContentsView's localStorage.
-    // This is the most reliable approach — the user is already logged in on the store tab,
-    // so the token is right there without needing a prior sync-session call.
-    let token: string | null = null;
-
+    // Strategy 1: Sync token from storeView localStorage into SQLite so authFetch can use it
     if (storeView && !storeView.webContents.isDestroyed()) {
       try {
-        token = await storeView.webContents.executeJavaScript(
+        const storeToken: string | null = await storeView.webContents.executeJavaScript(
           `localStorage.getItem('accessToken')`
         );
-        if (token) log.info("Token read from storeView localStorage ✓");
+        const storeRefresh: string | null = await storeView.webContents.executeJavaScript(
+          `localStorage.getItem('refreshToken')`
+        );
+        if (storeToken) {
+          db.setTokens(storeToken, storeRefresh || db.getTokens().refreshToken || "");
+          log.info("sync-remote-library: Token synced from storeView localStorage ✓");
+        }
       } catch (e) {
-        log.warn("Could not read token from storeView:", e);
+        log.warn("sync-remote-library: Could not read token from storeView:", e);
       }
     }
 
-    // Strategy 2: Fall back to SQLite-stored token (from sync-session)
-    if (!token) {
-      const stored = db.getTokens();
-      token = stored.token || null;
-      if (token) log.info("Token read from SQLite ✓");
-    }
-
+    const { token } = db.getTokens();
     if (!token) {
       log.warn("sync-remote-library: No token found. User must log in via the Store tab.");
       return { success: false, error: "Not logged in — please log in on the Store tab first." };
@@ -270,9 +264,8 @@ export function setupIpcHandlers(
 
     try {
       const platformParam = process.platform === "win32" ? "WINDOWS" : "LINUX";
-      const libRes = await fetch(`https://play.lazplay.tech/api/v1/library?platform=${platformParam}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      // authFetch automatically refreshes the token on 401
+      const libRes = await authFetch(`/library?platform=${platformParam}`);
 
       if (!libRes.ok) {
         const text = await libRes.text();
@@ -350,9 +343,6 @@ export function setupIpcHandlers(
         }
       });
 
-      // Also persist the token for future use (so later calls work even if store view is hidden)
-      if (token) db.setTokens(token, db.getTokens().refreshToken || "");
-
       return {
         success: true,
         ownedIds: ownedGames.map((g: any) => g.id),
@@ -369,12 +359,9 @@ export function setupIpcHandlers(
     if (!token) return { success: false, error: "Not logged in" };
 
     try {
-      const response = await fetch("https://play.lazplay.tech/api/v1/library", {
+      const response = await authFetch("/library", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ gameId }),
       });
 
